@@ -1,0 +1,2063 @@
+State 0:
+          input ::= * statement_list TOKEN_EOF
+          statement_list ::= * statement
+          statement_list ::= * statement_list statement
+          statement ::= * select_statement
+          statement ::= * TOKEN_IDENTIFIER TOKEN_EQ select_source
+          select_statement ::= * TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt
+
+                  TOKEN_SELECT shift        1      
+              TOKEN_IDENTIFIER shift        84     
+                statement_list shift        11     
+                         input accept
+                     statement shift-reduce 1      statement_list ::= statement
+              select_statement shift-reduce 3      statement ::= select_statement
+
+State 1:
+          select_statement ::= TOKEN_SELECT * select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt
+          select_list ::= * TOKEN_STAR
+          select_list ::= * select_item
+          select_list ::= * select_list TOKEN_COMMA select_item
+          select_item ::= * TOKEN_IDENTIFIER
+          select_item ::= * expression TOKEN_AS TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift        36     
+                TOKEN_COALESCE shift        68     
+                    TOKEN_STAR shift-reduce 23     select_list ::= TOKEN_STAR
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        35     
+                   select_list shift        59     
+                   select_item shift-reduce 24     select_list ::= select_item
+
+State 2:
+          group_by_opt ::= TOKEN_GROUP_BY * group_by_list
+          select_item ::= * TOKEN_IDENTIFIER
+          select_item ::= * expression TOKEN_AS TOKEN_IDENTIFIER
+          group_by_list ::= * select_item
+          group_by_list ::= * group_by_list TOKEN_COMMA select_item
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift        36     
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        35     
+                   select_item shift-reduce 28     group_by_list ::= select_item
+                 group_by_list shift        62     
+
+State 3:
+          select_list ::= select_list TOKEN_COMMA * select_item
+          select_item ::= * TOKEN_IDENTIFIER
+          select_item ::= * expression TOKEN_AS TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift        36     
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        35     
+                   select_item shift-reduce 25     select_list ::= select_list TOKEN_COMMA select_item
+
+State 4:
+          where_opt ::= TOKEN_WHERE * condition
+          condition ::= * expression
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        47     
+                     condition shift-reduce 13     where_opt ::= TOKEN_WHERE condition
+
+State 5:
+          select_item ::= * TOKEN_IDENTIFIER
+          select_item ::= * expression TOKEN_AS TOKEN_IDENTIFIER
+          group_by_list ::= group_by_list TOKEN_COMMA * select_item
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift        36     
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        35     
+                   select_item shift-reduce 29     group_by_list ::= group_by_list TOKEN_COMMA select_item
+
+State 6:
+          expression_list ::= * expression
+          expression_list ::= * expression_list TOKEN_COMMA expression
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= TOKEN_COALESCE TOKEN_LPAREN * expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        48     
+               expression_list shift        58     
+
+State 7:
+          order_by_opt ::= TOKEN_ORDER_BY * expression_list
+          order_by_opt ::= TOKEN_ORDER_BY * expression_list TOKEN_ASC
+          order_by_opt ::= TOKEN_ORDER_BY * expression_list TOKEN_DESC
+          expression_list ::= * expression
+          expression_list ::= * expression_list TOKEN_COMMA expression
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        48     
+               expression_list shift        55     
+
+State 8:
+          select_source ::= * file_source
+          select_source ::= * TOKEN_LPAREN relation TOKEN_RPAREN
+          select_source ::= * TOKEN_DOLLAR TOKEN_IDENTIFIER
+          file_source ::= * TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER
+          file_source ::= * TOKEN_PATH
+          expression ::= expression TOKEN_IN * select_source
+
+                    TOKEN_PATH shift        76     
+                  TOKEN_LPAREN shift        12     
+                  TOKEN_DOLLAR shift        77     
+                 select_source shift-reduce 57     expression ::= expression TOKEN_IN select_source
+                   file_source shift-reduce 7      select_source ::= file_source
+
+State 9:
+          select_statement ::= TOKEN_SELECT select_list TOKEN_FROM * select_source where_opt group_by_opt order_by_opt limit_opt
+          select_source ::= * file_source
+          select_source ::= * TOKEN_LPAREN relation TOKEN_RPAREN
+          select_source ::= * TOKEN_DOLLAR TOKEN_IDENTIFIER
+          file_source ::= * TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER
+          file_source ::= * TOKEN_PATH
+
+                    TOKEN_PATH shift        76     
+                  TOKEN_LPAREN shift        12     
+                  TOKEN_DOLLAR shift        77     
+                 select_source shift        34     
+                   file_source shift-reduce 7      select_source ::= file_source
+
+State 10:
+          statement ::= TOKEN_IDENTIFIER TOKEN_EQ * select_source
+          select_source ::= * file_source
+          select_source ::= * TOKEN_LPAREN relation TOKEN_RPAREN
+          select_source ::= * TOKEN_DOLLAR TOKEN_IDENTIFIER
+          file_source ::= * TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER
+          file_source ::= * TOKEN_PATH
+
+                    TOKEN_PATH shift        76     
+                  TOKEN_LPAREN shift        12     
+                  TOKEN_DOLLAR shift        77     
+                 select_source shift-reduce 4      statement ::= TOKEN_IDENTIFIER TOKEN_EQ select_source
+                   file_source shift-reduce 7      select_source ::= file_source
+
+State 11:
+          input ::= statement_list * TOKEN_EOF
+          statement_list ::= statement_list * statement
+          statement ::= * select_statement
+          statement ::= * TOKEN_IDENTIFIER TOKEN_EQ select_source
+          select_statement ::= * TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt
+
+                  TOKEN_SELECT shift        1      
+              TOKEN_IDENTIFIER shift        84     
+                     TOKEN_EOF shift        85     
+                     statement shift-reduce 2      statement_list ::= statement_list statement
+              select_statement shift-reduce 3      statement ::= select_statement
+
+State 12:
+          relation ::= * select_statement
+          select_statement ::= * TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt
+          select_source ::= TOKEN_LPAREN * relation TOKEN_RPAREN
+
+                  TOKEN_SELECT shift        1      
+              select_statement shift-reduce 5      relation ::= select_statement
+                      relation shift        60     
+
+State 13:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= TOKEN_PERCENTILE TOKEN_LPAREN * expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        37     
+
+State 14:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= TOKEN_RSUBSTR TOKEN_LPAREN * expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        38     
+
+State 15:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= TOKEN_SUM TOKEN_LPAREN * expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        39     
+
+State 16:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= TOKEN_MAX TOKEN_LPAREN * expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        40     
+
+State 17:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= TOKEN_MIN TOKEN_LPAREN * expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        41     
+
+State 18:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= TOKEN_COUNT TOKEN_LPAREN * expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        42     
+
+State 19:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= TOKEN_EXCLAMATION * expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        49     
+
+State 20:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= expression TOKEN_DIVIDE * expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        53     
+
+State 21:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= TOKEN_BOOL TOKEN_LPAREN * expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        43     
+
+State 22:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= expression TOKEN_OR * expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        51     
+
+State 23:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= TOKEN_FLOAT TOKEN_LPAREN * expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        44     
+
+State 24:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= expression TOKEN_AND * expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        52     
+
+State 25:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= TOKEN_INT TOKEN_LPAREN * expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        45     
+
+State 26:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= expression TOKEN_NEQ * expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        56     
+
+State 27:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= TOKEN_STRING TOKEN_LPAREN * expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        46     
+
+State 28:
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= expression TOKEN_EQ * expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        54     
+
+State 29:
+          expression_list ::= expression_list TOKEN_COMMA * expression
+          expression ::= * TOKEN_STR
+          expression ::= * TOKEN_INTEGER
+          expression ::= * TOKEN_FLOATING
+          expression ::= * TOKEN_NULL
+          expression ::= * TOKEN_TRUE
+          expression ::= * TOKEN_FALSE
+          expression ::= * TOKEN_IDENTIFIER
+          expression ::= * TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_EXCLAMATION expression
+          expression ::= * expression TOKEN_LIKE TOKEN_STR
+          expression ::= * expression TOKEN_EQ expression
+          expression ::= * expression TOKEN_NEQ expression
+          expression ::= * expression TOKEN_AND expression
+          expression ::= * expression TOKEN_OR expression
+          expression ::= * expression TOKEN_DIVIDE expression
+          expression ::= * TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+          expression ::= * TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+          expression ::= * TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= * TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= * expression TOKEN_IN select_source
+
+                   TOKEN_COUNT shift        72     
+              TOKEN_IDENTIFIER shift-reduce 38     expression ::= TOKEN_IDENTIFIER
+                TOKEN_COALESCE shift        68     
+                 TOKEN_INTEGER shift-reduce 33     expression ::= TOKEN_INTEGER
+                TOKEN_FLOATING shift-reduce 34     expression ::= TOKEN_FLOATING
+                     TOKEN_STR shift-reduce 32     expression ::= TOKEN_STR
+                 TOKEN_RSUBSTR shift        67     
+                    TOKEN_TRUE shift-reduce 36     expression ::= TOKEN_TRUE
+                   TOKEN_FALSE shift-reduce 37     expression ::= TOKEN_FALSE
+                    TOKEN_NULL shift-reduce 35     expression ::= TOKEN_NULL
+                     TOKEN_MIN shift        71     
+                     TOKEN_MAX shift        70     
+                     TOKEN_SUM shift        69     
+              TOKEN_PERCENTILE shift        64     
+                  TOKEN_STRING shift        81     
+                     TOKEN_INT shift        80     
+                   TOKEN_FLOAT shift        79     
+                    TOKEN_BOOL shift        78     
+             TOKEN_EXCLAMATION shift        19     
+                    expression shift        50     
+
+State 30:
+          expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA * floating_list TOKEN_RPAREN
+          floating_list ::= * TOKEN_FLOATING
+          floating_list ::= * floating_list TOKEN_COMMA TOKEN_FLOATING
+
+                TOKEN_FLOATING shift-reduce 58     floating_list ::= TOKEN_FLOATING
+                 floating_list shift        57     
+
+State 31:
+          select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt * limit_opt
+          limit_opt ::= * TOKEN_LIMIT TOKEN_INTEGER
+     (22) limit_opt ::= *
+
+                   TOKEN_LIMIT shift        83     
+                     limit_opt shift-reduce 6      select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt
+                     {default} reduce       22     limit_opt ::=
+
+State 32:
+          select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt * order_by_opt limit_opt
+     (16) order_by_opt ::= *
+          order_by_opt ::= * TOKEN_ORDER_BY expression_list
+          order_by_opt ::= * TOKEN_ORDER_BY expression_list TOKEN_ASC
+          order_by_opt ::= * TOKEN_ORDER_BY expression_list TOKEN_DESC
+
+                TOKEN_ORDER_BY shift        7      
+                  order_by_opt shift        31     
+                     {default} reduce       16     order_by_opt ::=
+
+State 33:
+          select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt * group_by_opt order_by_opt limit_opt
+     (14) group_by_opt ::= *
+          group_by_opt ::= * TOKEN_GROUP_BY group_by_list
+
+                TOKEN_GROUP_BY shift        2      
+                  group_by_opt shift        32     
+                     {default} reduce       14     group_by_opt ::=
+
+State 34:
+          select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source * where_opt group_by_opt order_by_opt limit_opt
+     (12) where_opt ::= *
+          where_opt ::= * TOKEN_WHERE condition
+
+                   TOKEN_WHERE shift        4      
+                     where_opt shift        33     
+                     {default} reduce       12     where_opt ::=
+
+State 35:
+          select_item ::= expression * TOKEN_AS TOKEN_IDENTIFIER
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_AS shift        61     
+                      TOKEN_IN shift        8      
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+
+State 36:
+     (26) select_item ::= TOKEN_IDENTIFIER *
+     (38) expression ::= TOKEN_IDENTIFIER *
+
+                      TOKEN_AS reduce       38     expression ::= TOKEN_IDENTIFIER
+                      TOKEN_IN reduce       38     expression ::= TOKEN_IDENTIFIER
+                      TOKEN_OR reduce       38     expression ::= TOKEN_IDENTIFIER
+                     TOKEN_AND reduce       38     expression ::= TOKEN_IDENTIFIER
+                  TOKEN_DIVIDE reduce       38     expression ::= TOKEN_IDENTIFIER
+                      TOKEN_EQ reduce       38     expression ::= TOKEN_IDENTIFIER
+                     TOKEN_NEQ reduce       38     expression ::= TOKEN_IDENTIFIER
+                    TOKEN_LIKE reduce       38     expression ::= TOKEN_IDENTIFIER
+                     {default} reduce       26     select_item ::= TOKEN_IDENTIFIER
+
+State 37:
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression * TOKEN_COMMA floating_list TOKEN_RPAREN
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                   TOKEN_COMMA shift        30     
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+
+State 38:
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression * TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                   TOKEN_COMMA shift        66     
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+
+State 39:
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= TOKEN_SUM TOKEN_LPAREN expression * TOKEN_RPAREN
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                  TOKEN_RPAREN shift-reduce 53     expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+
+State 40:
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= TOKEN_MAX TOKEN_LPAREN expression * TOKEN_RPAREN
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                  TOKEN_RPAREN shift-reduce 52     expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+
+State 41:
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= TOKEN_MIN TOKEN_LPAREN expression * TOKEN_RPAREN
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                  TOKEN_RPAREN shift-reduce 51     expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+
+State 42:
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= TOKEN_COUNT TOKEN_LPAREN expression * TOKEN_RPAREN
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                  TOKEN_RPAREN shift-reduce 50     expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+
+State 43:
+          expression ::= TOKEN_BOOL TOKEN_LPAREN expression * TOKEN_RPAREN
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                  TOKEN_RPAREN shift-reduce 42     expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+
+State 44:
+          expression ::= TOKEN_FLOAT TOKEN_LPAREN expression * TOKEN_RPAREN
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                  TOKEN_RPAREN shift-reduce 41     expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+
+State 45:
+          expression ::= TOKEN_INT TOKEN_LPAREN expression * TOKEN_RPAREN
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                  TOKEN_RPAREN shift-reduce 40     expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+
+State 46:
+          expression ::= TOKEN_STRING TOKEN_LPAREN expression * TOKEN_RPAREN
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                  TOKEN_RPAREN shift-reduce 39     expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+
+State 47:
+     (20) condition ::= expression *
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+                     {default} reduce       20     condition ::= expression
+
+State 48:
+     (30) expression_list ::= expression *
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+                     {default} reduce       30     expression_list ::= expression
+
+State 49:
+     (43) expression ::= TOKEN_EXCLAMATION expression *
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                      TOKEN_IN reduce       43      ** Parsing conflict **
+                      TOKEN_OR shift        22     
+                      TOKEN_OR reduce       43      ** Parsing conflict **
+                     TOKEN_AND shift        24     
+                     TOKEN_AND reduce       43      ** Parsing conflict **
+                  TOKEN_DIVIDE shift        20     
+                  TOKEN_DIVIDE reduce       43      ** Parsing conflict **
+                      TOKEN_EQ shift        28     
+                      TOKEN_EQ reduce       43      ** Parsing conflict **
+                     TOKEN_NEQ shift        26     
+                     TOKEN_NEQ reduce       43      ** Parsing conflict **
+                    TOKEN_LIKE shift        82     
+                    TOKEN_LIKE reduce       43      ** Parsing conflict **
+                     {default} reduce       43     expression ::= TOKEN_EXCLAMATION expression
+
+State 50:
+     (31) expression_list ::= expression_list TOKEN_COMMA expression *
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                      TOKEN_OR shift        22     
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+                     {default} reduce       31     expression_list ::= expression_list TOKEN_COMMA expression
+
+State 51:
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+     (48) expression ::= expression TOKEN_OR expression *
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                      TOKEN_IN reduce       48      ** Parsing conflict **
+                     TOKEN_AND shift        24     
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+                    TOKEN_LIKE reduce       48      ** Parsing conflict **
+                     {default} reduce       48     expression ::= expression TOKEN_OR expression
+
+State 52:
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+     (47) expression ::= expression TOKEN_AND expression *
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                      TOKEN_IN reduce       47      ** Parsing conflict **
+                  TOKEN_DIVIDE shift        20     
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+                    TOKEN_LIKE reduce       47      ** Parsing conflict **
+                     {default} reduce       47     expression ::= expression TOKEN_AND expression
+
+State 53:
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+     (49) expression ::= expression TOKEN_DIVIDE expression *
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                      TOKEN_IN reduce       49      ** Parsing conflict **
+                      TOKEN_EQ shift        28     
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+                    TOKEN_LIKE reduce       49      ** Parsing conflict **
+                     {default} reduce       49     expression ::= expression TOKEN_DIVIDE expression
+
+State 54:
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+     (45) expression ::= expression TOKEN_EQ expression *
+          expression ::= expression * TOKEN_NEQ expression
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                      TOKEN_IN reduce       45      ** Parsing conflict **
+                     TOKEN_NEQ shift        26     
+                    TOKEN_LIKE shift        82     
+                    TOKEN_LIKE reduce       45      ** Parsing conflict **
+                     {default} reduce       45     expression ::= expression TOKEN_EQ expression
+
+State 55:
+     (17) order_by_opt ::= TOKEN_ORDER_BY expression_list *
+          order_by_opt ::= TOKEN_ORDER_BY expression_list * TOKEN_ASC
+          order_by_opt ::= TOKEN_ORDER_BY expression_list * TOKEN_DESC
+          expression_list ::= expression_list * TOKEN_COMMA expression
+
+                   TOKEN_COMMA shift        29     
+                    TOKEN_DESC shift-reduce 19     order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC
+                     TOKEN_ASC shift-reduce 18     order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC
+                     {default} reduce       17     order_by_opt ::= TOKEN_ORDER_BY expression_list
+
+State 56:
+          expression ::= expression * TOKEN_LIKE TOKEN_STR
+          expression ::= expression * TOKEN_EQ expression
+          expression ::= expression * TOKEN_NEQ expression
+     (46) expression ::= expression TOKEN_NEQ expression *
+          expression ::= expression * TOKEN_AND expression
+          expression ::= expression * TOKEN_OR expression
+          expression ::= expression * TOKEN_DIVIDE expression
+          expression ::= expression * TOKEN_IN select_source
+
+                      TOKEN_IN shift        8      
+                      TOKEN_IN reduce       46      ** Parsing conflict **
+                    TOKEN_LIKE shift        82     
+                    TOKEN_LIKE reduce       46      ** Parsing conflict **
+                     {default} reduce       46     expression ::= expression TOKEN_NEQ expression
+
+State 57:
+          expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list * TOKEN_RPAREN
+          floating_list ::= floating_list * TOKEN_COMMA TOKEN_FLOATING
+
+                   TOKEN_COMMA shift        63     
+                  TOKEN_RPAREN shift-reduce 56     expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+
+State 58:
+          expression_list ::= expression_list * TOKEN_COMMA expression
+          expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list * TOKEN_RPAREN
+
+                   TOKEN_COMMA shift        29     
+                  TOKEN_RPAREN shift-reduce 54     expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN
+
+State 59:
+          select_statement ::= TOKEN_SELECT select_list * TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt
+          select_list ::= select_list * TOKEN_COMMA select_item
+
+                    TOKEN_FROM shift        9      
+                   TOKEN_COMMA shift        3      
+
+State 60:
+          select_source ::= TOKEN_LPAREN relation * TOKEN_RPAREN
+
+                  TOKEN_RPAREN shift-reduce 8      select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN
+
+State 61:
+          select_item ::= expression TOKEN_AS * TOKEN_IDENTIFIER
+
+              TOKEN_IDENTIFIER shift-reduce 27     select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER
+
+State 62:
+     (15) group_by_opt ::= TOKEN_GROUP_BY group_by_list *
+          group_by_list ::= group_by_list * TOKEN_COMMA select_item
+
+                   TOKEN_COMMA shift        5      
+                     {default} reduce       15     group_by_opt ::= TOKEN_GROUP_BY group_by_list
+
+State 63:
+          floating_list ::= floating_list TOKEN_COMMA * TOKEN_FLOATING
+
+                TOKEN_FLOATING shift-reduce 59     floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING
+
+State 64:
+          expression ::= TOKEN_PERCENTILE * TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN
+
+                  TOKEN_LPAREN shift        13     
+
+State 65:
+          expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR * TOKEN_RPAREN
+
+                  TOKEN_RPAREN shift-reduce 55     expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+
+State 66:
+          expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA * TOKEN_STR TOKEN_RPAREN
+
+                     TOKEN_STR shift        65     
+
+State 67:
+          expression ::= TOKEN_RSUBSTR * TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN
+
+                  TOKEN_LPAREN shift        14     
+
+State 68:
+          expression ::= TOKEN_COALESCE * TOKEN_LPAREN expression_list TOKEN_RPAREN
+
+                  TOKEN_LPAREN shift        6      
+
+State 69:
+          expression ::= TOKEN_SUM * TOKEN_LPAREN expression TOKEN_RPAREN
+
+                  TOKEN_LPAREN shift        15     
+
+State 70:
+          expression ::= TOKEN_MAX * TOKEN_LPAREN expression TOKEN_RPAREN
+
+                  TOKEN_LPAREN shift        16     
+
+State 71:
+          expression ::= TOKEN_MIN * TOKEN_LPAREN expression TOKEN_RPAREN
+
+                  TOKEN_LPAREN shift        17     
+
+State 72:
+          expression ::= TOKEN_COUNT * TOKEN_LPAREN expression TOKEN_RPAREN
+
+                  TOKEN_LPAREN shift        18     
+
+State 73:
+          file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS * TOKEN_INTEGER
+
+                 TOKEN_INTEGER shift-reduce 10     file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER
+
+State 74:
+          file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP * TOKEN_PLUS TOKEN_INTEGER
+
+                    TOKEN_PLUS shift        73     
+
+State 75:
+          file_source ::= TOKEN_PATH TOKEN_AT * TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER
+
+               TOKEN_TIMESTAMP shift        74     
+
+State 76:
+          file_source ::= TOKEN_PATH * TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER
+     (11) file_source ::= TOKEN_PATH *
+
+                      TOKEN_AT shift        75     
+                     {default} reduce       11     file_source ::= TOKEN_PATH
+
+State 77:
+          select_source ::= TOKEN_DOLLAR * TOKEN_IDENTIFIER
+
+              TOKEN_IDENTIFIER shift-reduce 9      select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER
+
+State 78:
+          expression ::= TOKEN_BOOL * TOKEN_LPAREN expression TOKEN_RPAREN
+
+                  TOKEN_LPAREN shift        21     
+
+State 79:
+          expression ::= TOKEN_FLOAT * TOKEN_LPAREN expression TOKEN_RPAREN
+
+                  TOKEN_LPAREN shift        23     
+
+State 80:
+          expression ::= TOKEN_INT * TOKEN_LPAREN expression TOKEN_RPAREN
+
+                  TOKEN_LPAREN shift        25     
+
+State 81:
+          expression ::= TOKEN_STRING * TOKEN_LPAREN expression TOKEN_RPAREN
+
+                  TOKEN_LPAREN shift        27     
+
+State 82:
+          expression ::= expression TOKEN_LIKE * TOKEN_STR
+
+                     TOKEN_STR shift-reduce 44     expression ::= expression TOKEN_LIKE TOKEN_STR
+
+State 83:
+          limit_opt ::= TOKEN_LIMIT * TOKEN_INTEGER
+
+                 TOKEN_INTEGER shift-reduce 21     limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER
+
+State 84:
+          statement ::= TOKEN_IDENTIFIER * TOKEN_EQ select_source
+
+                      TOKEN_EQ shift        10     
+
+State 85:
+      (0) input ::= statement_list TOKEN_EOF *
+
+                             $ reduce       0      input ::= statement_list TOKEN_EOF
+
+----------------------------------------------------
+Symbols:
+The first-set of non-terminals is shown after the name.
+
+    0: $:
+    1: TOKEN_SELECT
+    2: TOKEN_COUNT
+    3: TOKEN_FROM
+    4: TOKEN_IDENTIFIER
+    5: TOKEN_SEMICOLON
+    6: TOKEN_EOF
+    7: TOKEN_AS
+    8: TOKEN_IN
+    9: TOKEN_COALESCE
+   10: TOKEN_COMMA
+   11: TOKEN_STAR
+   12: TOKEN_WHERE
+   13: TOKEN_LIMIT
+   14: TOKEN_INTEGER
+   15: TOKEN_FLOATING
+   16: TOKEN_PATH
+   17: TOKEN_STR
+   18: TOKEN_RSUBSTR
+   19: TOKEN_LPAREN
+   20: TOKEN_RPAREN
+   21: TOKEN_AT
+   22: TOKEN_GROUP_BY
+   23: TOKEN_ORDER_BY
+   24: TOKEN_TRUE
+   25: TOKEN_FALSE
+   26: TOKEN_DESC
+   27: TOKEN_ASC
+   28: TOKEN_NULL
+   29: TOKEN_DOLLAR
+   30: TOKEN_MIN
+   31: TOKEN_MAX
+   32: TOKEN_SUM
+   33: TOKEN_PERCENTILE
+   34: TOKEN_PLUS
+   35: TOKEN_OR (precedence=1)
+   36: TOKEN_AND (precedence=2)
+   37: TOKEN_DIVIDE (precedence=3)
+   38: TOKEN_EQ (precedence=4)
+   39: TOKEN_NEQ (precedence=5)
+   40: TOKEN_LIKE
+   41: TOKEN_STRING
+   42: TOKEN_INT
+   43: TOKEN_FLOAT
+   44: TOKEN_BOOL
+   45: TOKEN_EXCLAMATION
+   46: TOKEN_TIMESTAMP
+   47: expression: TOKEN_COUNT TOKEN_IDENTIFIER TOKEN_COALESCE TOKEN_INTEGER TOKEN_FLOATING TOKEN_STR TOKEN_RSUBSTR TOKEN_TRUE TOKEN_FALSE TOKEN_NULL TOKEN_MIN TOKEN_MAX TOKEN_SUM TOKEN_PERCENTILE TOKEN_STRING TOKEN_INT TOKEN_FLOAT TOKEN_BOOL TOKEN_EXCLAMATION
+   48: group_expression:
+   49: limit_opt: <lambda> TOKEN_LIMIT
+   50: select_list: TOKEN_COUNT TOKEN_IDENTIFIER TOKEN_COALESCE TOKEN_STAR TOKEN_INTEGER TOKEN_FLOATING TOKEN_STR TOKEN_RSUBSTR TOKEN_TRUE TOKEN_FALSE TOKEN_NULL TOKEN_MIN TOKEN_MAX TOKEN_SUM TOKEN_PERCENTILE TOKEN_STRING TOKEN_INT TOKEN_FLOAT TOKEN_BOOL TOKEN_EXCLAMATION
+   51: expression_list: TOKEN_COUNT TOKEN_IDENTIFIER TOKEN_COALESCE TOKEN_INTEGER TOKEN_FLOATING TOKEN_STR TOKEN_RSUBSTR TOKEN_TRUE TOKEN_FALSE TOKEN_NULL TOKEN_MIN TOKEN_MAX TOKEN_SUM TOKEN_PERCENTILE TOKEN_STRING TOKEN_INT TOKEN_FLOAT TOKEN_BOOL TOKEN_EXCLAMATION
+   52: select_item: TOKEN_COUNT TOKEN_IDENTIFIER TOKEN_COALESCE TOKEN_INTEGER TOKEN_FLOATING TOKEN_STR TOKEN_RSUBSTR TOKEN_TRUE TOKEN_FALSE TOKEN_NULL TOKEN_MIN TOKEN_MAX TOKEN_SUM TOKEN_PERCENTILE TOKEN_STRING TOKEN_INT TOKEN_FLOAT TOKEN_BOOL TOKEN_EXCLAMATION
+   53: floating_list: TOKEN_FLOATING
+   54: group_select_list:
+   55: group_select_item:
+   56: group_by_opt: <lambda> TOKEN_GROUP_BY
+   57: group_by_list: TOKEN_COUNT TOKEN_IDENTIFIER TOKEN_COALESCE TOKEN_INTEGER TOKEN_FLOATING TOKEN_STR TOKEN_RSUBSTR TOKEN_TRUE TOKEN_FALSE TOKEN_NULL TOKEN_MIN TOKEN_MAX TOKEN_SUM TOKEN_PERCENTILE TOKEN_STRING TOKEN_INT TOKEN_FLOAT TOKEN_BOOL TOKEN_EXCLAMATION
+   58: order_by_opt: <lambda> TOKEN_ORDER_BY
+   59: statement_list: TOKEN_SELECT TOKEN_IDENTIFIER
+   60: input: TOKEN_SELECT TOKEN_IDENTIFIER
+   61: statement: TOKEN_SELECT TOKEN_IDENTIFIER
+   62: select_statement: TOKEN_SELECT
+   63: select_source: TOKEN_PATH TOKEN_LPAREN TOKEN_DOLLAR
+   64: relation: TOKEN_SELECT
+   65: where_opt: <lambda> TOKEN_WHERE
+   66: file_source: TOKEN_PATH
+   67: condition: TOKEN_COUNT TOKEN_IDENTIFIER TOKEN_COALESCE TOKEN_INTEGER TOKEN_FLOATING TOKEN_STR TOKEN_RSUBSTR TOKEN_TRUE TOKEN_FALSE TOKEN_NULL TOKEN_MIN TOKEN_MAX TOKEN_SUM TOKEN_PERCENTILE TOKEN_STRING TOKEN_INT TOKEN_FLOAT TOKEN_BOOL TOKEN_EXCLAMATION
+----------------------------------------------------
+Syntax-only Symbols:
+The following symbols never carry semantic content.
+
+$ TOKEN_SELECT TOKEN_COUNT TOKEN_FROM TOKEN_SEMICOLON TOKEN_EOF TOKEN_AS
+TOKEN_IN TOKEN_COALESCE TOKEN_COMMA TOKEN_STAR TOKEN_WHERE TOKEN_LIMIT
+TOKEN_RSUBSTR TOKEN_LPAREN TOKEN_RPAREN TOKEN_AT TOKEN_GROUP_BY
+TOKEN_ORDER_BY TOKEN_DESC TOKEN_ASC TOKEN_NULL TOKEN_DOLLAR TOKEN_MIN
+TOKEN_MAX TOKEN_SUM TOKEN_PERCENTILE TOKEN_PLUS TOKEN_OR TOKEN_AND
+TOKEN_DIVIDE TOKEN_EQ TOKEN_NEQ TOKEN_LIKE TOKEN_STRING TOKEN_INT
+TOKEN_FLOAT TOKEN_BOOL TOKEN_EXCLAMATION group_expression group_select_list
+group_select_item input
+----------------------------------------------------
+Rules:
+   0: input ::= statement_list TOKEN_EOF.
+   1: statement_list ::= statement.
+   2: statement_list ::= statement_list statement.
+   3: statement ::= select_statement.
+   4: statement ::= TOKEN_IDENTIFIER TOKEN_EQ select_source. [TOKEN_EQ precedence=4]
+   5: relation ::= select_statement.
+   6: select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt.
+   7: select_source ::= file_source.
+   8: select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN.
+   9: select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER.
+  10: file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER.
+  11: file_source ::= TOKEN_PATH.
+  12: where_opt ::=.
+  13: where_opt ::= TOKEN_WHERE condition.
+  14: group_by_opt ::=.
+  15: group_by_opt ::= TOKEN_GROUP_BY group_by_list.
+  16: order_by_opt ::=.
+  17: order_by_opt ::= TOKEN_ORDER_BY expression_list.
+  18: order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC.
+  19: order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC.
+  20: condition ::= expression.
+  21: limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER.
+  22: limit_opt ::=.
+  23: select_list ::= TOKEN_STAR.
+  24: select_list ::= select_item.
+  25: select_list ::= select_list TOKEN_COMMA select_item.
+  26: select_item ::= TOKEN_IDENTIFIER.
+  27: select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER.
+  28: group_by_list ::= select_item.
+  29: group_by_list ::= group_by_list TOKEN_COMMA select_item.
+  30: expression_list ::= expression.
+  31: expression_list ::= expression_list TOKEN_COMMA expression.
+  32: expression ::= TOKEN_STR.
+  33: expression ::= TOKEN_INTEGER.
+  34: expression ::= TOKEN_FLOATING.
+  35: expression ::= TOKEN_NULL.
+  36: expression ::= TOKEN_TRUE.
+  37: expression ::= TOKEN_FALSE.
+  38: expression ::= TOKEN_IDENTIFIER.
+  39: expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN.
+  40: expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN.
+  41: expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN.
+  42: expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN.
+  43: expression ::= TOKEN_EXCLAMATION expression.
+  44: expression ::= expression TOKEN_LIKE TOKEN_STR.
+  45: expression ::= expression TOKEN_EQ expression. [TOKEN_EQ precedence=4]
+  46: expression ::= expression TOKEN_NEQ expression. [TOKEN_NEQ precedence=5]
+  47: expression ::= expression TOKEN_AND expression. [TOKEN_AND precedence=2]
+  48: expression ::= expression TOKEN_OR expression. [TOKEN_OR precedence=1]
+  49: expression ::= expression TOKEN_DIVIDE expression. [TOKEN_DIVIDE precedence=3]
+  50: expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN.
+  51: expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN.
+  52: expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN.
+  53: expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN.
+  54: expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN.
+  55: expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN.
+  56: expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN.
+  57: expression ::= expression TOKEN_IN select_source.
+  58: floating_list ::= TOKEN_FLOATING.
+  59: floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING.

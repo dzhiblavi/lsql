@@ -1,0 +1,20 @@
+#pragma once
+
+#include "exec/expr/Expression.h"
+
+namespace lsql::exec {
+
+class ValueExpression : public Expression {
+ public:
+    explicit ValueExpression(Value value) : value_(std::move(value)) {}
+
+    ValueType valueType() const override { return value_.type(); }
+    Value eval(const rel::Record& /*record*/) const override { return value_; }
+    Value eval(const std::vector<rel::ConstRecordPtr>& /*group*/) const override { return value_; }
+    AggregatorPtr aggregator() const override { throw std::runtime_error("cannot aggregate"); }
+
+ private:
+    Value value_;
+};
+
+}  // namespace lsql::exec

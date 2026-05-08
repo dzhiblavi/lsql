@@ -1,0 +1,41 @@
+---
+
+Index:
+  Background: Build
+
+CompileFlags:
+  CompilationDatabase: target/armv8-macos/Debug/
+
+Completion:
+  AllScopes: true
+
+CompileFlags:
+  BuiltinHeaders: QueryDriver
+  Remove:
+    - -W*
+    - -mlongcalls
+    - -mtext-section-literals
+    - -fipa-pta
+    - -free
+    - -fconcepts-diagnostics-depth=10
+  Add:
+    - -xc++
+    - -Wall
+    - -Wextra
+    - -Wpedantic
+    - -Wno-unknown-attributes
+
+InlayHints:
+  BlockEnd: No
+  Designators: Yes
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+  TypeNameLimit: 50
+
+Hover:
+  ShowAKA: Yes
+
+Diagnostics:
+  UnusedIncludes: Strict
+  MissingIncludes: None

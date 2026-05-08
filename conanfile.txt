@@ -1,0 +1,8 @@
+[requires]
+catch2/3.6.0
+tclap/1.2.5
+magic_enum/0.9.6
+
+[generators]
+CMakeDeps
+CMakeToolchain

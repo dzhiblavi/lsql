@@ -1,0 +1,4 @@
+/target
+/CMakeUserPresets.json
+/tests/logs/*.log
+/prog.sql
