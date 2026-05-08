@@ -1,8 +1,8 @@
 #pragma once
 
+#include "core/time_formats.h"
 #include "core/types.h"
 #include "data/PagedFile.h"
-#include "core/time_formats.h"
 
 #include <cstddef>
 
@@ -14,4 +14,4 @@ size_t lowerBoundLine(const data::PagedFile& file, timestamp_t ts, TimeFormat fo
 // index of the first character of the first line with ts > x
 size_t upperBoundLine(const data::PagedFile& file, timestamp_t ts, TimeFormat format);
 
-}  // namespace lsql::exec
+}  // namespace lsql::logs

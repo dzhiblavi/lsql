@@ -15,9 +15,6 @@ add_compile_options(-Wno-language-extension-token)
 
 add_compile_options(-Wno-error=unused-command-line-argument)
 
-# Add debug symbols event in Release build
-add_compile_options(-g -gdwarf-4)
-
 # libc++
 if(LOGSQL_USE_CUSTOM_LIBCXX)
   message(STATUS "Using custom libc++ located at ${LOGSQL_USE_CUSTOM_LIBCXX}")

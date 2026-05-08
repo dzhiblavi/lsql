@@ -10,4 +10,4 @@ struct Overloaded : Ts... {
 template <class... Ts>
 Overloaded(Ts...) -> Overloaded<Ts...>;
 
-}  // namespace lsql::utils
+}  // namespace lsql::util

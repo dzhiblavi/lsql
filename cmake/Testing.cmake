@@ -1,6 +1,6 @@
-option(MODULECONF_BUILD_TESTS "Build tests" ON)
+option(LOGSQL_BUILD_TESTS "Build tests" ON)
 
-if(MODULECONF_BUILD_TESTS)
+if(LOGSQL_BUILD_TESTS)
     if (PROJECT_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
         enable_testing()
     endif()

@@ -17,4 +17,4 @@ ValueType unaryAggregateResultType(UnaryAggregateType type, ValueType a) {
     }
 }
 
-}  // namespace lsql
+}  // namespace lsql::sql::ast

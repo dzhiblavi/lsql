@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/time_formats.h"
-#include "logs/SearchTimestamp.h"
 #include "exec/expr/BinaryExpression.h"
 #include "exec/expr/Coalesce.h"
 #include "exec/expr/Expression.h"
@@ -10,6 +9,7 @@
 #include "exec/expr/UnaryExpression.h"
 #include "exec/expr/ValueExpression.h"
 #include "exec/op/In.h"
+#include "logs/SearchTimestamp.h"
 #include "sql/ast/BinExpression.h"
 #include "sql/ast/FileReference.h"
 #include "sql/ast/Program.h"

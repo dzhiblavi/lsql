@@ -1,7 +1,7 @@
 #pragma once
 
-#include "exec/op/Projection.h"
 #include "exec/Record.h"
+#include "exec/op/Projection.h"
 
 #include <vector>
 

@@ -10,4 +10,4 @@ class Node {
     virtual void visit(Visitor& visitor) const = 0;
 };
 
-}  // namespace lsql::ast
+}  // namespace lsql::sql::ast
