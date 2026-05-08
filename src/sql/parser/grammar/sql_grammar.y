@@ -64,6 +64,7 @@
 %left TOKEN_EQ.
 %left TOKEN_NEQ.
 %token TOKEN_LIKE.
+%token TOKEN_MATERIALIZE.
 %token TOKEN_STRING.
 %token TOKEN_INT.
 %token TOKEN_FLOAT.
@@ -101,12 +102,17 @@ statement_list(S) ::= statement_list(SL) statement(S1). {
 }
 
 statement(S) ::= select_statement(A). { S = A; }
-statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ select_source(R). {
+statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ TOKEN_LPAREN relation(R) TOKEN_RPAREN. {
     S = new ast::NamedRelation(Name.text, std::unique_ptr<ast::Node>(R));
 }
+statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ TOKEN_MATERIALIZE
+                 TOKEN_LPAREN relation(R) TOKEN_RPAREN. {
+    auto M = new ast::MaterializedRelation(std::unique_ptr<ast::Node>(R));
+    S = new ast::NamedRelation(Name.text, std::unique_ptr<ast::Node>(M));
+}
 
-relation(R) ::= select_statement(A). { R = A; }
 // relation(R) ::= ad-hoc relation (TODO)
+relation(R) ::= select_statement(A). { R = A; }
 
 select_statement(A) ::= TOKEN_SELECT select_list(L)
                         TOKEN_FROM select_source(F)

@@ -1,11 +1,11 @@
-#include "exec/SearchTimestamp.h"
+#include "logs/SearchTimestamp.h"
 
-#include "exec/SearchRegex.h"
+#include "logs/SearchRegex.h"
 #include "util/PageSize.h"
 
 #include <cassert>
 
-namespace lsql::exec {
+namespace lsql::logs {
 
 namespace {
 
@@ -168,4 +168,4 @@ size_t upperBoundLine(const data::PagedFile& file, timestamp_t ts, TimeFormat fo
     return pos == std::string::npos ? pos : pos + p * util::pageSize();
 }
 
-}  // namespace lsql::exec
+}  // namespace lsql::logs

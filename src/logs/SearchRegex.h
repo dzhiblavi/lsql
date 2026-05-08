@@ -6,7 +6,7 @@
 #include <optional>
 #include <string_view>
 
-namespace lsql::exec {
+namespace lsql::logs {
 
 std::optional<std::string_view> findFirst(std::string_view s, const reflex::Pattern& pattern);
 std::optional<std::string_view> findLast(std::string_view s, const reflex::Pattern& rev_pattern);

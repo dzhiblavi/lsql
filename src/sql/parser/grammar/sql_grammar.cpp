@@ -90,12 +90,13 @@
 #define TOKEN_EQ                       38
 #define TOKEN_NEQ                      39
 #define TOKEN_LIKE                     40
-#define TOKEN_STRING                   41
-#define TOKEN_INT                      42
-#define TOKEN_FLOAT                    43
-#define TOKEN_BOOL                     44
-#define TOKEN_EXCLAMATION              45
-#define TOKEN_TIMESTAMP                46
+#define TOKEN_MATERIALIZE              41
+#define TOKEN_STRING                   42
+#define TOKEN_INT                      43
+#define TOKEN_FLOAT                    44
+#define TOKEN_BOOL                     45
+#define TOKEN_EXCLAMATION              46
+#define TOKEN_TIMESTAMP                47
 #endif
 /**************** End token definitions ***************************************/
 
@@ -160,21 +161,21 @@
 #endif
 /************* Begin control #defines *****************************************/
 #define YYCODETYPE unsigned char
-#define YYNOCODE 68
-#define YYACTIONTYPE unsigned char
+#define YYNOCODE 69
+#define YYACTIONTYPE unsigned short int
 #define ParseTOKENTYPE lsql::sql::parse::Token
 typedef union {
   int yyinit;
   ParseTOKENTYPE yy0;
-  ast::SelectItem* yy46;
-  std::vector<float>* yy49;
-  int yy60;
-  std::vector<std::unique_ptr<ast::Expression>>* yy64;
-  std::vector<std::unique_ptr<ast::SelectItem>>* yy67;
-  lsql::sql::ast::Node* yy77;
-  ast::OrderBy* yy90;
-  std::vector<std::unique_ptr<ast::Node>>* yy102;
-  ast::Expression* yy115;
+  ast::Expression* yy31;
+  ast::SelectItem* yy44;
+  std::vector<std::unique_ptr<ast::SelectItem>>* yy51;
+  int yy52;
+  ast::OrderBy* yy84;
+  std::vector<std::unique_ptr<ast::Node>>* yy85;
+  std::vector<std::unique_ptr<ast::Expression>>* yy92;
+  std::vector<float>* yy111;
+  lsql::sql::ast::Node* yy125;
 } YYMINORTYPE;
 #ifndef YYSTACKDEPTH
 #define YYSTACKDEPTH 100
@@ -200,18 +201,18 @@ typedef union {
 #undef YYERRORSYMBOL
 #undef YYERRSYMDT
 #undef YYFALLBACK
-#define YYNSTATE             86
-#define YYNRULE              60
-#define YYNRULE_WITH_ACTION  60
-#define YYNTOKEN             47
-#define YY_MAX_SHIFT         85
-#define YY_MIN_SHIFTREDUCE   128
-#define YY_MAX_SHIFTREDUCE   187
-#define YY_ERROR_ACTION      188
-#define YY_ACCEPT_ACTION     189
-#define YY_NO_ACTION         190
-#define YY_MIN_REDUCE        191
-#define YY_MAX_REDUCE        250
+#define YYNSTATE             91
+#define YYNRULE              61
+#define YYNRULE_WITH_ACTION  61
+#define YYNTOKEN             48
+#define YY_MAX_SHIFT         90
+#define YY_MIN_SHIFTREDUCE   134
+#define YY_MAX_SHIFTREDUCE   194
+#define YY_ERROR_ACTION      195
+#define YY_ACCEPT_ACTION     196
+#define YY_NO_ACTION         197
+#define YY_MIN_REDUCE        198
+#define YY_MAX_REDUCE        258
 #define YY_MIN_DSTRCTR       0
 #define YY_MAX_DSTRCTR       0
 /************* End control #defines *******************************************/
@@ -296,106 +297,109 @@ typedef union {
 **  yy_default[]       Default action for each state.
 **
 *********** Begin parsing tables **********************************************/
-#define YY_ACTTAB_COUNT (282)
+#define YY_ACTTAB_COUNT (289)
 static const YYACTIONTYPE yy_action[] = {
- /*     0 */    47,  196,   72,   60,   36,   11,  189,  192,  194,   68,
- /*    10 */     1,  151,    1,   84,  161,  162,   35,  160,   67,   59,
- /*    20 */   204,  215,   35,   76,  164,  165,   12,  216,  163,   37,
- /*    30 */    71,   70,   69,   64,    8,    1,   77,   63,   84,    8,
- /*    40 */    85,   81,   80,   79,   78,   19,   72,  184,   36,    9,
- /*    50 */    61,    8,   35,   68,  193,  194,    3,  220,  161,  162,
- /*    60 */    38,  160,   67,   20,   28,   26,   82,   39,  164,  165,
- /*    70 */    26,   82,  163,  186,   71,   70,   69,   64,   22,   24,
- /*    80 */    20,   28,   26,   82,   40,   81,   80,   79,   78,   19,
- /*    90 */    72,   29,  166,   57,  229,  229,   48,   68,  248,   35,
- /*   100 */    58,  198,  161,  162,  219,  160,   67,  147,  146,   62,
- /*   110 */    48,   41,  164,  165,   55,    8,  163,   30,   71,   70,
- /*   120 */    69,   64,  229,  229,  229,  229,  229,  229,    8,   81,
- /*   130 */    80,   79,   78,   19,    8,   34,   66,   42,  198,   49,
- /*   140 */   181,    8,   22,   24,   20,   28,   26,   82,   53,  195,
- /*   150 */    43,    8,  198,  180,   83,   22,   24,   20,   28,   26,
- /*   160 */    82,   22,   24,   20,   28,   26,   82,    8,   22,   24,
- /*   170 */    20,   28,   26,   82,    8,   29,   51,   44,   52,  179,
- /*   180 */     8,   28,   26,   82,   45,  182,  178,   56,    8,   46,
- /*   190 */     8,   54,  170,   50,   22,   24,   20,   28,   26,   82,
- /*   200 */   169,   22,   24,   20,   28,   26,   82,   22,   24,   20,
- /*   210 */    28,   26,   82,    8,    7,   22,   24,   20,   28,   26,
- /*   220 */    82,    8,   82,  197,    2,  168,   31,    8,    4,   32,
- /*   230 */   136,  155,   33,  167,    8,    5,  187,   13,  138,   65,
- /*   240 */    22,   24,   20,   28,   26,   82,   73,   14,   22,   24,
- /*   250 */    20,   28,   26,   82,   22,   24,   20,   28,   26,   82,
- /*   260 */    74,  183,   24,   20,   28,   26,   82,    6,   15,   16,
- /*   270 */    17,   18,  137,   21,   75,   23,   25,   27,  172,  149,
- /*   280 */    10,  191,
+ /*     0 */    48,  256,   75,  206,   37,   10,  196,  199,  201,   71,
+ /*    10 */     1,  158,    1,   89,  168,  169,   36,  167,   70,   60,
+ /*    20 */   212,  223,   36,   38,  171,  172,    8,  224,  170,    8,
+ /*    30 */    74,   73,   72,   67,    8,   79,    1,   39,   12,   89,
+ /*    40 */     8,   90,   85,   84,   83,   82,   20,   75,   80,   37,
+ /*    50 */    40,   64,    8,  193,   71,   21,   29,   27,   86,  168,
+ /*    60 */   169,   86,  167,   70,   29,   27,   86,  200,  201,  171,
+ /*    70 */   172,   27,   86,  170,   58,   74,   73,   72,   67,   23,
+ /*    80 */    25,   21,   29,   27,   86,   41,   30,   85,   84,   83,
+ /*    90 */    82,   20,   75,   87,  173,   36,  237,  237,   42,   71,
+ /*   100 */   228,   36,  154,  153,  168,  169,  227,  167,   70,   49,
+ /*   110 */    43,   65,   49,   59,  171,  172,   56,    8,  170,   31,
+ /*   120 */    74,   73,   72,   67,  237,  237,  237,  237,  237,  237,
+ /*   130 */     8,   66,   85,   84,   83,   82,   20,    8,   35,   69,
+ /*   140 */   206,  191,  188,    8,   23,   25,   21,   29,   27,   86,
+ /*   150 */    50,    8,   54,   44,   52,  187,   45,   23,   25,   21,
+ /*   160 */    29,   27,   86,  186,   23,   25,   21,   29,   27,   86,
+ /*   170 */    23,   25,   21,   29,   27,   86,    8,   13,   23,   25,
+ /*   180 */    21,   29,   27,   86,    8,   30,  204,   62,  185,   53,
+ /*   190 */     8,  204,   81,  204,   88,  189,  177,    8,   46,   63,
+ /*   200 */    57,   47,  176,   23,   25,   21,   29,   27,   86,  175,
+ /*   210 */    55,   23,   25,   21,   29,   27,   86,   23,   25,   21,
+ /*   220 */    29,   27,   86,    8,   23,   25,   21,   29,   27,   86,
+ /*   230 */     8,   51,    9,    7,  205,  174,    8,   32,    2,    3,
+ /*   240 */    34,  139,   33,    4,   11,  162,    5,  194,  145,   14,
+ /*   250 */    23,   25,   21,   29,   27,   86,   68,   23,   25,   21,
+ /*   260 */    29,   27,   86,  190,   25,   21,   29,   27,   86,   15,
+ /*   270 */     6,   16,   17,   18,   19,  144,   76,   78,  143,   22,
+ /*   280 */    77,   24,   26,   28,  179,  138,  156,   61,  198,
 };
 static const YYCODETYPE yy_lookahead[] = {
- /*     0 */    47,   62,    2,   64,    4,   59,   60,   61,   62,    9,
- /*    10 */     1,   11,    1,    4,   14,   15,   47,   17,   18,   50,
- /*    20 */    67,   52,   47,   16,   24,   25,   19,   52,   28,   47,
- /*    30 */    30,   31,   32,   33,    8,    1,   29,   10,    4,    8,
- /*    40 */     6,   41,   42,   43,   44,   45,    2,   20,    4,    3,
- /*    50 */     7,    8,   47,    9,   61,   62,   10,   52,   14,   15,
- /*    60 */    47,   17,   18,   37,   38,   39,   40,   47,   24,   25,
- /*    70 */    39,   40,   28,   15,   30,   31,   32,   33,   35,   36,
- /*    80 */    37,   38,   39,   40,   47,   41,   42,   43,   44,   45,
- /*    90 */     2,   10,    4,   53,    7,    8,   47,    9,   63,   47,
- /*   100 */    51,   66,   14,   15,   52,   17,   18,   26,   27,   57,
- /*   110 */    47,   47,   24,   25,   51,    8,   28,   10,   30,   31,
- /*   120 */    32,   33,   35,   36,   37,   38,   39,   40,    8,   41,
- /*   130 */    42,   43,   44,   45,    8,   63,   10,   47,   66,   47,
- /*   140 */    20,    8,   35,   36,   37,   38,   39,   40,   47,   63,
- /*   150 */    47,    8,   66,   20,   13,   35,   36,   37,   38,   39,
- /*   160 */    40,   35,   36,   37,   38,   39,   40,    8,   35,   36,
- /*   170 */    37,   38,   39,   40,    8,   10,   47,   47,   47,   20,
- /*   180 */     8,   38,   39,   40,   47,   20,   20,   47,    8,   47,
- /*   190 */     8,   47,   20,   47,   35,   36,   37,   38,   39,   40,
- /*   200 */    20,   35,   36,   37,   38,   39,   40,   35,   36,   37,
- /*   210 */    38,   39,   40,    8,   23,   35,   36,   37,   38,   39,
- /*   220 */    40,    8,   40,   49,   22,   20,   58,    8,   12,   56,
- /*   230 */    20,    4,   65,   20,    8,   10,   15,   19,   14,   17,
- /*   240 */    35,   36,   37,   38,   39,   40,   34,   19,   35,   36,
- /*   250 */    37,   38,   39,   40,   35,   36,   37,   38,   39,   40,
- /*   260 */    46,   20,   36,   37,   38,   39,   40,   19,   19,   19,
- /*   270 */    19,   19,    4,   19,   21,   19,   19,   19,   17,   14,
- /*   280 */    38,    0,   68,   68,   68,   68,   68,   68,   68,   68,
- /*   290 */    68,   68,   68,   68,   68,   68,   68,   68,   68,   68,
- /*   300 */    68,   68,   68,   68,   68,   68,   68,   68,   68,   68,
- /*   310 */    68,   68,   68,   68,   68,   68,   68,   68,   68,   68,
- /*   320 */    68,   68,   68,   68,   68,   68,   68,   68,   68,
+ /*     0 */    48,   65,    2,   67,    4,   60,   61,   62,   63,    9,
+ /*    10 */     1,   11,    1,    4,   14,   15,   48,   17,   18,   51,
+ /*    20 */    68,   53,   48,   48,   24,   25,    8,   53,   28,    8,
+ /*    30 */    30,   31,   32,   33,    8,   16,    1,   48,   19,    4,
+ /*    40 */     8,    6,   42,   43,   44,   45,   46,    2,   29,    4,
+ /*    50 */    48,    7,    8,   15,    9,   37,   38,   39,   40,   14,
+ /*    60 */    15,   40,   17,   18,   38,   39,   40,   62,   63,   24,
+ /*    70 */    25,   39,   40,   28,   54,   30,   31,   32,   33,   35,
+ /*    80 */    36,   37,   38,   39,   40,   48,   10,   42,   43,   44,
+ /*    90 */    45,   46,    2,   13,    4,   48,    7,    8,   48,    9,
+ /*   100 */    53,   48,   26,   27,   14,   15,   53,   17,   18,   48,
+ /*   110 */    48,   58,   48,   52,   24,   25,   52,    8,   28,   10,
+ /*   120 */    30,   31,   32,   33,   35,   36,   37,   38,   39,   40,
+ /*   130 */     8,   10,   42,   43,   44,   45,   46,    8,   65,   10,
+ /*   140 */    67,   20,   20,    8,   35,   36,   37,   38,   39,   40,
+ /*   150 */    48,    8,   48,   48,   48,   20,   48,   35,   36,   37,
+ /*   160 */    38,   39,   40,   20,   35,   36,   37,   38,   39,   40,
+ /*   170 */    35,   36,   37,   38,   39,   40,    8,   19,   35,   36,
+ /*   180 */    37,   38,   39,   40,    8,   10,   63,   64,   20,   48,
+ /*   190 */     8,   63,   64,   63,   64,   20,   20,    8,   48,   41,
+ /*   200 */    48,   48,   20,   35,   36,   37,   38,   39,   40,   20,
+ /*   210 */    48,   35,   36,   37,   38,   39,   40,   35,   36,   37,
+ /*   220 */    38,   39,   40,    8,   35,   36,   37,   38,   39,   40,
+ /*   230 */     8,   48,    3,   23,   50,   20,    8,   59,   22,   10,
+ /*   240 */    66,   20,   57,   12,   19,    4,   10,   15,   14,   19,
+ /*   250 */    35,   36,   37,   38,   39,   40,   17,   35,   36,   37,
+ /*   260 */    38,   39,   40,   20,   36,   37,   38,   39,   40,   19,
+ /*   270 */    19,   19,   19,   19,   19,    4,   34,   21,   20,   19,
+ /*   280 */    47,   19,   19,   19,   17,   20,   14,   38,    0,   69,
+ /*   290 */    69,   69,   69,   69,   69,   69,   69,   69,   69,   69,
+ /*   300 */    69,   69,   69,   69,   69,   69,   69,   69,   69,   69,
+ /*   310 */    69,   69,   69,   69,   69,   69,   69,   69,   69,   69,
+ /*   320 */    69,   69,   69,   69,   69,   69,   69,   69,   69,   69,
+ /*   330 */    69,   69,   69,   69,   69,   69,   69,
 };
-#define YY_SHIFT_COUNT    (85)
+#define YY_SHIFT_COUNT    (90)
 #define YY_SHIFT_MIN      (0)
-#define YY_SHIFT_MAX      (281)
+#define YY_SHIFT_MAX      (288)
 static const unsigned short int yy_shift_ofst[] = {
- /*     0 */     9,    0,   44,   44,   88,   44,   88,   88,    7,    7,
- /*    10 */     7,   34,   11,   88,   88,   88,   88,   88,   88,   88,
- /*    20 */    88,   88,   88,   88,   88,   88,   88,   88,   88,   88,
- /*    30 */    58,  141,  191,  202,  216,   43,   87,  107,  126,  120,
- /*    40 */   133,  159,  166,  172,  180,  205,  213,  219,  219,  219,
- /*    50 */   219,  226,   26,  143,   31,   81,  182,   27,  165,   46,
- /*    60 */   210,  227,  225,  221,  218,  241,  222,  228,  248,  249,
- /*    70 */   250,  251,  252,  224,  212,  214,  253,  268,  254,  256,
- /*    80 */   257,  258,  261,  265,  242,  281,
+ /*     0 */     9,    0,   45,   45,   90,   45,   90,   90,   19,   19,
+ /*    10 */    35,   11,   11,   11,   90,   90,   90,   90,   90,   90,
+ /*    20 */    90,   90,   90,   90,   90,   90,   90,   90,   90,   90,
+ /*    30 */    90,   38,   80,  210,  216,  231,   44,   89,  109,  129,
+ /*    40 */   122,  135,  143,  168,  176,  182,  189,  215,  222,  222,
+ /*    50 */   222,  222,  228,   18,   26,   32,   76,   21,  121,  175,
+ /*    60 */   229,  158,  221,  225,  241,  236,  232,  230,  243,  239,
+ /*    70 */   250,  251,  252,  253,  254,  255,  234,  242,  233,  256,
+ /*    80 */   271,  258,  260,  262,  263,  264,  267,  272,  265,  249,
+ /*    90 */   288,
 };
-#define YY_REDUCE_COUNT (34)
-#define YY_REDUCE_MIN   (-61)
-#define YY_REDUCE_MAX   (174)
+#define YY_REDUCE_COUNT (35)
+#define YY_REDUCE_MIN   (-64)
+#define YY_REDUCE_MAX   (185)
 static const short yy_reduce_ofst[] = {
- /*     0 */   -54,  -31,   52,  -25,  -47,    5,   49,   63,   35,   72,
- /*    10 */    86,   -7,  -61,  -18,   13,   20,   37,   64,   90,   92,
- /*    20 */   101,  103,  129,  130,  131,  137,  140,  142,  144,  146,
- /*    30 */    40,  174,  168,  173,  167,
+ /*     0 */   -55,  -32,   53,  -26,  -48,   47,   61,   64,  -64,   73,
+ /*    10 */     5,  123,  128,  130,  -25,  -11,    2,   37,   50,   62,
+ /*    20 */   102,  104,  105,  106,  108,  141,  150,  152,  153,  162,
+ /*    30 */   183,   20,  184,  178,  185,  174,
 };
 static const YYACTIONTYPE yy_default[] = {
- /*     0 */   188,  188,  188,  188,  188,  188,  188,  188,  188,  188,
- /*    10 */   188,  188,  188,  188,  188,  188,  188,  188,  188,  188,
- /*    20 */   188,  188,  188,  188,  188,  188,  188,  188,  188,  188,
- /*    30 */   188,  213,  207,  205,  203,  188,  217,  188,  188,  188,
- /*    40 */   188,  188,  188,  188,  188,  188,  188,  211,  221,  234,
- /*    50 */   222,  239,  238,  240,  236,  208,  237,  188,  188,  188,
- /*    60 */   188,  188,  206,  188,  188,  188,  188,  188,  188,  188,
- /*    70 */   188,  188,  188,  188,  188,  188,  202,  188,  188,  188,
- /*    80 */   188,  188,  188,  188,  188,  188,
+ /*     0 */   195,  195,  195,  195,  195,  195,  195,  195,  195,  195,
+ /*    10 */   195,  195,  195,  195,  195,  195,  195,  195,  195,  195,
+ /*    20 */   195,  195,  195,  195,  195,  195,  195,  195,  195,  195,
+ /*    30 */   195,  195,  221,  215,  213,  211,  195,  225,  195,  195,
+ /*    40 */   195,  195,  195,  195,  195,  195,  195,  195,  219,  229,
+ /*    50 */   242,  230,  247,  246,  248,  244,  216,  245,  195,  195,
+ /*    60 */   195,  195,  195,  195,  195,  214,  195,  195,  195,  195,
+ /*    70 */   195,  195,  195,  195,  195,  195,  195,  195,  195,  210,
+ /*    80 */   195,  195,  195,  195,  195,  195,  195,  195,  195,  195,
+ /*    90 */   195,
 };
 /********** End of lemon-generated parsing tables *****************************/
 
@@ -539,33 +543,34 @@ static const char *const yyTokenName[] = {
   /*   38 */ "TOKEN_EQ",
   /*   39 */ "TOKEN_NEQ",
   /*   40 */ "TOKEN_LIKE",
-  /*   41 */ "TOKEN_STRING",
-  /*   42 */ "TOKEN_INT",
-  /*   43 */ "TOKEN_FLOAT",
-  /*   44 */ "TOKEN_BOOL",
-  /*   45 */ "TOKEN_EXCLAMATION",
-  /*   46 */ "TOKEN_TIMESTAMP",
-  /*   47 */ "expression",
-  /*   48 */ "group_expression",
-  /*   49 */ "limit_opt",
-  /*   50 */ "select_list",
-  /*   51 */ "expression_list",
-  /*   52 */ "select_item",
-  /*   53 */ "floating_list",
-  /*   54 */ "group_select_list",
-  /*   55 */ "group_select_item",
-  /*   56 */ "group_by_opt",
-  /*   57 */ "group_by_list",
-  /*   58 */ "order_by_opt",
-  /*   59 */ "statement_list",
-  /*   60 */ "input",
-  /*   61 */ "statement",
-  /*   62 */ "select_statement",
-  /*   63 */ "select_source",
+  /*   41 */ "TOKEN_MATERIALIZE",
+  /*   42 */ "TOKEN_STRING",
+  /*   43 */ "TOKEN_INT",
+  /*   44 */ "TOKEN_FLOAT",
+  /*   45 */ "TOKEN_BOOL",
+  /*   46 */ "TOKEN_EXCLAMATION",
+  /*   47 */ "TOKEN_TIMESTAMP",
+  /*   48 */ "expression",
+  /*   49 */ "group_expression",
+  /*   50 */ "limit_opt",
+  /*   51 */ "select_list",
+  /*   52 */ "expression_list",
+  /*   53 */ "select_item",
+  /*   54 */ "floating_list",
+  /*   55 */ "group_select_list",
+  /*   56 */ "group_select_item",
+  /*   57 */ "group_by_opt",
+  /*   58 */ "group_by_list",
+  /*   59 */ "order_by_opt",
+  /*   60 */ "statement_list",
+  /*   61 */ "input",
+  /*   62 */ "statement",
+  /*   63 */ "select_statement",
   /*   64 */ "relation",
-  /*   65 */ "where_opt",
-  /*   66 */ "file_source",
-  /*   67 */ "condition",
+  /*   65 */ "select_source",
+  /*   66 */ "where_opt",
+  /*   67 */ "file_source",
+  /*   68 */ "condition",
 };
 #endif /* defined(YYCOVERAGE) || !defined(NDEBUG) */
 
@@ -577,62 +582,63 @@ static const char *const yyRuleName[] = {
  /*   1 */ "statement_list ::= statement",
  /*   2 */ "statement_list ::= statement_list statement",
  /*   3 */ "statement ::= select_statement",
- /*   4 */ "statement ::= TOKEN_IDENTIFIER TOKEN_EQ select_source",
- /*   5 */ "relation ::= select_statement",
- /*   6 */ "select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt",
- /*   7 */ "select_source ::= file_source",
- /*   8 */ "select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN",
- /*   9 */ "select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER",
- /*  10 */ "file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER",
- /*  11 */ "file_source ::= TOKEN_PATH",
- /*  12 */ "where_opt ::=",
- /*  13 */ "where_opt ::= TOKEN_WHERE condition",
- /*  14 */ "group_by_opt ::=",
- /*  15 */ "group_by_opt ::= TOKEN_GROUP_BY group_by_list",
- /*  16 */ "order_by_opt ::=",
- /*  17 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list",
- /*  18 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC",
- /*  19 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC",
- /*  20 */ "condition ::= expression",
- /*  21 */ "limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER",
- /*  22 */ "limit_opt ::=",
- /*  23 */ "select_list ::= TOKEN_STAR",
- /*  24 */ "select_list ::= select_item",
- /*  25 */ "select_list ::= select_list TOKEN_COMMA select_item",
- /*  26 */ "select_item ::= TOKEN_IDENTIFIER",
- /*  27 */ "select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER",
- /*  28 */ "group_by_list ::= select_item",
- /*  29 */ "group_by_list ::= group_by_list TOKEN_COMMA select_item",
- /*  30 */ "expression_list ::= expression",
- /*  31 */ "expression_list ::= expression_list TOKEN_COMMA expression",
- /*  32 */ "expression ::= TOKEN_STR",
- /*  33 */ "expression ::= TOKEN_INTEGER",
- /*  34 */ "expression ::= TOKEN_FLOATING",
- /*  35 */ "expression ::= TOKEN_NULL",
- /*  36 */ "expression ::= TOKEN_TRUE",
- /*  37 */ "expression ::= TOKEN_FALSE",
- /*  38 */ "expression ::= TOKEN_IDENTIFIER",
- /*  39 */ "expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN",
- /*  40 */ "expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN",
- /*  41 */ "expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN",
- /*  42 */ "expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN",
- /*  43 */ "expression ::= TOKEN_EXCLAMATION expression",
- /*  44 */ "expression ::= expression TOKEN_LIKE TOKEN_STR",
- /*  45 */ "expression ::= expression TOKEN_EQ expression",
- /*  46 */ "expression ::= expression TOKEN_NEQ expression",
- /*  47 */ "expression ::= expression TOKEN_AND expression",
- /*  48 */ "expression ::= expression TOKEN_OR expression",
- /*  49 */ "expression ::= expression TOKEN_DIVIDE expression",
- /*  50 */ "expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN",
- /*  51 */ "expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN",
- /*  52 */ "expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN",
- /*  53 */ "expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN",
- /*  54 */ "expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN",
- /*  55 */ "expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN",
- /*  56 */ "expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN",
- /*  57 */ "expression ::= expression TOKEN_IN select_source",
- /*  58 */ "floating_list ::= TOKEN_FLOATING",
- /*  59 */ "floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING",
+ /*   4 */ "statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_LPAREN relation TOKEN_RPAREN",
+ /*   5 */ "statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation TOKEN_RPAREN",
+ /*   6 */ "relation ::= select_statement",
+ /*   7 */ "select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt",
+ /*   8 */ "select_source ::= file_source",
+ /*   9 */ "select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN",
+ /*  10 */ "select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER",
+ /*  11 */ "file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER",
+ /*  12 */ "file_source ::= TOKEN_PATH",
+ /*  13 */ "where_opt ::=",
+ /*  14 */ "where_opt ::= TOKEN_WHERE condition",
+ /*  15 */ "group_by_opt ::=",
+ /*  16 */ "group_by_opt ::= TOKEN_GROUP_BY group_by_list",
+ /*  17 */ "order_by_opt ::=",
+ /*  18 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list",
+ /*  19 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC",
+ /*  20 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC",
+ /*  21 */ "condition ::= expression",
+ /*  22 */ "limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER",
+ /*  23 */ "limit_opt ::=",
+ /*  24 */ "select_list ::= TOKEN_STAR",
+ /*  25 */ "select_list ::= select_item",
+ /*  26 */ "select_list ::= select_list TOKEN_COMMA select_item",
+ /*  27 */ "select_item ::= TOKEN_IDENTIFIER",
+ /*  28 */ "select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER",
+ /*  29 */ "group_by_list ::= select_item",
+ /*  30 */ "group_by_list ::= group_by_list TOKEN_COMMA select_item",
+ /*  31 */ "expression_list ::= expression",
+ /*  32 */ "expression_list ::= expression_list TOKEN_COMMA expression",
+ /*  33 */ "expression ::= TOKEN_STR",
+ /*  34 */ "expression ::= TOKEN_INTEGER",
+ /*  35 */ "expression ::= TOKEN_FLOATING",
+ /*  36 */ "expression ::= TOKEN_NULL",
+ /*  37 */ "expression ::= TOKEN_TRUE",
+ /*  38 */ "expression ::= TOKEN_FALSE",
+ /*  39 */ "expression ::= TOKEN_IDENTIFIER",
+ /*  40 */ "expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  41 */ "expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  42 */ "expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  43 */ "expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  44 */ "expression ::= TOKEN_EXCLAMATION expression",
+ /*  45 */ "expression ::= expression TOKEN_LIKE TOKEN_STR",
+ /*  46 */ "expression ::= expression TOKEN_EQ expression",
+ /*  47 */ "expression ::= expression TOKEN_NEQ expression",
+ /*  48 */ "expression ::= expression TOKEN_AND expression",
+ /*  49 */ "expression ::= expression TOKEN_OR expression",
+ /*  50 */ "expression ::= expression TOKEN_DIVIDE expression",
+ /*  51 */ "expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  52 */ "expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  53 */ "expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  54 */ "expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  55 */ "expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN",
+ /*  56 */ "expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN",
+ /*  57 */ "expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN",
+ /*  58 */ "expression ::= expression TOKEN_IN select_source",
+ /*  59 */ "floating_list ::= TOKEN_FLOATING",
+ /*  60 */ "floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING",
 };
 #endif /* NDEBUG */
 
@@ -1064,66 +1070,67 @@ static void yy_shift(
 /* For rule J, yyRuleInfoLhs[J] contains the symbol on the left-hand side
 ** of that rule */
 static const YYCODETYPE yyRuleInfoLhs[] = {
-    60,  /* (0) input ::= statement_list TOKEN_EOF */
-    59,  /* (1) statement_list ::= statement */
-    59,  /* (2) statement_list ::= statement_list statement */
-    61,  /* (3) statement ::= select_statement */
-    61,  /* (4) statement ::= TOKEN_IDENTIFIER TOKEN_EQ select_source */
-    64,  /* (5) relation ::= select_statement */
-    62,  /* (6) select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt */
-    63,  /* (7) select_source ::= file_source */
-    63,  /* (8) select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
-    63,  /* (9) select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
-    66,  /* (10) file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
-    66,  /* (11) file_source ::= TOKEN_PATH */
-    65,  /* (12) where_opt ::= */
-    65,  /* (13) where_opt ::= TOKEN_WHERE condition */
-    56,  /* (14) group_by_opt ::= */
-    56,  /* (15) group_by_opt ::= TOKEN_GROUP_BY group_by_list */
-    58,  /* (16) order_by_opt ::= */
-    58,  /* (17) order_by_opt ::= TOKEN_ORDER_BY expression_list */
-    58,  /* (18) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
-    58,  /* (19) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
-    67,  /* (20) condition ::= expression */
-    49,  /* (21) limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
-    49,  /* (22) limit_opt ::= */
-    50,  /* (23) select_list ::= TOKEN_STAR */
-    50,  /* (24) select_list ::= select_item */
-    50,  /* (25) select_list ::= select_list TOKEN_COMMA select_item */
-    52,  /* (26) select_item ::= TOKEN_IDENTIFIER */
-    52,  /* (27) select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
-    57,  /* (28) group_by_list ::= select_item */
-    57,  /* (29) group_by_list ::= group_by_list TOKEN_COMMA select_item */
-    51,  /* (30) expression_list ::= expression */
-    51,  /* (31) expression_list ::= expression_list TOKEN_COMMA expression */
-    47,  /* (32) expression ::= TOKEN_STR */
-    47,  /* (33) expression ::= TOKEN_INTEGER */
-    47,  /* (34) expression ::= TOKEN_FLOATING */
-    47,  /* (35) expression ::= TOKEN_NULL */
-    47,  /* (36) expression ::= TOKEN_TRUE */
-    47,  /* (37) expression ::= TOKEN_FALSE */
-    47,  /* (38) expression ::= TOKEN_IDENTIFIER */
-    47,  /* (39) expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
-    47,  /* (40) expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
-    47,  /* (41) expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
-    47,  /* (42) expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
-    47,  /* (43) expression ::= TOKEN_EXCLAMATION expression */
-    47,  /* (44) expression ::= expression TOKEN_LIKE TOKEN_STR */
-    47,  /* (45) expression ::= expression TOKEN_EQ expression */
-    47,  /* (46) expression ::= expression TOKEN_NEQ expression */
-    47,  /* (47) expression ::= expression TOKEN_AND expression */
-    47,  /* (48) expression ::= expression TOKEN_OR expression */
-    47,  /* (49) expression ::= expression TOKEN_DIVIDE expression */
-    47,  /* (50) expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
-    47,  /* (51) expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
-    47,  /* (52) expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
-    47,  /* (53) expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
-    47,  /* (54) expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
-    47,  /* (55) expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN */
-    47,  /* (56) expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN */
-    47,  /* (57) expression ::= expression TOKEN_IN select_source */
-    53,  /* (58) floating_list ::= TOKEN_FLOATING */
-    53,  /* (59) floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
+    61,  /* (0) input ::= statement_list TOKEN_EOF */
+    60,  /* (1) statement_list ::= statement */
+    60,  /* (2) statement_list ::= statement_list statement */
+    62,  /* (3) statement ::= select_statement */
+    62,  /* (4) statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_LPAREN relation TOKEN_RPAREN */
+    62,  /* (5) statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation TOKEN_RPAREN */
+    64,  /* (6) relation ::= select_statement */
+    63,  /* (7) select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt */
+    65,  /* (8) select_source ::= file_source */
+    65,  /* (9) select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
+    65,  /* (10) select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
+    67,  /* (11) file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
+    67,  /* (12) file_source ::= TOKEN_PATH */
+    66,  /* (13) where_opt ::= */
+    66,  /* (14) where_opt ::= TOKEN_WHERE condition */
+    57,  /* (15) group_by_opt ::= */
+    57,  /* (16) group_by_opt ::= TOKEN_GROUP_BY group_by_list */
+    59,  /* (17) order_by_opt ::= */
+    59,  /* (18) order_by_opt ::= TOKEN_ORDER_BY expression_list */
+    59,  /* (19) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
+    59,  /* (20) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
+    68,  /* (21) condition ::= expression */
+    50,  /* (22) limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
+    50,  /* (23) limit_opt ::= */
+    51,  /* (24) select_list ::= TOKEN_STAR */
+    51,  /* (25) select_list ::= select_item */
+    51,  /* (26) select_list ::= select_list TOKEN_COMMA select_item */
+    53,  /* (27) select_item ::= TOKEN_IDENTIFIER */
+    53,  /* (28) select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
+    58,  /* (29) group_by_list ::= select_item */
+    58,  /* (30) group_by_list ::= group_by_list TOKEN_COMMA select_item */
+    52,  /* (31) expression_list ::= expression */
+    52,  /* (32) expression_list ::= expression_list TOKEN_COMMA expression */
+    48,  /* (33) expression ::= TOKEN_STR */
+    48,  /* (34) expression ::= TOKEN_INTEGER */
+    48,  /* (35) expression ::= TOKEN_FLOATING */
+    48,  /* (36) expression ::= TOKEN_NULL */
+    48,  /* (37) expression ::= TOKEN_TRUE */
+    48,  /* (38) expression ::= TOKEN_FALSE */
+    48,  /* (39) expression ::= TOKEN_IDENTIFIER */
+    48,  /* (40) expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
+    48,  /* (41) expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
+    48,  /* (42) expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
+    48,  /* (43) expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
+    48,  /* (44) expression ::= TOKEN_EXCLAMATION expression */
+    48,  /* (45) expression ::= expression TOKEN_LIKE TOKEN_STR */
+    48,  /* (46) expression ::= expression TOKEN_EQ expression */
+    48,  /* (47) expression ::= expression TOKEN_NEQ expression */
+    48,  /* (48) expression ::= expression TOKEN_AND expression */
+    48,  /* (49) expression ::= expression TOKEN_OR expression */
+    48,  /* (50) expression ::= expression TOKEN_DIVIDE expression */
+    48,  /* (51) expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
+    48,  /* (52) expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
+    48,  /* (53) expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
+    48,  /* (54) expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
+    48,  /* (55) expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
+    48,  /* (56) expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN */
+    48,  /* (57) expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN */
+    48,  /* (58) expression ::= expression TOKEN_IN select_source */
+    54,  /* (59) floating_list ::= TOKEN_FLOATING */
+    54,  /* (60) floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
 };
 
 /* For rule J, yyRuleInfoNRhs[J] contains the negative of the number
@@ -1133,62 +1140,63 @@ static const signed char yyRuleInfoNRhs[] = {
    -1,  /* (1) statement_list ::= statement */
    -2,  /* (2) statement_list ::= statement_list statement */
    -1,  /* (3) statement ::= select_statement */
-   -3,  /* (4) statement ::= TOKEN_IDENTIFIER TOKEN_EQ select_source */
-   -1,  /* (5) relation ::= select_statement */
-   -8,  /* (6) select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt */
-   -1,  /* (7) select_source ::= file_source */
-   -3,  /* (8) select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
-   -2,  /* (9) select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
-   -5,  /* (10) file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
-   -1,  /* (11) file_source ::= TOKEN_PATH */
-    0,  /* (12) where_opt ::= */
-   -2,  /* (13) where_opt ::= TOKEN_WHERE condition */
-    0,  /* (14) group_by_opt ::= */
-   -2,  /* (15) group_by_opt ::= TOKEN_GROUP_BY group_by_list */
-    0,  /* (16) order_by_opt ::= */
-   -2,  /* (17) order_by_opt ::= TOKEN_ORDER_BY expression_list */
-   -3,  /* (18) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
-   -3,  /* (19) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
-   -1,  /* (20) condition ::= expression */
-   -2,  /* (21) limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
-    0,  /* (22) limit_opt ::= */
-   -1,  /* (23) select_list ::= TOKEN_STAR */
-   -1,  /* (24) select_list ::= select_item */
-   -3,  /* (25) select_list ::= select_list TOKEN_COMMA select_item */
-   -1,  /* (26) select_item ::= TOKEN_IDENTIFIER */
-   -3,  /* (27) select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
-   -1,  /* (28) group_by_list ::= select_item */
-   -3,  /* (29) group_by_list ::= group_by_list TOKEN_COMMA select_item */
-   -1,  /* (30) expression_list ::= expression */
-   -3,  /* (31) expression_list ::= expression_list TOKEN_COMMA expression */
-   -1,  /* (32) expression ::= TOKEN_STR */
-   -1,  /* (33) expression ::= TOKEN_INTEGER */
-   -1,  /* (34) expression ::= TOKEN_FLOATING */
-   -1,  /* (35) expression ::= TOKEN_NULL */
-   -1,  /* (36) expression ::= TOKEN_TRUE */
-   -1,  /* (37) expression ::= TOKEN_FALSE */
-   -1,  /* (38) expression ::= TOKEN_IDENTIFIER */
-   -4,  /* (39) expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
-   -4,  /* (40) expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
-   -4,  /* (41) expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
-   -4,  /* (42) expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
-   -2,  /* (43) expression ::= TOKEN_EXCLAMATION expression */
-   -3,  /* (44) expression ::= expression TOKEN_LIKE TOKEN_STR */
-   -3,  /* (45) expression ::= expression TOKEN_EQ expression */
-   -3,  /* (46) expression ::= expression TOKEN_NEQ expression */
-   -3,  /* (47) expression ::= expression TOKEN_AND expression */
-   -3,  /* (48) expression ::= expression TOKEN_OR expression */
-   -3,  /* (49) expression ::= expression TOKEN_DIVIDE expression */
-   -4,  /* (50) expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
-   -4,  /* (51) expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
-   -4,  /* (52) expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
-   -4,  /* (53) expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
-   -4,  /* (54) expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
-   -6,  /* (55) expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN */
-   -6,  /* (56) expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN */
-   -3,  /* (57) expression ::= expression TOKEN_IN select_source */
-   -1,  /* (58) floating_list ::= TOKEN_FLOATING */
-   -3,  /* (59) floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
+   -5,  /* (4) statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_LPAREN relation TOKEN_RPAREN */
+   -6,  /* (5) statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation TOKEN_RPAREN */
+   -1,  /* (6) relation ::= select_statement */
+   -8,  /* (7) select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt */
+   -1,  /* (8) select_source ::= file_source */
+   -3,  /* (9) select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
+   -2,  /* (10) select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
+   -5,  /* (11) file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
+   -1,  /* (12) file_source ::= TOKEN_PATH */
+    0,  /* (13) where_opt ::= */
+   -2,  /* (14) where_opt ::= TOKEN_WHERE condition */
+    0,  /* (15) group_by_opt ::= */
+   -2,  /* (16) group_by_opt ::= TOKEN_GROUP_BY group_by_list */
+    0,  /* (17) order_by_opt ::= */
+   -2,  /* (18) order_by_opt ::= TOKEN_ORDER_BY expression_list */
+   -3,  /* (19) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
+   -3,  /* (20) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
+   -1,  /* (21) condition ::= expression */
+   -2,  /* (22) limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
+    0,  /* (23) limit_opt ::= */
+   -1,  /* (24) select_list ::= TOKEN_STAR */
+   -1,  /* (25) select_list ::= select_item */
+   -3,  /* (26) select_list ::= select_list TOKEN_COMMA select_item */
+   -1,  /* (27) select_item ::= TOKEN_IDENTIFIER */
+   -3,  /* (28) select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
+   -1,  /* (29) group_by_list ::= select_item */
+   -3,  /* (30) group_by_list ::= group_by_list TOKEN_COMMA select_item */
+   -1,  /* (31) expression_list ::= expression */
+   -3,  /* (32) expression_list ::= expression_list TOKEN_COMMA expression */
+   -1,  /* (33) expression ::= TOKEN_STR */
+   -1,  /* (34) expression ::= TOKEN_INTEGER */
+   -1,  /* (35) expression ::= TOKEN_FLOATING */
+   -1,  /* (36) expression ::= TOKEN_NULL */
+   -1,  /* (37) expression ::= TOKEN_TRUE */
+   -1,  /* (38) expression ::= TOKEN_FALSE */
+   -1,  /* (39) expression ::= TOKEN_IDENTIFIER */
+   -4,  /* (40) expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (41) expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (42) expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (43) expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
+   -2,  /* (44) expression ::= TOKEN_EXCLAMATION expression */
+   -3,  /* (45) expression ::= expression TOKEN_LIKE TOKEN_STR */
+   -3,  /* (46) expression ::= expression TOKEN_EQ expression */
+   -3,  /* (47) expression ::= expression TOKEN_NEQ expression */
+   -3,  /* (48) expression ::= expression TOKEN_AND expression */
+   -3,  /* (49) expression ::= expression TOKEN_OR expression */
+   -3,  /* (50) expression ::= expression TOKEN_DIVIDE expression */
+   -4,  /* (51) expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (52) expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (53) expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (54) expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (55) expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
+   -6,  /* (56) expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN */
+   -6,  /* (57) expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN */
+   -3,  /* (58) expression ::= expression TOKEN_IN select_source */
+   -1,  /* (59) floating_list ::= TOKEN_FLOATING */
+   -3,  /* (60) floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
 };
 
 static void yy_accept(yyParser*);  /* Forward Declaration */
@@ -1231,483 +1239,492 @@ static YYACTIONTYPE yy_reduce(
 /********** Begin reduce actions **********************************************/
         YYMINORTYPE yylhsminor;
       case 0: /* input ::= statement_list TOKEN_EOF */
-#line 89 "sql_grammar.y"
+#line 90 "sql_grammar.y"
 {
-    pCtx->root = std::make_unique<ast::Program>(yymsp[-1].minor.yy102);
-}
-#line 1239 "sql_grammar.c"
-        break;
-      case 1: /* statement_list ::= statement */
-#line 93 "sql_grammar.y"
-{
-    yylhsminor.yy102 = new std::vector<std::unique_ptr<ast::Node>>();
-    yylhsminor.yy102->emplace_back(yymsp[0].minor.yy77);
+    pCtx->root = std::make_unique<ast::Program>(yymsp[-1].minor.yy85);
 }
 #line 1247 "sql_grammar.c"
-  yymsp[0].minor.yy102 = yylhsminor.yy102;
+        break;
+      case 1: /* statement_list ::= statement */
+#line 94 "sql_grammar.y"
+{
+    yylhsminor.yy85 = new std::vector<std::unique_ptr<ast::Node>>();
+    yylhsminor.yy85->emplace_back(yymsp[0].minor.yy125);
+}
+#line 1255 "sql_grammar.c"
+  yymsp[0].minor.yy85 = yylhsminor.yy85;
         break;
       case 2: /* statement_list ::= statement_list statement */
-#line 98 "sql_grammar.y"
+#line 99 "sql_grammar.y"
 {
-    yylhsminor.yy102 = yymsp[-1].minor.yy102;
-    yylhsminor.yy102->emplace_back(yymsp[0].minor.yy77);
+    yylhsminor.yy85 = yymsp[-1].minor.yy85;
+    yylhsminor.yy85->emplace_back(yymsp[0].minor.yy125);
 }
-#line 1256 "sql_grammar.c"
-  yymsp[-1].minor.yy102 = yylhsminor.yy102;
+#line 1264 "sql_grammar.c"
+  yymsp[-1].minor.yy85 = yylhsminor.yy85;
         break;
       case 3: /* statement ::= select_statement */
-      case 5: /* relation ::= select_statement */ yytestcase(yyruleno==5);
-      case 7: /* select_source ::= file_source */ yytestcase(yyruleno==7);
-#line 103 "sql_grammar.y"
-{ yylhsminor.yy77 = yymsp[0].minor.yy77; }
-#line 1264 "sql_grammar.c"
-  yymsp[0].minor.yy77 = yylhsminor.yy77;
-        break;
-      case 4: /* statement ::= TOKEN_IDENTIFIER TOKEN_EQ select_source */
+      case 6: /* relation ::= select_statement */ yytestcase(yyruleno==6);
+      case 8: /* select_source ::= file_source */ yytestcase(yyruleno==8);
 #line 104 "sql_grammar.y"
-{
-    yylhsminor.yy77 = new ast::NamedRelation(yymsp[-2].minor.yy0.text, std::unique_ptr<ast::Node>(yymsp[0].minor.yy77));
-}
+{ yylhsminor.yy125 = yymsp[0].minor.yy125; }
 #line 1272 "sql_grammar.c"
-  yymsp[-2].minor.yy77 = yylhsminor.yy77;
+  yymsp[0].minor.yy125 = yylhsminor.yy125;
         break;
-      case 6: /* select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt */
-#line 117 "sql_grammar.y"
+      case 4: /* statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_LPAREN relation TOKEN_RPAREN */
+#line 105 "sql_grammar.y"
 {
-    yymsp[-7].minor.yy77 = yymsp[-4].minor.yy77;
+    yylhsminor.yy125 = new ast::NamedRelation(yymsp[-4].minor.yy0.text, std::unique_ptr<ast::Node>(yymsp[-1].minor.yy125));
+}
+#line 1280 "sql_grammar.c"
+  yymsp[-4].minor.yy125 = yylhsminor.yy125;
+        break;
+      case 5: /* statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation TOKEN_RPAREN */
+#line 109 "sql_grammar.y"
+{
+    auto M = new ast::MaterializedRelation(std::unique_ptr<ast::Node>(yymsp[-1].minor.yy125));
+    yylhsminor.yy125 = new ast::NamedRelation(yymsp[-5].minor.yy0.text, std::unique_ptr<ast::Node>(M));
+}
+#line 1289 "sql_grammar.c"
+  yymsp[-5].minor.yy125 = yylhsminor.yy125;
+        break;
+      case 7: /* select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt */
+#line 123 "sql_grammar.y"
+{
+    yymsp[-7].minor.yy125 = yymsp[-4].minor.yy125;
 
-    if (yymsp[-3].minor.yy77 != nullptr) {
-        yymsp[-7].minor.yy77 = new ast::Where(std::unique_ptr<ast::Node>(yymsp[-3].minor.yy77), std::unique_ptr<ast::Node>(yymsp[-7].minor.yy77));
+    if (yymsp[-3].minor.yy125 != nullptr) {
+        yymsp[-7].minor.yy125 = new ast::Where(std::unique_ptr<ast::Node>(yymsp[-3].minor.yy125), std::unique_ptr<ast::Node>(yymsp[-7].minor.yy125));
     }
 
-    if (yymsp[-2].minor.yy67 != nullptr) {
-        yymsp[-7].minor.yy77 = new ast::GroupBySelect(
-            yymsp[-2].minor.yy67,
-            yymsp[-6].minor.yy67,
-            std::unique_ptr<ast::Node>(yymsp[-7].minor.yy77)
+    if (yymsp[-2].minor.yy51 != nullptr) {
+        yymsp[-7].minor.yy125 = new ast::GroupBySelect(
+            yymsp[-2].minor.yy51,
+            yymsp[-6].minor.yy51,
+            std::unique_ptr<ast::Node>(yymsp[-7].minor.yy125)
         );
     } else {
-        yymsp[-7].minor.yy77 = new ast::SelectStatement(yymsp[-6].minor.yy67, std::unique_ptr<ast::Node>(yymsp[-7].minor.yy77));
+        yymsp[-7].minor.yy125 = new ast::SelectStatement(yymsp[-6].minor.yy51, std::unique_ptr<ast::Node>(yymsp[-7].minor.yy125));
     }
 
-    if (yymsp[-1].minor.yy90 != nullptr) {
-        yymsp[-7].minor.yy77 = new ast::OrderBySelect(std::unique_ptr<ast::Node>(yymsp[-7].minor.yy77), std::unique_ptr<ast::OrderBy>(yymsp[-1].minor.yy90));
+    if (yymsp[-1].minor.yy84 != nullptr) {
+        yymsp[-7].minor.yy125 = new ast::OrderBySelect(std::unique_ptr<ast::Node>(yymsp[-7].minor.yy125), std::unique_ptr<ast::OrderBy>(yymsp[-1].minor.yy84));
     }
 
-    if (yymsp[0].minor.yy60 != -1) {
-        yymsp[-7].minor.yy77 = new ast::Limit(yymsp[0].minor.yy60, std::unique_ptr<ast::Node>(yymsp[-7].minor.yy77));
+    if (yymsp[0].minor.yy52 != -1) {
+        yymsp[-7].minor.yy125 = new ast::Limit(yymsp[0].minor.yy52, std::unique_ptr<ast::Node>(yymsp[-7].minor.yy125));
     }
 }
-#line 1302 "sql_grammar.c"
+#line 1319 "sql_grammar.c"
         break;
-      case 8: /* select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
-#line 144 "sql_grammar.y"
-{ yymsp[-2].minor.yy77 = yymsp[-1].minor.yy77; }
-#line 1307 "sql_grammar.c"
+      case 9: /* select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
+#line 150 "sql_grammar.y"
+{ yymsp[-2].minor.yy125 = yymsp[-1].minor.yy125; }
+#line 1324 "sql_grammar.c"
         break;
-      case 9: /* select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
-#line 145 "sql_grammar.y"
+      case 10: /* select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
+#line 151 "sql_grammar.y"
 {
-    yymsp[-1].minor.yy77 = new ast::NamedRelationReference(yymsp[0].minor.yy0.text);
+    yymsp[-1].minor.yy125 = new ast::NamedRelationReference(yymsp[0].minor.yy0.text);
 }
-#line 1314 "sql_grammar.c"
+#line 1331 "sql_grammar.c"
         break;
-      case 10: /* file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
-#line 149 "sql_grammar.y"
+      case 11: /* file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
+#line 155 "sql_grammar.y"
 {
-    yylhsminor.yy77 = new ast::FileIntervalReference(
+    yylhsminor.yy125 = new ast::FileIntervalReference(
         std::string(yymsp[-4].minor.yy0.text),
         std::string(yymsp[-2].minor.yy0.text),
         std::stoi(yymsp[0].minor.yy0.text)
     );
 }
-#line 1325 "sql_grammar.c"
-  yymsp[-4].minor.yy77 = yylhsminor.yy77;
+#line 1342 "sql_grammar.c"
+  yymsp[-4].minor.yy125 = yylhsminor.yy125;
         break;
-      case 11: /* file_source ::= TOKEN_PATH */
-#line 157 "sql_grammar.y"
+      case 12: /* file_source ::= TOKEN_PATH */
+#line 163 "sql_grammar.y"
 {
-    yylhsminor.yy77 = new ast::FileReference(std::string(yymsp[0].minor.yy0.text));
+    yylhsminor.yy125 = new ast::FileReference(std::string(yymsp[0].minor.yy0.text));
 }
-#line 1333 "sql_grammar.c"
-  yymsp[0].minor.yy77 = yylhsminor.yy77;
+#line 1350 "sql_grammar.c"
+  yymsp[0].minor.yy125 = yylhsminor.yy125;
         break;
-      case 12: /* where_opt ::= */
-#line 161 "sql_grammar.y"
-{ yymsp[1].minor.yy77 = nullptr; }
-#line 1339 "sql_grammar.c"
-        break;
-      case 13: /* where_opt ::= TOKEN_WHERE condition */
-#line 162 "sql_grammar.y"
-{ yymsp[-1].minor.yy77 = yymsp[0].minor.yy77; }
-#line 1344 "sql_grammar.c"
-        break;
-      case 14: /* group_by_opt ::= */
-#line 164 "sql_grammar.y"
-{ yymsp[1].minor.yy67 = nullptr; }
-#line 1349 "sql_grammar.c"
-        break;
-      case 15: /* group_by_opt ::= TOKEN_GROUP_BY group_by_list */
-#line 165 "sql_grammar.y"
-{ yymsp[-1].minor.yy67 = yymsp[0].minor.yy67; }
-#line 1354 "sql_grammar.c"
-        break;
-      case 16: /* order_by_opt ::= */
+      case 13: /* where_opt ::= */
 #line 167 "sql_grammar.y"
-{ yymsp[1].minor.yy90 = nullptr; }
-#line 1359 "sql_grammar.c"
+{ yymsp[1].minor.yy125 = nullptr; }
+#line 1356 "sql_grammar.c"
         break;
-      case 17: /* order_by_opt ::= TOKEN_ORDER_BY expression_list */
+      case 14: /* where_opt ::= TOKEN_WHERE condition */
 #line 168 "sql_grammar.y"
-{ yymsp[-1].minor.yy90 = new ast::OrderBy(yymsp[0].minor.yy64, false); }
-#line 1364 "sql_grammar.c"
+{ yymsp[-1].minor.yy125 = yymsp[0].minor.yy125; }
+#line 1361 "sql_grammar.c"
         break;
-      case 18: /* order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
-#line 169 "sql_grammar.y"
-{ yymsp[-2].minor.yy90 = new ast::OrderBy(yymsp[-1].minor.yy64, false); }
-#line 1369 "sql_grammar.c"
-        break;
-      case 19: /* order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
+      case 15: /* group_by_opt ::= */
 #line 170 "sql_grammar.y"
-{ yymsp[-2].minor.yy90 = new ast::OrderBy(yymsp[-1].minor.yy64, true); }
-#line 1374 "sql_grammar.c"
+{ yymsp[1].minor.yy51 = nullptr; }
+#line 1366 "sql_grammar.c"
         break;
-      case 20: /* condition ::= expression */
-#line 172 "sql_grammar.y"
-{ yylhsminor.yy77 = yymsp[0].minor.yy115; }
-#line 1379 "sql_grammar.c"
-  yymsp[0].minor.yy77 = yylhsminor.yy77;
+      case 16: /* group_by_opt ::= TOKEN_GROUP_BY group_by_list */
+#line 171 "sql_grammar.y"
+{ yymsp[-1].minor.yy51 = yymsp[0].minor.yy51; }
+#line 1371 "sql_grammar.c"
         break;
-      case 21: /* limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
+      case 17: /* order_by_opt ::= */
+#line 173 "sql_grammar.y"
+{ yymsp[1].minor.yy84 = nullptr; }
+#line 1376 "sql_grammar.c"
+        break;
+      case 18: /* order_by_opt ::= TOKEN_ORDER_BY expression_list */
 #line 174 "sql_grammar.y"
-{ yymsp[-1].minor.yy60 = std::atoi(yymsp[0].minor.yy0.text); }
-#line 1385 "sql_grammar.c"
+{ yymsp[-1].minor.yy84 = new ast::OrderBy(yymsp[0].minor.yy92, false); }
+#line 1381 "sql_grammar.c"
         break;
-      case 22: /* limit_opt ::= */
+      case 19: /* order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
 #line 175 "sql_grammar.y"
-{ yymsp[1].minor.yy60 = -1; }
-#line 1390 "sql_grammar.c"
+{ yymsp[-2].minor.yy84 = new ast::OrderBy(yymsp[-1].minor.yy92, false); }
+#line 1386 "sql_grammar.c"
         break;
-      case 23: /* select_list ::= TOKEN_STAR */
-#line 177 "sql_grammar.y"
-{
-    yymsp[0].minor.yy67 = new ast::SelectList();
-}
-#line 1397 "sql_grammar.c"
+      case 20: /* order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
+#line 176 "sql_grammar.y"
+{ yymsp[-2].minor.yy84 = new ast::OrderBy(yymsp[-1].minor.yy92, true); }
+#line 1391 "sql_grammar.c"
         break;
-      case 24: /* select_list ::= select_item */
-      case 28: /* group_by_list ::= select_item */ yytestcase(yyruleno==28);
+      case 21: /* condition ::= expression */
+#line 178 "sql_grammar.y"
+{ yylhsminor.yy125 = yymsp[0].minor.yy31; }
+#line 1396 "sql_grammar.c"
+  yymsp[0].minor.yy125 = yylhsminor.yy125;
+        break;
+      case 22: /* limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
+#line 180 "sql_grammar.y"
+{ yymsp[-1].minor.yy52 = std::atoi(yymsp[0].minor.yy0.text); }
+#line 1402 "sql_grammar.c"
+        break;
+      case 23: /* limit_opt ::= */
 #line 181 "sql_grammar.y"
-{
-    yylhsminor.yy67 = new ast::SelectList();
-    yylhsminor.yy67->push_back(std::unique_ptr<ast::SelectItem>(yymsp[0].minor.yy46));
-}
-#line 1406 "sql_grammar.c"
-  yymsp[0].minor.yy67 = yylhsminor.yy67;
+{ yymsp[1].minor.yy52 = -1; }
+#line 1407 "sql_grammar.c"
         break;
-      case 25: /* select_list ::= select_list TOKEN_COMMA select_item */
-      case 29: /* group_by_list ::= group_by_list TOKEN_COMMA select_item */ yytestcase(yyruleno==29);
-#line 186 "sql_grammar.y"
+      case 24: /* select_list ::= TOKEN_STAR */
+#line 183 "sql_grammar.y"
 {
-    yylhsminor.yy67 = yymsp[-2].minor.yy67;
-    yylhsminor.yy67->push_back(std::unique_ptr<ast::SelectItem>(yymsp[0].minor.yy46));
+    yymsp[0].minor.yy51 = new ast::SelectList();
 }
-#line 1416 "sql_grammar.c"
-  yymsp[-2].minor.yy67 = yylhsminor.yy67;
+#line 1414 "sql_grammar.c"
         break;
-      case 26: /* select_item ::= TOKEN_IDENTIFIER */
-#line 191 "sql_grammar.y"
+      case 25: /* select_list ::= select_item */
+      case 29: /* group_by_list ::= select_item */ yytestcase(yyruleno==29);
+#line 187 "sql_grammar.y"
 {
-    yylhsminor.yy46 = new ast::SelectItem(
+    yylhsminor.yy51 = new ast::SelectList();
+    yylhsminor.yy51->push_back(std::unique_ptr<ast::SelectItem>(yymsp[0].minor.yy44));
+}
+#line 1423 "sql_grammar.c"
+  yymsp[0].minor.yy51 = yylhsminor.yy51;
+        break;
+      case 26: /* select_list ::= select_list TOKEN_COMMA select_item */
+      case 30: /* group_by_list ::= group_by_list TOKEN_COMMA select_item */ yytestcase(yyruleno==30);
+#line 192 "sql_grammar.y"
+{
+    yylhsminor.yy51 = yymsp[-2].minor.yy51;
+    yylhsminor.yy51->push_back(std::unique_ptr<ast::SelectItem>(yymsp[0].minor.yy44));
+}
+#line 1433 "sql_grammar.c"
+  yymsp[-2].minor.yy51 = yylhsminor.yy51;
+        break;
+      case 27: /* select_item ::= TOKEN_IDENTIFIER */
+#line 197 "sql_grammar.y"
+{
+    yylhsminor.yy44 = new ast::SelectItem(
         std::make_unique<ast::IdentifierExpression>(yymsp[0].minor.yy0.text, lsql::ValueType::String),
         std::string(yymsp[0].minor.yy0.text)
     );
 }
-#line 1427 "sql_grammar.c"
-  yymsp[0].minor.yy46 = yylhsminor.yy46;
-        break;
-      case 27: /* select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
-#line 198 "sql_grammar.y"
-{
-    yylhsminor.yy46 = new ast::SelectItem(std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy115), std::string(yymsp[0].minor.yy0.text));
-}
-#line 1435 "sql_grammar.c"
-  yymsp[-2].minor.yy46 = yylhsminor.yy46;
-        break;
-      case 30: /* expression_list ::= expression */
-#line 212 "sql_grammar.y"
-{
-    yylhsminor.yy64 = new ast::ExpressionList();
-    yylhsminor.yy64->push_back(std::unique_ptr<ast::Expression>(yymsp[0].minor.yy115));
-}
 #line 1444 "sql_grammar.c"
-  yymsp[0].minor.yy64 = yylhsminor.yy64;
+  yymsp[0].minor.yy44 = yylhsminor.yy44;
         break;
-      case 31: /* expression_list ::= expression_list TOKEN_COMMA expression */
-#line 217 "sql_grammar.y"
+      case 28: /* select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
+#line 204 "sql_grammar.y"
 {
-    yylhsminor.yy64 = yymsp[-2].minor.yy64;
-    yylhsminor.yy64->push_back(std::unique_ptr<ast::Expression>(yymsp[0].minor.yy115));
+    yylhsminor.yy44 = new ast::SelectItem(std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31), std::string(yymsp[0].minor.yy0.text));
 }
-#line 1453 "sql_grammar.c"
-  yymsp[-2].minor.yy64 = yylhsminor.yy64;
+#line 1452 "sql_grammar.c"
+  yymsp[-2].minor.yy44 = yylhsminor.yy44;
         break;
-      case 32: /* expression ::= TOKEN_STR */
-#line 223 "sql_grammar.y"
+      case 31: /* expression_list ::= expression */
+#line 218 "sql_grammar.y"
 {
-    yylhsminor.yy115 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::String);
+    yylhsminor.yy92 = new ast::ExpressionList();
+    yylhsminor.yy92->push_back(std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31));
 }
 #line 1461 "sql_grammar.c"
-  yymsp[0].minor.yy115 = yylhsminor.yy115;
+  yymsp[0].minor.yy92 = yylhsminor.yy92;
         break;
-      case 33: /* expression ::= TOKEN_INTEGER */
-#line 227 "sql_grammar.y"
+      case 32: /* expression_list ::= expression_list TOKEN_COMMA expression */
+#line 223 "sql_grammar.y"
 {
-    yylhsminor.yy115 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Integer);
+    yylhsminor.yy92 = yymsp[-2].minor.yy92;
+    yylhsminor.yy92->push_back(std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31));
 }
-#line 1469 "sql_grammar.c"
-  yymsp[0].minor.yy115 = yylhsminor.yy115;
+#line 1470 "sql_grammar.c"
+  yymsp[-2].minor.yy92 = yylhsminor.yy92;
         break;
-      case 34: /* expression ::= TOKEN_FLOATING */
-#line 231 "sql_grammar.y"
+      case 33: /* expression ::= TOKEN_STR */
+#line 229 "sql_grammar.y"
 {
-    yylhsminor.yy115 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Floating);
+    yylhsminor.yy31 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::String);
 }
-#line 1477 "sql_grammar.c"
-  yymsp[0].minor.yy115 = yylhsminor.yy115;
+#line 1478 "sql_grammar.c"
+  yymsp[0].minor.yy31 = yylhsminor.yy31;
         break;
-      case 35: /* expression ::= TOKEN_NULL */
-#line 235 "sql_grammar.y"
+      case 34: /* expression ::= TOKEN_INTEGER */
+#line 233 "sql_grammar.y"
 {
-    yymsp[0].minor.yy115 = new ast::ValueExpression("", lsql::ValueType::Null);
+    yylhsminor.yy31 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Integer);
 }
-#line 1485 "sql_grammar.c"
+#line 1486 "sql_grammar.c"
+  yymsp[0].minor.yy31 = yylhsminor.yy31;
         break;
-      case 36: /* expression ::= TOKEN_TRUE */
-      case 37: /* expression ::= TOKEN_FALSE */ yytestcase(yyruleno==37);
-#line 239 "sql_grammar.y"
+      case 35: /* expression ::= TOKEN_FLOATING */
+#line 237 "sql_grammar.y"
 {
-    yylhsminor.yy115 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Boolean);
+    yylhsminor.yy31 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Floating);
 }
-#line 1493 "sql_grammar.c"
-  yymsp[0].minor.yy115 = yylhsminor.yy115;
+#line 1494 "sql_grammar.c"
+  yymsp[0].minor.yy31 = yylhsminor.yy31;
         break;
-      case 38: /* expression ::= TOKEN_IDENTIFIER */
-#line 247 "sql_grammar.y"
+      case 36: /* expression ::= TOKEN_NULL */
+#line 241 "sql_grammar.y"
 {
-    yylhsminor.yy115 = new ast::IdentifierExpression(yymsp[0].minor.yy0.text, lsql::ValueType::String);
+    yymsp[0].minor.yy31 = new ast::ValueExpression("", lsql::ValueType::Null);
 }
-#line 1501 "sql_grammar.c"
-  yymsp[0].minor.yy115 = yylhsminor.yy115;
+#line 1502 "sql_grammar.c"
         break;
-      case 39: /* expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 251 "sql_grammar.y"
+      case 37: /* expression ::= TOKEN_TRUE */
+      case 38: /* expression ::= TOKEN_FALSE */ yytestcase(yyruleno==38);
+#line 245 "sql_grammar.y"
 {
-    yymsp[-3].minor.yy115 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy115), lsql::ValueType::String);
+    yylhsminor.yy31 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Boolean);
 }
-#line 1509 "sql_grammar.c"
+#line 1510 "sql_grammar.c"
+  yymsp[0].minor.yy31 = yylhsminor.yy31;
         break;
-      case 40: /* expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 255 "sql_grammar.y"
+      case 39: /* expression ::= TOKEN_IDENTIFIER */
+#line 253 "sql_grammar.y"
 {
-    yymsp[-3].minor.yy115 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy115), lsql::ValueType::Integer);
+    yylhsminor.yy31 = new ast::IdentifierExpression(yymsp[0].minor.yy0.text, lsql::ValueType::String);
 }
-#line 1516 "sql_grammar.c"
+#line 1518 "sql_grammar.c"
+  yymsp[0].minor.yy31 = yylhsminor.yy31;
         break;
-      case 41: /* expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 259 "sql_grammar.y"
+      case 40: /* expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 257 "sql_grammar.y"
 {
-    yymsp[-3].minor.yy115 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy115), lsql::ValueType::Floating);
+    yymsp[-3].minor.yy31 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31), lsql::ValueType::String);
 }
-#line 1523 "sql_grammar.c"
+#line 1526 "sql_grammar.c"
         break;
-      case 42: /* expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 263 "sql_grammar.y"
+      case 41: /* expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 261 "sql_grammar.y"
 {
-    yymsp[-3].minor.yy115 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy115), lsql::ValueType::Boolean);
+    yymsp[-3].minor.yy31 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31), lsql::ValueType::Integer);
 }
-#line 1530 "sql_grammar.c"
+#line 1533 "sql_grammar.c"
         break;
-      case 43: /* expression ::= TOKEN_EXCLAMATION expression */
-#line 267 "sql_grammar.y"
+      case 42: /* expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 265 "sql_grammar.y"
 {
-    yymsp[-1].minor.yy115 = new ast::UnaryExpression(
-        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy115),
-        ast::UnaryExpressionType::BooleanNegate
-    );
+    yymsp[-3].minor.yy31 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31), lsql::ValueType::Floating);
 }
 #line 1540 "sql_grammar.c"
         break;
-      case 44: /* expression ::= expression TOKEN_LIKE TOKEN_STR */
-#line 274 "sql_grammar.y"
+      case 43: /* expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 269 "sql_grammar.y"
+{
+    yymsp[-3].minor.yy31 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31), lsql::ValueType::Boolean);
+}
+#line 1547 "sql_grammar.c"
+        break;
+      case 44: /* expression ::= TOKEN_EXCLAMATION expression */
+#line 273 "sql_grammar.y"
+{
+    yymsp[-1].minor.yy31 = new ast::UnaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
+        ast::UnaryExpressionType::BooleanNegate
+    );
+}
+#line 1557 "sql_grammar.c"
+        break;
+      case 45: /* expression ::= expression TOKEN_LIKE TOKEN_STR */
+#line 280 "sql_grammar.y"
 {
     auto str = std::string(yymsp[0].minor.yy0.text);
 
-    yylhsminor.yy115 = new ast::LikeExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy115),
+    yylhsminor.yy31 = new ast::LikeExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
         str.substr(1, str.size() - 2)
     );
 }
-#line 1552 "sql_grammar.c"
-  yymsp[-2].minor.yy115 = yylhsminor.yy115;
+#line 1569 "sql_grammar.c"
+  yymsp[-2].minor.yy31 = yylhsminor.yy31;
         break;
-      case 45: /* expression ::= expression TOKEN_EQ expression */
-#line 283 "sql_grammar.y"
+      case 46: /* expression ::= expression TOKEN_EQ expression */
+#line 289 "sql_grammar.y"
 {
-    yylhsminor.yy115 = new ast::BinaryExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy115),
-        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy115),
+    yylhsminor.yy31 = new ast::BinaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
         ast::BinExpressionType::Equal
     );
 }
-#line 1564 "sql_grammar.c"
-  yymsp[-2].minor.yy115 = yylhsminor.yy115;
+#line 1581 "sql_grammar.c"
+  yymsp[-2].minor.yy31 = yylhsminor.yy31;
         break;
-      case 46: /* expression ::= expression TOKEN_NEQ expression */
-#line 291 "sql_grammar.y"
+      case 47: /* expression ::= expression TOKEN_NEQ expression */
+#line 297 "sql_grammar.y"
 {
-    yylhsminor.yy115 = new ast::BinaryExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy115),
-        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy115),
+    yylhsminor.yy31 = new ast::BinaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
         ast::BinExpressionType::NotEqual
     );
 }
-#line 1576 "sql_grammar.c"
-  yymsp[-2].minor.yy115 = yylhsminor.yy115;
+#line 1593 "sql_grammar.c"
+  yymsp[-2].minor.yy31 = yylhsminor.yy31;
         break;
-      case 47: /* expression ::= expression TOKEN_AND expression */
-#line 299 "sql_grammar.y"
+      case 48: /* expression ::= expression TOKEN_AND expression */
+#line 305 "sql_grammar.y"
 {
-    yylhsminor.yy115 = new ast::BinaryExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy115),
-        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy115),
+    yylhsminor.yy31 = new ast::BinaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
         ast::BinExpressionType::And
     );
 }
-#line 1588 "sql_grammar.c"
-  yymsp[-2].minor.yy115 = yylhsminor.yy115;
+#line 1605 "sql_grammar.c"
+  yymsp[-2].minor.yy31 = yylhsminor.yy31;
         break;
-      case 48: /* expression ::= expression TOKEN_OR expression */
-#line 307 "sql_grammar.y"
+      case 49: /* expression ::= expression TOKEN_OR expression */
+#line 313 "sql_grammar.y"
 {
-    yylhsminor.yy115 = new ast::BinaryExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy115),
-        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy115),
+    yylhsminor.yy31 = new ast::BinaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
         ast::BinExpressionType::Or
     );
 }
-#line 1600 "sql_grammar.c"
-  yymsp[-2].minor.yy115 = yylhsminor.yy115;
+#line 1617 "sql_grammar.c"
+  yymsp[-2].minor.yy31 = yylhsminor.yy31;
         break;
-      case 49: /* expression ::= expression TOKEN_DIVIDE expression */
-#line 315 "sql_grammar.y"
+      case 50: /* expression ::= expression TOKEN_DIVIDE expression */
+#line 321 "sql_grammar.y"
 {
-    yylhsminor.yy115 = new ast::BinaryExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy115),
-        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy115),
+    yylhsminor.yy31 = new ast::BinaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
         ast::BinExpressionType::Divide
     );
 }
-#line 1612 "sql_grammar.c"
-  yymsp[-2].minor.yy115 = yylhsminor.yy115;
+#line 1629 "sql_grammar.c"
+  yymsp[-2].minor.yy31 = yylhsminor.yy31;
         break;
-      case 50: /* expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 323 "sql_grammar.y"
+      case 51: /* expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 329 "sql_grammar.y"
 {
-    yymsp[-3].minor.yy115 = new ast::UnaryAggregateExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy115),
+    yymsp[-3].minor.yy31 = new ast::UnaryAggregateExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31),
         ast::UnaryAggregateType::Count
     );
 }
-#line 1623 "sql_grammar.c"
+#line 1640 "sql_grammar.c"
         break;
-      case 51: /* expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 330 "sql_grammar.y"
+      case 52: /* expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 336 "sql_grammar.y"
 {
-    yymsp[-3].minor.yy115 = new ast::UnaryAggregateExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy115),
+    yymsp[-3].minor.yy31 = new ast::UnaryAggregateExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31),
         ast::UnaryAggregateType::Min
     );
 }
-#line 1633 "sql_grammar.c"
+#line 1650 "sql_grammar.c"
         break;
-      case 52: /* expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 337 "sql_grammar.y"
+      case 53: /* expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 343 "sql_grammar.y"
 {
-    yymsp[-3].minor.yy115 = new ast::UnaryAggregateExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy115),
+    yymsp[-3].minor.yy31 = new ast::UnaryAggregateExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31),
         ast::UnaryAggregateType::Max
     );
 }
-#line 1643 "sql_grammar.c"
+#line 1660 "sql_grammar.c"
         break;
-      case 53: /* expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 344 "sql_grammar.y"
+      case 54: /* expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 350 "sql_grammar.y"
 {
-    yymsp[-3].minor.yy115 = new ast::UnaryAggregateExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy115),
+    yymsp[-3].minor.yy31 = new ast::UnaryAggregateExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31),
         ast::UnaryAggregateType::Sum
     );
 }
-#line 1653 "sql_grammar.c"
+#line 1670 "sql_grammar.c"
         break;
-      case 54: /* expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
-#line 351 "sql_grammar.y"
+      case 55: /* expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
+#line 357 "sql_grammar.y"
 {
-    yymsp[-3].minor.yy115 = new ast::CoalesceExpression(yymsp[-1].minor.yy64);
+    yymsp[-3].minor.yy31 = new ast::CoalesceExpression(yymsp[-1].minor.yy92);
 }
-#line 1660 "sql_grammar.c"
+#line 1677 "sql_grammar.c"
         break;
-      case 55: /* expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN */
-#line 355 "sql_grammar.y"
+      case 56: /* expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN */
+#line 361 "sql_grammar.y"
 {
     auto str = std::string(yymsp[-1].minor.yy0.text);
 
-    yymsp[-5].minor.yy115 = new ast::RSubstrExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-3].minor.yy115),
+    yymsp[-5].minor.yy31 = new ast::RSubstrExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-3].minor.yy31),
         str.substr(1, str.size() - 2)
     );
 }
-#line 1672 "sql_grammar.c"
+#line 1689 "sql_grammar.c"
         break;
-      case 56: /* expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN */
-#line 364 "sql_grammar.y"
+      case 57: /* expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN */
+#line 370 "sql_grammar.y"
 {
-    yymsp[-5].minor.yy115 = new ast::PercentileExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-3].minor.yy115),
-        yymsp[-1].minor.yy49
+    yymsp[-5].minor.yy31 = new ast::PercentileExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-3].minor.yy31),
+        yymsp[-1].minor.yy111
     );
 }
-#line 1682 "sql_grammar.c"
+#line 1699 "sql_grammar.c"
         break;
-      case 57: /* expression ::= expression TOKEN_IN select_source */
-#line 371 "sql_grammar.y"
+      case 58: /* expression ::= expression TOKEN_IN select_source */
+#line 377 "sql_grammar.y"
 {
-    yylhsminor.yy115 = new ast::InExpression(
-        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy115),
-        std::unique_ptr<ast::Node>(yymsp[0].minor.yy77)
+    yylhsminor.yy31 = new ast::InExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
+        std::unique_ptr<ast::Node>(yymsp[0].minor.yy125)
     );
 }
-#line 1692 "sql_grammar.c"
-  yymsp[-2].minor.yy115 = yylhsminor.yy115;
+#line 1709 "sql_grammar.c"
+  yymsp[-2].minor.yy31 = yylhsminor.yy31;
         break;
-      case 58: /* floating_list ::= TOKEN_FLOATING */
-#line 378 "sql_grammar.y"
+      case 59: /* floating_list ::= TOKEN_FLOATING */
+#line 384 "sql_grammar.y"
 {
-    yylhsminor.yy49 = new std::vector<float>();
-    yylhsminor.yy49->push_back(std::strtof(yymsp[0].minor.yy0.text, nullptr));
+    yylhsminor.yy111 = new std::vector<float>();
+    yylhsminor.yy111->push_back(std::strtof(yymsp[0].minor.yy0.text, nullptr));
 }
-#line 1701 "sql_grammar.c"
-  yymsp[0].minor.yy49 = yylhsminor.yy49;
+#line 1718 "sql_grammar.c"
+  yymsp[0].minor.yy111 = yylhsminor.yy111;
         break;
-      case 59: /* floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
-#line 383 "sql_grammar.y"
+      case 60: /* floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
+#line 389 "sql_grammar.y"
 {
-    yylhsminor.yy49 = yymsp[-2].minor.yy49;
-    yylhsminor.yy49->push_back(std::strtof(yymsp[0].minor.yy0.text, nullptr));
+    yylhsminor.yy111 = yymsp[-2].minor.yy111;
+    yylhsminor.yy111->push_back(std::strtof(yymsp[0].minor.yy0.text, nullptr));
 }
-#line 1710 "sql_grammar.c"
-  yymsp[-2].minor.yy49 = yylhsminor.yy49;
+#line 1727 "sql_grammar.c"
+  yymsp[-2].minor.yy111 = yylhsminor.yy111;
         break;
       default:
         break;
@@ -1769,12 +1786,12 @@ static void yy_syntax_error(
   ParseCTX_FETCH
 #define TOKEN yyminor
 /************ Begin %syntax_error code ****************************************/
-#line 388 "sql_grammar.y"
+#line 394 "sql_grammar.y"
 
     const char* token_text = TOKEN.text;
     fprintf(stderr, "Syntax error at line near token: '%s'\n", token_text);
     pCtx->has_error = 1;
-#line 1778 "sql_grammar.c"
+#line 1795 "sql_grammar.c"
 /************ End %syntax_error code ******************************************/
   ParseARG_STORE /* Suppress warning about unused %extra_argument variable */
   ParseCTX_STORE

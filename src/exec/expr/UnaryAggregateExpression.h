@@ -20,7 +20,7 @@ template <UnaryAggregateOperation Op>
 class UnaryAggregateExpression : public Expression {
     struct Aggr : Aggregator {
         Aggr(ExpressionPtr expr, const Op* op) : expr(expr), op(op) {}
-        void feed(const rel::Record& record) override { op->update(&state, expr->eval(record)); }
+        void feed(const exec::Record& record) override { op->update(&state, expr->eval(record)); }
         Value get() override { return op->result(&state); }
 
         ExpressionPtr expr;
@@ -42,12 +42,12 @@ class UnaryAggregateExpression : public Expression {
 
     AggregatorPtr aggregator() const override { return std::make_shared<Aggr>(arg_, &op_); }
 
-    Value eval(const rel::Record& /*record*/) const override {
+    Value eval(const exec::Record& /*record*/) const override {
         assert(false);
         throw std::runtime_error("aggregate expression");
     }
 
-    Value eval(const std::vector<rel::ConstRecordPtr>& group) const override {
+    Value eval(const std::vector<exec::ConstRecordPtr>& group) const override {
         typename Op::State state;
         for (auto&& record : group) {
             op_.update(&state, arg_->eval(*record));

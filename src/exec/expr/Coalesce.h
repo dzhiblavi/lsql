@@ -8,7 +8,7 @@ class Coalesce : public Expression, public std::enable_shared_from_this<Coalesce
     struct Aggr : Aggregator {
         explicit Aggr(std::vector<AggregatorPtr> aggregators) : aggregators(aggregators) {}
 
-        void feed(const rel::Record& rec) override {
+        void feed(const exec::Record& rec) override {
             for (auto&& aggregator : aggregators) {
                 aggregator->feed(rec);
             }
@@ -41,7 +41,7 @@ class Coalesce : public Expression, public std::enable_shared_from_this<Coalesce
         return std::make_shared<Aggr>(std::move(aggregators));
     }
 
-    Value eval(const rel::Record& record) const override {
+    Value eval(const exec::Record& record) const override {
         for (auto&& expr : values_) {
             if (auto value = expr->eval(record); value != null) {
                 return value;
@@ -50,7 +50,7 @@ class Coalesce : public Expression, public std::enable_shared_from_this<Coalesce
         return null;
     }
 
-    Value eval(const std::vector<rel::ConstRecordPtr>& group) const override {
+    Value eval(const std::vector<exec::ConstRecordPtr>& group) const override {
         for (auto&& expr : values_) {
             if (auto value = expr->eval(group); value != null) {
                 return value;

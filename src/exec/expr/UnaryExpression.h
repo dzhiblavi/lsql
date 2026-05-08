@@ -1,10 +1,8 @@
 #pragma once
 
 #include "exec/expr/Expression.h"
-#include "rel/Relation.h"
 
 #include <reflex/stdmatcher.h>
-#include <unordered_set>
 
 namespace lsql::exec {
 
@@ -19,7 +17,7 @@ template <UnaryOperation Op>
 class UnaryExpression : public Expression {
     struct Aggr : Aggregator {
         Aggr(AggregatorPtr arg, const Op* op) : arg(arg), op(op) {}
-        void feed(const rel::Record& rec) override { arg->feed(rec); }
+        void feed(const exec::Record& rec) override { arg->feed(rec); }
         Value get() override { return op->apply(arg->get()); }
 
         AggregatorPtr arg;
@@ -42,9 +40,9 @@ class UnaryExpression : public Expression {
         return std::make_shared<Aggr>(arg_->aggregator(), &op_);
     }
 
-    Value eval(const rel::Record& record) const override { return op_.apply(arg_->eval(record)); }
+    Value eval(const exec::Record& record) const override { return op_.apply(arg_->eval(record)); }
 
-    Value eval(const std::vector<rel::ConstRecordPtr>& group) const override {
+    Value eval(const std::vector<exec::ConstRecordPtr>& group) const override {
         return op_.apply(arg_->eval(group));
     }
 
@@ -91,26 +89,6 @@ struct RSubstrOp {
     ValueType argType() const { return ValueType::String; }
 
     const reflex::Pattern pattern;
-};
-
-struct InOp {
-    InOp(rel::RelationPtr source, ValueType type) : type(type) {
-        for (auto* record : source->records()) {
-            auto val = record->values();
-            if (val.size() != 1) {
-                throw std::runtime_error("expected exactly 1 column in IN rhs");
-            }
-
-            values.insert(val.begin()->second);
-        }
-    }
-
-    Value apply(const Value& value) const { return values.contains(value); }
-    ValueType valueType() const { return ValueType::Boolean; }
-    ValueType argType() const { return type; }
-
-    ValueType type;
-    std::unordered_set<Value> values;
 };
 
 struct CastOp {

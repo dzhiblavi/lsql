@@ -29,6 +29,15 @@ class NamedRelationReference : public Node {
     std::string name;
 };
 
+class MaterializedRelation : public Node {
+ public:
+    explicit MaterializedRelation(std::unique_ptr<Node> relation) : relation(std::move(relation)) {}
+
+    void visit(Visitor& visitor) const override { visitor.visit(*this); }
+
+    std::unique_ptr<Node> relation;
+};
+
 class Program : public Node {
  public:
     explicit Program(std::vector<std::unique_ptr<Node>>* statements) : statements(statements) {}

@@ -1,3 +1,4 @@
+#include "exec/op/Operation.h"
 #include "sql/ast/ExecVisitor.h"
 #include "sql/parser/parser.h"
 
@@ -90,11 +91,11 @@ std::unique_ptr<sql::ast::Node> parseQuery(std::string maybe_path) {
     return std::move(ctx.root);
 }
 
-void printRecordTSKV(const rel::Record::values_t& values) {
+void printRecordTSKV(const exec::Record::values_t& values, std::stringstream& out) {
     for (auto&& [k, v] : values) {
-        std::cout << std::format("{}={}", k, to_string(v)) << '\t';
+        out << std::format("{}={}", k, to_string(v)) << '\t';
     }
-    std::cout << '\n';
+    out << '\n';
 }
 
 std::string toJSONStr(const Value& v) {
@@ -109,7 +110,7 @@ std::string toJSONStr(const Value& v) {
         v);
 }
 
-void printRecordJSON(const rel::Record::values_t& values, std::stringstream& out) {
+void printRecordJSON(const exec::Record::values_t& values, std::stringstream& out) {
     if (values.empty()) {
         out << "{}";
         return;
@@ -123,31 +124,42 @@ void printRecordJSON(const rel::Record::values_t& values, std::stringstream& out
     out << "}";
 }
 
-void printRecords(coro::generator<const rel::Record*> records, Format format) {
-    switch (format) {
-        case Format::TSKV:
-            for (auto* record : records) {
-                printRecordTSKV(record->values());
-            }
-            break;
+class Print : public exec::Operation {
+ public:
+    Print(exec::OperationPtr source, Format format)
+        : Operation(1, source->minPhase())
+        , source_(std::move(source))
+        , format_(format) {}
 
-        case Format::JSON:
-            std::stringstream ss;
-            bool empty = true;
-            ss << '[';
-            for (auto* record : records) {
-                printRecordJSON(record->values(), ss);
-                ss << ',';
-                empty = false;
-            }
-            if (!empty) {
-                ss.seekp(-1, std::ios_base::end);  // remove last comma
-            }
-            ss << ']';
-            std::cout << ss.str();
-            break;
+    std::string result() const { return ss_.str(); }
+    void subscribe() { subscribe(source_->minPhase()); }
+
+ private:
+    bool consume(int, const exec::Record* record) {
+        if (record == nullptr) {
+            return false;
+        }
+
+        switch (format_) {
+            case Format::TSKV:
+                printRecordTSKV(record->values(), ss_);
+                break;
+
+            case Format::JSON:
+                printRecordJSON(record->values(), ss_);
+                break;
+        }
+
+        return true;
     }
-}
+
+    void subscribe(int phase) override { source_->subscribe(phase, &sub_); }
+
+    exec::OperationPtr source_;
+    Format format_;
+    exec::MemberSubscriber<Print> sub_{this, &Print::consume};
+    std::stringstream ss_;
+};
 
 void main(std::span<const char*> argv) {
     if (!parseArgs(argv)) {
@@ -165,14 +177,35 @@ void main(std::span<const char*> argv) {
     sql::ast::ExecVisitor exec_visitor;
     root->visit(exec_visitor);
 
-    std::deque<rel::RelationPtr> relations;
-    while (!exec_visitor.relations.empty()) {
-        relations.push_front(exec_visitor.popRelation());
+    auto sources = std::move(exec_visitor.sources);
+
+    std::deque<Print> ops;
+    while (!exec_visitor.operations.empty()) {
+        ops.emplace_front(exec_visitor.popOperation(), *format);
+        ops.front().subscribe();
     }
 
-    for (auto&& relation : relations) {
-        printRecords(relation->records(), *format);
-        std::println();
+    int max_phase = 0;
+    for (auto&& source : sources) {
+        max_phase = std::max(max_phase, source->maxPhase());
+    }
+
+    std::println("total src: {}, max phase: {}", sources.size(), max_phase);
+
+    for (int phase = 0; phase <= max_phase; ++phase) {
+        std::println("phase {}", phase);
+
+        for (auto&& source : sources) {
+            if (phase > source->maxPhase()) {
+                continue;
+            }
+
+            source->push(phase);
+        }
+    }
+
+    for (auto&& op : ops) {
+        std::cout << op.result() << '\n';
     }
 }
 

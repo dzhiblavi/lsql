@@ -1,7 +1,5 @@
 add_library(
-    lsql-exec STATIC
-    SearchRegex.cpp
-    SearchTimestamp.cpp
+    lsql-exec INTERFACE
 )
 
-target_link_libraries(lsql-exec PRIVATE lsql-core)
+target_link_libraries(lsql-exec INTERFACE lsql-core lsql-logs)

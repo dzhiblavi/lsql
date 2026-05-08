@@ -19,7 +19,7 @@ class BinaryExpression : public Expression {
     struct Aggr : Aggregator {
         Aggr(AggregatorPtr al, AggregatorPtr ar, const Op* op) : al(al), ar(ar), op(op) {}
 
-        void feed(const rel::Record& rec) override {
+        void feed(const exec::Record& rec) override {
             al->feed(rec);
             ar->feed(rec);
         }
@@ -48,11 +48,11 @@ class BinaryExpression : public Expression {
         return std::make_shared<Aggr>(l_->aggregator(), r_->aggregator(), &op_);
     }
 
-    Value eval(const rel::Record& record) const override {
+    Value eval(const exec::Record& record) const override {
         return op_.apply(l_->eval(record), r_->eval(record));
     }
 
-    Value eval(const std::vector<rel::ConstRecordPtr>& group) const override {
+    Value eval(const std::vector<exec::ConstRecordPtr>& group) const override {
         return op_.apply(l_->eval(group), r_->eval(group));
     }
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/time_formats.h"
-#include "exec/SearchTimestamp.h"
+#include "logs/SearchTimestamp.h"
 #include "exec/expr/BinaryExpression.h"
 #include "exec/expr/Coalesce.h"
 #include "exec/expr/Expression.h"
@@ -9,13 +9,7 @@
 #include "exec/expr/UnaryAggregateExpression.h"
 #include "exec/expr/UnaryExpression.h"
 #include "exec/expr/ValueExpression.h"
-#include "logs/LogRelation.h"
-#include "rel/Aggregate.h"
-#include "rel/Filter.h"
-#include "rel/Group.h"
-#include "rel/Limit.h"
-#include "rel/Projection.h"
-#include "rel/Sort.h"
+#include "exec/op/In.h"
 #include "sql/ast/BinExpression.h"
 #include "sql/ast/FileReference.h"
 #include "sql/ast/Program.h"
@@ -23,6 +17,15 @@
 #include "sql/ast/UnaryAggregateExpression.h"
 #include "sql/ast/UnaryExpression.h"
 #include "sql/ast/Visitor.h"
+
+#include "exec/op/Aggregate.h"
+#include "exec/op/Filter.h"
+#include "exec/op/Group.h"
+#include "exec/op/Limit.h"
+#include "exec/op/Log.h"
+#include "exec/op/Materialize.h"
+#include "exec/op/Projection.h"
+#include "exec/op/Sort.h"
 
 #include <memory>
 #include <stack>
@@ -44,9 +47,11 @@ class ExecVisitor : public Visitor {
     void visit(const FileReference& node) override {
         auto file = data::NativePagedFile::open(node.path);
 
-        relations.push(
-            std::make_shared<logs::LogRelation>(
-                std::make_shared<data::PagedLog>(file), getLogType(*file)));
+        auto op =
+            std::make_shared<exec::Log>(std::make_shared<data::PagedLog>(file), getLogType(*file));
+
+        sources.push_back(op);
+        operations.push(op);
     }
 
     void visit(const FileIntervalReference& node) override {
@@ -56,21 +61,23 @@ class ExecVisitor : public Visitor {
         auto file = data::NativePagedFile::open(node.path);
         auto log_type = getLogType(*file);
         auto time_format = logs::timeFormat(log_type);
-        auto from_pos = exec::lowerBoundLine(*file, from, time_format);
-        auto to_pos = exec::upperBoundLine(*file, to, time_format);
+        auto from_pos = logs::lowerBoundLine(*file, from, time_format);
+        auto to_pos = logs::upperBoundLine(*file, to, time_format);
 
         if (from_pos == std::string::npos || to_pos <= from_pos) {
             from_pos = to_pos = 0;
         }
 
-        relations.push(
-            std::make_shared<logs::LogRelation>(
-                std::make_shared<data::PagedLog>(file, from_pos, to_pos), log_type));
+        auto op = std::make_shared<exec::Log>(
+            std::make_shared<data::PagedLog>(file, from_pos, to_pos), log_type);
+
+        sources.push_back(op);
+        operations.push(op);
     }
 
     void visit(const Limit& node) override {
         node.source->visit(*this);
-        relations.push(rel::executeLimit(node.limit, popRelation()));
+        operations.push(exec::limit(popOperation(), node.limit));
     }
 
     void visit(const SelectStatement& node) override {
@@ -80,32 +87,26 @@ class ExecVisitor : public Visitor {
         if (std::ranges::any_of(*node.select_list, [](const std::unique_ptr<ast::SelectItem>& x) {
                 return x->expr->type() == ExpressionType::Group;
             })) {
-            relations.push(rel::executeAggregate(std::move(list), popRelation()));
+            operations.push(exec::aggregate(popOperation(), std::move(list)));
         } else {
-            relations.push(rel::executeProjection(std::move(list), popRelation()));
+            operations.push(exec::projection(popOperation(), std::move(list)));
         }
-    }
-
-    void visit(const Where& w) override {
-        w.source->visit(*this);
-        w.expr->visit(*this);
-        relations.push(rel::executeFilter(popExpression(), popRelation()));
     }
 
     void visit(const GroupBySelect& node) override {
         node.source->visit(*this);
-        relations.push(
-            rel::executeGroup(
+        operations.push(
+            exec::group(
+                popOperation(),
                 projectorsList(*node.group_list),
-                projectorsList(*node.select_list),
-                popRelation()));
+                projectorsList(*node.select_list)));
     }
 
     void visit(const OrderBySelect& node) override {
         node.source->visit(*this);
-        relations.push(
-            rel::executeSort(
-                expressionList(*node.order_by->order_list), node.order_by->desc, popRelation()));
+        operations.push(
+            exec::sort(
+                popOperation(), expressionList(*node.order_by->order_list), node.order_by->desc));
     }
 
     void visit(const BinaryExpression& e) override {
@@ -223,14 +224,26 @@ class ExecVisitor : public Visitor {
         exprs.push_back(expr);
     }
 
+    void visit(const Where& w) override {
+        w.source->visit(*this);
+        w.expr->visit(*this);
+
+        if (exprs.empty()) {
+            return;
+        }
+
+        operations.push(exec::filter(popOperation(), popExpression()));
+    }
+
     void visit(const InExpression& e) override {
+        auto source = popOperation();
+
         e.left->visit(*this);
         auto left = popExpression();
         e.source->visit(*this);
-        auto rel = popRelation();
+        auto match = popOperation();
 
-        exprs.push_back(
-            std::make_shared<exec::UnaryExpression<exec::InOp>>(left, rel, left->valueType()));
+        operations.push(exec::in(source, match, left));
     }
 
     void visit(const PercentileExpression& e) override {
@@ -243,20 +256,27 @@ class ExecVisitor : public Visitor {
 
     void visit(const SelectItem& e) override {
         e.expr->visit(*this);
-        projectors.push_back(std::make_unique<rel::Projector>(e.name, popExpression()));
+        projectors.push_back(std::make_unique<exec::Projector>(e.name, popExpression()));
     }
 
     void visit(const NamedRelation& e) override {
         e.relation->visit(*this);
-        named_relations[e.name] = popRelation();
+        named_ops[e.name] = popOperation();
     }
 
     void visit(const NamedRelationReference& e) override {
-        if (!named_relations.contains(e.name)) {
+        if (!named_ops.contains(e.name)) {
             throw std::runtime_error(std::format("no such named relation {}", e.name));
         }
 
-        relations.push(named_relations[e.name]);
+        operations.push(named_ops[e.name]);
+    }
+
+    void visit(const MaterializedRelation& e) override {
+        e.relation->visit(*this);
+        auto op = exec::materialize(popOperation());
+        operations.push(op);
+        sources.push_back(op);
     }
 
     void visit(const Program& e) override {
@@ -266,16 +286,15 @@ class ExecVisitor : public Visitor {
     }
 
     std::shared_ptr<exec::Expression> popExpression() {
-        assert(!exprs.empty());
         auto top = exprs.back();
         exprs.pop_back();
         return top;
     }
 
-    rel::RelationPtr popRelation() {
-        assert(!relations.empty());
-        auto top = relations.top();
-        relations.pop();
+    exec::OperationPtr popOperation() {
+        assert(!operations.empty());
+        auto top = operations.top();
+        operations.pop();
         return top;
     }
 
@@ -288,7 +307,7 @@ class ExecVisitor : public Visitor {
         return std::move(exprs);
     }
 
-    std::vector<std::unique_ptr<rel::Projector>> projectorsList(const ast::SelectList& list) {
+    exec::ProjectionList projectorsList(const ast::SelectList& list) {
         assert(projectors.empty());
         for (auto&& item : list) {
             item->visit(*this);
@@ -297,10 +316,12 @@ class ExecVisitor : public Visitor {
         return std::move(projectors);
     }
 
-    std::unordered_map<std::string, rel::RelationPtr> named_relations;
-    std::vector<std::unique_ptr<rel::Projector>> projectors;
+    std::unordered_map<std::string, exec::OperationPtr> named_ops;
+    exec::ProjectionList projectors;
     std::vector<exec::ExpressionPtr> exprs;
-    std::stack<rel::RelationPtr> relations;
+
+    std::vector<exec::SourcePtr> sources;
+    std::stack<exec::OperationPtr> operations;
 };
 
 }  // namespace lsql::sql::ast

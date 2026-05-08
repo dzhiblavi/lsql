@@ -6,7 +6,7 @@
 
 #include <cstddef>
 
-namespace lsql::exec {
+namespace lsql::logs {
 
 // index of the first character of the first line with ts >= x
 size_t lowerBoundLine(const data::PagedFile& file, timestamp_t ts, TimeFormat format);

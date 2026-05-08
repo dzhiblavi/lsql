@@ -1,22 +1,22 @@
 #pragma once
 
 #include "exec/expr/Expression.h"
-#include "rel/Relation.h"
+#include "exec/op/Operation.h"
 
 #include <algorithm>
 #include <cassert>
 #include <vector>
 
-namespace lsql::rel {
+namespace lsql::exec {
 
 struct Projector {
     std::string name;
-    std::shared_ptr<exec::Expression> expr;
+    std::shared_ptr<Expression> expr;
 };
 
 using ProjectionList = std::vector<std::unique_ptr<Projector>>;
 
-class ProjectionRecord : public Record {
+class ProjectionRecord : public exec::Record {
  public:
     ProjectionRecord(const Record* child, std::shared_ptr<const ProjectionList> projectors)
         : child_(child)
@@ -44,7 +44,7 @@ class ProjectionRecord : public Record {
         return (*it)->expr->eval(*child_);
     }
 
-    ConstRecordPtr clone() const override {
+    exec::ConstRecordPtr clone() const override {
         auto c = child_->clone();
         auto res = std::make_shared<ProjectionRecord>(c.get(), projectors_);
         res->child_pin_ = std::move(c);
@@ -54,30 +54,35 @@ class ProjectionRecord : public Record {
  private:
     const Record* child_;
     std::shared_ptr<const ProjectionList> projectors_;
-    ConstRecordPtr child_pin_ = nullptr;  // clone()
+    exec::ConstRecordPtr child_pin_ = nullptr;  // clone()
 };
 
-class ProjectionRelation : public Relation,
-                           public std::enable_shared_from_this<ProjectionRelation> {
+class Projection : public Operation, public std::enable_shared_from_this<Projection> {
  public:
-    ProjectionRelation(RelationPtr rel, ProjectionList projectors)
-        : rel_(rel)
+    Projection(OperationPtr source, ProjectionList projectors)
+        : Operation(1, source->minPhase())
+        , source_(std::move(source))
         , projectors_(std::move(projectors)) {}
 
-    coro::generator<const Record*> records() const override {
-        for (auto* record : rel_->records()) {
-            ProjectionRecord rec(record, {shared_from_this(), &projectors_});
-            co_yield &rec;
+ private:
+    bool consume(int phase, const exec::Record* record) {
+        if (record == nullptr) {
+            return emit(phase, nullptr);
         }
+
+        ProjectionRecord rec(record, {shared_from_this(), &projectors_});
+        return emit(phase, &rec);
     }
 
- private:
-    RelationPtr rel_;
+    void subscribe(int phase) override { source_->subscribe(phase, &sub_); }
+
+    OperationPtr source_;
     ProjectionList projectors_;
+    MemberSubscriber<Projection> sub_{this, &Projection::consume};
 };
 
-RelationPtr executeProjection(ProjectionList slist, RelationPtr rel) {
-    return std::make_shared<ProjectionRelation>(rel, std::move(slist));
+OperationPtr projection(OperationPtr source, ProjectionList slist) {
+    return std::make_shared<Projection>(std::move(source), std::move(slist));
 }
 
-}  // namespace lsql::rel
+}  // namespace lsql::exec

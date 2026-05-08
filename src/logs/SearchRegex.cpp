@@ -1,10 +1,10 @@
-#include "SearchRegex.h"
+#include "logs/SearchRegex.h"
 #include "util/NonCopyable.h"
 
 #include <algorithm>
 #include <reflex/matcher.h>
 
-namespace lsql::exec {
+namespace lsql::logs {
 
 namespace {
 
@@ -74,4 +74,4 @@ std::optional<timestamp_t> searchLastTimestamp(std::string_view s, TimeFormat fo
     });
 }
 
-}  // namespace lsql::exec
+}  // namespace lsql::logs

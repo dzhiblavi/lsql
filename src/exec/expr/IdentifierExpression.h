@@ -10,9 +10,9 @@ class IdentifierExpression : public Expression {
 
     ValueType valueType() const override { return ValueType::String; }
 
-    Value eval(const rel::Record& record) const override { return record.value(name_); }
+    Value eval(const exec::Record& record) const override { return record.value(name_); }
 
-    Value eval(const std::vector<rel::ConstRecordPtr>& group) const override {
+    Value eval(const std::vector<exec::ConstRecordPtr>& group) const override {
         return eval(*group.front());
     }
 

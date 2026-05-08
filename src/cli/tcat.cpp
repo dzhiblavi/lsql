@@ -1,5 +1,5 @@
 #include "data/PagedFile.h"
-#include "exec/SearchTimestamp.h"
+#include "logs/SearchTimestamp.h"
 
 #include <tclap/CmdLine.h>
 
@@ -73,12 +73,12 @@ void main(std::span<const char*> argv) {
     auto interval = interval_arg.getValue();
     auto file = data::NativePagedFile::open(file_arg.getValue());
 
-    size_t from = exec::lowerBoundLine(*file, ts, format);
+    size_t from = logs::lowerBoundLine(*file, ts, format);
     if (from == std::string::npos) {
         return;
     }
 
-    size_t to = exec::upperBoundLine(*file, ts + interval, format);
+    size_t to = logs::upperBoundLine(*file, ts + interval, format);
     printFileRange(*file, from, to);
 }
 

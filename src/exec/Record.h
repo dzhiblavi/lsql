@@ -6,7 +6,7 @@
 #include <string_view>
 #include <unordered_map>
 
-namespace lsql::rel {
+namespace lsql::exec {
 
 class Record {
  public:
@@ -22,4 +22,4 @@ class Record {
 using RecordPtr = std::shared_ptr<Record>;
 using ConstRecordPtr = std::shared_ptr<const Record>;
 
-}  // namespace lsql::rel
+}  // namespace lsql::exec

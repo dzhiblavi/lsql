@@ -5,6 +5,7 @@ namespace lsql::sql::ast {
 class Program;
 class NamedRelation;
 class NamedRelationReference;
+class MaterializedRelation;
 class FileReference;
 class FileIntervalReference;
 class SelectStatement;
@@ -33,6 +34,7 @@ class Visitor {
     virtual void visit(const Program&) {}
     virtual void visit(const NamedRelation&) {}
     virtual void visit(const NamedRelationReference&) {}
+    virtual void visit(const MaterializedRelation&) {}
     virtual void visit(const FileReference&) {}
     virtual void visit(const FileIntervalReference&) {}
     virtual void visit(const SelectStatement&) {}

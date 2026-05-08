@@ -38,9 +38,10 @@
 #define TOKEN_EQ                        38
 #define TOKEN_NEQ                       39
 #define TOKEN_LIKE                      40
-#define TOKEN_STRING                    41
-#define TOKEN_INT                       42
-#define TOKEN_FLOAT                     43
-#define TOKEN_BOOL                      44
-#define TOKEN_EXCLAMATION               45
-#define TOKEN_TIMESTAMP                 46
+#define TOKEN_MATERIALIZE               41
+#define TOKEN_STRING                    42
+#define TOKEN_INT                       43
+#define TOKEN_FLOAT                     44
+#define TOKEN_BOOL                      45
+#define TOKEN_EXCLAMATION               46
+#define TOKEN_TIMESTAMP                 47

@@ -1,14 +1,14 @@
 #pragma once
 
 #include "data/Log.h"
+#include "exec/op/Source.h"
 #include "logs/log_types.h"
-#include "rel/Relation.h"
 
-namespace lsql::logs {
+namespace lsql::exec {
 
-class LineRecord : public rel::Record {
+class LineRecord : public exec::Record {
  public:
-    LineRecord(data::Line line, LogType type) : line_(line) {
+    LineRecord(data::Line line, logs::LogType type) : line_(line) {
         parseKeyValue(line_.view(), type, kv_);
     }
 
@@ -27,29 +27,42 @@ class LineRecord : public rel::Record {
         return it == kv_.end() ? Value() : Value(std::string(it->second));
     }
 
-    rel::ConstRecordPtr clone() const override { return std::make_shared<LineRecord>(*this); }
+    exec::ConstRecordPtr clone() const override { return std::make_shared<LineRecord>(*this); }
 
  private:
-    void parse() {}
-
     data::Line line_;
     std::unordered_map<std::string_view, std::string_view> kv_;
 };
 
-class LogRelation : public rel::Relation {
+class Log : public Source {
  public:
-    LogRelation(std::shared_ptr<data::Log> log, LogType type) : log_(std::move(log)), type_(type) {}
+    Log(std::shared_ptr<data::Log> log, logs::LogType type)
+        : Source(1, 0)
+        , log_(std::move(log))
+        , type_(type) {}
 
-    coro::generator<const rel::Record*> records() const override {
+    void push(int phase) override {
+        if (!active(phase)) {
+            return;
+        }
+
         for (auto line : log_->lines()) {
             LineRecord record(line, type_);
-            co_yield &record;
+
+            if (!emit(phase, &record)) {
+                // no more subscribers
+                return;
+            }
         }
+
+        emit(phase, nullptr);
     }
 
  private:
+    void subscribe(int) override {}
+
     std::shared_ptr<data::Log> log_;
-    LogType type_;
+    logs::LogType type_;
 };
 
-}  // namespace lsql::logs
+}  // namespace lsql::exec

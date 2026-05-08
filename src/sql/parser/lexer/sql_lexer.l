@@ -55,12 +55,12 @@ LIMIT            {
                      Parse(g_parser, TOKEN_LIMIT, t, g_parse_context);
                  }
 
-AND            {
+AND              {
                      lsql::sql::parse::Token t = {TOKEN_AND, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_AND, t, g_parse_context);
                  }
 
-OR            {
+OR               {
                      lsql::sql::parse::Token t = {TOKEN_OR, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_OR, t, g_parse_context);
                  }
@@ -68,6 +68,11 @@ OR            {
 LIKE             {
                      lsql::sql::parse::Token t = {TOKEN_LIKE, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_LIKE, t, g_parse_context);
+                 }
+
+MATERIALIZE      {
+                     lsql::sql::parse::Token t = {TOKEN_MATERIALIZE, strdup(yytext), (int)strlen(yytext)};
+                     Parse(g_parser, TOKEN_MATERIALIZE, t, g_parse_context);
                  }
 
 String           {

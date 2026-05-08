@@ -9,8 +9,8 @@ class ValueExpression : public Expression {
     explicit ValueExpression(Value value) : value_(std::move(value)) {}
 
     ValueType valueType() const override { return value_.type(); }
-    Value eval(const rel::Record& /*record*/) const override { return value_; }
-    Value eval(const std::vector<rel::ConstRecordPtr>& /*group*/) const override { return value_; }
+    Value eval(const exec::Record& /*record*/) const override { return value_; }
+    Value eval(const std::vector<exec::ConstRecordPtr>& /*group*/) const override { return value_; }
     AggregatorPtr aggregator() const override { throw std::runtime_error("cannot aggregate"); }
 
  private:
