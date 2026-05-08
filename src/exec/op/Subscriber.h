@@ -18,6 +18,9 @@ class MemberSubscriber : public Subscriber {
  public:
     using MethodType = bool (Self::*)(int, const exec::Record*);
 
+    MemberSubscriber(const MemberSubscriber&) = default;
+    MemberSubscriber& operator=(const MemberSubscriber&) = default;
+
     MemberSubscriber(Self* self, MethodType method) : self_(self), method_(method) {
         assert(self != nullptr);
         assert(method != nullptr);

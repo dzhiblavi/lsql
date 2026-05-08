@@ -3,6 +3,7 @@ include(FetchContent)
 set(LIBCORO_BUILD_TESTS OFF)
 set(LIBCORO_BUILD_EXAMPLES OFF)
 set(LIBCORO_FEATURE_TLS OFF)
+set(LIBCORO_FEATURE_NETWORKING OFF)
 
 FetchContent_Declare(
     libcoro

@@ -16,28 +16,23 @@ add_compile_options(-Wno-language-extension-token)
 add_compile_options(-Wno-error=unused-command-line-argument)
 
 # Add debug symbols event in Release build
-add_compile_options(-g)
-#add_compile_options(-g -gdwarf-4)
-
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    add_compile_options(-O0 -fstandalone-debug)
-endif()
+add_compile_options(-g -gdwarf-4)
 
 # libc++
-if(MODULECONF_USE_CUSTOM_LIBCXX)
-  message(STATUS "Using custom libc++ located at ${MODULECONF_USE_CUSTOM_LIBCXX}")
+if(LOGSQL_USE_CUSTOM_LIBCXX)
+  message(STATUS "Using custom libc++ located at ${LOGSQL_USE_CUSTOM_LIBCXX}")
 
   add_compile_options(-nostdinc++ -isystem
-                      "${MODULECONF_USE_CUSTOM_LIBCXX}/include/c++/v1")
+                      "${LOGSQL_USE_CUSTOM_LIBCXX}/include/c++/v1")
 
   add_link_options(
-    -nostdlib++ "-L${MODULECONF_USE_CUSTOM_LIBCXX}/lib/c++"
-    -Wl,-rpath,"${MODULECONF_USE_CUSTOM_LIBCXX}"/lib/c++ -lc++ -lc++abi)
+    -nostdlib++ "-L${LOGSQL_USE_CUSTOM_LIBCXX}/lib/c++"
+    -Wl,-rpath,"${LOGSQL_USE_CUSTOM_LIBCXX}"/lib/c++ -lc++ -lc++abi)
 else()
   message(STATUS "Using system libc++")
 
   add_compile_options(-stdlib=libc++)
   add_link_options(-stdlib=libc++)
-endif(MODULECONF_USE_CUSTOM_LIBCXX)
+endif(LOGSQL_USE_CUSTOM_LIBCXX)
 
 message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")

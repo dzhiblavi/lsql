@@ -5,7 +5,6 @@
 #include <magic_enum/magic_enum.hpp>
 #include <tclap/CmdLine.h>
 
-void ParseTrace(FILE* TraceFILE, char* zTracePrompt);
 void set_parser_context(void* parser, lsql::sql::parse::Context* ctx);
 int yylex_init(void** scanner);
 void yyset_in(FILE* in, void* scanner);
@@ -131,8 +130,8 @@ class Print : public exec::Operation {
         , source_(std::move(source))
         , format_(format) {}
 
-    std::string result() const { return ss_.str(); }
     void subscribe() { subscribe(source_->minPhase()); }
+    void done() const { std::cout << ss_.str() << '\n'; }
 
  private:
     bool consume(int, const exec::Record* record) {
@@ -179,22 +178,20 @@ void main(std::span<const char*> argv) {
 
     auto sources = std::move(exec_visitor.sources);
 
-    std::deque<Print> ops;
+    std::vector<std::shared_ptr<Print>> ops;
     while (!exec_visitor.operations.empty()) {
-        ops.emplace_front(exec_visitor.popOperation(), *format);
-        ops.front().subscribe();
+        auto op = std::make_shared<Print>(exec_visitor.popOperation(), *format);
+        op->subscribe();
+        ops.push_back(op);
     }
+    std::ranges::reverse(ops);
 
     int max_phase = 0;
     for (auto&& source : sources) {
         max_phase = std::max(max_phase, source->maxPhase());
     }
 
-    std::println("total src: {}, max phase: {}", sources.size(), max_phase);
-
     for (int phase = 0; phase <= max_phase; ++phase) {
-        std::println("phase {}", phase);
-
         for (auto&& source : sources) {
             if (phase > source->maxPhase()) {
                 continue;
@@ -205,7 +202,7 @@ void main(std::span<const char*> argv) {
     }
 
     for (auto&& op : ops) {
-        std::cout << op.result() << '\n';
+        op->done();
     }
 }
 
