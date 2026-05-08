@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(
     logsql
     VERSION 0.0.1
-    LANGUAGES CXX C)
+    LANGUAGES CXX)
 
 set(BUILD_SHARED_LIBS OFF)
 
@@ -21,7 +21,7 @@ include(./cmake/thirdparty/libcoro.cmake)
 
 # Enable warnings for core of the project
 include(./cmake/CompileOptions.cmake)
-#include(./cmake/Werror.cmake)
+include(./cmake/Werror.cmake)
 
 include(./cmake/Testing.cmake)
 

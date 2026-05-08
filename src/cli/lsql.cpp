@@ -73,7 +73,7 @@ std::unique_ptr<sql::ast::Node> parseQuery(std::string maybe_path) {
     set_parser_context(parser, &ctx);
 
     yylex(scanner);
-    Parse(parser, 0, {.code = 0}, &ctx);  // NOLINT
+    Parse(parser, 0, {.code = 0, .text = "", .length = 0}, &ctx);
 
     /* Cleanup */
     yylex_destroy(scanner);
