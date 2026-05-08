@@ -3,13 +3,16 @@
 
 #include <cassert>
 #include <fcntl.h>
-#include <print>
+#include <format>
 #include <sys/mman.h>
 #include <unistd.h>
 
 namespace lsql::data {
 
-NativePagedFile::NativePagedFile(int fd) : fd_(fd), size_(lseek(fd_, 0, SEEK_END)) {
+NativePagedFile::NativePagedFile(int fd, std::filesystem::path path)
+    : fd_(fd)
+    , size_(lseek(fd_, 0, SEEK_END))
+    , path_(std::move(path)) {
 }
 
 NativePagedFile::NativePagedFile(NativePagedFile&& rhs) noexcept
@@ -43,10 +46,14 @@ std::shared_ptr<NativePagedFile> NativePagedFile::open(std::filesystem::path pat
     int fd = ::open(path.c_str(), O_RDONLY);
     if (fd == -1) {
         throw std::runtime_error(
-            std::format("failed to open file: errno={}, error={}", errno, strerror(errno)));
+            std::format(
+                "failed to open file '{}': errno={}, error={}",
+                path.c_str(),
+                errno,
+                strerror(errno)));
     }
 
-    return std::make_shared<NativePagedFile>(fd);
+    return std::make_shared<NativePagedFile>(fd, std::move(path));
 }
 
 size_t NativePagedFile::pageCount() const {
@@ -87,6 +94,10 @@ size_t NativePagedFile::read(size_t offset, std::span<char> dest) const {
     }
 
     return read;
+}
+
+const std::filesystem::path& NativePagedFile::path() const {
+    return path_;
 }
 
 }  // namespace lsql::data

@@ -1,6 +1,8 @@
 #include "data/Log.h"
 #include "util/PageSize.h"
 
+#include <llog/log.h>
+
 #include <cassert>
 
 namespace lsql::data {
@@ -9,6 +11,13 @@ PagedLog::PagedLog(std::shared_ptr<PagedFile> file) : file_(std::move(file)), en
 }
 
 coro::generator<Line> PagedLog::lines() const {
+    llog::info(
+        "scanning lines of '{}' in range [{}, {}) ({} bytes)",
+        file_->path().c_str(),
+        begin_,
+        end_,
+        end_ - begin_);
+
     size_t page_index = begin_ / util::pageSize();
     size_t pos = begin_;  // global position
     auto page = file_->page(page_index);

@@ -3,6 +3,8 @@
 #include "exec/expr/Expression.h"
 #include "exec/op/Operation.h"
 
+#include <llog/log.h>
+
 #include <algorithm>
 #include <vector>
 
@@ -35,6 +37,8 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
         }
 
         // end of stream
+        llog::info("sort dataset size: {} (phase {})", records_.size(), phase);
+
         if (desc_) {
             std::sort(records_.begin(), records_.end(), [this](auto&& l, auto&& r) {
                 return key(*l) > key(*r);

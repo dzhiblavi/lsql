@@ -2,6 +2,8 @@
 
 #include "exec/expr/Expression.h"
 
+#include <llog/log.h>
+
 #include <algorithm>
 #include <sstream>
 
@@ -164,6 +166,11 @@ struct PercentileOp {
     void update(State* curr, const Value& value) const { curr->push_back(value); }
 
     Value result(State* state) const {
+        llog::info(
+            "percentile dataset size: {} (percentiles count: {})",
+            state->size(),
+            percentiles.size());
+
         std::vector<float> result;
         result.reserve(percentiles.size());
 

@@ -7,4 +7,4 @@ add_library(
     time_formats/iso8601.cpp
     time_formats/sql.cpp
 )
-target_link_libraries(lsql-core PUBLIC lsql-util ReflexLibStatic magic_enum::magic_enum)
+target_link_libraries(lsql-core PUBLIC lsql-util ReflexLibStatic magic_enum::magic_enum llog)

@@ -5,6 +5,9 @@
 #include <magic_enum/magic_enum.hpp>
 #include <tclap/CmdLine.h>
 
+#include <llog/load.h>
+#include <llog/log.h>
+
 void set_parser_context(void* parser, lsql::sql::parse::Context* ctx);
 int yylex_init(void** scanner);
 void yyset_in(FILE* in, void* scanner);
@@ -35,10 +38,20 @@ TCLAP::ValueArg<std::string> format_arg{
     "see Format enum in " __FILE_NAME__,
 };
 
+TCLAP::ValueArg<std::string> log_level_arg{
+    "l",
+    "log-level",
+    "log level",
+    false,
+    "Warn",
+    "Trace/Debug/Info/Warn/Err/Critical/Off",
+};
+
 bool parseArgs(std::span<const char*> argv) {
     TCLAP::CmdLine cmd{"tsql", ' ', "0.0.1"};
     cmd.add(&sql_file_arg);
     cmd.add(&format_arg);
+    cmd.add(&log_level_arg);
     cmd.setExceptionHandling(false);
 
     try {
@@ -161,31 +174,44 @@ void main(std::span<const char*> argv) {
         return;
     }
 
+    auto log_level = magic_enum::enum_cast<llog::Level>(log_level_arg.getValue());
+    if (!log_level) {
+        throw std::runtime_error(
+            std::format("invalid value for log-level: {}", log_level_arg.getValue()));
+    }
+    llog::global()->set_level(static_cast<spdlog::level::level_enum>(*log_level));
+
     auto format = magic_enum::enum_cast<Format>(format_arg.getValue());
     if (!format) {
         throw std::runtime_error(
             std::format("invalid value for format: {}", format_arg.getValue()));
     }
 
+    llog::info("parsing the query");
     auto root = parseQuery(sql_file_arg.getValue());
 
+    llog::info("building operations");
     sql::ast::ExecVisitor exec_visitor;
     root->visit(exec_visitor);
 
     auto sources = std::move(exec_visitor.sources);
 
+    llog::info("collecting print operations");
     std::vector<std::shared_ptr<Print>> ops;
     while (!exec_visitor.operations.empty()) {
         ops.push_back(std::make_shared<Print>(exec_visitor.popOperation(), *format));
     }
     std::ranges::reverse(ops);
 
+    llog::info("determining phase count");
     int max_phase = 0;
     for (auto&& source : sources) {
         max_phase = std::max(max_phase, source->maxPhase());
     }
 
     for (int phase = 0; phase <= max_phase; ++phase) {
+        llog::info("executing phase {}", phase);
+
         for (auto&& source : sources) {
             if (phase > source->maxPhase()) {
                 continue;
@@ -195,6 +221,7 @@ void main(std::span<const char*> argv) {
         }
     }
 
+    llog::info("dumping the output");
     for (auto&& op : ops) {
         op->done();
     }
@@ -207,10 +234,10 @@ int main(int argc, const char** argv) {
         lsql::main(std::span<const char*>(argv, argc));
         return 0;
     } catch (const std::exception& e) {
-        std::println("error: {}", e.what());
+        llog::critical("error: {}", e.what());
         return 1;
     } catch (...) {
-        std::println("unknown error");
+        llog::critical("unknown error");
         return 2;
     }
 }

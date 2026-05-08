@@ -5,4 +5,4 @@ add_library(
     Log.cpp
 )
 
-target_link_libraries(lsql-data PUBLIC lsql-util libcoro)
+target_link_libraries(lsql-data PUBLIC lsql-util lsql-core libcoro)
