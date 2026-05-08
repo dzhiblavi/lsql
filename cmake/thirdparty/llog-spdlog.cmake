@@ -1,5 +1,8 @@
 include(FetchContent)
 
+set(LLOG_BUILD_IPO OFF)
+set(LLOG_BUILD_TESTS OFF)
+
 FetchContent_Declare(
   llog-spdlog
   GIT_REPOSITORY https://github.com/dzhiblavi/llog-spdlog.git

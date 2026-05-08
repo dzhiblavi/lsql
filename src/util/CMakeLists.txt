@@ -5,4 +5,4 @@ add_library(
     PageSize.cpp
 )
 
-target_link_libraries(lsql-util INTERFACE magic_enum::magic_enum)
+target_link_libraries(lsql-util INTERFACE magic_enum::magic_enum llog)
