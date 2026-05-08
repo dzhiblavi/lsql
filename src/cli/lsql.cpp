@@ -123,18 +123,16 @@ void printRecordJSON(const exec::Record::values_t& values, std::stringstream& ou
     out << "}";
 }
 
-class Print : public exec::Operation {
+class Print : public exec::Subscriber {
  public:
-    Print(exec::OperationPtr source, Format format)
-        : Operation(1, source->minPhase())
-        , source_(std::move(source))
-        , format_(format) {}
+    Print(exec::OperationPtr source, Format format) : source_(std::move(source)), format_(format) {
+        source_->subscribe(source_->minPhase(), this);
+    }
 
-    void subscribe() { subscribe(source_->minPhase()); }
     void done() const { std::cout << ss_.str() << '\n'; }
 
  private:
-    bool consume(int, const exec::Record* record) {
+    bool consume(int, const exec::Record* record) override {
         if (record == nullptr) {
             return false;
         }
@@ -151,8 +149,6 @@ class Print : public exec::Operation {
 
         return true;
     }
-
-    void subscribe(int phase) override { source_->subscribe(phase, &sub_); }
 
     exec::OperationPtr source_;
     Format format_;
@@ -180,9 +176,7 @@ void main(std::span<const char*> argv) {
 
     std::vector<std::shared_ptr<Print>> ops;
     while (!exec_visitor.operations.empty()) {
-        auto op = std::make_shared<Print>(exec_visitor.popOperation(), *format);
-        op->subscribe();
-        ops.push_back(op);
+        ops.push_back(std::make_shared<Print>(exec_visitor.popOperation(), *format));
     }
     std::ranges::reverse(ops);
 
