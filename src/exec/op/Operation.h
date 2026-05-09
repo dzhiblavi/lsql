@@ -24,16 +24,15 @@ class Operation {
         max_out_phase_ = std::max(max_out_phase_, out_phase);
         subs_[out_phase].insert(sub);
 
-        int in_phase = out_phase - phases_ + 1;
-        subscribe(in_phase);
+        subscribe(out_phase);
     }
 
     int minPhase() const { return min_out_phase_; }
     int maxPhase() const { return max_out_phase_; }
 
  protected:
-    // must subscribe for phases starting from `in_phase` in inbound operations
-    virtual void subscribe(int in_phase) = 0;
+    // the way for downstream operations to ask for output on phase `out_phase`
+    virtual void subscribe(int out_phase) = 0;
 
     bool active(int phase) const {
         auto it = subs_.find(phase);

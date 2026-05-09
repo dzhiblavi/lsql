@@ -53,12 +53,14 @@ class Materialize : public Source {
         emit(phase, nullptr);
     }
 
-    void subscribe(int in_phase) override {
+    void subscribe(int out_phase) override {
         if (first_phase_ != -1) {
+            // this may be an incorrect expectation
+            assert(out_phase >= first_phase_);
             return;
         }
 
-        first_phase_ = in_phase;
+        first_phase_ = out_phase;
         source_->subscribe(first_phase_, &sub_);
     }
 

@@ -15,6 +15,8 @@ class In : public Operation {
 
  private:
     bool consumeMatch(int phase, const exec::Record* record) {
+        assert(phase == match_phase_);
+
         if (record == nullptr) {
             // not emitting because it's not the last phase
             return false;
@@ -24,23 +26,18 @@ class In : public Operation {
         if (val.size() != 1) {
             throw std::runtime_error("expected exactly 1 column in IN rhs");
         }
-        values_[phase].insert(val.begin()->second);
 
+        values_.insert(val.begin()->second);
         return active(phase + 1);
     }
 
     bool consumeSource(int phase, const exec::Record* record) {
         if (record == nullptr) {
-            values_.erase(phase - 1);
+            cleanIfDone(phase);
             return emit(phase, nullptr);
         }
 
-        auto it = values_.find(phase - 1);
-        if (it == values_.end()) {
-            return emit(phase, nullptr);
-        }
-
-        if (it->second.contains(proj_->eval(*record))) {
+        if (values_.contains(proj_->eval(*record))) {
             return emit(phase, record);
         }
 
@@ -48,13 +45,30 @@ class In : public Operation {
             return true;
         }
 
-        values_.erase(it);
+        cleanIfDone(phase);
         return false;
     }
 
-    void subscribe(int in_phase) override {
-        match_source_->subscribe(in_phase, &sub_match_);
-        source_->subscribe(in_phase + 1, &sub_source_);
+    void subscribe(int out_phase) override {
+        assert(out_phase >= minPhase());
+
+        if (match_phase_ == -1) {
+            match_phase_ = out_phase - 1;
+            match_source_->subscribe(out_phase - 1, &sub_match_);
+        }
+
+        // this may be an incorrect expectation
+        assert(out_phase > match_phase_);
+
+        source_->subscribe(out_phase, &sub_source_);
+    }
+
+    void cleanIfDone(int phase) {
+        if (phase < maxPhase()) {
+            return;
+        }
+
+        values_ = {};
     }
 
     OperationPtr source_;
@@ -63,8 +77,9 @@ class In : public Operation {
     MemberSubscriber<In> sub_source_{this, &In::consumeSource};
     MemberSubscriber<In> sub_match_{this, &In::consumeMatch};
 
-    // phase -> matches
-    std::unordered_map<int, std::unordered_set<Value>> values_;
+    // phase at which values_ are built
+    int match_phase_ = -1;
+    std::unordered_set<Value> values_;
 };
 
 OperationPtr in(OperationPtr source, OperationPtr match, ExpressionPtr proj) {

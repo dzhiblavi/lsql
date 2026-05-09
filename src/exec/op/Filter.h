@@ -25,7 +25,7 @@ class Filter : public Operation {
         return active(phase);
     }
 
-    void subscribe(int in_phase) override { source_->subscribe(in_phase, &sub_); }
+    void subscribe(int out_phase) override { source_->subscribe(out_phase, &sub_); }
 
     OperationPtr source_;
     ExpressionPtr condition_;
