@@ -40,7 +40,10 @@ class ProjectionRecord : public exec::Record {
         }
 
         auto it = std::ranges::find(*projectors_, name, [](auto&& i) { return i->name; });
-        assert(it != projectors_->end());
+        if (it == projectors_->end()) {
+            throw std::runtime_error(std::format("no field {}", name));
+        }
+
         return (*it)->expr->eval(*child_);
     }
 
