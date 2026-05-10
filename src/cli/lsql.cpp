@@ -232,7 +232,7 @@ void run(int max_phase, const auto& sources, const auto& operations, util::Threa
 
 void explain(int max_phase, const auto& operations) {
     for (int phase = 0; phase <= max_phase; ++phase) {
-        llog::info("planning phase {}", phase);
+        std::cout << std::format("===================== planning phase {}", phase) << std::endl;
 
         exec::Explanation explanation;
         exec::ExplanationCtx ctx{
