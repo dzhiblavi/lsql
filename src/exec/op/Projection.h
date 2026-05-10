@@ -18,25 +18,25 @@ using ProjectionList = std::vector<std::unique_ptr<Projector>>;
 
 class ProjectionRecord : public exec::Record {
  public:
-    ProjectionRecord(const Record* child, std::shared_ptr<const ProjectionList> projectors)
-        : child_(child)
-        , projectors_(projectors) {}
+    ProjectionRecord(RecordRef child, std::shared_ptr<const ProjectionList> projectors)
+        : child_(std::move(child))
+        , projectors_(std::move(projectors)) {}
 
     values_t values() const override {
         if (projectors_->empty()) {
-            return child_->values();
+            return get(child_)->values();
         }
 
         values_t values;
         for (auto&& col : *projectors_) {
-            values.emplace(col->name, col->expr->eval(*child_));
+            values.emplace(col->name, col->expr->eval(*get(child_)));
         }
         return values;
     }
 
     Value value(std::string_view name) const override {
         if (projectors_->empty()) {
-            return child_->value(name);
+            return get(child_)->value(name);
         }
 
         auto it = std::ranges::find(*projectors_, name, [](auto&& i) { return i->name; });
@@ -44,20 +44,16 @@ class ProjectionRecord : public exec::Record {
             throw std::runtime_error(std::format("no field {}", name));
         }
 
-        return (*it)->expr->eval(*child_);
+        return (*it)->expr->eval(*get(child_));
     }
 
     exec::ConstRecordPtr clone() const override {
-        auto c = child_->clone();
-        auto res = std::make_shared<ProjectionRecord>(c.get(), projectors_);
-        res->child_pin_ = std::move(c);
-        return res;
+        return std::make_shared<ProjectionRecord>(pin(child_), projectors_);
     }
 
  private:
-    const Record* child_;
+    RecordRef child_;
     std::shared_ptr<const ProjectionList> projectors_;
-    exec::ConstRecordPtr child_pin_ = nullptr;  // clone()
 };
 
 class Projection : public Operation, public std::enable_shared_from_this<Projection> {
