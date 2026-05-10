@@ -9,15 +9,14 @@ namespace lsql::exec {
 
 using GroupValues = std::unordered_map<std::string_view, Value>;
 
-class GroupEnrichedRecord : public exec::Record,
-                            public std::enable_shared_from_this<GroupEnrichedRecord> {
+class GroupEnrichedRecord : public exec::Record {
  public:
-    GroupEnrichedRecord(exec::ConstRecordPtr child, std::shared_ptr<GroupValues> values)
+    GroupEnrichedRecord(RecordRef child, std::shared_ptr<GroupValues> values)
         : child_(std::move(child))
         , values_(std::move(values)) {}
 
     values_t values() const override {
-        auto values = child_->values();
+        auto values = get(child_)->values();
         for (auto&& [k, v] : *values_) {
             values.emplace(k, v);
         }
@@ -28,43 +27,40 @@ class GroupEnrichedRecord : public exec::Record,
         if (auto it = values_->find(name); it != values_->end()) {
             return it->second;
         }
-        return child_->value(name);
+        return get(child_)->value(name);
     }
 
-    std::shared_ptr<const Record> clone() const override { return shared_from_this(); }
+    std::shared_ptr<const Record> clone() const override {
+        return std::make_shared<GroupEnrichedRecord>(pin(child_), values_);
+    }
 
  private:
-    exec::ConstRecordPtr child_;
+    RecordRef child_;
     std::shared_ptr<GroupValues> values_;
 };
 
 class GroupRecord : public exec::Record {
  public:
-    GroupRecord(
-        std::shared_ptr<std::vector<exec::ConstRecordPtr>> records,
-        std::shared_ptr<const ProjectionList> slist)
-        : records_(std::move(records))
-        , slist_(slist) {}
+    explicit GroupRecord(std::shared_ptr<GroupValues> values) : values_(std::move(values)) {}
 
     values_t values() const override {
         values_t values;
-        for (auto&& key : *slist_) {
-            values.emplace(key->name, key->expr->eval(*records_));
+        for (auto&& [k, v] : *values_) {
+            values.emplace(k, v);
         }
         return values;
     }
 
     Value value(std::string_view name) const override {
-        auto it = std::ranges::find(*slist_, name, [](auto&& i) { return i->name; });
-        assert(it != slist_->end());
-        return (*it)->expr->eval(*records_);
+        auto it = values_->find(name);
+        assert(it != values_->end());
+        return it->second;
     }
 
     exec::ConstRecordPtr clone() const override { return std::make_shared<GroupRecord>(*this); }
 
  private:
-    std::shared_ptr<std::vector<exec::ConstRecordPtr>> records_;
-    std::shared_ptr<const ProjectionList> slist_;
+    std::shared_ptr<GroupValues> values_;
 };
 
 class Group : public Operation, public std::enable_shared_from_this<Group> {
@@ -89,40 +85,69 @@ class Group : public Operation, public std::enable_shared_from_this<Group> {
         }
 
         if (record != nullptr) {
+            auto group_kv = std::make_shared<GroupValues>();
             std::vector<Value> key;
             key.reserve(glist_.size());
             for (auto&& col : glist_) {
-                key.push_back(col->expr->eval(*record));
+                auto value = col->expr->eval(*record);
+                group_kv->emplace(col->name, value);
+                key.push_back(std::move(value));
             }
-            auto it = groups_.find(key);
-            if (it == groups_.end()) {
-                it = groups_
-                         .emplace(
-                             std::move(key), std::make_shared<std::vector<exec::ConstRecordPtr>>())
-                         .first;
+
+            auto&& aggregators = groups_[key];
+
+            if (aggregators.empty()) {
+                for (auto&& proj : slist_) {
+                    auto&& name = proj->name;
+
+                    if (std::ranges::find(glist_, name, [](auto&& proj) { return proj->name; }) ==
+                        glist_.end()) {
+                        aggregators.push_back(proj->expr->aggregator());
+                    }
+                }
             }
-            it->second->push_back(record->clone());
-            return active(phase);
+
+            for (auto&& aggregator : aggregators) {
+                GroupEnrichedRecord enriched_record(record, std::move(group_kv));
+                aggregator->feed(enriched_record);
+            }
+
+            if (!active(phase)) {
+                groups_.clear();
+                return false;
+            }
+
+            return true;
         }
 
         // end of stream
         while (!groups_.empty()) {
             auto node = groups_.extract(groups_.begin());
-
             auto group_values = std::move(node.key());
-            auto group_kv = std::make_shared<GroupValues>();
+            auto aggregators = std::move(node.mapped());
+
+            GroupValues group_kv;
             for (size_t i = 0; i < glist_.size(); ++i) {
-                group_kv->emplace(glist_[i]->name, std::move(group_values[i]));
+                group_kv.emplace(glist_[i]->name, std::move(group_values[i]));
             }
 
-            auto records = std::make_shared<std::vector<exec::ConstRecordPtr>>();
-            records->reserve(node.mapped()->size());
-            for (auto&& record : *node.mapped()) {
-                records->push_back(std::make_shared<GroupEnrichedRecord>(record, group_kv));
+            auto values = std::make_shared<GroupValues>();
+            size_t agr = 0;
+
+            for (size_t i = 0; i < slist_.size(); ++i) {
+                auto&& name = slist_[i]->name;
+                auto it = std::ranges::find(glist_, name, [](auto&& proj) { return proj->name; });
+
+                if (it == glist_.end()) {
+                    values->emplace(name, aggregators[agr++]->get());
+                } else {
+                    values->emplace(name, group_kv[name]);
+                }
             }
 
-            GroupRecord record(std::move(records), {shared_from_this(), &slist_});
+            GroupRecord record(std::move(values));
             if (!emit(phase, &record)) {
+                groups_.clear();
                 return false;
             }
         }
@@ -138,8 +163,7 @@ class Group : public Operation, public std::enable_shared_from_this<Group> {
     MemberSubscriber<Group> sub_{this, &Group::consume};
 
     // phase state
-    using Groups =
-        std::unordered_map<std::vector<Value>, std::shared_ptr<std::vector<exec::ConstRecordPtr>>>;
+    using Groups = std::unordered_map<std::vector<Value>, std::vector<exec::AggregatorPtr>>;
 
     int curr_phase_ = 0;
     Groups groups_;

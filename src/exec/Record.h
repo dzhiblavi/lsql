@@ -2,6 +2,7 @@
 
 #include "core/Value.h"
 
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -21,5 +22,25 @@ class Record {
 
 using RecordPtr = std::shared_ptr<Record>;
 using ConstRecordPtr = std::shared_ptr<const Record>;
+
+using RecordRef = std::variant<const Record*, ConstRecordPtr>;
+
+inline ConstRecordPtr pin(const RecordRef& ref) {
+    return std::visit(
+        util::Overloaded{
+            [](const Record* record) { return record->clone(); },
+            [](ConstRecordPtr record) { return record; },
+        },
+        ref);
+}
+
+inline const Record* get(const RecordRef& ref) {
+    return std::visit(
+        util::Overloaded{
+            [](const Record* record) { return record; },
+            [](ConstRecordPtr record) { return record.get(); },
+        },
+        ref);
+}
 
 }  // namespace lsql::exec

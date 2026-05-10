@@ -17,8 +17,24 @@ class IdentifierExpression : public Expression {
     }
 
     AggregatorPtr aggregator() const override {
-        assert(false);
-        throw std::runtime_error("not implemented");
+        struct Aggr : Aggregator {
+            explicit Aggr(const IdentifierExpression* self) : self(self) {}
+
+            Value get() override { return std::move(value); }
+
+            void feed(const exec::Record& record) override {
+                if (value != null) {
+                    return;
+                }
+
+                value = self->eval(record);
+            }
+
+            const IdentifierExpression* self;
+            Value value;
+        };
+
+        return std::make_shared<Aggr>(this);
     }
 
  private:
