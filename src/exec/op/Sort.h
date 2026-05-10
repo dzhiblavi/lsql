@@ -1,8 +1,8 @@
 #pragma once
 
+#include "core/verify.h"
 #include "exec/expr/Expression.h"
 #include "exec/op/Operation.h"
-#include "core/verify.h"
 
 #include <llog/log.h>
 
@@ -74,6 +74,17 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
             result.push_back(col->eval(record));
         }
         return result;
+    }
+
+    // Operation
+    ExplanationItem explain(ExplanationCtx ctx) const override {
+        auto source = source_->explain(ctx.withRequester(&sub_));
+
+        if (!hasSubscriber(ctx.phase, ctx.requester)) {
+            return {};
+        }
+
+        return ExplanationItem().line("Sort").child(source);
     }
 
     OperationPtr source_;

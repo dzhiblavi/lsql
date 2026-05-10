@@ -89,4 +89,9 @@ coro::generator<Line> PagedLog::lines() const {
     }
 }
 
+std::string PagedLog::describe() const {
+    return std::format(
+        "'{}' in range [{}, {}) ({} bytes)", file_->path().c_str(), begin_, end_, end_ - begin_);
+}
+
 }  // namespace lsql::data

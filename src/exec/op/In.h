@@ -3,6 +3,7 @@
 #include "core/verify.h"
 #include "exec/expr/Expression.h"
 #include "exec/op/Operation.h"
+#include "util/uniq_id.h"
 
 namespace lsql::exec {
 
@@ -72,11 +73,45 @@ class In : public Operation {
         values_ = {};
     }
 
+    // Operation
+    ExplanationItem explain(ExplanationCtx ctx) const override {
+        auto match = match_source_->explain(ctx.withRequester(&sub_match_));
+        auto source = source_->explain(ctx.withRequester(&sub_source_));
+
+        if (ctx.phase < match_phase_) {
+            // we do nothing on this phase
+            verify(match.empty());
+            verify(source.empty());
+            return {};
+        }
+
+        if (ctx.phase == match_phase_) {
+            verify(source.empty());
+
+            auto item =
+                ExplanationItem().line("In: store match set [id={}]", uniq_id_).child(match);
+
+            if (hasSubscriber(ctx.phase, ctx.requester)) {
+                return item;
+            } else {
+                ctx.explanation.insert(item, this);
+                return {};
+            }
+        }
+
+        if (!hasSubscriber(ctx.phase, ctx.requester)) {
+            return {};
+        }
+
+        return ExplanationItem().line("In: stream match [id={}]", uniq_id_).child(source);
+    }
+
     OperationPtr source_;
     OperationPtr match_source_;
     ExpressionPtr proj_;
     MemberSubscriber<In> sub_source_{this, &In::consumeSource};
     MemberSubscriber<In> sub_match_{this, &In::consumeMatch};
+    int uniq_id_ = util::uniqId();
 
     // phase at which values_ are built
     int match_phase_ = -1;

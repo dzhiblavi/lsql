@@ -35,6 +35,17 @@ class Limit : public Operation {
     // Operation
     void init(int phase) override { source_->subscribe(phase, &sub_); }
 
+    // Operation
+    ExplanationItem explain(ExplanationCtx ctx) const override {
+        auto source = source_->explain(ctx.withRequester(&sub_));
+
+        if (!hasSubscriber(ctx.phase, ctx.requester)) {
+            return {};
+        }
+
+        return ExplanationItem().line("Limit {}", limit_).child(source);
+    }
+
     OperationPtr source_;
     const int limit_;
     MemberSubscriber<Limit> sub_{this, &Limit::consume};

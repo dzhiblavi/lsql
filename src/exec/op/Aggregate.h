@@ -4,6 +4,7 @@
 #include "exec/expr/Expression.h"
 #include "exec/op/Projection.h"
 #include "exec/op/Source.h"
+#include "util/uniq_id.h"
 
 #include <vector>
 
@@ -102,9 +103,43 @@ class Aggregate : public Source, public Record, public std::enable_shared_from_t
     // Record
     exec::ConstRecordPtr clone() const override { return shared_from_this(); }
 
+    // Operation
+    ExplanationItem explain(ExplanationCtx ctx) const override {
+        auto source = source_->explain(ctx.withRequester(&sub_));
+
+        if (ctx.phase < first_phase_) {
+            // we return nothing on this phase
+            verify(source.empty());
+            return {};
+        }
+
+        if (ctx.phase == first_phase_) {
+            auto item =
+                ExplanationItem()
+                    .line(
+                        "Aggregate w/store ({} projections) [id={}]", projectors_.size(), uniq_id_)
+                    .child(source);
+
+            if (hasSubscriber(ctx.phase, ctx.requester)) {
+                return item;
+            } else {
+                ctx.explanation.insert(item, this);
+                return {};
+            }
+        }
+
+        // phase > first_phase_
+        if (hasSubscriber(ctx.phase, ctx.requester)) {
+            return ExplanationItem().line("Aggregate stored [id={}]", uniq_id_);
+        }
+
+        return {};
+    }
+
     OperationPtr source_;
     ProjectionList projectors_;
     MemberSubscriber<Aggregate> sub_{this, &Aggregate::consume};
+    int uniq_id_ = util::uniqId();
 
     // phase state
     int first_phase_ = -1;

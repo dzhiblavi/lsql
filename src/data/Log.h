@@ -25,6 +25,7 @@ class Log {
     virtual ~Log() = default;
 
     virtual coro::generator<Line> lines() const = 0;
+    virtual std::string describe() const = 0;
 };
 
 // Log backed by paged file
@@ -38,6 +39,7 @@ class PagedLog : public Log {
         , end_{end} {}
 
     coro::generator<Line> lines() const override;
+    std::string describe() const override;
 
  private:
     std::shared_ptr<PagedFile> file_;

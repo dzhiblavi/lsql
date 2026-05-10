@@ -47,11 +47,18 @@ TCLAP::ValueArg<std::string> log_level_arg{
     "Trace/Debug/Info/Warn/Err/Critical/Off",
 };
 
+TCLAP::SwitchArg explain_arg{
+    "e",
+    "explain",
+    "show execution plan",
+};
+
 bool parseArgs(std::span<const char*> argv) {
     TCLAP::CmdLine cmd{"tsql", ' ', "0.0.1"};
     cmd.add(&sql_file_arg);
     cmd.add(&format_arg);
     cmd.add(&log_level_arg);
+    cmd.add(&explain_arg);
     cmd.setExceptionHandling(false);
 
     try {
@@ -144,8 +151,22 @@ class Print : public exec::Subscriber {
 
     void done() const { std::cout << ss_.str() << '\n'; }
 
+    exec::ExplanationItem explain(exec::ExplanationCtx ctx) const {
+        auto source = source_->explain(ctx.withRequester(this));
+
+        if (ctx.phase != source_->minPhase()) {
+            verify(source.empty());
+            return {};
+        } else {
+            verify(!source.empty());
+            return exec::ExplanationItem().line("Print").child(source);
+        }
+    }
+
  private:
-    bool consume(int, const exec::Record* record) override {
+    bool consume(int phase, const exec::Record* record) override {
+        verify(phase == source_->minPhase());
+
         if (record == nullptr) {
             return false;
         }
@@ -165,9 +186,50 @@ class Print : public exec::Subscriber {
 
     exec::OperationPtr source_;
     Format format_;
-    exec::MemberSubscriber<Print> sub_{this, &Print::consume};
     std::stringstream ss_;
 };
+
+void run(int max_phase, const auto& sources, const auto& operations) {
+    for (int phase = 0; phase <= max_phase; ++phase) {
+        llog::info("executing phase {}", phase);
+
+        for (auto&& source : sources) {
+            if (phase > source->maxPhase()) {
+                continue;
+            }
+
+            source->push(phase);
+        }
+    }
+
+    llog::info("dumping the output");
+    for (auto&& op : operations) {
+        op->done();
+    }
+}
+
+void explain(int max_phase, const auto& operations) {
+    for (int phase = 0; phase <= max_phase; ++phase) {
+        llog::info("executing phase {}", phase);
+
+        exec::Explanation explanation;
+        exec::ExplanationCtx ctx{
+            .requester = nullptr,
+            .phase = phase,
+            .explanation = explanation,
+        };
+
+        for (auto&& op : operations) {
+            auto explain = op->explain(ctx);
+
+            if (!explain.empty()) {
+                std::cout << explain.format() << std::endl;
+            }
+        }
+
+        std::cout << explanation.format() << std::endl;
+    }
+}
 
 void main(std::span<const char*> argv) {
     if (!parseArgs(argv)) {
@@ -209,21 +271,10 @@ void main(std::span<const char*> argv) {
         max_phase = std::max(max_phase, source->maxPhase());
     }
 
-    for (int phase = 0; phase <= max_phase; ++phase) {
-        llog::info("executing phase {}", phase);
-
-        for (auto&& source : sources) {
-            if (phase > source->maxPhase()) {
-                continue;
-            }
-
-            source->push(phase);
-        }
-    }
-
-    llog::info("dumping the output");
-    for (auto&& op : ops) {
-        op->done();
+    if (explain_arg.getValue()) {
+        explain(max_phase, ops);
+    } else {
+        run(max_phase, sources, ops);
     }
 }
 

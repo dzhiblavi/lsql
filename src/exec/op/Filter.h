@@ -29,6 +29,17 @@ class Filter : public Operation {
     // Operation
     void init(int out_phase) override { source_->subscribe(out_phase, &sub_); }
 
+    // Operation
+    ExplanationItem explain(ExplanationCtx ctx) const override {
+        auto source = source_->explain(ctx.withRequester(&sub_));
+
+        if (!hasSubscriber(ctx.phase, ctx.requester)) {
+            return {};
+        }
+
+        return ExplanationItem().line("Filter").child(source);
+    }
+
     OperationPtr source_;
     ExpressionPtr condition_;
     MemberSubscriber<Filter> sub_{this, &Filter::consume};

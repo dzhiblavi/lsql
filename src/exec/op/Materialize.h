@@ -2,6 +2,7 @@
 
 #include "core/verify.h"
 #include "exec/op/Source.h"
+#include "util/uniq_id.h"
 
 namespace lsql::exec {
 
@@ -67,10 +68,40 @@ class Materialize : public Source {
         source_->subscribe(first_phase_, &sub_);
     }
 
+    // Operation
+    ExplanationItem explain(ExplanationCtx ctx) const override {
+        auto source = source_->explain(ctx.withRequester(&sub_));
+
+        if (ctx.phase < first_phase_) {
+            // we do nothing on this phase
+            verify(source.empty());
+            return {};
+        }
+
+        if (ctx.phase == first_phase_) {
+            auto item = ExplanationItem().line("Store passthrough [id={}]", uniq_id_).child(source);
+
+            if (hasSubscriber(ctx.phase, ctx.requester)) {
+                return item;
+            } else {
+                ctx.explanation.insert(item, this);
+                return {};
+            }
+        }
+
+        // phase > first_phase_
+        if (!hasSubscriber(ctx.phase, ctx.requester)) {
+            return {};
+        }
+
+        return ExplanationItem().line("Scan stored [id={}]", uniq_id_);
+    }
+
     OperationPtr source_;
     MemberSubscriber<Materialize> sub_{this, &Materialize::consume};
     std::optional<std::vector<exec::ConstRecordPtr>> materialized_ = std::nullopt;
     int first_phase_ = -1;
+    int uniq_id_ = util::uniqId();
 };
 
 SourcePtr materialize(OperationPtr source) {

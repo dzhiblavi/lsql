@@ -155,7 +155,19 @@ class Group : public Operation, public std::enable_shared_from_this<Group> {
         return emit(phase, nullptr);
     }
 
+    // Operation
     void init(int phase) override { source_->subscribe(phase, &sub_); }
+
+    // Operation
+    ExplanationItem explain(ExplanationCtx ctx) const override {
+        auto source = source_->explain(ctx.withRequester(&sub_));
+
+        if (!hasSubscriber(ctx.phase, ctx.requester)) {
+            return {};
+        }
+
+        return ExplanationItem().line("Group").child(source);
+    }
 
     OperationPtr source_;
     ProjectionList glist_;

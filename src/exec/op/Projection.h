@@ -74,6 +74,19 @@ class Projection : public Operation, public std::enable_shared_from_this<Project
 
     void init(int phase) override { source_->subscribe(phase, &sub_); }
 
+    // Operation
+    ExplanationItem explain(ExplanationCtx ctx) const override {
+        auto source = source_->explain(ctx.withRequester(&sub_));
+
+        if (!hasSubscriber(ctx.phase, ctx.requester)) {
+            return {};
+        }
+
+        return ExplanationItem()
+            .line("Projection ({} projectors)", projectors_.size())
+            .child(source);
+    }
+
     OperationPtr source_;
     ProjectionList projectors_;
     MemberSubscriber<Projection> sub_{this, &Projection::consume};

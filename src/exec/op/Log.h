@@ -3,6 +3,7 @@
 #include "data/Log.h"
 #include "exec/op/Source.h"
 #include "logs/log_types.h"
+#include "util/uniq_id.h"
 
 namespace lsql::exec {
 
@@ -59,10 +60,21 @@ class Log : public Source {
     }
 
  private:
+    // Operation
     void init(int) override {}
+
+    // Operation
+    ExplanationItem explain(ExplanationCtx ctx) const override {
+        if (!hasSubscriber(ctx.phase, ctx.requester)) {
+            return {};
+        }
+
+        return ExplanationItem().line("Scan {} [id={}]", log_->describe(), uniq_id_);
+    }
 
     std::shared_ptr<data::Log> log_;
     logs::LogType type_;
+    int uniq_id_ = util::uniqId();
 };
 
 }  // namespace lsql::exec
