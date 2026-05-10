@@ -2,6 +2,7 @@
 
 #include "core/verify.h"
 #include "exec/expr/Expression.h"
+#include "exec/op/Profiler.h"
 #include "exec/op/Projection.h"
 #include "exec/op/Source.h"
 
@@ -12,7 +13,7 @@ namespace lsql::exec {
 class Aggregate : public Source, public Record, public std::enable_shared_from_this<Aggregate> {
  public:
     Aggregate(OperationPtr source, ProjectionList projectors)
-        : Source(source->minPhase())
+        : Source(source->minPhase(), Profiler::profiler().registerOperation(this, "Aggregate"))
         , source_(std::move(source))
         , projectors_(std::move(projectors)) {}
 
@@ -137,7 +138,12 @@ class Aggregate : public Source, public Record, public std::enable_shared_from_t
 
     OperationPtr source_;
     ProjectionList projectors_;
-    MemberSubscriber<Aggregate> sub_{this, &Aggregate::consume};
+
+    MemberSubscriber<Aggregate> sub_{
+        this,
+        &Aggregate::consume,
+        handle_.inputHandle(&sub_),
+    };
 
     // phase state
     int first_phase_ = -1;

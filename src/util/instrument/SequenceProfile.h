@@ -2,6 +2,7 @@
 
 #include "util/Pinned.h"
 #include "util/instrument/Histogram.h"
+#include "util/instrument/duration.h"
 #include "util/instrument/types.h"
 
 #include <chrono>
@@ -30,33 +31,50 @@ class SequenceProfile {
  public:
     SequenceProfile() = default;
 
-    Item next() { return Item(this); }
-    void reset() { hist_.reset(); }
+    Item scope() { return Item(this); }
 
-    std::string report() {
-        std::stringstream ss;
-
-        ss << '[';
-
-        for (size_t bucket = 0; bucket < hist_.BucketsCount; ++bucket) {
-            if (hist_.buckets[bucket] == 0) {
-                continue;
-            }
-
-            ss << std::format(
-                "<={}: {}, ", Duration(hist_.bucketEdge(bucket)), hist_.buckets[bucket]);
-        }
-
-        ss << ']';
-        return std::move(ss).str();
+    void reset() {
+        count_ = 0;
+        total_duration_ = {};
+        hist_.reset();
     }
 
- private:
-    void push(MonotonicDuration duration) {
+    void add(MonotonicDuration duration) {
+        ++count_;
+        total_duration_ += duration;
+
         Duration dur = std::chrono::duration_cast<Duration>(duration);
         hist_.add(dur.count());
     }
 
+    std::string format() const {
+        std::stringstream ss;
+        ss << std::format(
+            "count={} total={} avg={} [",
+            count_,
+            prettyDuration(total_duration_),
+            prettyDuration(total_duration_ / count_));
+
+        for (size_t bucket = 0; bucket < hist_.BucketsCount; ++bucket) {
+            if (hist_.buckets[bucket] != 0) {
+                ss << std::format(
+                    "<={}: {}, ",
+                    prettyDuration(
+                        std::chrono::duration_cast<MonotonicDuration>(
+                            Duration(hist_.bucketEdge(bucket)))),
+                    hist_.buckets[bucket]);
+            }
+        }
+        if (ss.str().back() != '[') {
+            ss.seekp(-2, std::ios_base::end);  // remove last ', '
+        }
+        ss << "]";
+        return std::move(ss).str();
+    }
+
+ private:
+    uint32_t count_ = 0;
+    MonotonicDuration total_duration_ = {};
     util::Histogram<Bits, Resolution> hist_;
 };
 

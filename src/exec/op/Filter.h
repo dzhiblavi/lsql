@@ -8,7 +8,7 @@ namespace lsql::exec {
 class Filter : public Operation {
  public:
     Filter(OperationPtr source, ExpressionPtr condition)
-        : Operation(source->minPhase())
+        : Operation(source->minPhase(), Profiler::profiler().registerOperation(this, "Filter"))
         , source_(std::move(source))
         , condition_(std::move(condition)) {}
 
@@ -42,7 +42,11 @@ class Filter : public Operation {
 
     OperationPtr source_;
     ExpressionPtr condition_;
-    MemberSubscriber<Filter> sub_{this, &Filter::consume};
+    MemberSubscriber<Filter> sub_{
+        this,
+        &Filter::consume,
+        handle_.inputHandle(&sub_),
+    };
 };
 
 OperationPtr filter(OperationPtr source, ExpressionPtr condition) {

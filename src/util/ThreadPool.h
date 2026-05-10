@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/verify.h"
+#include "util/thread_name.h"
 
 #include <cassert>
 #include <functional>
@@ -64,7 +65,7 @@ class ThreadPool {
         workers_.reserve(threads);
 
         for (size_t i = 0; i < threads; ++i) {
-            workers_.emplace_back(&ThreadPool::worker, this);
+            workers_.emplace_back(&ThreadPool::worker, this, i);
         }
     }
 
@@ -83,7 +84,10 @@ class ThreadPool {
     }
 
  private:
-    void worker() {
+    void worker(size_t index) {
+        setThreadName(std::format("worker-{}", index));
+        llog::info("started worker thread [thread={}]", threadName());
+
         for (;;) {
             auto task = tasks_.pop();
 
@@ -98,6 +102,9 @@ class ThreadPool {
                 verify(false, "unhandled exception in ThreadPool task");
             }
         }
+
+        llog::info("stopping worker thread [thread={}]", threadName());
+        setThreadName("");
     }
 
     std::vector<std::thread> workers_;

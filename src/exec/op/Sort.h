@@ -16,7 +16,7 @@ using SortList = std::vector<exec::ExpressionPtr>;
 class Sort : public Operation, public std::enable_shared_from_this<Sort> {
  public:
     Sort(OperationPtr source, bool desc, SortList sort_list)
-        : Operation(source->minPhase())
+        : Operation(source->minPhase(), Profiler::profiler().registerOperation(this, "Sort"))
         , source_(std::move(source))
         , desc_(desc)
         , sort_list_(std::move(sort_list)) {
@@ -90,7 +90,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
     OperationPtr source_;
     bool desc_;
     SortList sort_list_;
-    MemberSubscriber<Sort> sub_{this, &Sort::consume};
+    MemberSubscriber<Sort> sub_{this, &Sort::consume, handle_.inputHandle(&sub_)};
 
     // phase state
     int curr_phase_ = 0;

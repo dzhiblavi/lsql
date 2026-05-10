@@ -51,7 +51,7 @@ class ExecVisitor : public Visitor {
             std::make_shared<exec::Log>(std::make_shared<data::PagedLog>(file), getLogType(*file));
 
         sources.push_back(op);
-        operations.push(op);
+        pushOperation(op);
     }
 
     void visit(const FileIntervalReference& node) override {
@@ -72,12 +72,12 @@ class ExecVisitor : public Visitor {
             std::make_shared<data::PagedLog>(file, from_pos, to_pos), log_type);
 
         sources.push_back(op);
-        operations.push(op);
+        pushOperation(op);
     }
 
     void visit(const Limit& node) override {
         node.source->visit(*this);
-        operations.push(exec::limit(popOperation(), node.limit));
+        pushOperation(exec::limit(popOperation(), node.limit));
     }
 
     void visit(const SelectStatement& node) override {
@@ -89,15 +89,15 @@ class ExecVisitor : public Visitor {
             })) {
             auto op = exec::aggregate(popOperation(), std::move(list));
             sources.push_back(op);
-            operations.push(op);
+            pushOperation(op);
         } else {
-            operations.push(exec::projection(popOperation(), std::move(list)));
+            pushOperation(exec::projection(popOperation(), std::move(list)));
         }
     }
 
     void visit(const GroupBySelect& node) override {
         node.source->visit(*this);
-        operations.push(
+        pushOperation(
             exec::group(
                 popOperation(),
                 projectorsList(*node.group_list),
@@ -106,7 +106,7 @@ class ExecVisitor : public Visitor {
 
     void visit(const OrderBySelect& node) override {
         node.source->visit(*this);
-        operations.push(
+        pushOperation(
             exec::sort(
                 popOperation(), expressionList(*node.order_by->order_list), node.order_by->desc));
     }
@@ -234,7 +234,7 @@ class ExecVisitor : public Visitor {
             return;
         }
 
-        operations.push(exec::filter(popOperation(), popExpression()));
+        pushOperation(exec::filter(popOperation(), popExpression()));
     }
 
     void visit(const InExpression& e) override {
@@ -245,7 +245,7 @@ class ExecVisitor : public Visitor {
         e.source->visit(*this);
         auto match = popOperation();
 
-        operations.push(exec::in(source, match, left));
+        pushOperation(exec::in(source, match, left));
     }
 
     void visit(const PercentileExpression& e) override {
@@ -271,13 +271,13 @@ class ExecVisitor : public Visitor {
             throw std::runtime_error(std::format("no such named relation {}", e.name));
         }
 
-        operations.push(named_ops[e.name]);
+        pushOperation(named_ops[e.name]);
     }
 
     void visit(const MaterializedRelation& e) override {
         e.relation->visit(*this);
         auto op = exec::materialize(popOperation());
-        operations.push(op);
+        pushOperation(op);
         sources.push_back(op);
     }
 
@@ -318,12 +318,18 @@ class ExecVisitor : public Visitor {
         return std::move(projectors);
     }
 
+    void pushOperation(exec::OperationPtr op) {
+        all_operations.push_back(op);
+        operations.push(op);
+    }
+
     std::unordered_map<std::string, exec::OperationPtr> named_ops;
     exec::ProjectionList projectors;
     std::vector<exec::ExpressionPtr> exprs;
 
     std::vector<exec::SourcePtr> sources;
     std::stack<exec::OperationPtr> operations;
+    std::vector<exec::OperationPtr> all_operations;
 };
 
 }  // namespace lsql::sql::ast

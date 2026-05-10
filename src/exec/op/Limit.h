@@ -8,7 +8,7 @@ namespace lsql::exec {
 class Limit : public Operation {
  public:
     Limit(OperationPtr source, int limit)
-        : Operation(source->minPhase())
+        : Operation(source->minPhase(), Profiler::profiler().registerOperation(this, "Limit"))
         , source_(std::move(source))
         , limit_(limit) {}
 
@@ -48,7 +48,11 @@ class Limit : public Operation {
 
     OperationPtr source_;
     const int limit_;
-    MemberSubscriber<Limit> sub_{this, &Limit::consume};
+    MemberSubscriber<Limit> sub_{
+        this,
+        &Limit::consume,
+        handle_.inputHandle(&sub_),
+    };
 
     // phase state
     int curr_phase_ = 0;

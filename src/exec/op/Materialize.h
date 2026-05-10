@@ -7,7 +7,9 @@ namespace lsql::exec {
 
 class Materialize : public Source {
  public:
-    Materialize(OperationPtr source) : Source(source->minPhase()), source_(std::move(source)) {}
+    Materialize(OperationPtr source)
+        : Source(source->minPhase(), Profiler::profiler().registerOperation(this, "Materialize"))
+        , source_(std::move(source)) {}
 
     void push(int phase) override {
         if (first_phase_ == -1) {
@@ -97,7 +99,11 @@ class Materialize : public Source {
     }
 
     OperationPtr source_;
-    MemberSubscriber<Materialize> sub_{this, &Materialize::consume};
+    MemberSubscriber<Materialize> sub_{
+        this,
+        &Materialize::consume,
+        handle_.inputHandle(&sub_),
+    };
     std::optional<std::vector<exec::ConstRecordPtr>> materialized_ = std::nullopt;
     int first_phase_ = -1;
 };

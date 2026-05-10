@@ -2,6 +2,7 @@
 
 #include "core/verify.h"
 #include "exec/op/Explanation.h"
+#include "exec/op/Profiler.h"
 #include "exec/op/Subscriber.h"
 #include "util/uniq_id.h"
 
@@ -14,7 +15,9 @@ class Operation {
     using Subscribers = std::unordered_map<int, std::unordered_set<Subscriber*>>;
 
  public:
-    explicit Operation(int min_out_phase) : min_out_phase_(min_out_phase) {}
+    Operation(int min_out_phase, Profiler::OperationHandle handle)
+        : min_out_phase_(min_out_phase)
+        , handle_(handle) {}
 
     virtual ~Operation() = default;
 
@@ -37,6 +40,7 @@ class Operation {
 
     int minPhase() const { return min_out_phase_; }
     int maxPhase() const { return max_out_phase_; }
+    int uniqId() const { return uniq_id_; }
     const Subscribers& subscribers() const { return subs_; }
 
  protected:
@@ -57,6 +61,7 @@ class Operation {
     // returns active(phase)
     bool emit(int phase, const exec::Record* record) {
         verify(active(phase));
+        auto _ = handle_.emitScope();
 
         auto&& subs = subs_[phase];
         auto it = subs.begin();
@@ -84,6 +89,9 @@ class Operation {
 
     // global phase -> subscribers
     Subscribers subs_;
+
+    // profiler handle
+    Profiler::OperationHandle handle_;
 };
 
 using OperationPtr = std::shared_ptr<Operation>;

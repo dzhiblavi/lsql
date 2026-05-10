@@ -39,7 +39,7 @@ std::string prettyDuration(MonotonicDuration duration) {
     }
 
     return std::format(
-        "{:.2f}{}", static_cast<float>(ns) / static_cast<float>(ratios[index]), names[index]);
+        "{:.1f}{}", static_cast<float>(ns) / static_cast<float>(ratios[index]), names[index]);
 }
 
 }  // namespace lsql::instr

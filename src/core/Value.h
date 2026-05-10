@@ -113,7 +113,7 @@ struct hash<lsql::null_t> {
 
 namespace lsql {
 
-size_t Value::hash() const {
+inline size_t Value::hash() const {
     return std::hash<decltype(val_)>{}(val_);
 }
 

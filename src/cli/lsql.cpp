@@ -201,7 +201,7 @@ class Print : public exec::Subscriber {
     std::stringstream ss_;
 };
 
-void run(int max_phase, const auto& sources, const auto& operations, util::ThreadPool& tp) {
+void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
     for (int phase = 0; phase <= max_phase; ++phase) {
         llog::info("executing phase {}", phase);
         std::latch latch(sources.size());
@@ -222,11 +222,8 @@ void run(int max_phase, const auto& sources, const auto& operations, util::Threa
 
         latch.wait();
         llog::info("phase {} completed", phase);
-    }
-
-    llog::info("dumping the output");
-    for (auto&& op : operations) {
-        op->done();
+        llog::info("profile {}", exec::Profiler::profiler().report());
+        exec::Profiler::profiler().reset();
     }
 }
 
@@ -297,9 +294,14 @@ void main(std::span<const char*> argv) {
         explain(max_phase, ops);
     } else {
         util::ThreadPool pool(threads_arg.getValue());
-        run(max_phase, sources, ops, pool);
+        run(max_phase, sources, pool);
         pool.stop();
         pool.join();
+
+        llog::info("dumping the output");
+        for (auto&& op : ops) {
+            op->done();
+        }
     }
 }
 
