@@ -1,12 +1,14 @@
 #include "exec/op/Operation.h"
 #include "sql/ast/ExecVisitor.h"
 #include "sql/parser/parser.h"
-
-#include <magic_enum/magic_enum.hpp>
-#include <tclap/CmdLine.h>
+#include "util/ThreadPool.h"
 
 #include <llog/load.h>
 #include <llog/log.h>
+
+#include <latch>
+#include <magic_enum/magic_enum.hpp>
+#include <tclap/CmdLine.h>
 
 void set_parser_context(void* parser, lsql::sql::parse::Context* ctx);
 int yylex_init(void** scanner);
@@ -47,6 +49,15 @@ TCLAP::ValueArg<std::string> log_level_arg{
     "Trace/Debug/Info/Warn/Err/Critical/Off",
 };
 
+TCLAP::ValueArg<unsigned> threads_arg{
+    "j",
+    "threads",
+    "max number of threads",
+    false,
+    1,
+    "unsigned",
+};
+
 TCLAP::SwitchArg explain_arg{
     "e",
     "explain",
@@ -59,6 +70,7 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&format_arg);
     cmd.add(&log_level_arg);
     cmd.add(&explain_arg);
+    cmd.add(&threads_arg);
     cmd.setExceptionHandling(false);
 
     try {
@@ -189,17 +201,23 @@ class Print : public exec::Subscriber {
     std::stringstream ss_;
 };
 
-void run(int max_phase, const auto& sources, const auto& operations) {
+void run(int max_phase, const auto& sources, const auto& operations, util::ThreadPool& tp) {
     for (int phase = 0; phase <= max_phase; ++phase) {
         llog::info("executing phase {}", phase);
+        std::latch latch(sources.size());
 
-        for (auto&& source : sources) {
-            if (phase > source->maxPhase()) {
-                continue;
-            }
+        for (auto source : sources) {
+            tp.enqueue([source, phase, &latch] {
+                if (phase <= source->maxPhase()) {
+                    source->push(phase);
+                }
 
-            source->push(phase);
+                latch.count_down();
+            });
         }
+
+        latch.wait();
+        llog::info("phase {} completed", phase);
     }
 
     llog::info("dumping the output");
@@ -210,7 +228,7 @@ void run(int max_phase, const auto& sources, const auto& operations) {
 
 void explain(int max_phase, const auto& operations) {
     for (int phase = 0; phase <= max_phase; ++phase) {
-        llog::info("executing phase {}", phase);
+        llog::info("planning phase {}", phase);
 
         exec::Explanation explanation;
         exec::ExplanationCtx ctx{
@@ -274,7 +292,10 @@ void main(std::span<const char*> argv) {
     if (explain_arg.getValue()) {
         explain(max_phase, ops);
     } else {
-        run(max_phase, sources, ops);
+        util::ThreadPool pool(threads_arg.getValue());
+        run(max_phase, sources, ops, pool);
+        pool.stop();
+        pool.join();
     }
 }
 
