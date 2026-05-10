@@ -87,7 +87,9 @@ class ExecVisitor : public Visitor {
         if (std::ranges::any_of(*node.select_list, [](const std::unique_ptr<ast::SelectItem>& x) {
                 return x->expr->type() == ExpressionType::Group;
             })) {
-            operations.push(exec::aggregate(popOperation(), std::move(list)));
+            auto op = exec::aggregate(popOperation(), std::move(list));
+            sources.push_back(op);
+            operations.push(op);
         } else {
             operations.push(exec::projection(popOperation(), std::move(list)));
         }

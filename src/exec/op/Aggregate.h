@@ -2,51 +2,49 @@
 
 #include "exec/expr/Expression.h"
 #include "exec/op/Projection.h"
+#include "exec/op/Source.h"
 
 #include <cassert>
 #include <vector>
 
 namespace lsql::exec {
 
-class AggregateRecord : public exec::Record {
- public:
-    AggregateRecord(std::shared_ptr<const ProjectionList> projectors, std::vector<Value> values)
-        : projectors_(projectors)
-        , values_(std::move(values)) {}
-
-    values_t values() const override {
-        values_t values;
-        for (size_t i = 0; i < projectors_->size(); ++i) {
-            values.emplace((*projectors_)[i]->name, values_[i]);
-        }
-        return values;
-    }
-
-    Value value(std::string_view name) const override {
-        auto it = std::ranges::find(*projectors_, name, [](auto&& i) { return i->name; });
-        assert(it != projectors_->end());
-        return values_[it - projectors_->begin()];
-    }
-
-    exec::ConstRecordPtr clone() const override { return std::make_shared<AggregateRecord>(*this); }
-
- private:
-    std::shared_ptr<const ProjectionList> projectors_;
-    std::vector<Value> values_;
-};
-
-class Aggregate : public Operation, public std::enable_shared_from_this<Aggregate> {
+class Aggregate : public Source, public Record, public std::enable_shared_from_this<Aggregate> {
  public:
     Aggregate(OperationPtr source, ProjectionList projectors)
-        : Operation(1, source->minPhase())
+        : Source(1, source->minPhase())
         , source_(std::move(source))
         , projectors_(std::move(projectors)) {}
 
  private:
-    bool consume(int phase, const exec::Record* record) {
-        if (curr_phase_ != phase) {
-            curr_phase_ = phase;
+    void push(int phase) override {
+        if (first_phase_ == -1) {
+            return;
+        }
 
+        if (phase <= first_phase_) {
+            // consume()
+            return;
+        }
+
+        pushValue(phase);
+    }
+
+    bool pushValue(int phase) {
+        assert(phase >= first_phase_);
+
+        if (active(phase) && emit(phase, this)) {
+            emit(phase, nullptr);
+        }
+
+        return false;
+    }
+
+    // Subscriber
+    bool consume(int phase, const exec::Record* record) {
+        assert(phase == first_phase_);
+
+        if (aggregators_.size() != projectors_.size()) {
             assert(aggregators_.empty());
             aggregators_.reserve(projectors_.size());
             for (auto&& proj : projectors_) {
@@ -57,38 +55,63 @@ class Aggregate : public Operation, public std::enable_shared_from_this<Aggregat
         assert(aggregators_.size() == projectors_.size());
 
         if (record != nullptr) {
-            for (size_t i = 0; i < projectors_.size(); ++i) {
-                aggregators_[i]->feed(*record);
+            for (auto&& aggregator : aggregators_) {
+                aggregator->feed(*record);
             }
 
             return active(phase);
         }
 
         // end of stream
-        std::vector<Value> values;
-        values.reserve(aggregators_.size());
-        for (auto&& aggregator : aggregators_) {
-            values.push_back(aggregator->get());
+        values_.reserve(aggregators_.size());
+        for (size_t i = 0; i < projectors_.size(); ++i) {
+            values_.emplace(projectors_[i]->name, aggregators_[i]->get());
         }
         aggregators_.clear();
 
-        AggregateRecord rec({shared_from_this(), &projectors_}, std::move(values));
-        emit(phase, &rec);
-        return emit(phase, nullptr);
+        return pushValue(phase);
     }
 
-    void subscribe(int phase) override { source_->subscribe(phase, &sub_); }
+    void subscribe(int out_phase) override {
+        if (first_phase_ != -1) {
+            // this may be an incorrect expectation
+            assert(out_phase >= first_phase_);
+            return;
+        }
+
+        first_phase_ = out_phase;
+        source_->subscribe(out_phase, &sub_);
+    }
+
+    // Record
+    values_t values() const override {
+        values_t values;
+        for (auto&& [k, v] : values_) {
+            values.emplace(k, v);
+        }
+        return values;
+    }
+
+    // Record
+    Value value(std::string_view name) const override {
+        auto it = values_.find(name);
+        return it == values_.end() ? null : it->second;
+    }
+
+    // Record
+    exec::ConstRecordPtr clone() const override { return shared_from_this(); }
 
     OperationPtr source_;
     ProjectionList projectors_;
     MemberSubscriber<Aggregate> sub_{this, &Aggregate::consume};
 
     // phase state
-    int curr_phase_ = -1;
+    int first_phase_ = -1;
     std::vector<exec::AggregatorPtr> aggregators_;
+    std::unordered_map<std::string_view, Value> values_;
 };
 
-OperationPtr aggregate(OperationPtr source, ProjectionList slist) {
+SourcePtr aggregate(OperationPtr source, ProjectionList slist) {
     return std::make_shared<Aggregate>(std::move(source), std::move(slist));
 }
 
