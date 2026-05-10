@@ -77,7 +77,7 @@ class Projection : public Operation, public std::enable_shared_from_this<Project
         return emit(phase, &rec);
     }
 
-    void subscribe(int phase) override { source_->subscribe(phase, &sub_); }
+    void init(int phase) override { source_->subscribe(phase, &sub_); }
 
     OperationPtr source_;
     ProjectionList projectors_;

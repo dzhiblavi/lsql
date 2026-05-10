@@ -72,7 +72,8 @@ class Aggregate : public Source, public Record, public std::enable_shared_from_t
         return pushValue(phase);
     }
 
-    void subscribe(int out_phase) override {
+    // Operation
+    void init(int out_phase) override {
         if (first_phase_ != -1) {
             // this may be an incorrect expectation
             assert(out_phase >= first_phase_);

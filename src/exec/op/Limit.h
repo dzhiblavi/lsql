@@ -12,6 +12,7 @@ class Limit : public Operation {
         , limit_(limit) {}
 
  private:
+    // Subscriber
     bool consume(int phase, const exec::Record* record) {
         if (curr_phase_ != phase) {
             curr_phase_ = phase;
@@ -30,7 +31,8 @@ class Limit : public Operation {
         }
     }
 
-    void subscribe(int phase) override { source_->subscribe(phase, &sub_); }
+    // Operation
+    void init(int phase) override { source_->subscribe(phase, &sub_); }
 
     OperationPtr source_;
     const int limit_;

@@ -49,7 +49,7 @@ class In : public Operation {
         return false;
     }
 
-    void subscribe(int out_phase) override {
+    void init(int out_phase) override {
         assert(out_phase >= minPhase());
 
         if (match_phase_ == -1) {

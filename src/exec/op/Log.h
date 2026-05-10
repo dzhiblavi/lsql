@@ -59,7 +59,7 @@ class Log : public Source {
     }
 
  private:
-    void subscribe(int) override {}
+    void init(int) override {}
 
     std::shared_ptr<data::Log> log_;
     logs::LogType type_;

@@ -14,6 +14,7 @@ class Operation {
     virtual ~Operation() = default;
 
     // outbound operations call this method to receive records
+    // idempotent
     void subscribe(int out_phase, Subscriber* sub) {
         assert(out_phase >= minPhase());
 
@@ -24,7 +25,7 @@ class Operation {
         max_out_phase_ = std::max(max_out_phase_, out_phase);
         subs_[out_phase].insert(sub);
 
-        subscribe(out_phase);
+        init(out_phase);
     }
 
     int minPhase() const { return min_out_phase_; }
@@ -32,7 +33,8 @@ class Operation {
 
  protected:
     // the way for downstream operations to ask for output on phase `out_phase`
-    virtual void subscribe(int out_phase) = 0;
+    // idempotent
+    virtual void init(int out_phase) = 0;
 
     bool active(int phase) const {
         auto it = subs_.find(phase);

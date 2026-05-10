@@ -155,7 +155,7 @@ class Group : public Operation, public std::enable_shared_from_this<Group> {
         return emit(phase, nullptr);
     }
 
-    void subscribe(int phase) override { source_->subscribe(phase, &sub_); }
+    void init(int phase) override { source_->subscribe(phase, &sub_); }
 
     OperationPtr source_;
     ProjectionList glist_;

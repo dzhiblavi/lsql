@@ -14,7 +14,7 @@ class Materialize : public Source {
         }
 
         if (phase <= first_phase_) {
-            // using consume() for the first phase
+            // consume()
             return;
         }
 
@@ -22,6 +22,7 @@ class Materialize : public Source {
     }
 
  private:
+    // Subscriber
     bool consume(int phase, const exec::Record* record) {
         assert(phase == first_phase_);
 
@@ -53,7 +54,8 @@ class Materialize : public Source {
         emit(phase, nullptr);
     }
 
-    void subscribe(int out_phase) override {
+    // Operation
+    void init(int out_phase) override {
         if (first_phase_ != -1) {
             // this may be an incorrect expectation
             assert(out_phase >= first_phase_);

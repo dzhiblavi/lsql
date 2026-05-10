@@ -13,6 +13,7 @@ class Filter : public Operation {
         , condition_(std::move(condition)) {}
 
  private:
+    // Subscriber
     bool consume(int phase, const exec::Record* record) {
         if (record == nullptr) {
             return emit(phase, nullptr);
@@ -25,7 +26,8 @@ class Filter : public Operation {
         return active(phase);
     }
 
-    void subscribe(int out_phase) override { source_->subscribe(out_phase, &sub_); }
+    // Operation
+    void init(int out_phase) override { source_->subscribe(out_phase, &sub_); }
 
     OperationPtr source_;
     ExpressionPtr condition_;

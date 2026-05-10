@@ -59,7 +59,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
         return emit(phase, nullptr);
     }
 
-    void subscribe(int phase) override { source_->subscribe(phase, &sub_); }
+    void init(int phase) override { source_->subscribe(phase, &sub_); }
 
     std::vector<Value> key(const exec::Record& record) const {
         std::vector<Value> result;
