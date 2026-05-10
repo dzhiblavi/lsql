@@ -2,6 +2,7 @@
 
 #include "exec/expr/Expression.h"
 #include "exec/op/Operation.h"
+#include "core/verify.h"
 
 #include <llog/log.h>
 
@@ -28,12 +29,17 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
     bool consume(int phase, const exec::Record* record) {
         if (curr_phase_ != phase) {
             curr_phase_ = phase;
-            assert(records_.empty());
+            verify(records_.empty());
         }
 
         if (record != nullptr) {
             records_.push_back(record->clone());
-            return active(phase);
+
+            if (!active(phase)) {
+                records_.clear();
+                return false;
+            }
+            return true;
         }
 
         // end of stream
@@ -63,6 +69,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
 
     std::vector<Value> key(const exec::Record& record) const {
         std::vector<Value> result;
+        result.reserve(sort_list_.size());
         for (auto&& col : sort_list_) {
             result.push_back(col->eval(record));
         }

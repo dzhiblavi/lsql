@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/verify.h"
 #include "exec/expr/Expression.h"
 #include "exec/op/Operation.h"
 
@@ -15,7 +16,7 @@ class In : public Operation {
 
  private:
     bool consumeMatch(int phase, const exec::Record* record) {
-        assert(phase == match_phase_);
+        verify(phase == match_phase_);
 
         if (record == nullptr) {
             // not emitting because it's not the last phase
@@ -50,7 +51,7 @@ class In : public Operation {
     }
 
     void init(int out_phase) override {
-        assert(out_phase >= minPhase());
+        verify(out_phase >= minPhase());
 
         if (match_phase_ == -1) {
             match_phase_ = out_phase - 1;
@@ -58,7 +59,7 @@ class In : public Operation {
         }
 
         // this may be an incorrect expectation
-        assert(out_phase > match_phase_);
+        verify(out_phase > match_phase_);
 
         source_->subscribe(out_phase, &sub_source_);
     }

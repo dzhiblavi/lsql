@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/verify.h"
 #include "exec/op/Source.h"
 
 namespace lsql::exec {
@@ -24,7 +25,7 @@ class Materialize : public Source {
  private:
     // Subscriber
     bool consume(int phase, const exec::Record* record) {
-        assert(phase == first_phase_);
+        verify(phase == first_phase_);
 
         if (!materialized_) {
             materialized_.emplace();
@@ -39,7 +40,7 @@ class Materialize : public Source {
     }
 
     void pushMaterialized(int phase) {
-        assert(materialized_.has_value());
+        verify(materialized_.has_value());
 
         if (!active(phase)) {
             return;
@@ -58,7 +59,7 @@ class Materialize : public Source {
     void init(int out_phase) override {
         if (first_phase_ != -1) {
             // this may be an incorrect expectation
-            assert(out_phase >= first_phase_);
+            verify(out_phase >= first_phase_);
             return;
         }
 

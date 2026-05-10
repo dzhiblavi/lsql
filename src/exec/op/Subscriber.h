@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/verify.h"
 #include "exec/Record.h"
 
 namespace lsql::exec {
@@ -19,8 +20,8 @@ class MemberSubscriber : public Subscriber {
     using MethodType = bool (Self::*)(int, const exec::Record*);
 
     MemberSubscriber(Self* self, MethodType method) : self_(self), method_(method) {
-        assert(self != nullptr);
-        assert(method != nullptr);
+        verify(self != nullptr);
+        verify(method != nullptr);
     }
 
     bool consume(int phase, const exec::Record* record) override {

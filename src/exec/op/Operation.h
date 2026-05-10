@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/verify.h"
 #include "exec/op/Subscriber.h"
 
 #include <memory>
@@ -16,7 +17,7 @@ class Operation {
     // outbound operations call this method to receive records
     // idempotent
     void subscribe(int out_phase, Subscriber* sub) {
-        assert(out_phase >= minPhase());
+        verify(out_phase >= minPhase());
 
         if (subs_[out_phase].contains(sub)) {
             return;
@@ -43,7 +44,7 @@ class Operation {
 
     // returns active(phase)
     bool emit(int phase, const exec::Record* record) {
-        assert(active(phase));
+        verify(active(phase));
 
         auto&& subs = subs_[phase];
         auto it = subs.begin();

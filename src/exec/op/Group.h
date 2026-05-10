@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/verify.h"
 #include "exec/Record.h"
 #include "exec/op/Projection.h"
 
@@ -53,8 +54,7 @@ class GroupRecord : public exec::Record {
 
     Value value(std::string_view name) const override {
         auto it = values_->find(name);
-        assert(it != values_->end());
-        return it->second;
+        return it == values_->end() ? null : it->second;
     }
 
     exec::ConstRecordPtr clone() const override { return std::make_shared<GroupRecord>(*this); }
@@ -81,7 +81,7 @@ class Group : public Operation, public std::enable_shared_from_this<Group> {
     bool consume(int phase, const exec::Record* record) {
         if (curr_phase_ != phase) {
             curr_phase_ = phase;
-            assert(groups_.empty());
+            verify(groups_.empty());
         }
 
         if (record != nullptr) {

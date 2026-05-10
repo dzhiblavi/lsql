@@ -1,10 +1,10 @@
 #pragma once
 
+#include "core/verify.h"
 #include "exec/expr/Expression.h"
 #include "exec/op/Projection.h"
 #include "exec/op/Source.h"
 
-#include <cassert>
 #include <vector>
 
 namespace lsql::exec {
@@ -31,7 +31,7 @@ class Aggregate : public Source, public Record, public std::enable_shared_from_t
     }
 
     bool pushValue(int phase) {
-        assert(phase >= first_phase_);
+        verify(phase >= first_phase_);
 
         if (active(phase) && emit(phase, this)) {
             emit(phase, nullptr);
@@ -42,17 +42,17 @@ class Aggregate : public Source, public Record, public std::enable_shared_from_t
 
     // Subscriber
     bool consume(int phase, const exec::Record* record) {
-        assert(phase == first_phase_);
+        verify(phase == first_phase_);
 
         if (aggregators_.size() != projectors_.size()) {
-            assert(aggregators_.empty());
+            verify(aggregators_.empty());
             aggregators_.reserve(projectors_.size());
             for (auto&& proj : projectors_) {
                 aggregators_.push_back(proj->expr->aggregator());
             }
         }
 
-        assert(aggregators_.size() == projectors_.size());
+        verify(aggregators_.size() == projectors_.size());
 
         if (record != nullptr) {
             for (auto&& aggregator : aggregators_) {
@@ -76,7 +76,7 @@ class Aggregate : public Source, public Record, public std::enable_shared_from_t
     void init(int out_phase) override {
         if (first_phase_ != -1) {
             // this may be an incorrect expectation
-            assert(out_phase >= first_phase_);
+            verify(out_phase >= first_phase_);
             return;
         }
 

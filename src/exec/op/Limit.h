@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/verify.h"
 #include "exec/op/Operation.h"
 
 namespace lsql::exec {
@@ -19,7 +20,7 @@ class Limit : public Operation {
             curr_limit_ = limit_;
         }
 
-        assert(curr_limit_ > 0);
+        verify(curr_limit_ > 0);
         if (!emit(phase, record)) {
             return false;
         }

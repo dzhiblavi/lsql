@@ -4,7 +4,6 @@
 #include "exec/op/Operation.h"
 
 #include <algorithm>
-#include <cassert>
 #include <vector>
 
 namespace lsql::exec {
