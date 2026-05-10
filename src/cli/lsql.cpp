@@ -208,8 +208,12 @@ void run(int max_phase, const auto& sources, const auto& operations, util::Threa
 
         for (auto source : sources) {
             tp.enqueue([source, phase, &latch] {
-                if (phase <= source->maxPhase()) {
-                    source->push(phase);
+                try {
+                    if (phase <= source->maxPhase()) {
+                        source->push(phase);
+                    }
+                } catch (const std::exception& e) {
+                    verify(false, "unhandled exception: {}", e.what());
                 }
 
                 latch.count_down();

@@ -2,14 +2,14 @@
 
 #include <llog/log.h>
 
-#define verify(...)                                            \
-    [&] {                                                      \
-        auto&& res = __VA_ARGS__;                              \
-                                                               \
-        if (!static_cast<bool>(res)) [[unlikely]] {            \
-            llog::critical("verify(" #__VA_ARGS__ ") failed"); \
-            std::terminate();                                  \
-        }                                                      \
-                                                               \
-        return std::forward<decltype(__VA_ARGS__)>(res);       \
+#define verify(X, ...)                                                          \
+    [&] {                                                                       \
+        auto&& res = X;                                                         \
+                                                                                \
+        if (!static_cast<bool>(res)) [[unlikely]] {                             \
+            llog::critical("verify(" #X ") failed" __VA_OPT__(, ) __VA_ARGS__); \
+            std::terminate();                                                   \
+        }                                                                       \
+                                                                                \
+        return std::forward<decltype(X)>(res);                                  \
     }()

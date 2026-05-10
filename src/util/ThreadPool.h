@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/verify.h"
+
 #include <cassert>
 #include <functional>
 #include <queue>
@@ -25,7 +27,7 @@ class MPMCLockedQueue {
             return std::nullopt;
         }
 
-        assert(!queue_.empty());
+        verify(!queue_.empty());
         return popQueue();
     }
 
@@ -90,7 +92,11 @@ class ThreadPool {
                 break;
             }
 
-            (*task)();
+            try {
+                (*task)();
+            } catch (...) {
+                verify(false, "unhandled exception in ThreadPool task");
+            }
         }
     }
 
