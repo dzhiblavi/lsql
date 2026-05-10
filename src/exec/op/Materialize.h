@@ -8,7 +8,7 @@ namespace lsql::exec {
 
 class Materialize : public Source {
  public:
-    Materialize(OperationPtr source) : Source(1, source->minPhase()), source_(std::move(source)) {}
+    Materialize(OperationPtr source) : Source(source->minPhase()), source_(std::move(source)) {}
 
     void push(int phase) override {
         if (first_phase_ == -1) {

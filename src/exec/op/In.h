@@ -10,7 +10,7 @@ namespace lsql::exec {
 class In : public Operation {
  public:
     In(OperationPtr source, OperationPtr match_source, ExpressionPtr proj)
-        : Operation(2, std::max(source->minPhase(), match_source->minPhase() + 1))
+        : Operation(std::max(source->minPhase(), match_source->minPhase() + 1))
         , source_(std::move(source))
         , match_source_(std::move(match_source))
         , proj_(std::move(proj)) {}

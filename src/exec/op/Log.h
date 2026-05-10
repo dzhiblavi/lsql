@@ -38,7 +38,7 @@ class LineRecord : public exec::Record {
 class Log : public Source {
  public:
     Log(std::shared_ptr<data::Log> log, logs::LogType type)
-        : Source(1, 0)
+        : Source(0)
         , log_(std::move(log))
         , type_(type) {}
 

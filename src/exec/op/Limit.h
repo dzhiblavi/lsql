@@ -8,7 +8,7 @@ namespace lsql::exec {
 class Limit : public Operation {
  public:
     Limit(OperationPtr source, int limit)
-        : Operation(1, source->minPhase())
+        : Operation(source->minPhase())
         , source_(std::move(source))
         , limit_(limit) {}
 

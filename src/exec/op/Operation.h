@@ -13,7 +13,7 @@ class Operation {
     using Subscribers = std::unordered_map<int, std::unordered_set<Subscriber*>>;
 
  public:
-    Operation(int phases, int min_out_phase) : phases_(phases), min_out_phase_(min_out_phase) {}
+    explicit Operation(int min_out_phase) : min_out_phase_(min_out_phase) {}
 
     virtual ~Operation() = default;
 
@@ -34,7 +34,6 @@ class Operation {
 
     virtual ExplanationItem explain(ExplanationCtx ctx) const = 0;
 
-    int phases() const { return phases_; }
     int minPhase() const { return min_out_phase_; }
     int maxPhase() const { return max_out_phase_; }
     const Subscribers& subscribers() const { return subs_; }
@@ -73,9 +72,6 @@ class Operation {
 
         return active(phase);
     }
-
-    // total phases in this operation
-    const int phases_ = 0;
 
     // the phase the result is available at
     const int min_out_phase_ = 0;

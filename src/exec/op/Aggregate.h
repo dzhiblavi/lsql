@@ -13,7 +13,7 @@ namespace lsql::exec {
 class Aggregate : public Source, public Record, public std::enable_shared_from_this<Aggregate> {
  public:
     Aggregate(OperationPtr source, ProjectionList projectors)
-        : Source(1, source->minPhase())
+        : Source(source->minPhase())
         , source_(std::move(source))
         , projectors_(std::move(projectors)) {}
 

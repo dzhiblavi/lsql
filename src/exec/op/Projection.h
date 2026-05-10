@@ -58,7 +58,7 @@ class ProjectionRecord : public exec::Record {
 class Projection : public Operation, public std::enable_shared_from_this<Projection> {
  public:
     Projection(OperationPtr source, ProjectionList projectors)
-        : Operation(1, source->minPhase())
+        : Operation(source->minPhase())
         , source_(std::move(source))
         , projectors_(std::move(projectors)) {}
 

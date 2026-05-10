@@ -16,7 +16,7 @@ using SortList = std::vector<exec::ExpressionPtr>;
 class Sort : public Operation, public std::enable_shared_from_this<Sort> {
  public:
     Sort(OperationPtr source, bool desc, SortList sort_list)
-        : Operation(1, source->minPhase())
+        : Operation(source->minPhase())
         , source_(std::move(source))
         , desc_(desc)
         , sort_list_(std::move(sort_list)) {
