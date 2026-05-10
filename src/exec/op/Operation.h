@@ -3,6 +3,7 @@
 #include "core/verify.h"
 #include "exec/op/Explanation.h"
 #include "exec/op/Subscriber.h"
+#include "util/uniq_id.h"
 
 #include <memory>
 #include <unordered_set>
@@ -75,6 +76,7 @@ class Operation {
 
     // the phase the result is available at
     const int min_out_phase_ = 0;
+    const int uniq_id_ = util::uniqId();
 
  protected:
     // the max out phase

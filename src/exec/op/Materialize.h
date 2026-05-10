@@ -2,7 +2,6 @@
 
 #include "core/verify.h"
 #include "exec/op/Source.h"
-#include "util/uniq_id.h"
 
 namespace lsql::exec {
 
@@ -101,7 +100,6 @@ class Materialize : public Source {
     MemberSubscriber<Materialize> sub_{this, &Materialize::consume};
     std::optional<std::vector<exec::ConstRecordPtr>> materialized_ = std::nullopt;
     int first_phase_ = -1;
-    int uniq_id_ = util::uniqId();
 };
 
 SourcePtr materialize(OperationPtr source) {

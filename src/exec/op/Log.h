@@ -3,7 +3,6 @@
 #include "data/Log.h"
 #include "exec/op/Source.h"
 #include "logs/log_types.h"
-#include "util/uniq_id.h"
 
 namespace lsql::exec {
 
@@ -74,7 +73,6 @@ class Log : public Source {
 
     std::shared_ptr<data::Log> log_;
     logs::LogType type_;
-    int uniq_id_ = util::uniqId();
 };
 
 }  // namespace lsql::exec

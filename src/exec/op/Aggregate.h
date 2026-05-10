@@ -4,7 +4,6 @@
 #include "exec/expr/Expression.h"
 #include "exec/op/Projection.h"
 #include "exec/op/Source.h"
-#include "util/uniq_id.h"
 
 #include <vector>
 
@@ -139,7 +138,6 @@ class Aggregate : public Source, public Record, public std::enable_shared_from_t
     OperationPtr source_;
     ProjectionList projectors_;
     MemberSubscriber<Aggregate> sub_{this, &Aggregate::consume};
-    int uniq_id_ = util::uniqId();
 
     // phase state
     int first_phase_ = -1;

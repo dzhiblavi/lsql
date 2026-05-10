@@ -3,7 +3,6 @@
 #include "core/verify.h"
 #include "exec/expr/Expression.h"
 #include "exec/op/Operation.h"
-#include "util/uniq_id.h"
 
 namespace lsql::exec {
 
@@ -111,7 +110,6 @@ class In : public Operation {
     ExpressionPtr proj_;
     MemberSubscriber<In> sub_source_{this, &In::consumeSource};
     MemberSubscriber<In> sub_match_{this, &In::consumeMatch};
-    int uniq_id_ = util::uniqId();
 
     // phase at which values_ are built
     int match_phase_ = -1;
