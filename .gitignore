@@ -1,5 +1,6 @@
 /target
 /CMakeUserPresets.json
-/tests/logs/*.log
+/_logs
 /prog.sql
 /ref.out
+/output

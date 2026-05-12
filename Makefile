@@ -50,6 +50,17 @@ generate-lexer:
 build: configure
 	cmake --build --preset $(CONAN_PRESET)
 
+build-docker-linux-builder:
+	docker build                    \
+		--tag logsql-builder:latest \
+		--build-arg LLVM_VERSION=20 \
+		-f ./build/images/Dockerfile.ubuntu2004 .
+
+build-docker-linux-%:
+	docker run                         \
+		-v $(shell pwd)/output:/output \
+		logsql-builder:latest armv8 $*
+
 gen-doc: deps
 	cd $(TARGET_DIR) && $(CMAKE) --build . --target documentation
 

@@ -1,0 +1,27 @@
+FROM ubuntu:20.04
+
+ARG LLVM_VERSION
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update && apt install -y git wget lsb-release gpg software-properties-common python3-pip libssl-dev
+RUN pip3 install conan
+
+WORKDIR /build
+
+COPY ./build/scripts/install_cmake.sh .
+RUN chmod +x ./install_cmake.sh && ./install_cmake.sh
+
+COPY ./build/scripts/install_llvm.sh .
+RUN chmod +x ./install_llvm.sh && ./install_llvm.sh "${LLVM_VERSION}"
+
+COPY cmake ./cmake
+COPY conan ./conan
+COPY src ./src
+COPY tests ./tests
+COPY CMakeLists.txt .
+COPY conanfile.txt .
+COPY ./build/scripts/Makefile .
+
+COPY ./build/scripts/build_linux.sh .
+RUN chmod +x /build/build_linux.sh
+ENTRYPOINT ["/build/build_linux.sh"]
