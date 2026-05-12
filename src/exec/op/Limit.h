@@ -2,6 +2,7 @@
 
 #include "core/verify.h"
 #include "exec/op/Operation.h"
+#include "exec/op/MemberSubscriber.h"
 
 namespace lsql::exec {
 

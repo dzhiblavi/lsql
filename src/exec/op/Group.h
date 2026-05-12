@@ -3,6 +3,7 @@
 #include "core/verify.h"
 #include "exec/Record.h"
 #include "exec/op/Projection.h"
+#include "exec/op/MemberSubscriber.h"
 
 #include <vector>
 

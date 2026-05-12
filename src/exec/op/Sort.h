@@ -2,6 +2,7 @@
 
 #include "core/verify.h"
 #include "exec/expr/Expression.h"
+#include "exec/op/MemberSubscriber.h"
 #include "exec/op/Operation.h"
 #include "util/instrument/Timer.h"
 

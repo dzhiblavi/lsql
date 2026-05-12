@@ -188,7 +188,7 @@ struct OperationHandle {
         instr::MonotonicTimePoint started_at = {};
         ThreadOperationStats* stats = nullptr;
         OperationHandle* self = nullptr;
-        InputHandle::ConsumeScope** parent = nullptr;  // emit may be called from inside consume
+        InputHandle::ConsumeScope** parent = nullptr;
     };
 
     OperationHandle() = default;
