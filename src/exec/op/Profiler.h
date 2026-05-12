@@ -37,6 +37,7 @@ struct ThreadOperationStats {
     void reset() {
         records_out = 0;
         emit_profile.reset();
+        custom_info.clear();
     }
 
     template <typename... Args>

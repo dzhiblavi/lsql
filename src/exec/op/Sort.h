@@ -3,6 +3,7 @@
 #include "core/verify.h"
 #include "exec/expr/Expression.h"
 #include "exec/op/Operation.h"
+#include "util/instrument/Timer.h"
 
 #include <llog/log.h>
 
@@ -14,6 +15,8 @@ namespace lsql::exec {
 using SortList = std::vector<ExpressionPtr>;
 
 class Sort : public Operation, public std::enable_shared_from_this<Sort> {
+    using Key = std::vector<Value>;
+
  public:
     Sort(OperationPtr source, bool desc, SortList sort_list)
         : Operation(source->minPhase(), "Sort")
@@ -33,7 +36,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
         }
 
         if (record != nullptr) {
-            records_.push_back(record->clone());
+            records_.emplace_back(record->clone(), key(*record));
 
             if (!active(phase)) {
                 records_.clear();
@@ -43,21 +46,24 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
         }
 
         // end of stream
-        if (auto curr = prof_.current()) {
-            curr->custom("sort dataset size: {} (phase {})", records_.size(), phase);
-        }
+        instr::Timer timer;
 
         if (desc_) {
-            std::sort(records_.begin(), records_.end(), [this](auto&& l, auto&& r) {
-                return key(*l) > key(*r);
+            std::sort(records_.begin(), records_.end(), [](auto&& l, auto&& r) {
+                return l.second > r.second;
             });
         } else {
-            std::sort(records_.begin(), records_.end(), [this](auto&& l, auto&& r) {
-                return key(*l) < key(*r);
+            std::sort(records_.begin(), records_.end(), [](auto&& l, auto&& r) {
+                return l.second < r.second;
             });
         }
 
-        for (auto&& record : records_) {
+        if (auto curr = prof_.current()) {
+            curr->custom("dataset size: {}", records_.size(), phase);
+            curr->custom("sort time: {}", instr::prettyDuration(timer.elapsed()));
+        }
+
+        for (auto&& [record, _] : records_) {
             if (!emit(phase, record.get())) {
                 return false;
             }
@@ -69,8 +75,8 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
 
     void init(int phase) override { source_->subscribe(phase, &sub_); }
 
-    std::vector<Value> key(const Record& record) const {
-        std::vector<Value> result;
+    Key key(const Record& record) const {
+        Key result;
         result.reserve(sort_list_.size());
         for (auto&& col : sort_list_) {
             result.push_back(col->eval(record));
@@ -96,7 +102,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
 
     // phase state
     int curr_phase_ = 0;
-    std::vector<ConstRecordPtr> records_;
+    std::vector<std::pair<ConstRecordPtr, Key>> records_;
 };
 
 OperationPtr sort(OperationPtr source, SortList glist, bool desc) {
