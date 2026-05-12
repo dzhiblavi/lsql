@@ -15,7 +15,7 @@ class Histogram {
     static_assert(Bits <= 31);
     static_assert(Bits % Resolution == 0);
     static constexpr size_t IgnoredLeadingBits = 32 - Bits;
-    inline static const int CLZLCorrection = __builtin_clzl(uint32_t(0)) - 32;
+    inline static const int CLZLOffset = __builtin_clzl(1);
 
  public:
     static constexpr size_t BucketsCount = Bits / Resolution;
@@ -34,23 +34,31 @@ class Histogram {
         value = value & mask;
 
         // get leading zero index
-        auto lz = 31 - (__builtin_clzl(value) - CLZLCorrection);
+        auto lz = CLZLOffset - __builtin_clzl(value);
 
         assert(lz / Resolution < BucketsCount);
-        ++buckets[lz / Resolution];
+        ++buckets_[lz / Resolution];
     }
 
     void reset() {
         for (size_t i = 0; i < BucketsCount; ++i) {
-            buckets[i] = 0;
+            buckets_[i] = 0;
         }
     }
 
-    static constexpr unsigned long bucketEdge(uint32_t bucket) {
-        return 1UL << ((1UL + bucket) * Resolution);
+    uint32_t operator[](size_t bucket) const {
+        assert(bucket < BucketsCount);
+        return buckets_[bucket];
     }
 
-    uint32_t buckets[BucketsCount];
+    static constexpr unsigned long bucketMax(uint32_t bucket) {
+        int max_lz = bucket * Resolution;
+        int max_ones = max_lz + 1;
+        return (1UL << max_ones) - 1;
+    }
+
+ private:
+    uint32_t buckets_[BucketsCount] = {0};
 };
 
 template <size_t Bits = 31, size_t Resolution = 1>

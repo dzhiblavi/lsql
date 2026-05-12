@@ -53,16 +53,16 @@ class SequenceProfile {
             "count={} total={} avg={} [",
             count_,
             prettyDuration(total_duration_),
-            prettyDuration(total_duration_ / count_));
+            prettyDuration(count_ > 0 ? total_duration_ / count_ : Duration{}));
 
         for (size_t bucket = 0; bucket < hist_.BucketsCount; ++bucket) {
-            if (hist_.buckets[bucket] != 0) {
+            if (hist_[bucket] != 0) {
                 ss << std::format(
                     "<={}: {}, ",
                     prettyDuration(
                         std::chrono::duration_cast<MonotonicDuration>(
-                            Duration(hist_.bucketEdge(bucket)))),
-                    hist_.buckets[bucket]);
+                            Duration(hist_.bucketMax(bucket)))),
+                    hist_[bucket]);
             }
         }
         if (ss.str().back() != '[') {

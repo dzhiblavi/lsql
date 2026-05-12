@@ -66,6 +66,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
 
         for (auto&& [record, _] : records_) {
             if (!emit(phase, record.get())) {
+                records_.clear();
                 return false;
             }
         }

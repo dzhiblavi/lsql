@@ -284,7 +284,7 @@ void main(std::span<const char*> argv) {
 
     std::optional<exec::prof::Profiler> profiler;
     if (profile_arg.getValue()) {
-        llog::info("enabling profiling");
+        llog::info("enabling profiling [threads={}]", threads_arg.getValue());
         profiler.emplace(threads_arg.getValue());
     } else {
         llog::info("profiling disabled");

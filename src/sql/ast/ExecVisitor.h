@@ -319,7 +319,6 @@ class ExecVisitor : public Visitor {
     }
 
     void pushOperation(exec::OperationPtr op) {
-        all_operations.push_back(op);
         operations.push(op);
     }
 
@@ -329,7 +328,6 @@ class ExecVisitor : public Visitor {
 
     std::vector<exec::SourcePtr> sources;
     std::stack<exec::OperationPtr> operations;
-    std::vector<exec::OperationPtr> all_operations;
 };
 
 }  // namespace lsql::sql::ast
