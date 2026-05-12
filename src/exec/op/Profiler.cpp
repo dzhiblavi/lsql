@@ -5,7 +5,7 @@
 #include <sstream>
 #include <unordered_map>
 
-namespace lsql::exec {
+namespace lsql::exec::prof {
 
 namespace {
 
@@ -24,6 +24,30 @@ Profiler::~Profiler() {
 }
 
 OperationHandle Profiler::registerOperation(const Operation* self, std::string_view name) {
+    if (!profiler()) {
+        return {};
+    }
+
+    return profiler()->registerOperationImpl(self, name);
+}
+
+std::string Profiler::report() {
+    if (!profiler()) {
+        return "";
+    }
+
+    return profiler()->reportImpl();
+}
+
+void Profiler::reset() {
+    if (!profiler()) {
+        return;
+    }
+
+    profiler()->resetImpl();
+}
+
+OperationHandle Profiler::registerOperationImpl(const Operation* self, std::string_view name) {
     auto [it, _] = stats_.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(self),
@@ -32,7 +56,7 @@ OperationHandle Profiler::registerOperation(const Operation* self, std::string_v
     return OperationHandle(&it->second);
 }
 
-std::string Profiler::report() {
+std::string Profiler::reportImpl() {
     std::stringstream ss;
 
     for (auto&& [op, stats] : stats_) {
@@ -77,7 +101,7 @@ std::string Profiler::report() {
         }
 
         if (!oss.str().empty() || !ass.str().empty()) {
-            ss << std::format("Operation [id: {} name: {}]\n", op->uniqId(), stats.name());
+            ss << std::format("Operation [id: {}, name: {}]\n", op->uniqId(), stats.name());
         }
         if (!oss.str().empty()) {
             ss << "  - output\n" << oss.str();
@@ -90,15 +114,18 @@ std::string Profiler::report() {
     return ss.str();
 }
 
-void Profiler::reset() {
-    for (auto&& [_, stats] : stats_) {
+void Profiler::resetImpl() {
+    if (!profiler()) {
+        return;
+    }
+
+    for (auto&& [_, stats] : profiler()->stats_) {
         stats.reset();
     }
 }
 
-Profiler& Profiler::profiler() {
-    verify(current_ != nullptr);
-    return *current_;
+Profiler* Profiler::profiler() {
+    return current_;
 }
 
-}  // namespace lsql::exec
+}  // namespace lsql::exec::prof

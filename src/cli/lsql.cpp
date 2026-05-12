@@ -64,6 +64,12 @@ TCLAP::SwitchArg explain_arg{
     "show execution plan",
 };
 
+TCLAP::SwitchArg profile_arg{
+    "p",
+    "profile",
+    "enable profiling (printed to stderr)",
+};
+
 bool parseArgs(std::span<const char*> argv) {
     TCLAP::CmdLine cmd{"tsql", ' ', "0.0.1"};
     cmd.add(&sql_file_arg);
@@ -71,6 +77,7 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&log_level_arg);
     cmd.add(&explain_arg);
     cmd.add(&threads_arg);
+    cmd.add(&profile_arg);
     cmd.setExceptionHandling(false);
 
     try {
@@ -222,8 +229,12 @@ void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
 
         latch.wait();
         llog::info("phase {} completed", phase);
-        llog::info("profile\n{}", exec::Profiler::profiler().report());
-        exec::Profiler::profiler().reset();
+
+        if (profile_arg.getValue()) {
+            std::cerr << std::format(
+                "profile [phase={}]\n{}", phase, exec::prof::Profiler::report());
+            exec::prof::Profiler::reset();
+        }
     }
 }
 
@@ -271,7 +282,13 @@ void main(std::span<const char*> argv) {
     llog::info("parsing the query");
     auto root = parseQuery(sql_file_arg.getValue());
 
-    exec::Profiler profiler(threads_arg.getValue());
+    std::optional<exec::prof::Profiler> profiler;
+    if (profile_arg.getValue()) {
+        llog::info("enabling profiling");
+        profiler.emplace(threads_arg.getValue());
+    } else {
+        llog::info("profiling disabled");
+    }
 
     llog::info("building operations");
     sql::ast::ExecVisitor exec_visitor;

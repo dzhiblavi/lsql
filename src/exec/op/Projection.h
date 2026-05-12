@@ -58,7 +58,7 @@ class ProjectionRecord : public exec::Record {
 class Projection : public Operation, public std::enable_shared_from_this<Projection> {
  public:
     Projection(OperationPtr source, ProjectionList projectors)
-        : Operation(source->minPhase(), Profiler::profiler().registerOperation(this, "Projection"))
+        : Operation(source->minPhase(), "Projection")
         , source_(std::move(source))
         , projectors_(std::move(projectors)) {}
 
@@ -92,7 +92,7 @@ class Projection : public Operation, public std::enable_shared_from_this<Project
     MemberSubscriber<Projection> sub_{
         this,
         &Projection::consume,
-        handle_.inputHandle(&sub_),
+        prof_.inputHandle(&sub_),
     };
 };
 

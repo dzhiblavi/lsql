@@ -21,23 +21,23 @@ class MemberSubscriber : public Subscriber {
  public:
     using MethodType = bool (Self::*)(int, const exec::Record*);
 
-    MemberSubscriber(Self* self, MethodType method, InputHandle handle)
+    MemberSubscriber(Self* self, MethodType method, prof::InputHandle handle)
         : self_(self)
         , method_(method)
-        , handle_(handle) {
+        , prof_(handle) {
         verify(self != nullptr);
         verify(method != nullptr);
     }
 
     bool consume(int phase, const exec::Record* record) override {
-        auto _ = handle_.consumeScope();
+        auto _ = prof_.consumeScope();
         return (self_->*method_)(phase, record);
     }
 
  private:
     Self* self_;
     MethodType method_;
-    InputHandle handle_;
+    prof::InputHandle prof_;
 };
 
 }  // namespace lsql::exec

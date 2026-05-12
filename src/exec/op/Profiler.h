@@ -13,6 +13,10 @@ namespace lsql::exec {
 class Operation;
 class Subscriber;
 
+}  // namespace lsql::exec
+
+namespace lsql::exec::prof {
+
 struct ThreadSubscriberStats {
     uint32_t records_in = 0;
     instr::SequenceProfile<std::chrono::microseconds> consume_profile = {};
@@ -111,45 +115,68 @@ struct OperationStats {
 
 struct InputHandle {
     struct ConsumeScope {
-        ConsumeScope(ThreadSubscriberStats* stats, InputHandle* self) : stats_(stats), self(self) {
+        ConsumeScope() = default;
+
+        ConsumeScope(ThreadSubscriberStats* stats, InputHandle* self)
+            : started_at(instr::MonotonicClock::now())
+            , stats_(stats)
+            , self(self) {
             *self->current_ = this;
             ++stats->records_in;
         }
 
         ~ConsumeScope() {
+            if (!self) {
+                return;
+            }
+
             *self->current_ = nullptr;
             stats_->consume_profile.add(
                 instr::MonotonicClock::now() - started_at - ignore_duration);
         }
 
-        instr::MonotonicTimePoint started_at = instr::MonotonicClock::now();
+        instr::MonotonicTimePoint started_at = {};
         instr::MonotonicDuration ignore_duration = {};
-        ThreadSubscriberStats* stats_;
-        InputHandle* self;
+        ThreadSubscriberStats* stats_ = nullptr;
+        InputHandle* self = nullptr;
     };
+
+    InputHandle() = default;
 
     InputHandle(Stats<ThreadSubscriberStats>* stats, ConsumeScope** current)
         : current_(current)
         , stats_(stats) {}
 
-    ConsumeScope consumeScope() { return {stats_->current(), this}; }
+    ConsumeScope consumeScope() {
+        if (!current_) {
+            return {};
+        }
+        return {stats_->current(), this};
+    }
 
  private:
-    ConsumeScope** current_;
-    Stats<ThreadSubscriberStats>* stats_;
+    ConsumeScope** current_ = nullptr;
+    Stats<ThreadSubscriberStats>* stats_ = nullptr;
 };
 
 struct OperationHandle {
     struct EmitScope {
+        EmitScope() = default;
+
         EmitScope(
             ThreadOperationStats* stats, OperationHandle* self, InputHandle::ConsumeScope** parent)
-            : stats(stats)
+            : started_at(instr::MonotonicClock::now())
+            , stats(stats)
             , self(self)
             , parent(parent) {
             ++stats->records_out;
         }
 
         ~EmitScope() {
+            if (!parent) {
+                return;
+            }
+
             auto dur = instr::MonotonicClock::now() - started_at;
             if (*parent) {
                 (*parent)->ignore_duration += dur;
@@ -157,37 +184,59 @@ struct OperationHandle {
             stats->emit_profile.add(dur);
         }
 
-        instr::MonotonicTimePoint started_at = instr::MonotonicClock::now();
-        ThreadOperationStats* stats;
-        OperationHandle* self;
-        InputHandle::ConsumeScope** parent;  // emit may be called from inside consume
+        instr::MonotonicTimePoint started_at = {};
+        ThreadOperationStats* stats = nullptr;
+        OperationHandle* self = nullptr;
+        InputHandle::ConsumeScope** parent = nullptr;  // emit may be called from inside consume
     };
 
+    OperationHandle() = default;
     explicit OperationHandle(OperationStats* stats) : stats_(stats) {}
 
-    EmitScope emitScope() { return {stats_->current(), this, &consume_scope}; }
-    InputHandle inputHandle(const Subscriber* sub) { return {stats_->input(sub), &consume_scope}; }
-    ThreadOperationStats& current() { return *stats_->current(); }
+    EmitScope emitScope() {
+        if (!stats_) {
+            return {};
+        }
+        return {stats_->current(), this, &consume_scope};
+    }
+
+    InputHandle inputHandle(const Subscriber* sub) {
+        if (!stats_) {
+            return {};
+        }
+        return {stats_->input(sub), &consume_scope};
+    }
+
+    ThreadOperationStats* current() {
+        if (!stats_) {
+            return nullptr;
+        }
+        return stats_->current();
+    }
 
  private:
-    OperationStats* stats_;
+    OperationStats* stats_ = nullptr;
     InputHandle::ConsumeScope* consume_scope = nullptr;
 };
 
 class Profiler {
  public:
-    Profiler(size_t num_threads);
+    explicit Profiler(size_t num_threads);
     ~Profiler();
 
-    OperationHandle registerOperation(const Operation* self, std::string_view name);
-    std::string report();
-    void reset();
-
-    static Profiler& profiler();
+    static OperationHandle registerOperation(const Operation* self, std::string_view name);
+    static std::string report();
+    static void reset();
 
  private:
+    static Profiler* profiler();
+
+    OperationHandle registerOperationImpl(const Operation* self, std::string_view name);
+    std::string reportImpl();
+    void resetImpl();
+
     const size_t num_threads_;
     std::unordered_map<const Operation*, OperationStats> stats_;
 };
 
-}  // namespace lsql::exec
+}  // namespace lsql::exec::prof

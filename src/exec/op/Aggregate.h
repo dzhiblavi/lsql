@@ -13,7 +13,7 @@ namespace lsql::exec {
 class Aggregate : public Source, public Record, public std::enable_shared_from_this<Aggregate> {
  public:
     Aggregate(OperationPtr source, ProjectionList projectors)
-        : Source(source->minPhase(), Profiler::profiler().registerOperation(this, "Aggregate"))
+        : Source(source->minPhase(), "Aggregate")
         , source_(std::move(source))
         , projectors_(std::move(projectors)) {}
 
@@ -142,7 +142,7 @@ class Aggregate : public Source, public Record, public std::enable_shared_from_t
     MemberSubscriber<Aggregate> sub_{
         this,
         &Aggregate::consume,
-        handle_.inputHandle(&sub_),
+        prof_.inputHandle(&sub_),
     };
 
     // phase state

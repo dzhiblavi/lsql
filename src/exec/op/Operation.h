@@ -15,9 +15,9 @@ class Operation {
     using Subscribers = std::unordered_map<int, std::unordered_set<Subscriber*>>;
 
  public:
-    Operation(int min_out_phase, OperationHandle handle)
+    Operation(int min_out_phase, std::string_view name)
         : min_out_phase_(min_out_phase)
-        , handle_(handle) {}
+        , prof_(prof::Profiler::registerOperation(this, name)) {}
 
     virtual ~Operation() = default;
 
@@ -61,7 +61,7 @@ class Operation {
     // returns active(phase)
     bool emit(int phase, const exec::Record* record) {
         verify(active(phase));
-        auto _ = handle_.emitScope();
+        auto _ = prof_.emitScope();
 
         auto&& subs = subs_[phase];
         auto it = subs.begin();
@@ -91,7 +91,7 @@ class Operation {
     Subscribers subs_;
 
     // profiler handle
-    OperationHandle handle_;
+    prof::OperationHandle prof_;
 };
 
 using OperationPtr = std::shared_ptr<Operation>;

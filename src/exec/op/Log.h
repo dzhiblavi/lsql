@@ -37,7 +37,7 @@ class LineRecord : public exec::Record {
 class Log : public Source {
  public:
     Log(std::shared_ptr<data::Log> log, logs::LogType type)
-        : Source(0, Profiler::profiler().registerOperation(this, "Log"))
+        : Source(0, "LogScan")
         , log_(std::move(log))
         , type_(type) {}
 

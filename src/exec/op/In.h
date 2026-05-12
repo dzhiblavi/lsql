@@ -9,9 +9,7 @@ namespace lsql::exec {
 class In : public Operation {
  public:
     In(OperationPtr source, OperationPtr match_source, ExpressionPtr proj)
-        : Operation(
-              std::max(source->minPhase(), match_source->minPhase() + 1),
-              Profiler::profiler().registerOperation(this, "In"))
+        : Operation(std::max(source->minPhase(), match_source->minPhase() + 1), "In")
         , source_(std::move(source))
         , match_source_(std::move(match_source))
         , proj_(std::move(proj)) {}
@@ -113,12 +111,12 @@ class In : public Operation {
     MemberSubscriber<In> sub_source_{
         this,
         &In::consumeSource,
-        handle_.inputHandle(&sub_source_),
+        prof_.inputHandle(&sub_source_),
     };
     MemberSubscriber<In> sub_match_{
         this,
         &In::consumeMatch,
-        handle_.inputHandle(&sub_match_),
+        prof_.inputHandle(&sub_match_),
     };
 
     // phase at which values_ are built

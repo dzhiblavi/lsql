@@ -68,7 +68,7 @@ class Group : public Operation, public std::enable_shared_from_this<Group> {
 
  public:
     Group(OperationPtr source, ProjectionList glist, ProjectionList slist)
-        : Operation(source->minPhase(), Profiler::profiler().registerOperation(this, "Group"))
+        : Operation(source->minPhase(), "Group")
         , source_(std::move(source))
         , glist_(std::move(glist))
         , slist_(std::move(slist)) {
@@ -175,7 +175,7 @@ class Group : public Operation, public std::enable_shared_from_this<Group> {
     MemberSubscriber<Group> sub_{
         this,
         &Group::consume,
-        handle_.inputHandle(&sub_),
+        prof_.inputHandle(&sub_),
     };
 
     // phase state
