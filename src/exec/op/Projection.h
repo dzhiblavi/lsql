@@ -15,7 +15,7 @@ struct Projector {
 
 using ProjectionList = std::vector<std::unique_ptr<Projector>>;
 
-class ProjectionRecord : public exec::Record {
+class ProjectionRecord : public Record {
  public:
     ProjectionRecord(RecordRef child, std::shared_ptr<const ProjectionList> projectors)
         : child_(std::move(child))
@@ -46,7 +46,7 @@ class ProjectionRecord : public exec::Record {
         return (*it)->expr->eval(*get(child_));
     }
 
-    exec::ConstRecordPtr clone() const override {
+    ConstRecordPtr cloneImpl() const override {
         return std::make_shared<ProjectionRecord>(pin(child_), projectors_);
     }
 
@@ -63,7 +63,7 @@ class Projection : public Operation, public std::enable_shared_from_this<Project
         , projectors_(std::move(projectors)) {}
 
  private:
-    bool consume(int phase, const exec::Record* record) {
+    bool consume(int phase, const Record* record) {
         if (record == nullptr) {
             return emit(phase, nullptr);
         }

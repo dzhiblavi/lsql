@@ -10,7 +10,7 @@
 
 namespace lsql::exec {
 
-class Aggregate : public Source, public Record, public std::enable_shared_from_this<Aggregate> {
+class Aggregate : public Source, public Record {
  public:
     Aggregate(OperationPtr source, ProjectionList projectors)
         : Source(source->minPhase(), "Aggregate")
@@ -42,7 +42,7 @@ class Aggregate : public Source, public Record, public std::enable_shared_from_t
     }
 
     // Subscriber
-    bool consume(int phase, const exec::Record* record) {
+    bool consume(int phase, const Record* record) {
         verify(phase == first_phase_);
 
         if (aggregators_.size() != projectors_.size()) {
@@ -101,7 +101,7 @@ class Aggregate : public Source, public Record, public std::enable_shared_from_t
     }
 
     // Record
-    exec::ConstRecordPtr clone() const override { return shared_from_this(); }
+    ConstRecordPtr cloneImpl() const override { return shared_from_this(); }
 
     // Operation
     ExplanationItem explain(ExplanationCtx ctx) const override {
@@ -147,7 +147,7 @@ class Aggregate : public Source, public Record, public std::enable_shared_from_t
 
     // phase state
     int first_phase_ = -1;
-    std::vector<exec::AggregatorPtr> aggregators_;
+    std::vector<AggregatorPtr> aggregators_;
     std::unordered_map<std::string_view, Value> values_;
 };
 

@@ -15,7 +15,7 @@ class In : public Operation {
         , proj_(std::move(proj)) {}
 
  private:
-    bool consumeMatch(int phase, const exec::Record* record) {
+    bool consumeMatch(int phase, const Record* record) {
         verify(phase == match_phase_);
 
         if (record == nullptr) {
@@ -32,7 +32,7 @@ class In : public Operation {
         return active(phase + 1);
     }
 
-    bool consumeSource(int phase, const exec::Record* record) {
+    bool consumeSource(int phase, const Record* record) {
         if (record == nullptr) {
             cleanIfDone(phase);
             return emit(phase, nullptr);
@@ -108,6 +108,7 @@ class In : public Operation {
     OperationPtr source_;
     OperationPtr match_source_;
     ExpressionPtr proj_;
+
     MemberSubscriber<In> sub_source_{
         this,
         &In::consumeSource,

@@ -11,7 +11,7 @@
 
 namespace lsql::exec {
 
-using SortList = std::vector<exec::ExpressionPtr>;
+using SortList = std::vector<ExpressionPtr>;
 
 class Sort : public Operation, public std::enable_shared_from_this<Sort> {
  public:
@@ -26,7 +26,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
     }
 
  private:
-    bool consume(int phase, const exec::Record* record) {
+    bool consume(int phase, const Record* record) {
         if (curr_phase_ != phase) {
             curr_phase_ = phase;
             verify(records_.empty());
@@ -69,7 +69,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
 
     void init(int phase) override { source_->subscribe(phase, &sub_); }
 
-    std::vector<Value> key(const exec::Record& record) const {
+    std::vector<Value> key(const Record& record) const {
         std::vector<Value> result;
         result.reserve(sort_list_.size());
         for (auto&& col : sort_list_) {
@@ -96,7 +96,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
 
     // phase state
     int curr_phase_ = 0;
-    std::vector<exec::ConstRecordPtr> records_;
+    std::vector<ConstRecordPtr> records_;
 };
 
 OperationPtr sort(OperationPtr source, SortList glist, bool desc) {

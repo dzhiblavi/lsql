@@ -59,7 +59,7 @@ class Operation {
     }
 
     // returns active(phase)
-    bool emit(int phase, const exec::Record* record) {
+    bool emit(int phase, const Record* record) {
         verify(active(phase));
         auto _ = prof_.emitScope();
 

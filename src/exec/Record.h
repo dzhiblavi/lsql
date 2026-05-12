@@ -9,7 +9,7 @@
 
 namespace lsql::exec {
 
-class Record {
+class Record : public std::enable_shared_from_this<Record> {
  public:
     using values_t = std::unordered_map<std::string, Value>;
 
@@ -17,7 +17,17 @@ class Record {
 
     virtual values_t values() const = 0;
     virtual Value value(std::string_view name) const = 0;
-    virtual std::shared_ptr<const Record> clone() const = 0;
+
+    std::shared_ptr<const Record> clone() const {
+        if (!weak_from_this().expired()) {
+            return shared_from_this();
+        }
+
+        return cloneImpl();
+    }
+
+ private:
+    virtual std::shared_ptr<const Record> cloneImpl() const = 0;
 };
 
 using RecordPtr = std::shared_ptr<Record>;

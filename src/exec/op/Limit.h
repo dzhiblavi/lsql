@@ -14,7 +14,7 @@ class Limit : public Operation {
 
  private:
     // Subscriber
-    bool consume(int phase, const exec::Record* record) {
+    bool consume(int phase, const Record* record) {
         if (curr_phase_ != phase) {
             curr_phase_ = phase;
             curr_limit_ = limit_;

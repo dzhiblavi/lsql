@@ -6,7 +6,7 @@
 
 namespace lsql::exec {
 
-class LineRecord : public exec::Record {
+class LineRecord : public Record {
  public:
     LineRecord(data::Line line, logs::LogType type) : line_(line) {
         parseKeyValue(line_.view(), type, kv_);
@@ -27,7 +27,7 @@ class LineRecord : public exec::Record {
         return it == kv_.end() ? Value() : Value(std::string(it->second));
     }
 
-    exec::ConstRecordPtr clone() const override { return std::make_shared<LineRecord>(*this); }
+    ConstRecordPtr cloneImpl() const override { return std::make_shared<LineRecord>(*this); }
 
  private:
     data::Line line_;

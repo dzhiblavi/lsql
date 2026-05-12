@@ -26,7 +26,7 @@ class Materialize : public Source {
 
  private:
     // Subscriber
-    bool consume(int phase, const exec::Record* record) {
+    bool consume(int phase, const Record* record) {
         verify(phase == first_phase_);
 
         if (!materialized_) {
@@ -104,7 +104,7 @@ class Materialize : public Source {
         &Materialize::consume,
         prof_.inputHandle(&sub_),
     };
-    std::optional<std::vector<exec::ConstRecordPtr>> materialized_ = std::nullopt;
+    std::optional<std::vector<ConstRecordPtr>> materialized_ = std::nullopt;
     int first_phase_ = -1;
 };
 

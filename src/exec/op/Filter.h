@@ -14,7 +14,7 @@ class Filter : public Operation {
 
  private:
     // Subscriber
-    bool consume(int phase, const exec::Record* record) {
+    bool consume(int phase, const Record* record) {
         if (record == nullptr) {
             return emit(phase, nullptr);
         }

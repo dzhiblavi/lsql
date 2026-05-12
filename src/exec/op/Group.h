@@ -10,7 +10,7 @@ namespace lsql::exec {
 
 using GroupValues = std::unordered_map<std::string_view, Value>;
 
-class GroupEnrichedRecord : public exec::Record {
+class GroupEnrichedRecord : public Record {
  public:
     GroupEnrichedRecord(RecordRef child, std::shared_ptr<GroupValues> values)
         : child_(std::move(child))
@@ -31,7 +31,7 @@ class GroupEnrichedRecord : public exec::Record {
         return get(child_)->value(name);
     }
 
-    std::shared_ptr<const Record> clone() const override {
+    std::shared_ptr<const Record> cloneImpl() const override {
         return std::make_shared<GroupEnrichedRecord>(pin(child_), values_);
     }
 
@@ -40,7 +40,7 @@ class GroupEnrichedRecord : public exec::Record {
     std::shared_ptr<GroupValues> values_;
 };
 
-class GroupRecord : public exec::Record {
+class GroupRecord : public Record {
  public:
     explicit GroupRecord(std::shared_ptr<GroupValues> values) : values_(std::move(values)) {}
 
@@ -57,7 +57,7 @@ class GroupRecord : public exec::Record {
         return it == values_->end() ? null : it->second;
     }
 
-    exec::ConstRecordPtr clone() const override { return std::make_shared<GroupRecord>(*this); }
+    ConstRecordPtr cloneImpl() const override { return std::make_shared<GroupRecord>(*this); }
 
  private:
     std::shared_ptr<GroupValues> values_;
@@ -78,7 +78,7 @@ class Group : public Operation, public std::enable_shared_from_this<Group> {
     }
 
  private:
-    bool consume(int phase, const exec::Record* record) {
+    bool consume(int phase, const Record* record) {
         if (curr_phase_ != phase) {
             curr_phase_ = phase;
             verify(groups_.empty());
@@ -179,7 +179,7 @@ class Group : public Operation, public std::enable_shared_from_this<Group> {
     };
 
     // phase state
-    using Groups = std::unordered_map<std::vector<Value>, std::vector<exec::AggregatorPtr>>;
+    using Groups = std::unordered_map<std::vector<Value>, std::vector<AggregatorPtr>>;
 
     int curr_phase_ = 0;
     Groups groups_;
