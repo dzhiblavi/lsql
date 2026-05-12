@@ -15,7 +15,7 @@ class Operation {
     using Subscribers = std::unordered_map<int, std::unordered_set<Subscriber*>>;
 
  public:
-    Operation(int min_out_phase, Profiler::OperationHandle handle)
+    Operation(int min_out_phase, OperationHandle handle)
         : min_out_phase_(min_out_phase)
         , handle_(handle) {}
 
@@ -91,7 +91,7 @@ class Operation {
     Subscribers subs_;
 
     // profiler handle
-    Profiler::OperationHandle handle_;
+    OperationHandle handle_;
 };
 
 using OperationPtr = std::shared_ptr<Operation>;

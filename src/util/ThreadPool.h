@@ -73,6 +73,8 @@ class ThreadPool {
 
     void stop() { tasks_.stop(); }
 
+    size_t size() const { return workers_.size(); }
+
     void join() {
         for (auto& thread : workers_) {
             if (!thread.joinable()) {

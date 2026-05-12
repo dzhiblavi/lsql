@@ -222,7 +222,7 @@ void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
 
         latch.wait();
         llog::info("phase {} completed", phase);
-        llog::info("profile {}", exec::Profiler::profiler().report());
+        llog::info("profile\n{}", exec::Profiler::profiler().report());
         exec::Profiler::profiler().reset();
     }
 }
@@ -270,6 +270,8 @@ void main(std::span<const char*> argv) {
 
     llog::info("parsing the query");
     auto root = parseQuery(sql_file_arg.getValue());
+
+    exec::Profiler profiler(threads_arg.getValue());
 
     llog::info("building operations");
     sql::ast::ExecVisitor exec_visitor;

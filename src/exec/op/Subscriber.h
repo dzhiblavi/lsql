@@ -21,7 +21,7 @@ class MemberSubscriber : public Subscriber {
  public:
     using MethodType = bool (Self::*)(int, const exec::Record*);
 
-    MemberSubscriber(Self* self, MethodType method, Profiler::InputHandle handle)
+    MemberSubscriber(Self* self, MethodType method, InputHandle handle)
         : self_(self)
         , method_(method)
         , handle_(handle) {
@@ -37,7 +37,7 @@ class MemberSubscriber : public Subscriber {
  private:
     Self* self_;
     MethodType method_;
-    Profiler::InputHandle handle_;
+    InputHandle handle_;
 };
 
 }  // namespace lsql::exec

@@ -1,48 +1,104 @@
 #include "exec/op/Profiler.h"
 #include "exec/op/Operation.h"
 
-#include "util/instrument/SequenceProfile.h"
-
 #include <format>
 #include <sstream>
 #include <unordered_map>
 
 namespace lsql::exec {
 
-Profiler::OperationHandle Profiler::registerOperation(
-    const Operation* self, std::string_view name) {
-    auto [it, _] = stats_.emplace(self, OperationStats{.name = name});
+namespace {
+
+Profiler* current_ = nullptr;
+
+}  // namespace
+
+Profiler::Profiler(size_t num_threads) : num_threads_(num_threads) {
+    verify(current_ == nullptr, "profiler already registered");
+    current_ = this;
+}
+
+Profiler::~Profiler() {
+    verify(current_ == this);
+    current_ = nullptr;
+}
+
+OperationHandle Profiler::registerOperation(const Operation* self, std::string_view name) {
+    auto [it, _] = stats_.emplace(
+        std::piecewise_construct,
+        std::forward_as_tuple(self),
+        std::forward_as_tuple(num_threads_, name));
+
     return OperationHandle(&it->second);
 }
 
-std::string Profiler::report() const {
+std::string Profiler::report() {
     std::stringstream ss;
-    ss << std::format("ops_count={}\n", stats_.size());
-    for (auto&& [op, stats] : stats_) {
-        ss << std::format(
-            "[id={} name={}] records_out={}\n", op->uniqId(), stats.name, stats.records_out);
-        ss << std::format(" emit profile: {}\n", stats.emit_profile.format());
 
-        for (auto&& [_, stats] : stats.inputs) {
-            ss << std::format("  input records_in={}\n", stats.records_in);
-            ss << std::format("  consume profile: {}\n", stats.consume_profile.format());
+    for (auto&& [op, stats] : stats_) {
+        std::stringstream oss;
+
+        for (size_t t = 0; t < num_threads_; ++t) {
+            auto* tstats = stats.thread(t);
+            if (tstats->empty()) {
+                continue;
+            }
+
+            oss << std::format("    [thread={}]\n", t);
+            oss << std::format("      records_out: {}\n", tstats->records_out);
+            oss << std::format("      emit profile: {}\n", tstats->emit_profile.format());
+            if (!tstats->custom_info.empty()) {
+                oss << "      custom:\n";
+                for (auto&& info : tstats->custom_info) {
+                    oss << "      - " << info << '\n';
+                }
+            }
         }
 
-        ss << '\n';
+        std::stringstream ass;
+
+        for (auto&& [_, istats] : stats.inputs()) {
+            std::stringstream iss;
+
+            for (size_t t = 0; t < num_threads_; ++t) {
+                auto* istat = istats.thread(t);
+                if (istat->empty()) {
+                    continue;
+                }
+
+                iss << std::format("    [thread={}]\n", t);
+                iss << std::format("      records_in: {}\n", istat->records_in);
+                iss << std::format("      consume profile: {}\n", istat->consume_profile.format());
+            }
+
+            if (!iss.str().empty()) {
+                ass << "  - input\n" << iss.str();
+            }
+        }
+
+        if (!oss.str().empty() || !ass.str().empty()) {
+            ss << std::format("Operation [id: {} name: {}]\n", op->uniqId(), stats.name());
+        }
+        if (!oss.str().empty()) {
+            ss << "  - output\n" << oss.str();
+        }
+        if (!ass.str().empty()) {
+            ss << ass.str();
+        }
     }
 
     return ss.str();
-}
-
-Profiler& Profiler::profiler() {
-    static Profiler profiler;
-    return profiler;
 }
 
 void Profiler::reset() {
     for (auto&& [_, stats] : stats_) {
         stats.reset();
     }
+}
+
+Profiler& Profiler::profiler() {
+    verify(current_ != nullptr);
+    return *current_;
 }
 
 }  // namespace lsql::exec
