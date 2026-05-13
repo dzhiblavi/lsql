@@ -67,19 +67,13 @@ std::string Profiler::reportImpl() {
             oss << std::format("    [thread={}]\n", t);
             oss << std::format("      records_out: {}\n", tstats->records_out);
             oss << std::format("      emit profile: {}\n", tstats->emit_profile.format());
-            if (!tstats->custom_info.empty()) {
-                oss << "      custom:\n";
-                for (auto&& info : tstats->custom_info) {
-                    oss << "      - " << info << '\n';
-                }
-            }
         }
 
-        if (!oss.str().empty() && !stats.counters().empty()) {
-            oss << std::format("  - counters:\n");
+        if (!oss.str().empty() && !stats.metrics().empty()) {
+            oss << std::format("  - metrics:\n");
 
-            for (auto&& [_, name, counter] : stats.counters()) {
-                oss << std::format("      {}: {}\n", name, counter.value());
+            for (auto&& metric : stats.metrics()) {
+                oss << std::format("      {}\n", metric->format());
             }
         }
 

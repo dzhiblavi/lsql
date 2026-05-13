@@ -25,6 +25,9 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
         if (sort_list_.empty()) {
             throw std::runtime_error("ORDER BY list cannot be empty");
         }
+
+        prof_.registerMetric(&dataset_size_);
+        prof_.registerMetric(&sort_time_);
     }
 
  private:
@@ -57,9 +60,9 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
             });
         }
 
-        if (auto curr = prof_.current()) {
-            curr->custom("dataset size: {}", records_.size(), phase);
-            curr->custom("sort time: {}", instr::prettyDuration(timer.elapsed()));
+        if (prof_) {
+            dataset_size_.counter.set(records_.size());
+            sort_time_.set("sort time: {}", instr::prettyDuration(timer.elapsed()));
         }
 
         for (auto&& [record, _] : records_) {
@@ -94,6 +97,9 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
 
         return ExplanationItem().line(fullName()).child(source);
     }
+
+    prof::NamedCounter<size_t> dataset_size_{"dataset size", size_t(0)};
+    prof::Message sort_time_;
 
     OperationPtr source_;
     bool desc_;

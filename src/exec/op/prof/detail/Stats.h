@@ -1,13 +1,12 @@
 #pragma once
 
-#include "exec/op/prof/detail/NamedCounter.h"
+#include "exec/op/prof/Metrics.h"
 
 #include "core/verify.h"
 #include "util/thread_name.h"
 
 #include "exec/op/prof/detail/ThreadStats.h"
 
-#include <list>
 #include <unordered_map>
 #include <vector>
 
@@ -71,14 +70,12 @@ struct OperationStats {
             v.reset();
         }
 
-        std::ranges::for_each(counters_, &NamedCounter::reset);
+        std::ranges::for_each(metrics_, &Metric::reset);
     }
 
-    NamedCounter& makeCounter(std::string_view name, int64_t init) {
-        return counters_.emplace_back(name, init);
-    }
+    void registerMetric(Metric* metric) { metrics_.push_back(metric); }
 
-    const std::list<NamedCounter>& counters() const { return counters_; }
+    const std::vector<Metric*>& metrics() const { return metrics_; }
 
  private:
     template <typename T>
@@ -87,7 +84,7 @@ struct OperationStats {
     size_t num_threads_;
     Stats<ThreadOperationStats> op_;
     std::unordered_map<const Subscriber*, Stats<ThreadSubscriberStats>> inputs_;
-    std::list<NamedCounter> counters_;
+    std::vector<Metric*> metrics_;
 };
 
 }  // namespace lsql::exec::prof::detail

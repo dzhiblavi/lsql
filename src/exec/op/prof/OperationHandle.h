@@ -1,6 +1,5 @@
 #pragma once
 
-#include "util/instrument/Counters.h"
 #include "util/instrument/SequenceProfile.h"
 #include "util/instrument/types.h"
 
@@ -67,12 +66,14 @@ class OperationHandle {
         return stats_->current();
     }
 
-    instr::Counter<int64_t>* makeCounter(std::string_view name, int64_t init = 0) {
+    void registerMetric(Metric* metric) {
         if (!stats_) {
-            return nullptr;
+            return;
         }
-        return &stats_->makeCounter(name, init).counter;
+        stats_->registerMetric(metric);
     }
+
+    operator bool() const { return stats_ != nullptr; }
 
  private:
     detail::OperationStats* stats_ = nullptr;
