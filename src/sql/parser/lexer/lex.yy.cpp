@@ -23,7 +23,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define INITIAL (0)
-#define YY_NUM_RULES (51)
+#define YY_NUM_RULES (52)
 
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
@@ -202,7 +202,7 @@ YY_EXTERN_C void yyset_extra(void* x, yyscan_t scanner)
 
 int yyFlexLexer::yylex(void)
 {
-  static const char *REGEX_INITIAL = "(?m)((?:[\\x09\\x0a\\x20]+))|((?:\\Q--\\E).*)|(SELECT)|(FROM)|(AS)|(WHERE)|(LIMIT)|(AND)|(OR)|(LIKE)|(MATERIALIZE)|(String)|(Int)|(Float)|(Bool)|(COUNT)|(true)|(false)|(null)|(ASC)|(DESC)|(MIN)|(MAX)|(SUM)|(IN)|(PERCENTILE)|(COALESCE)|(RSUBSTR)|((?:\\QGROUP BY\\E))|((?:\\QORDER BY\\E))|((?:\\QUNION ALL\\E))|((?:[0-9]+))|((?:[\\x2b\\x2d]?[0-9]+\\.[0-9]+))|((?:[A-Z_a-z][0-9A-Z_a-z]*))|((?:[/\\x5c]?(?:[\\x2d.0-9A-Z_a-z]+[/\\x5c]+)*[\\x2d.0-9A-Z_a-z]+))|((?:'[^']*'))|((?:[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}))|((?:\\Q;\\E))|((?:\\Q,\\E))|((?:\\Q*\\E))|((?:\\Q=\\E))|((?:\\Q!=\\E))|((?:\\Q(\\E))|((?:\\Q)\\E))|((?:\\Q!\\E))|((?:\\Q+\\E))|((?:\\Q/\\E))|((?:\\Q@\\E))|((?:\\Q$\\E))|(.)";
+  static const char *REGEX_INITIAL = "(?m)((?:[\\x09\\x0a\\x20]+))|((?:\\Q--\\E).*)|(SELECT)|(FROM)|(AS)|(WHERE)|(LIMIT)|(AND)|(OR)|(LIKE)|(MATERIALIZE)|(String)|(Int)|(Float)|(Bool)|(COUNT)|(true)|(false)|(null)|(ASC)|(DESC)|(MIN)|(MAX)|(SUM)|(IN)|(PERCENTILE)|(COALESCE)|(RSUBSTR)|((?:\\QGROUP BY\\E))|((?:\\QORDER BY\\E))|((?:\\QUNION ALL\\E))|((?:\\QUNION ALL SORTED BY\\E))|((?:[0-9]+))|((?:[\\x2b\\x2d]?[0-9]+\\.[0-9]+))|((?:[A-Z_a-z][0-9A-Z_a-z]*))|((?:[/\\x5c]?(?:[\\x2d.0-9A-Z_a-z]+[/\\x5c]+)*[\\x2d.0-9A-Z_a-z]+))|((?:'[^']*'))|((?:[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}))|((?:\\Q;\\E))|((?:\\Q,\\E))|((?:\\Q*\\E))|((?:\\Q=\\E))|((?:\\Q!=\\E))|((?:\\Q(\\E))|((?:\\Q)\\E))|((?:\\Q!\\E))|((?:\\Q+\\E))|((?:\\Q/\\E))|((?:\\Q@\\E))|((?:\\Q$\\E))|(.)";
   static const reflex::Pattern PATTERN_INITIAL(REGEX_INITIAL);
   if (!has_matcher())
   {
@@ -216,7 +216,7 @@ int yyFlexLexer::yylex(void)
           case 0:
             if (matcher().at_end())
             {
-#line 268 "sql_lexer.l"
+#line 273 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_EOF, NULL, 0};
                      Parse(g_parser, TOKEN_EOF, t, g_parse_context);
@@ -502,171 +502,180 @@ int yyFlexLexer::yylex(void)
                  }
 
             YY_BREAK
-          case 32: // rule sql_lexer.l:178: {INTEGER} :
+          case 32: // rule sql_lexer.l:178: "UNION ALL SORTED BY" :
             YY_USER_ACTION
 #line 178 "sql_lexer.l"
+{
+                     lsql::sql::parse::Token t = {TOKEN_UNION_ALL_SORTED_BY, strdup(yytext), (int)strlen(yytext)};
+                     Parse(g_parser, TOKEN_UNION_ALL_SORTED_BY, t, g_parse_context);
+                 }
+
+            YY_BREAK
+          case 33: // rule sql_lexer.l:183: {INTEGER} :
+            YY_USER_ACTION
+#line 183 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_INTEGER, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_INTEGER, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 33: // rule sql_lexer.l:183: {FLOATING} :
+          case 34: // rule sql_lexer.l:188: {FLOATING} :
             YY_USER_ACTION
-#line 183 "sql_lexer.l"
+#line 188 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_FLOATING, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_FLOATING, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 34: // rule sql_lexer.l:188: {IDENTIFIER} :
+          case 35: // rule sql_lexer.l:193: {IDENTIFIER} :
             YY_USER_ACTION
-#line 188 "sql_lexer.l"
+#line 193 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_IDENTIFIER, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_IDENTIFIER, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 35: // rule sql_lexer.l:193: {PATH} :
+          case 36: // rule sql_lexer.l:198: {PATH} :
             YY_USER_ACTION
-#line 193 "sql_lexer.l"
+#line 198 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_PATH, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_PATH, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 36: // rule sql_lexer.l:198: {QUOTED_STRING} :
+          case 37: // rule sql_lexer.l:203: {QUOTED_STRING} :
             YY_USER_ACTION
-#line 198 "sql_lexer.l"
+#line 203 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_STR, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_STR, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 37: // rule sql_lexer.l:203: {TIMESTAMP} :
+          case 38: // rule sql_lexer.l:208: {TIMESTAMP} :
             YY_USER_ACTION
-#line 203 "sql_lexer.l"
+#line 208 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_TIMESTAMP, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_TIMESTAMP, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 38: // rule sql_lexer.l:208: ";" :
+          case 39: // rule sql_lexer.l:213: ";" :
             YY_USER_ACTION
-#line 208 "sql_lexer.l"
+#line 213 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_SEMICOLON, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_SEMICOLON, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 39: // rule sql_lexer.l:213: "," :
+          case 40: // rule sql_lexer.l:218: "," :
             YY_USER_ACTION
-#line 213 "sql_lexer.l"
+#line 218 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_COMMA, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_COMMA, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 40: // rule sql_lexer.l:218: "*" :
+          case 41: // rule sql_lexer.l:223: "*" :
             YY_USER_ACTION
-#line 218 "sql_lexer.l"
+#line 223 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_STAR, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_STAR, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 41: // rule sql_lexer.l:223: "=" :
+          case 42: // rule sql_lexer.l:228: "=" :
             YY_USER_ACTION
-#line 223 "sql_lexer.l"
+#line 228 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_EQ, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_EQ, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 42: // rule sql_lexer.l:228: "!=" :
+          case 43: // rule sql_lexer.l:233: "!=" :
             YY_USER_ACTION
-#line 228 "sql_lexer.l"
+#line 233 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_NEQ, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_NEQ, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 43: // rule sql_lexer.l:233: "(" :
+          case 44: // rule sql_lexer.l:238: "(" :
             YY_USER_ACTION
-#line 233 "sql_lexer.l"
+#line 238 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_LPAREN, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_LPAREN, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 44: // rule sql_lexer.l:238: ")" :
+          case 45: // rule sql_lexer.l:243: ")" :
             YY_USER_ACTION
-#line 238 "sql_lexer.l"
+#line 243 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_RPAREN, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_RPAREN, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 45: // rule sql_lexer.l:243: "!" :
+          case 46: // rule sql_lexer.l:248: "!" :
             YY_USER_ACTION
-#line 243 "sql_lexer.l"
+#line 248 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_EXCLAMATION, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_EXCLAMATION, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 46: // rule sql_lexer.l:248: "+" :
+          case 47: // rule sql_lexer.l:253: "+" :
             YY_USER_ACTION
-#line 248 "sql_lexer.l"
+#line 253 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_PLUS, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_PLUS, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 47: // rule sql_lexer.l:253: "/" :
+          case 48: // rule sql_lexer.l:258: "/" :
             YY_USER_ACTION
-#line 253 "sql_lexer.l"
+#line 258 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_DIVIDE, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_DIVIDE, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 48: // rule sql_lexer.l:258: "@" :
+          case 49: // rule sql_lexer.l:263: "@" :
             YY_USER_ACTION
-#line 258 "sql_lexer.l"
+#line 263 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_AT, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_AT, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 49: // rule sql_lexer.l:263: "$" :
+          case 50: // rule sql_lexer.l:268: "$" :
             YY_USER_ACTION
-#line 263 "sql_lexer.l"
+#line 268 "sql_lexer.l"
 {
                      lsql::sql::parse::Token t = {TOKEN_DOLLAR, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_DOLLAR, t, g_parse_context);
                  }
 
             YY_BREAK
-          case 50: // rule sql_lexer.l:274: . :
+          case 51: // rule sql_lexer.l:279: . :
             YY_USER_ACTION
-#line 274 "sql_lexer.l"
+#line 279 "sql_lexer.l"
 {
                      fprintf(stderr, "lexer error: unknown character: '%s' (ASCII %d)\n", yytext, yytext[0]);
                      g_parse_context->has_error = 1;
@@ -683,7 +692,7 @@ int yyFlexLexer::yylex(void)
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#line 280 "sql_lexer.l"
+#line 285 "sql_lexer.l"
 
 void set_parser_context(void* parser, lsql::sql::parse::Context* ctx) {
     g_parser = parser;

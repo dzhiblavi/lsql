@@ -16,6 +16,7 @@ class GroupBySelect;
 class OrderBy;
 class OrderBySelect;
 class UnionAll;
+class UnionAllSortedBy;
 class AdhocRelation;
 
 class BinaryExpression;
@@ -58,6 +59,7 @@ class Visitor {
     virtual void visit(const RSubstrExpression&) {}
     virtual void visit(const CoalesceExpression&) {}
     virtual void visit(const UnionAll&) {}
+    virtual void visit(const UnionAllSortedBy&) {}
     virtual void visit(const AdhocRelation&) {}
 };
 

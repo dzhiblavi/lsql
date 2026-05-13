@@ -1,1 +1,1 @@
-#add_test(./unit.cpp module::module)
+add_test(exec/op/TestMergeSorted.cpp lsql-exec)

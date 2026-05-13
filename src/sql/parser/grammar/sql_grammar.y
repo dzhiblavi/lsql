@@ -52,6 +52,7 @@
 %token TOKEN_NULL.
 %token TOKEN_DOLLAR.
 %token TOKEN_UNION_ALL.
+%token TOKEN_UNION_ALL_SORTED_BY.
 
 %token TOKEN_MIN.
 %token TOKEN_MAX.
@@ -142,6 +143,24 @@ relation(R) ::= select_statement(A). {
 
 relation(A) ::= relation(L) TOKEN_UNION_ALL relation(R). {
     A = new ast::UnionAll(std::unique_ptr<ast::Node>(L), std::unique_ptr<ast::Node>(R));
+}
+
+relation(A) ::= relation(L) TOKEN_UNION_ALL_SORTED_BY expression_list(S) relation(R). {
+    A = new ast::UnionAllSortedBy(
+        /* desc = */ false,
+        std::unique_ptr<ast::Node>(L),
+        std::unique_ptr<ast::Node>(R),
+        S
+    );
+}
+
+relation(A) ::= relation(L) TOKEN_UNION_ALL_SORTED_BY expression_list(S) TOKEN_DESC relation(R). {
+    A = new ast::UnionAllSortedBy(
+        /* desc = */ true,
+        std::unique_ptr<ast::Node>(L),
+        std::unique_ptr<ast::Node>(R),
+        S
+    );
 }
 
 adhoc_relation(A) ::= TOKEN_LPAREN value_list(L) TOKEN_RPAREN. {

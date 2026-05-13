@@ -93,4 +93,21 @@ class OrderBySelect : public Node {
     std::unique_ptr<OrderBy> order_by;
 };
 
+class UnionAllSortedBy : public Node {
+ public:
+    UnionAllSortedBy(
+        bool desc, std::unique_ptr<Node> l, std::unique_ptr<Node> r, ExpressionList* slist)
+        : desc(desc)
+        , l(std::move(l))
+        , r(std::move(r))
+        , slist(slist) {}
+
+    void visit(Visitor& visitor) const override { visitor.visit(*this); }
+
+    bool desc;
+    std::unique_ptr<Node> l;
+    std::unique_ptr<Node> r;
+    std::unique_ptr<ExpressionList> slist;
+};
+
 }  // namespace lsql::sql::ast

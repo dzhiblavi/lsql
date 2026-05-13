@@ -11,7 +11,7 @@ if(LOGSQL_BUILD_TESTS)
         find_package(Catch2 CONFIG REQUIRED)
 
         string(REPLACE ".cpp" "" name ${path})
-        string(REPLACE "./" "" name ${name})
+        string(REPLACE "/" "_" name ${name})
 
         add_executable("${name}" "${path}")
 

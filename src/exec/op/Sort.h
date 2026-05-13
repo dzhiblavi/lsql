@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/verify.h"
-#include "exec/expr/Expression.h"
 #include "exec/op/MemberSubscriber.h"
 #include "exec/op/Operation.h"
+#include "exec/op/types.h"
 #include "util/instrument/Timer.h"
 
 #include <llog/log.h>
@@ -12,8 +12,6 @@
 #include <vector>
 
 namespace lsql::exec {
-
-using SortList = std::vector<ExpressionPtr>;
 
 class Sort : public Operation, public std::enable_shared_from_this<Sort> {
     using Key = std::vector<Value>;

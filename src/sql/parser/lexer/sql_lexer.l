@@ -175,6 +175,11 @@ RSUBSTR          {
                      Parse(g_parser, TOKEN_UNION_ALL, t, g_parse_context);
                  }
 
+"UNION ALL SORTED BY" {
+                     lsql::sql::parse::Token t = {TOKEN_UNION_ALL_SORTED_BY, strdup(yytext), (int)strlen(yytext)};
+                     Parse(g_parser, TOKEN_UNION_ALL_SORTED_BY, t, g_parse_context);
+                 }
+
 {INTEGER}        {
                      lsql::sql::parse::Token t = {TOKEN_INTEGER, strdup(yytext), (int)strlen(yytext)};
                      Parse(g_parser, TOKEN_INTEGER, t, g_parse_context);

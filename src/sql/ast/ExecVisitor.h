@@ -24,6 +24,7 @@
 #include "exec/op/Limit.h"
 #include "exec/op/Log.h"
 #include "exec/op/Materialize.h"
+#include "exec/op/MergeSorted.h"
 #include "exec/op/Projection.h"
 #include "exec/op/Sort.h"
 #include "exec/op/UnionAll.h"
@@ -120,6 +121,16 @@ class ExecVisitor : public Visitor {
         auto r = popOperation();
 
         pushOperation(exec::unionAll(l, r));
+    }
+
+    void visit(const UnionAllSortedBy& node) override {
+        node.l->visit(*this);
+        auto l = popOperation();
+        node.r->visit(*this);
+        auto r = popOperation();
+
+        auto slist = expressionList(*node.slist);
+        pushOperation(exec::mergeSorted(l, r, std::move(slist), node.desc));
     }
 
     void visit(const AdhocRelation& node) override {
