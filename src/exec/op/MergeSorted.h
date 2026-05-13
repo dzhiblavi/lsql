@@ -22,7 +22,10 @@ class MergeSorted : public Operation {
         , l_(std::move(l))
         , r_(std::move(r))
         , slist_(std::move(slist))
-        , desc_(desc) {}
+        , desc_(desc) {
+        buf_sizes_[0] = prof_.makeCounter("left max buf size");
+        buf_sizes_[1] = prof_.makeCounter("right max buf size");
+    }
 
  private:
     // Subscriber
@@ -98,6 +101,10 @@ class MergeSorted : public Operation {
 
     void push(int index, const Record* record) {
         buffers_[index].emplace(record->clone(), key(*record));
+
+        if (auto* counter = buf_sizes_[index]) {
+            counter->max(int64_t(buffers_[index].size()));
+        }
     }
 
     // drain from buffers only
@@ -239,6 +246,8 @@ class MergeSorted : public Operation {
 
     static constexpr int Left = 0;
     static constexpr int Right = 1;
+
+    std::array<instr::Counter<int64_t>*, 2> buf_sizes_;
 
     OperationPtr l_;
     OperationPtr r_;

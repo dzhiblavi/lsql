@@ -2,7 +2,7 @@
 
 #include "core/verify.h"
 #include "exec/expr/Expression.h"
-#include "exec/op/Profiler.h"
+#include "exec/op/prof/Profiler.h"
 #include "exec/op/Projection.h"
 #include "exec/op/Source.h"
 

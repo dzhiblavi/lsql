@@ -1,4 +1,4 @@
-#include "exec/op/Profiler.h"
+#include "exec/op/prof/Profiler.h"
 #include "exec/op/Operation.h"
 
 #include <format>
@@ -72,6 +72,14 @@ std::string Profiler::reportImpl() {
                 for (auto&& info : tstats->custom_info) {
                     oss << "      - " << info << '\n';
                 }
+            }
+        }
+
+        if (!oss.str().empty() && !stats.counters().empty()) {
+            oss << std::format("  - counters:\n");
+
+            for (auto&& [_, name, counter] : stats.counters()) {
+                oss << std::format("      {}: {}\n", name, counter.value());
             }
         }
 
