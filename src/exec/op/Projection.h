@@ -1,8 +1,8 @@
 #pragma once
 
 #include "exec/expr/Expression.h"
-#include "exec/op/Operation.h"
 #include "exec/op/MemberSubscriber.h"
+#include "exec/op/Operation.h"
 
 #include <algorithm>
 #include <vector>
@@ -84,7 +84,7 @@ class Projection : public Operation, public std::enable_shared_from_this<Project
         }
 
         return ExplanationItem()
-            .line("Projection ({} projectors)", projectors_.size())
+            .line("{} ({} projectors)", fullName(), projectors_.size())
             .child(source);
     }
 

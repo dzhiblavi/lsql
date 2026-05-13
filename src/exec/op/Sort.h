@@ -94,7 +94,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
             return {};
         }
 
-        return ExplanationItem().line("Sort").child(source);
+        return ExplanationItem().line(fullName()).child(source);
     }
 
     OperationPtr source_;

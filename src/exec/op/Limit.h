@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/verify.h"
-#include "exec/op/Operation.h"
 #include "exec/op/MemberSubscriber.h"
+#include "exec/op/Operation.h"
 
 namespace lsql::exec {
 
@@ -44,7 +44,7 @@ class Limit : public Operation {
             return {};
         }
 
-        return ExplanationItem().line("Limit {}", limit_).child(source);
+        return ExplanationItem().line("{} [limit={}]", fullName(), limit_).child(source);
     }
 
     OperationPtr source_;

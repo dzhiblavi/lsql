@@ -15,6 +15,8 @@ class Where;
 class GroupBySelect;
 class OrderBy;
 class OrderBySelect;
+class UnionAll;
+class AdhocRelation;
 
 class BinaryExpression;
 class UnaryExpression;
@@ -55,6 +57,8 @@ class Visitor {
     virtual void visit(const LikeExpression&) {}
     virtual void visit(const RSubstrExpression&) {}
     virtual void visit(const CoalesceExpression&) {}
+    virtual void visit(const UnionAll&) {}
+    virtual void visit(const AdhocRelation&) {}
 };
 
 }  // namespace lsql::sql::ast

@@ -23,12 +23,12 @@ Profiler::~Profiler() {
     current_ = nullptr;
 }
 
-OperationHandle Profiler::registerOperation(const Operation* self, std::string_view name) {
+OperationHandle Profiler::registerOperation(const Operation* self) {
     if (!profiler()) {
         return {};
     }
 
-    return profiler()->registerOperationImpl(self, name);
+    return profiler()->registerOperationImpl(self);
 }
 
 std::string Profiler::report() {
@@ -47,12 +47,8 @@ void Profiler::reset() {
     profiler()->resetImpl();
 }
 
-OperationHandle Profiler::registerOperationImpl(const Operation* self, std::string_view name) {
-    auto [it, _] = stats_.emplace(
-        std::piecewise_construct,
-        std::forward_as_tuple(self),
-        std::forward_as_tuple(num_threads_, name));
-
+OperationHandle Profiler::registerOperationImpl(const Operation* self) {
+    auto [it, _] = stats_.emplace(self, num_threads_);
     return OperationHandle(&it->second);
 }
 
@@ -101,7 +97,7 @@ std::string Profiler::reportImpl() {
         }
 
         if (!oss.str().empty() || !ass.str().empty()) {
-            ss << std::format("Operation [id: {}, name: {}]\n", op->uniqId(), stats.name());
+            ss << std::format("Operation {}\n", op->fullName());
         }
         if (!oss.str().empty()) {
             ss << "  - output\n" << oss.str();

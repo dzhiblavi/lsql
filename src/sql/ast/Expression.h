@@ -123,4 +123,14 @@ class CoalesceExpression : public Expression {
     std::unique_ptr<std::vector<std::unique_ptr<Expression>>> values;
 };
 
+class AdhocRelation : public Node {
+ public:
+    AdhocRelation(std::unique_ptr<std::vector<std::unique_ptr<ValueExpression>>> values)
+        : values(std::move(values)) {}
+
+    void visit(Visitor& visitor) const override { visitor.visit(*this); }
+
+    std::unique_ptr<std::vector<std::unique_ptr<ValueExpression>>> values;
+};
+
 }  // namespace lsql::sql::ast

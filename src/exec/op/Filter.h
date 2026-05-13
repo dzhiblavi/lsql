@@ -1,8 +1,8 @@
 #pragma once
 
 #include "exec/expr/Expression.h"
-#include "exec/op/Operation.h"
 #include "exec/op/MemberSubscriber.h"
+#include "exec/op/Operation.h"
 
 namespace lsql::exec {
 
@@ -38,7 +38,7 @@ class Filter : public Operation {
             return {};
         }
 
-        return ExplanationItem().line("Filter").child(source);
+        return ExplanationItem().line(fullName()).child(source);
     }
 
     OperationPtr source_;

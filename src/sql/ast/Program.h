@@ -38,6 +38,16 @@ class MaterializedRelation : public Node {
     std::unique_ptr<Node> relation;
 };
 
+class UnionAll : public Node {
+ public:
+    UnionAll(std::unique_ptr<Node> l, std::unique_ptr<Node> r) : l(std::move(l)), r(std::move(r)) {}
+
+    void visit(Visitor& visitor) const override { visitor.visit(*this); }
+
+    std::unique_ptr<Node> l;
+    std::unique_ptr<Node> r;
+};
+
 class Program : public Node {
  public:
     explicit Program(std::vector<std::unique_ptr<Node>>* statements) : statements(statements) {}

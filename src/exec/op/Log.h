@@ -68,7 +68,7 @@ class Log : public Source {
             return {};
         }
 
-        return ExplanationItem().line("Scan {} [id={}]", log_->describe(), uniq_id_);
+        return ExplanationItem().line("{} source: {}", fullName(), log_->describe());
     }
 
     std::shared_ptr<data::Log> log_;

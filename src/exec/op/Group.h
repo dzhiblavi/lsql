@@ -2,8 +2,8 @@
 
 #include "core/verify.h"
 #include "exec/Record.h"
-#include "exec/op/Projection.h"
 #include "exec/op/MemberSubscriber.h"
+#include "exec/op/Projection.h"
 
 #include <vector>
 
@@ -167,7 +167,7 @@ class Group : public Operation, public std::enable_shared_from_this<Group> {
             return {};
         }
 
-        return ExplanationItem().line("Group").child(source);
+        return ExplanationItem().line(fullName()).child(source);
     }
 
     OperationPtr source_;

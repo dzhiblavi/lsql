@@ -2,6 +2,7 @@
 
 #include "exec/op/Subscriber.h"
 
+#include <format>
 #include <sstream>
 
 namespace lsql::exec {
@@ -13,6 +14,11 @@ class ExplanationItem {
     ExplanationItem() = default;
 
     bool empty() const { return lines.empty(); }
+
+    ExplanationItem& line(std::string s) {
+        lines.push_back(std::move(s));
+        return *this;
+    }
 
     template <typename... Args>
     ExplanationItem& line(std::format_string<const Args&...> fmt, const Args&... args) {

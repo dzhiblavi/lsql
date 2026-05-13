@@ -2,8 +2,8 @@
 
 #include "core/verify.h"
 #include "exec/expr/Expression.h"
-#include "exec/op/Operation.h"
 #include "exec/op/MemberSubscriber.h"
+#include "exec/op/Operation.h"
 
 namespace lsql::exec {
 
@@ -88,8 +88,7 @@ class In : public Operation {
         if (ctx.phase == match_phase_) {
             verify(source.empty());
 
-            auto item =
-                ExplanationItem().line("In: store match set [id={}]", uniq_id_).child(match);
+            auto item = ExplanationItem().line("{}: store match set", fullName()).child(match);
 
             if (hasSubscriber(ctx.phase, ctx.requester)) {
                 return item;
@@ -103,7 +102,7 @@ class In : public Operation {
             return {};
         }
 
-        return ExplanationItem().line("In: stream match [id={}]", uniq_id_).child(source);
+        return ExplanationItem().line("{}: stream match", fullName()).child(source);
     }
 
     OperationPtr source_;

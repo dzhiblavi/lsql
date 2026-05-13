@@ -26,6 +26,8 @@
 #include "exec/op/Materialize.h"
 #include "exec/op/Projection.h"
 #include "exec/op/Sort.h"
+#include "exec/op/UnionAll.h"
+#include "exec/op/Values.h"
 
 #include <memory>
 #include <stack>
@@ -111,6 +113,27 @@ class ExecVisitor : public Visitor {
                 popOperation(), expressionList(*node.order_by->order_list), node.order_by->desc));
     }
 
+    void visit(const UnionAll& node) override {
+        node.l->visit(*this);
+        auto l = popOperation();
+        node.r->visit(*this);
+        auto r = popOperation();
+
+        pushOperation(exec::unionAll(l, r));
+    }
+
+    void visit(const AdhocRelation& node) override {
+        std::vector<Value> values;
+        values.reserve(node.values->size());
+        for (auto&& node : *node.values) {
+            values.push_back(getExpression(*node)->get());
+        }
+
+        auto op = exec::values(std::move(values));
+        sources.push_back(op);
+        pushOperation(op);
+    }
+
     void visit(const BinaryExpression& e) override {
         e.l->visit(*this);
         e.r->visit(*this);
@@ -172,26 +195,24 @@ class ExecVisitor : public Visitor {
         exprs.push_back(std::make_shared<exec::IdentifierExpression>(e.id));
     }
 
-    void visit(const ValueExpression& e) override {
-        auto expr = [&] -> exec::ExpressionPtr {
-            switch (e.valueType()) {
-                case ValueType::String:
-                    return std::make_shared<exec::ValueExpression>(
-                        e.value_str.substr(1, e.value_str.size() - 2));
-                case ValueType::Integer:
-                    return std::make_shared<exec::ValueExpression>(
-                        int64_t(std::atoll(e.value_str.data())));
-                case ValueType::Boolean:
-                    return std::make_shared<exec::ValueExpression>(e.value_str == "true");
-                case ValueType::Floating:
-                    return std::make_shared<exec::ValueExpression>(
-                        std::strtof(e.value_str.data(), nullptr));
-                case ValueType::Null:
-                    return std::make_shared<exec::ValueExpression>(Value());
-            }
-        }();
+    void visit(const ValueExpression& e) override { exprs.push_back(getExpression(e)); }
 
-        exprs.push_back(expr);
+    std::shared_ptr<exec::ValueExpression> getExpression(const ValueExpression& e) {
+        switch (e.valueType()) {
+            case ValueType::String:
+                return std::make_shared<exec::ValueExpression>(
+                    e.value_str.substr(1, e.value_str.size() - 2));
+            case ValueType::Integer:
+                return std::make_shared<exec::ValueExpression>(
+                    int64_t(std::atoll(e.value_str.data())));
+            case ValueType::Boolean:
+                return std::make_shared<exec::ValueExpression>(e.value_str == "true");
+            case ValueType::Floating:
+                return std::make_shared<exec::ValueExpression>(
+                    std::strtof(e.value_str.data(), nullptr));
+            case ValueType::Null:
+                return std::make_shared<exec::ValueExpression>(Value());
+        }
     }
 
     void visit(const CastExpression& e) override {
@@ -318,9 +339,7 @@ class ExecVisitor : public Visitor {
         return std::move(projectors);
     }
 
-    void pushOperation(exec::OperationPtr op) {
-        operations.push(op);
-    }
+    void pushOperation(exec::OperationPtr op) { operations.push(op); }
 
     std::unordered_map<std::string, exec::OperationPtr> named_ops;
     exec::ProjectionList projectors;

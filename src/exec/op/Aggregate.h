@@ -114,11 +114,9 @@ class Aggregate : public Source, public Record {
         }
 
         if (ctx.phase == first_phase_) {
-            auto item =
-                ExplanationItem()
-                    .line(
-                        "Aggregate w/store ({} projections) [id={}]", projectors_.size(), uniq_id_)
-                    .child(source);
+            auto item = ExplanationItem()
+                            .line("{} (store, {} projections)", fullName(), projectors_.size())
+                            .child(source);
 
             if (hasSubscriber(ctx.phase, ctx.requester)) {
                 return item;
@@ -130,7 +128,7 @@ class Aggregate : public Source, public Record {
 
         // phase > first_phase_
         if (hasSubscriber(ctx.phase, ctx.requester)) {
-            return ExplanationItem().line("Aggregate stored [id={}]", uniq_id_);
+            return ExplanationItem().line("{} (push stored)", fullName());
         }
 
         return {};

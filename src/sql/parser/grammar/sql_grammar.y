@@ -51,6 +51,7 @@
 %token TOKEN_ASC.
 %token TOKEN_NULL.
 %token TOKEN_DOLLAR.
+%token TOKEN_UNION_ALL.
 
 %token TOKEN_MIN.
 %token TOKEN_MAX.
@@ -84,6 +85,8 @@
 %type group_by_list {std::vector<std::unique_ptr<ast::SelectItem>>*}
 %type order_by_opt {ast::OrderBy*}
 %type statement_list {std::vector<std::unique_ptr<ast::Node>>*}
+%type value {ast::ValueExpression*}
+%type value_list {std::vector<std::unique_ptr<ast::ValueExpression>>*}
 
 %start_symbol input
 
@@ -101,18 +104,49 @@ statement_list(S) ::= statement_list(SL) statement(S1). {
     S->emplace_back(S1);
 }
 
-statement(S) ::= select_statement(A). { S = A; }
-statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ TOKEN_LPAREN relation(R) TOKEN_RPAREN. {
+statement(S) ::= relation(R). {
+    S = R;
+}
+
+statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ select_source(R). {
     S = new ast::NamedRelation(Name.text, std::unique_ptr<ast::Node>(R));
 }
-statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ TOKEN_MATERIALIZE
-                 TOKEN_LPAREN relation(R) TOKEN_RPAREN. {
-    auto M = new ast::MaterializedRelation(std::unique_ptr<ast::Node>(R));
+
+// immediate = does not require parentheses in SELECT FROM <here>
+immediate_relation(R) ::= adhoc_relation(A). {
+    R = A;
+}
+
+immediate_relation(R) ::= file_source(F). {
+    R = F;
+}
+
+immediate_relation(R) ::= TOKEN_DOLLAR TOKEN_IDENTIFIER(Name). {
+    R = new ast::NamedRelationReference(Name.text);
+}
+
+immediate_relation(R) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ TOKEN_MATERIALIZE
+                          TOKEN_LPAREN relation(S) TOKEN_RPAREN. {
+    auto M = new ast::MaterializedRelation(std::unique_ptr<ast::Node>(S));
     S = new ast::NamedRelation(Name.text, std::unique_ptr<ast::Node>(M));
 }
 
-// relation(R) ::= ad-hoc relation (TODO)
-relation(R) ::= select_statement(A). { R = A; }
+// all kinds of relations that can be used on top level
+relation(R) ::= immediate_relation(A). {
+    R = A;
+}
+
+relation(R) ::= select_statement(A). {
+    R = A;
+}
+
+relation(A) ::= relation(L) TOKEN_UNION_ALL relation(R). {
+    A = new ast::UnionAll(std::unique_ptr<ast::Node>(L), std::unique_ptr<ast::Node>(R));
+}
+
+adhoc_relation(A) ::= TOKEN_LPAREN value_list(L) TOKEN_RPAREN. {
+    A = new ast::AdhocRelation(std::unique_ptr<std::vector<std::unique_ptr<ast::ValueExpression>>>(L));
+}
 
 select_statement(A) ::= TOKEN_SELECT select_list(L)
                         TOKEN_FROM select_source(F)
@@ -146,10 +180,18 @@ select_statement(A) ::= TOKEN_SELECT select_list(L)
     }
 }
 
-select_source(S) ::= file_source(F). { S = F; }
-select_source(S) ::= TOKEN_LPAREN relation(R) TOKEN_RPAREN. { S = R; }
-select_source(S) ::= TOKEN_DOLLAR TOKEN_IDENTIFIER(Name). {
-    S = new ast::NamedRelationReference(Name.text);
+// all relations in parentheses
+select_source(S) ::= TOKEN_LPAREN relation(R) TOKEN_RPAREN. {
+    S = R;
+}
+
+// immediate relations as is
+select_source(S) ::= immediate_relation(R). {
+    S = R;
+}
+
+file_source(F) ::= TOKEN_PATH(File). {
+    F = new ast::FileReference(std::string(File.text));
 }
 
 file_source(F) ::= TOKEN_PATH(File) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKEN_INTEGER(Interval). {
@@ -158,10 +200,6 @@ file_source(F) ::= TOKEN_PATH(File) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKE
         std::string(Ts.text),
         std::stoi(Interval.text)
     );
-}
-
-file_source(F) ::= TOKEN_PATH(File). {
-    F = new ast::FileReference(std::string(File.text));
 }
 
 where_opt(A) ::= . { A = nullptr; }
@@ -225,30 +263,7 @@ expression_list(A) ::= expression_list(B) TOKEN_COMMA expression(C). {
     A->push_back(std::unique_ptr<ast::Expression>(C));
 }
 
-
-expression(E) ::= TOKEN_STR(S). {
-    E = new ast::ValueExpression(S.text, lsql::ValueType::String);
-}
-
-expression(E) ::= TOKEN_INTEGER(I). {
-    E = new ast::ValueExpression(I.text, lsql::ValueType::Integer);
-}
-
-expression(E) ::= TOKEN_FLOATING(I). {
-    E = new ast::ValueExpression(I.text, lsql::ValueType::Floating);
-}
-
-expression(E) ::= TOKEN_NULL. {
-    E = new ast::ValueExpression("", lsql::ValueType::Null);
-}
-
-expression(E) ::= TOKEN_TRUE(S). {
-    E = new ast::ValueExpression(S.text, lsql::ValueType::Boolean);
-}
-
-expression(E) ::= TOKEN_FALSE(S). {
-    E = new ast::ValueExpression(S.text, lsql::ValueType::Boolean);
-}
+expression(E) ::= value(V). { E = V; }
 
 expression(E) ::= TOKEN_IDENTIFIER(Id). {
     E = new ast::IdentifierExpression(Id.text, lsql::ValueType::String);
@@ -379,6 +394,40 @@ expression(E) ::= expression(L) TOKEN_IN select_source(S). {
         std::unique_ptr<ast::Expression>(L),
         std::unique_ptr<ast::Node>(S)
     );
+}
+
+value_list(L) ::= value(V). {
+    L = new std::vector<std::unique_ptr<ast::ValueExpression>>();
+    L->emplace_back(V);
+}
+
+value_list(L) ::= value_list(L1) TOKEN_COMMA value(V). {
+    L = L1;
+    L->emplace_back(V);
+}
+
+value(E) ::= TOKEN_STR(S). {
+    E = new ast::ValueExpression(S.text, lsql::ValueType::String);
+}
+
+value(E) ::= TOKEN_INTEGER(I). {
+    E = new ast::ValueExpression(I.text, lsql::ValueType::Integer);
+}
+
+value(E) ::= TOKEN_FLOATING(I). {
+    E = new ast::ValueExpression(I.text, lsql::ValueType::Floating);
+}
+
+value(E) ::= TOKEN_TRUE(S). {
+    E = new ast::ValueExpression(S.text, lsql::ValueType::Boolean);
+}
+
+value(E) ::= TOKEN_FALSE(S). {
+    E = new ast::ValueExpression(S.text, lsql::ValueType::Boolean);
+}
+
+value(E) ::= TOKEN_NULL. {
+    E = new ast::ValueExpression("", lsql::ValueType::Null);
 }
 
 floating_list(L) ::= TOKEN_FLOATING(I). {

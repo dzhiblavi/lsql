@@ -28,75 +28,76 @@
 /************ Begin %include sections from the grammar ************************/
 #line 5 "sql_grammar.y"
 
-#include "sql/parser/parser.h"
-#include "sql/parser/token.h"
+    #include "sql/parser/token.h"
+    #include "sql/parser/parser.h"
 
-#include "sql/ast/BinExpression.h"
-#include "sql/ast/Expression.h"
-#include "sql/ast/FileReference.h"
-#include "sql/ast/Program.h"
-#include "sql/ast/SelectStatement.h"
-#include "sql/ast/UnaryAggregateExpression.h"
-#include "sql/ast/UnaryExpression.h"
+    #include "sql/ast/SelectStatement.h"
+    #include "sql/ast/Expression.h"
+    #include "sql/ast/BinExpression.h"
+    #include "sql/ast/UnaryExpression.h"
+    #include "sql/ast/UnaryAggregateExpression.h"
+    #include "sql/ast/FileReference.h"
+    #include "sql/ast/Program.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <vector>
+    #include <cstdio>
+    #include <cstdlib>
+    #include <cstring>
+    #include <vector>
 
-namespace ast = lsql::sql::ast;
+    namespace ast = lsql::sql::ast;
 #line 49 "sql_grammar.c"
 /**************** End of %include directives **********************************/
 /* These constants specify the various numeric values for terminal symbols.
 ***************** Begin token definitions *************************************/
 #ifndef TOKEN_SELECT
-#define TOKEN_SELECT 1
-#define TOKEN_COUNT 2
-#define TOKEN_FROM 3
-#define TOKEN_IDENTIFIER 4
-#define TOKEN_SEMICOLON 5
-#define TOKEN_EOF 6
-#define TOKEN_AS 7
-#define TOKEN_IN 8
-#define TOKEN_COALESCE 9
-#define TOKEN_COMMA 10
-#define TOKEN_STAR 11
-#define TOKEN_WHERE 12
-#define TOKEN_LIMIT 13
-#define TOKEN_INTEGER 14
-#define TOKEN_FLOATING 15
-#define TOKEN_PATH 16
-#define TOKEN_STR 17
-#define TOKEN_RSUBSTR 18
-#define TOKEN_LPAREN 19
-#define TOKEN_RPAREN 20
-#define TOKEN_AT 21
-#define TOKEN_GROUP_BY 22
-#define TOKEN_ORDER_BY 23
-#define TOKEN_TRUE 24
-#define TOKEN_FALSE 25
-#define TOKEN_DESC 26
-#define TOKEN_ASC 27
-#define TOKEN_NULL 28
-#define TOKEN_DOLLAR 29
-#define TOKEN_MIN 30
-#define TOKEN_MAX 31
-#define TOKEN_SUM 32
-#define TOKEN_PERCENTILE 33
-#define TOKEN_PLUS 34
-#define TOKEN_OR 35
-#define TOKEN_AND 36
-#define TOKEN_DIVIDE 37
-#define TOKEN_EQ 38
-#define TOKEN_NEQ 39
-#define TOKEN_LIKE 40
-#define TOKEN_MATERIALIZE 41
-#define TOKEN_STRING 42
-#define TOKEN_INT 43
-#define TOKEN_FLOAT 44
-#define TOKEN_BOOL 45
-#define TOKEN_EXCLAMATION 46
-#define TOKEN_TIMESTAMP 47
+#define TOKEN_SELECT                    1
+#define TOKEN_COUNT                     2
+#define TOKEN_FROM                      3
+#define TOKEN_IDENTIFIER                4
+#define TOKEN_SEMICOLON                 5
+#define TOKEN_EOF                       6
+#define TOKEN_AS                        7
+#define TOKEN_IN                        8
+#define TOKEN_COALESCE                  9
+#define TOKEN_COMMA                    10
+#define TOKEN_STAR                     11
+#define TOKEN_WHERE                    12
+#define TOKEN_LIMIT                    13
+#define TOKEN_INTEGER                  14
+#define TOKEN_FLOATING                 15
+#define TOKEN_PATH                     16
+#define TOKEN_STR                      17
+#define TOKEN_RSUBSTR                  18
+#define TOKEN_LPAREN                   19
+#define TOKEN_RPAREN                   20
+#define TOKEN_AT                       21
+#define TOKEN_GROUP_BY                 22
+#define TOKEN_ORDER_BY                 23
+#define TOKEN_TRUE                     24
+#define TOKEN_FALSE                    25
+#define TOKEN_DESC                     26
+#define TOKEN_ASC                      27
+#define TOKEN_NULL                     28
+#define TOKEN_DOLLAR                   29
+#define TOKEN_UNION_ALL                30
+#define TOKEN_MIN                      31
+#define TOKEN_MAX                      32
+#define TOKEN_SUM                      33
+#define TOKEN_PERCENTILE               34
+#define TOKEN_PLUS                     35
+#define TOKEN_OR                       36
+#define TOKEN_AND                      37
+#define TOKEN_DIVIDE                   38
+#define TOKEN_EQ                       39
+#define TOKEN_NEQ                      40
+#define TOKEN_LIKE                     41
+#define TOKEN_MATERIALIZE              42
+#define TOKEN_STRING                   43
+#define TOKEN_INT                      44
+#define TOKEN_FLOAT                    45
+#define TOKEN_BOOL                     46
+#define TOKEN_EXCLAMATION              47
+#define TOKEN_TIMESTAMP                48
 #endif
 /**************** End token definitions ***************************************/
 
@@ -123,7 +124,7 @@ namespace ast = lsql::sql::ast;
 **                       the minor type might be the name of the identifier.
 **                       Each non-terminal can have a different minor type.
 **                       Terminal symbols all have the same minor type, though.
-**                       This macros defines the minor type for terminal
+**                       This macros defines the minor type for terminal 
 **                       symbols.
 **    YYMINORTYPE        is the data type used for all minor types.
 **                       This is typically a union of many types, one of
@@ -157,34 +158,36 @@ namespace ast = lsql::sql::ast;
 **    YY_MAX_DSTRCTR     Maximum symbol value that has a destructor
 */
 #ifndef INTERFACE
-#define INTERFACE 1
+# define INTERFACE 1
 #endif
 /************* Begin control #defines *****************************************/
 #define YYCODETYPE unsigned char
-#define YYNOCODE 69
+#define YYNOCODE 74
 #define YYACTIONTYPE unsigned short int
 #define ParseTOKENTYPE lsql::sql::parse::Token
 typedef union {
-    int yyinit;
-    ParseTOKENTYPE yy0;
-    ast::Expression* yy31;
-    ast::SelectItem* yy44;
-    std::vector<std::unique_ptr<ast::SelectItem>>* yy51;
-    int yy52;
-    ast::OrderBy* yy84;
-    std::vector<std::unique_ptr<ast::Node>>* yy85;
-    std::vector<std::unique_ptr<ast::Expression>>* yy92;
-    std::vector<float>* yy111;
-    lsql::sql::ast::Node* yy125;
+  int yyinit;
+  ParseTOKENTYPE yy0;
+  int yy8;
+  lsql::sql::ast::Node* yy17;
+  std::vector<float>* yy18;
+  ast::Expression* yy19;
+  std::vector<std::unique_ptr<ast::SelectItem>>* yy51;
+  std::vector<std::unique_ptr<ast::ValueExpression>>* yy53;
+  ast::ValueExpression* yy96;
+  ast::SelectItem* yy98;
+  ast::OrderBy* yy106;
+  std::vector<std::unique_ptr<ast::Expression>>* yy140;
+  std::vector<std::unique_ptr<ast::Node>>* yy146;
 } YYMINORTYPE;
 #ifndef YYSTACKDEPTH
 #define YYSTACKDEPTH 100
 #endif
-#define ParseARG_SDECL lsql::sql::parse::Context* pCtx;
-#define ParseARG_PDECL , lsql::sql::parse::Context* pCtx
-#define ParseARG_PARAM , pCtx
-#define ParseARG_FETCH lsql::sql::parse::Context* pCtx = yypParser->pCtx;
-#define ParseARG_STORE yypParser->pCtx = pCtx;
+#define ParseARG_SDECL lsql::sql::parse::Context *pCtx;
+#define ParseARG_PDECL ,lsql::sql::parse::Context *pCtx
+#define ParseARG_PARAM ,pCtx
+#define ParseARG_FETCH lsql::sql::parse::Context *pCtx=yypParser->pCtx;
+#define ParseARG_STORE yypParser->pCtx=pCtx;
 #undef YYREALLOC
 #define YYREALLOC realloc
 #undef YYFREE
@@ -201,22 +204,22 @@ typedef union {
 #undef YYERRORSYMBOL
 #undef YYERRSYMDT
 #undef YYFALLBACK
-#define YYNSTATE 91
-#define YYNRULE 61
-#define YYNRULE_WITH_ACTION 61
-#define YYNTOKEN 48
-#define YY_MAX_SHIFT 90
-#define YY_MIN_SHIFTREDUCE 134
-#define YY_MAX_SHIFTREDUCE 194
-#define YY_ERROR_ACTION 195
-#define YY_ACCEPT_ACTION 196
-#define YY_NO_ACTION 197
-#define YY_MIN_REDUCE 198
-#define YY_MAX_REDUCE 258
-#define YY_MIN_DSTRCTR 0
-#define YY_MAX_DSTRCTR 0
+#define YYNSTATE             97
+#define YYNRULE              69
+#define YYNRULE_WITH_ACTION  69
+#define YYNTOKEN             49
+#define YY_MAX_SHIFT         96
+#define YY_MIN_SHIFTREDUCE   146
+#define YY_MAX_SHIFTREDUCE   214
+#define YY_ERROR_ACTION      215
+#define YY_ACCEPT_ACTION     216
+#define YY_NO_ACTION         217
+#define YY_MIN_REDUCE        218
+#define YY_MAX_REDUCE        286
+#define YY_MIN_DSTRCTR       0
+#define YY_MAX_DSTRCTR       0
 /************* End control #defines *******************************************/
-#define YY_NLOOKAHEAD ((int)(sizeof(yy_lookahead) / sizeof(yy_lookahead[0])))
+#define YY_NLOOKAHEAD ((int)(sizeof(yy_lookahead)/sizeof(yy_lookahead[0])))
 
 /* Define the yytestcase() macro to be a no-op if is not already defined
 ** otherwise.
@@ -227,29 +230,30 @@ typedef union {
 ** for testing.
 */
 #ifndef yytestcase
-#define yytestcase(X)
+# define yytestcase(X)
 #endif
 
 /* Macro to determine if stack space has the ability to grow using
 ** heap memory.
 */
-#if YYSTACKDEPTH <= 0 || YYDYNSTACK
-#define YYGROWABLESTACK 1
+#if YYSTACKDEPTH<=0 || YYDYNSTACK
+# define YYGROWABLESTACK 1
 #else
-#define YYGROWABLESTACK 0
+# define YYGROWABLESTACK 0
 #endif
 
 /* Guarantee a minimum number of initial stack slots.
- */
-#if YYSTACKDEPTH <= 0
-#undef YYSTACKDEPTH
-#define YYSTACKDEPTH 2 /* Need a minimum stack size */
+*/
+#if YYSTACKDEPTH<=0
+# undef YYSTACKDEPTH
+# define YYSTACKDEPTH 2  /* Need a minimum stack size */
 #endif
+
 
 /* Next are the tables used to determine what action to take based on the
 ** current state and lookahead token.  These tables are used to implement
 ** functions that take a state number and lookahead value and return an
-** action integer.
+** action integer.  
 **
 ** Suppose the action integer is N.  Then the action is determined as
 ** follows
@@ -296,115 +300,135 @@ typedef union {
 **  yy_default[]       Default action for each state.
 **
 *********** Begin parsing tables **********************************************/
-#define YY_ACTTAB_COUNT (289)
+#define YY_ACTTAB_COUNT (385)
 static const YYACTIONTYPE yy_action[] = {
-    /*     0 */ 48,  256, 75,  206, 37,  10,  196, 199, 201, 71,
-    /*    10 */ 1,   158, 1,   89,  168, 169, 36,  167, 70,  60,
-    /*    20 */ 212, 223, 36,  38,  171, 172, 8,   224, 170, 8,
-    /*    30 */ 74,  73,  72,  67,  8,   79,  1,   39,  12,  89,
-    /*    40 */ 8,   90,  85,  84,  83,  82,  20,  75,  80,  37,
-    /*    50 */ 40,  64,  8,   193, 71,  21,  29,  27,  86,  168,
-    /*    60 */ 169, 86,  167, 70,  29,  27,  86,  200, 201, 171,
-    /*    70 */ 172, 27,  86,  170, 58,  74,  73,  72,  67,  23,
-    /*    80 */ 25,  21,  29,  27,  86,  41,  30,  85,  84,  83,
-    /*    90 */ 82,  20,  75,  87,  173, 36,  237, 237, 42,  71,
-    /*   100 */ 228, 36,  154, 153, 168, 169, 227, 167, 70,  49,
-    /*   110 */ 43,  65,  49,  59,  171, 172, 56,  8,   170, 31,
-    /*   120 */ 74,  73,  72,  67,  237, 237, 237, 237, 237, 237,
-    /*   130 */ 8,   66,  85,  84,  83,  82,  20,  8,   35,  69,
-    /*   140 */ 206, 191, 188, 8,   23,  25,  21,  29,  27,  86,
-    /*   150 */ 50,  8,   54,  44,  52,  187, 45,  23,  25,  21,
-    /*   160 */ 29,  27,  86,  186, 23,  25,  21,  29,  27,  86,
-    /*   170 */ 23,  25,  21,  29,  27,  86,  8,   13,  23,  25,
-    /*   180 */ 21,  29,  27,  86,  8,   30,  204, 62,  185, 53,
-    /*   190 */ 8,   204, 81,  204, 88,  189, 177, 8,   46,  63,
-    /*   200 */ 57,  47,  176, 23,  25,  21,  29,  27,  86,  175,
-    /*   210 */ 55,  23,  25,  21,  29,  27,  86,  23,  25,  21,
-    /*   220 */ 29,  27,  86,  8,   23,  25,  21,  29,  27,  86,
-    /*   230 */ 8,   51,  9,   7,   205, 174, 8,   32,  2,   3,
-    /*   240 */ 34,  139, 33,  4,   11,  162, 5,   194, 145, 14,
-    /*   250 */ 23,  25,  21,  29,  27,  86,  68,  23,  25,  21,
-    /*   260 */ 29,  27,  86,  190, 25,  21,  29,  27,  86,  15,
-    /*   270 */ 6,   16,  17,  18,  19,  144, 76,  78,  143, 22,
-    /*   280 */ 77,  24,  26,  28,  179, 138, 156, 61,  198,
+ /*     0 */   277,   65,   80,   66,   40,  227,  223,  224,  228,   76,
+ /*    10 */    41,  175,   71,   51,  208,  209,   39,  207,   75,   64,
+ /*    20 */    31,  248,  203,  256,  210,  211,  256,  278,  212,  256,
+ /*    30 */   201,   79,   78,   77,   72,  220,   95,  237,  227,  223,
+ /*    40 */   224,  228,  213,   84,   83,   82,   81,   21,   80,    2,
+ /*    50 */    40,   61,  216,  219,   95,   76,  227,  223,  224,  228,
+ /*    60 */   208,  209,    8,  207,   75,  222,  233,  223,  224,    9,
+ /*    70 */   210,  211,  208,  209,  212,  207,   10,   79,   78,   77,
+ /*    80 */    72,   31,  210,  211,    5,    5,  212,   67,   93,   84,
+ /*    90 */    83,   82,   81,   21,   80,   85,  185,  171,  170,   90,
+ /*   100 */    90,   76,   32,   32,   33,   42,  208,  209,   43,  207,
+ /*   110 */    75,   86,   94,   94,  158,   35,  210,  211,  256,  231,
+ /*   120 */   212,  256,   14,   79,   78,   77,   72,    5,   69,    8,
+ /*   130 */    93,  276,  233,  223,  224,   84,   83,   82,   81,   21,
+ /*   140 */   208,  209,   90,  207,    6,   32,  257,  257,   36,    8,
+ /*   150 */   210,  211,   11,   44,  212,   94,    8,   24,   26,   22,
+ /*   160 */    30,   28,   85,    8,  160,   34,  256,   37,  200,    8,
+ /*   170 */     7,   74,  179,    4,    4,  257,  257,  257,  257,  257,
+ /*   180 */   257,   28,   85,   12,   24,   26,   22,   30,   28,   85,
+ /*   190 */   214,   24,   26,   22,   30,   28,   85,   24,   26,   22,
+ /*   200 */    30,   28,   85,    8,  277,   65,   45,   46,   63,    8,
+ /*   210 */   227,  223,  224,  228,  202,  199,   53,   15,    8,  256,
+ /*   220 */   256,  198,   68,   73,  227,  223,  224,  228,   16,  256,
+ /*   230 */   197,   24,   26,   22,   30,   28,   85,   24,   26,   22,
+ /*   240 */    30,   28,   85,    8,   93,   13,   24,   26,   22,   30,
+ /*   250 */    28,   85,    8,   52,  191,  189,   90,   62,    8,    1,
+ /*   260 */    38,  233,  223,  224,  188,   57,  256,    8,   17,   94,
+ /*   270 */   187,   24,   26,   22,   30,   28,   85,   18,  256,  186,
+ /*   280 */    24,   26,   22,   30,   28,   85,   24,   26,   22,   30,
+ /*   290 */    28,   85,    8,  154,   47,   24,   26,   22,   30,   28,
+ /*   300 */    85,    5,   93,    4,   67,    8,   96,  256,   19,  173,
+ /*   310 */    20,    8,   23,   39,   90,    8,   90,    1,  249,   32,
+ /*   320 */    24,   26,   22,   30,   28,   85,  256,   94,   25,   94,
+ /*   330 */    27,   88,   29,   92,   26,   22,   30,   28,   85,   55,
+ /*   340 */    91,   22,   30,   28,   85,   39,   30,   28,   85,  163,
+ /*   350 */   252,   39,  256,   87,   48,   70,  253,   56,  256,   89,
+ /*   360 */     3,   52,  153,   49,  256,   59,   60,  256,   50,   58,
+ /*   370 */   256,   54,   91,  218,  256,  217,  256,  217,  217,  256,
+ /*   380 */   217,  256,  256,  217,  256,
 };
 static const YYCODETYPE yy_lookahead[] = {
-    /*     0 */ 48, 65, 2,  67, 4,  60, 61, 62, 63, 9,
-    /*    10 */ 1,  11, 1,  4,  14, 15, 48, 17, 18, 51,
-    /*    20 */ 68, 53, 48, 48, 24, 25, 8,  53, 28, 8,
-    /*    30 */ 30, 31, 32, 33, 8,  16, 1,  48, 19, 4,
-    /*    40 */ 8,  6,  42, 43, 44, 45, 46, 2,  29, 4,
-    /*    50 */ 48, 7,  8,  15, 9,  37, 38, 39, 40, 14,
-    /*    60 */ 15, 40, 17, 18, 38, 39, 40, 62, 63, 24,
-    /*    70 */ 25, 39, 40, 28, 54, 30, 31, 32, 33, 35,
-    /*    80 */ 36, 37, 38, 39, 40, 48, 10, 42, 43, 44,
-    /*    90 */ 45, 46, 2,  13, 4,  48, 7,  8,  48, 9,
-    /*   100 */ 53, 48, 26, 27, 14, 15, 53, 17, 18, 48,
-    /*   110 */ 48, 58, 48, 52, 24, 25, 52, 8,  28, 10,
-    /*   120 */ 30, 31, 32, 33, 35, 36, 37, 38, 39, 40,
-    /*   130 */ 8,  10, 42, 43, 44, 45, 46, 8,  65, 10,
-    /*   140 */ 67, 20, 20, 8,  35, 36, 37, 38, 39, 40,
-    /*   150 */ 48, 8,  48, 48, 48, 20, 48, 35, 36, 37,
-    /*   160 */ 38, 39, 40, 20, 35, 36, 37, 38, 39, 40,
-    /*   170 */ 35, 36, 37, 38, 39, 40, 8,  19, 35, 36,
-    /*   180 */ 37, 38, 39, 40, 8,  10, 63, 64, 20, 48,
-    /*   190 */ 8,  63, 64, 63, 64, 20, 20, 8,  48, 41,
-    /*   200 */ 48, 48, 20, 35, 36, 37, 38, 39, 40, 20,
-    /*   210 */ 48, 35, 36, 37, 38, 39, 40, 35, 36, 37,
-    /*   220 */ 38, 39, 40, 8,  35, 36, 37, 38, 39, 40,
-    /*   230 */ 8,  48, 3,  23, 50, 20, 8,  59, 22, 10,
-    /*   240 */ 66, 20, 57, 12, 19, 4,  10, 15, 14, 19,
-    /*   250 */ 35, 36, 37, 38, 39, 40, 17, 35, 36, 37,
-    /*   260 */ 38, 39, 40, 20, 36, 37, 38, 39, 40, 19,
-    /*   270 */ 19, 19, 19, 19, 19, 4,  34, 21, 20, 19,
-    /*   280 */ 47, 19, 19, 19, 17, 20, 14, 38, 0,  69,
-    /*   290 */ 69, 69, 69, 69, 69, 69, 69, 69, 69, 69,
-    /*   300 */ 69, 69, 69, 69, 69, 69, 69, 69, 69, 69,
-    /*   310 */ 69, 69, 69, 69, 69, 69, 69, 69, 69, 69,
-    /*   320 */ 69, 69, 69, 69, 69, 69, 69, 69, 69, 69,
-    /*   330 */ 69, 69, 69, 69, 69, 69, 69,
+ /*     0 */    62,   63,    2,   66,    4,   68,   69,   70,   71,    9,
+ /*    10 */    49,   11,   10,   49,   14,   15,   49,   17,   18,   52,
+ /*    20 */    10,   54,   20,   62,   24,   25,   62,   62,   28,   62,
+ /*    30 */    20,   31,   32,   33,   34,   65,   66,   73,   68,   69,
+ /*    40 */    70,   71,   15,   43,   44,   45,   46,   47,    2,   61,
+ /*    50 */     4,   55,   64,   65,   66,    9,   68,   69,   70,   71,
+ /*    60 */    14,   15,    8,   17,   18,   67,   68,   69,   70,    3,
+ /*    70 */    24,   25,   14,   15,   28,   17,   10,   31,   32,   33,
+ /*    80 */    34,   10,   24,   25,    1,    1,   28,    4,    4,   43,
+ /*    90 */    44,   45,   46,   47,    2,   41,    4,   26,   27,   16,
+ /*   100 */    16,    9,   19,   19,   10,   49,   14,   15,   49,   17,
+ /*   110 */    18,   13,   29,   29,   20,   60,   24,   25,   62,   51,
+ /*   120 */    28,   62,   23,   31,   32,   33,   34,    1,    7,    8,
+ /*   130 */     4,   67,   68,   69,   70,   43,   44,   45,   46,   47,
+ /*   140 */    14,   15,   16,   17,   22,   19,    7,    8,   58,    8,
+ /*   150 */    24,   25,   12,   49,   28,   29,    8,   36,   37,   38,
+ /*   160 */    39,   40,   41,    8,   20,   10,   62,   72,   20,    8,
+ /*   170 */    39,   10,    4,   30,   30,   36,   37,   38,   39,   40,
+ /*   180 */    41,   40,   41,   10,   36,   37,   38,   39,   40,   41,
+ /*   190 */    15,   36,   37,   38,   39,   40,   41,   36,   37,   38,
+ /*   200 */    39,   40,   41,    8,   62,   63,   49,   49,   66,    8,
+ /*   210 */    68,   69,   70,   71,   20,   20,   49,   19,    8,   62,
+ /*   220 */    62,   20,   66,   17,   68,   69,   70,   71,   19,   62,
+ /*   230 */    20,   36,   37,   38,   39,   40,   41,   36,   37,   38,
+ /*   240 */    39,   40,   41,    8,    4,   19,   36,   37,   38,   39,
+ /*   250 */    40,   41,    8,   49,   17,   20,   16,   53,    8,   19,
+ /*   260 */    67,   68,   69,   70,   20,   49,   62,    8,   19,   29,
+ /*   270 */    20,   36,   37,   38,   39,   40,   41,   19,   62,   20,
+ /*   280 */    36,   37,   38,   39,   40,   41,   36,   37,   38,   39,
+ /*   290 */    40,   41,    8,   20,   49,   36,   37,   38,   39,   40,
+ /*   300 */    41,    1,    4,   30,    4,    8,    6,   62,   19,   14,
+ /*   310 */    19,    8,   19,   49,   16,    8,   16,   19,   54,   19,
+ /*   320 */    36,   37,   38,   39,   40,   41,   62,   29,   19,   29,
+ /*   330 */    19,   48,   19,   39,   37,   38,   39,   40,   41,   49,
+ /*   340 */    42,   38,   39,   40,   41,   49,   39,   40,   41,   14,
+ /*   350 */    54,   49,   62,   35,   49,   59,   54,   49,   62,   21,
+ /*   360 */    19,   49,    4,   49,   62,   53,   49,   62,   49,   49,
+ /*   370 */    62,   49,   42,    0,   62,   74,   62,   74,   74,   62,
+ /*   380 */    74,   62,   62,   74,   62,   74,   74,   74,   74,   74,
+ /*   390 */    74,   74,   74,   74,   74,   74,   74,   74,   74,   74,
+ /*   400 */    74,   74,   74,   74,   74,   74,   74,   74,   74,   74,
+ /*   410 */    74,   74,   74,   74,   74,   74,   74,   74,   74,   74,
+ /*   420 */    74,   74,   74,   49,   49,   49,   49,   49,   49,   49,
+ /*   430 */    49,   49,   49,   49,
 };
-#define YY_SHIFT_COUNT (90)
-#define YY_SHIFT_MIN (0)
-#define YY_SHIFT_MAX (288)
+#define YY_SHIFT_COUNT    (96)
+#define YY_SHIFT_MIN      (0)
+#define YY_SHIFT_MAX      (373)
 static const unsigned short int yy_shift_ofst[] = {
-    /*     0 */ 9,   0,   45,  45,  90,  45,  90,  90,  19,  19,
-    /*    10 */ 35,  11,  11,  11,  90,  90,  90,  90,  90,  90,
-    /*    20 */ 90,  90,  90,  90,  90,  90,  90,  90,  90,  90,
-    /*    30 */ 90,  38,  80,  210, 216, 231, 44,  89,  109, 129,
-    /*    40 */ 122, 135, 143, 168, 176, 182, 189, 215, 222, 222,
-    /*    50 */ 222, 222, 228, 18,  26,  32,  76,  21,  121, 175,
-    /*    60 */ 229, 158, 221, 225, 241, 236, 232, 230, 243, 239,
-    /*    70 */ 250, 251, 252, 253, 254, 255, 234, 242, 233, 256,
-    /*    80 */ 271, 258, 260, 262, 263, 264, 267, 272, 265, 249,
-    /*    90 */ 288,
+ /*     0 */    83,  126,  300,   84,   84,    0,   46,  298,  240,  240,
+ /*    10 */    46,   92,   46,   92,   92,   92,   92,   92,   92,   92,
+ /*    20 */    92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+ /*    30 */    92,   92,   58,   58,   27,   98,   99,  122,  140,  121,
+ /*    40 */   139,  155,  161,  148,  195,  201,  210,  235,  244,  250,
+ /*    50 */   259,  284,  284,  284,  284,  297,  303,  307,  141,   71,
+ /*    60 */    54,    2,   10,  144,   66,   94,  273,  131,  143,  168,
+ /*    70 */   173,  175,  198,  194,  206,  209,  226,  249,  258,  289,
+ /*    80 */   291,  293,  309,  311,  313,  237,  295,  335,  318,  283,
+ /*    90 */   338,  341,  330,  294,  358,  143,  373,
 };
-#define YY_REDUCE_COUNT (35)
-#define YY_REDUCE_MIN (-64)
-#define YY_REDUCE_MAX (185)
+#define YY_REDUCE_COUNT (38)
+#define YY_REDUCE_MIN   (-63)
+#define YY_REDUCE_MAX   (322)
 static const short yy_reduce_ofst[] = {
-    /*     0 */ -55, -32, 53,  -26, -48, 47,  61,  64,  -64, 73,
-    /*    10 */ 5,   123, 128, 130, -25, -11, 2,   37,  50,  62,
-    /*    20 */ 102, 104, 105, 106, 108, 141, 150, 152, 153, 162,
-    /*    30 */ 183, 20,  184, 178, 185, 174,
+ /*     0 */   -12,  142,  -30,  -63,  156,  -33,  296,   -2,   64,  193,
+ /*    10 */   264,  -36,  302,  204,  312,  -39,   56,   59,  104,  157,
+ /*    20 */   158,  167,  216,  245,  290,  305,  308,  314,  317,  319,
+ /*    30 */   320,  322,  -62,  -35,   -4,   68,   55,   90,   95,
 };
 static const YYACTIONTYPE yy_default[] = {
-    /*     0 */ 195, 195, 195, 195, 195, 195, 195, 195, 195, 195,
-    /*    10 */ 195, 195, 195, 195, 195, 195, 195, 195, 195, 195,
-    /*    20 */ 195, 195, 195, 195, 195, 195, 195, 195, 195, 195,
-    /*    30 */ 195, 195, 221, 215, 213, 211, 195, 225, 195, 195,
-    /*    40 */ 195, 195, 195, 195, 195, 195, 195, 195, 219, 229,
-    /*    50 */ 242, 230, 247, 246, 248, 244, 216, 245, 195, 195,
-    /*    60 */ 195, 195, 195, 195, 195, 214, 195, 195, 195, 195,
-    /*    70 */ 195, 195, 195, 195, 195, 195, 195, 195, 195, 210,
-    /*    80 */ 195, 195, 195, 195, 195, 195, 195, 195, 195, 195,
-    /*    90 */ 195,
+ /*     0 */   215,  215,  215,  215,  215,  215,  215,  215,  215,  215,
+ /*    10 */   215,  215,  215,  215,  215,  215,  215,  215,  215,  215,
+ /*    20 */   215,  215,  215,  215,  215,  215,  215,  215,  215,  215,
+ /*    30 */   215,  215,  215,  215,  215,  246,  240,  238,  236,  215,
+ /*    40 */   250,  215,  215,  215,  215,  215,  215,  215,  215,  215,
+ /*    50 */   215,  244,  254,  262,  255,  267,  266,  268,  264,  241,
+ /*    60 */   265,  215,  215,  215,  215,  215,  215,  215,  229,  215,
+ /*    70 */   239,  215,  215,  215,  215,  215,  215,  215,  215,  215,
+ /*    80 */   215,  215,  215,  215,  215,  215,  215,  215,  215,  215,
+ /*    90 */   234,  215,  215,  215,  215,  221,  215,
 };
 /********** End of lemon-generated parsing tables *****************************/
 
-/* The next table maps tokens (terminal symbols) into fallback tokens.
+/* The next table maps tokens (terminal symbols) into fallback tokens.  
 ** If a construct like the following:
-**
+** 
 **      %fallback ID X Y Z.
 **
 ** appears in the grammar, then ID becomes a fallback token for X, Y,
@@ -417,7 +441,8 @@ static const YYACTIONTYPE yy_default[] = {
 ** it appears.
 */
 #ifdef YYFALLBACK
-static const YYCODETYPE yyFallback[] = {};
+static const YYCODETYPE yyFallback[] = {
+};
 #endif /* YYFALLBACK */
 
 /* The following structure represents a single element of the
@@ -437,44 +462,44 @@ static const YYCODETYPE yyFallback[] = {};
 ** SHIFTREDUCE.
 */
 struct yyStackEntry {
-    YYACTIONTYPE stateno; /* The state-number, or reduce action in SHIFTREDUCE */
-    YYCODETYPE major;     /* The major token value.  This is the code
-                          ** number for the token at this stack level */
-    YYMINORTYPE minor;    /* The user-supplied minor token value.  This
-                          ** is the value of the token  */
+  YYACTIONTYPE stateno;  /* The state-number, or reduce action in SHIFTREDUCE */
+  YYCODETYPE major;      /* The major token value.  This is the code
+                         ** number for the token at this stack level */
+  YYMINORTYPE minor;     /* The user-supplied minor token value.  This
+                         ** is the value of the token  */
 };
 typedef struct yyStackEntry yyStackEntry;
 
 /* The state of the parser is completely contained in an instance of
 ** the following structure */
 struct yyParser {
-    yyStackEntry* yytos; /* Pointer to top element of the stack */
+  yyStackEntry *yytos;          /* Pointer to top element of the stack */
 #ifdef YYTRACKMAXSTACKDEPTH
-    int yyhwm; /* High-water mark of the stack */
+  int yyhwm;                    /* High-water mark of the stack */
 #endif
 #ifndef YYNOERRORRECOVERY
-    int yyerrcnt; /* Shifts left before out of the error */
+  int yyerrcnt;                 /* Shifts left before out of the error */
 #endif
-    ParseARG_SDECL                     /* A place to hold %extra_argument */
-        ParseCTX_SDECL                 /* A place to hold %extra_context */
-        yyStackEntry* yystackEnd;      /* Last entry in the stack */
-    yyStackEntry* yystack;             /* The parser stack */
-    yyStackEntry yystk0[YYSTACKDEPTH]; /* Initial stack space */
+  ParseARG_SDECL                /* A place to hold %extra_argument */
+  ParseCTX_SDECL                /* A place to hold %extra_context */
+  yyStackEntry *yystackEnd;           /* Last entry in the stack */
+  yyStackEntry *yystack;              /* The parser stack */
+  yyStackEntry yystk0[YYSTACKDEPTH];  /* Initial stack space */
 };
 typedef struct yyParser yyParser;
 
 #include <assert.h>
 #ifndef NDEBUG
 #include <stdio.h>
-static FILE* yyTraceFILE = 0;
-static char* yyTracePrompt = 0;
+static FILE *yyTraceFILE = 0;
+static char *yyTracePrompt = 0;
 #endif /* NDEBUG */
 
 #ifndef NDEBUG
-/*
+/* 
 ** Turn parser tracing on by giving a stream to which to write the trace
 ** and a prompt to preface each trace message.  Tracing is turned off
-** by making either argument NULL
+** by making either argument NULL 
 **
 ** Inputs:
 ** <ul>
@@ -488,209 +513,212 @@ static char* yyTracePrompt = 0;
 ** Outputs:
 ** None.
 */
-void ParseTrace(FILE* TraceFILE, char* zTracePrompt) {
-    yyTraceFILE = TraceFILE;
-    yyTracePrompt = zTracePrompt;
-    if (yyTraceFILE == 0)
-        yyTracePrompt = 0;
-    else if (yyTracePrompt == 0)
-        yyTraceFILE = 0;
+void ParseTrace(FILE *TraceFILE, char *zTracePrompt){
+  yyTraceFILE = TraceFILE;
+  yyTracePrompt = zTracePrompt;
+  if( yyTraceFILE==0 ) yyTracePrompt = 0;
+  else if( yyTracePrompt==0 ) yyTraceFILE = 0;
 }
 #endif /* NDEBUG */
 
 #if defined(YYCOVERAGE) || !defined(NDEBUG)
 /* For tracing shifts, the names of all terminals and nonterminals
 ** are required.  The following table supplies these names */
-static const char* const yyTokenName[] = {
-    /*    0 */ "$",
-    /*    1 */ "TOKEN_SELECT",
-    /*    2 */ "TOKEN_COUNT",
-    /*    3 */ "TOKEN_FROM",
-    /*    4 */ "TOKEN_IDENTIFIER",
-    /*    5 */ "TOKEN_SEMICOLON",
-    /*    6 */ "TOKEN_EOF",
-    /*    7 */ "TOKEN_AS",
-    /*    8 */ "TOKEN_IN",
-    /*    9 */ "TOKEN_COALESCE",
-    /*   10 */ "TOKEN_COMMA",
-    /*   11 */ "TOKEN_STAR",
-    /*   12 */ "TOKEN_WHERE",
-    /*   13 */ "TOKEN_LIMIT",
-    /*   14 */ "TOKEN_INTEGER",
-    /*   15 */ "TOKEN_FLOATING",
-    /*   16 */ "TOKEN_PATH",
-    /*   17 */ "TOKEN_STR",
-    /*   18 */ "TOKEN_RSUBSTR",
-    /*   19 */ "TOKEN_LPAREN",
-    /*   20 */ "TOKEN_RPAREN",
-    /*   21 */ "TOKEN_AT",
-    /*   22 */ "TOKEN_GROUP_BY",
-    /*   23 */ "TOKEN_ORDER_BY",
-    /*   24 */ "TOKEN_TRUE",
-    /*   25 */ "TOKEN_FALSE",
-    /*   26 */ "TOKEN_DESC",
-    /*   27 */ "TOKEN_ASC",
-    /*   28 */ "TOKEN_NULL",
-    /*   29 */ "TOKEN_DOLLAR",
-    /*   30 */ "TOKEN_MIN",
-    /*   31 */ "TOKEN_MAX",
-    /*   32 */ "TOKEN_SUM",
-    /*   33 */ "TOKEN_PERCENTILE",
-    /*   34 */ "TOKEN_PLUS",
-    /*   35 */ "TOKEN_OR",
-    /*   36 */ "TOKEN_AND",
-    /*   37 */ "TOKEN_DIVIDE",
-    /*   38 */ "TOKEN_EQ",
-    /*   39 */ "TOKEN_NEQ",
-    /*   40 */ "TOKEN_LIKE",
-    /*   41 */ "TOKEN_MATERIALIZE",
-    /*   42 */ "TOKEN_STRING",
-    /*   43 */ "TOKEN_INT",
-    /*   44 */ "TOKEN_FLOAT",
-    /*   45 */ "TOKEN_BOOL",
-    /*   46 */ "TOKEN_EXCLAMATION",
-    /*   47 */ "TOKEN_TIMESTAMP",
-    /*   48 */ "expression",
-    /*   49 */ "group_expression",
-    /*   50 */ "limit_opt",
-    /*   51 */ "select_list",
-    /*   52 */ "expression_list",
-    /*   53 */ "select_item",
-    /*   54 */ "floating_list",
-    /*   55 */ "group_select_list",
-    /*   56 */ "group_select_item",
-    /*   57 */ "group_by_opt",
-    /*   58 */ "group_by_list",
-    /*   59 */ "order_by_opt",
-    /*   60 */ "statement_list",
-    /*   61 */ "input",
-    /*   62 */ "statement",
-    /*   63 */ "select_statement",
-    /*   64 */ "relation",
-    /*   65 */ "select_source",
-    /*   66 */ "where_opt",
-    /*   67 */ "file_source",
-    /*   68 */ "condition",
+static const char *const yyTokenName[] = { 
+  /*    0 */ "$",
+  /*    1 */ "TOKEN_SELECT",
+  /*    2 */ "TOKEN_COUNT",
+  /*    3 */ "TOKEN_FROM",
+  /*    4 */ "TOKEN_IDENTIFIER",
+  /*    5 */ "TOKEN_SEMICOLON",
+  /*    6 */ "TOKEN_EOF",
+  /*    7 */ "TOKEN_AS",
+  /*    8 */ "TOKEN_IN",
+  /*    9 */ "TOKEN_COALESCE",
+  /*   10 */ "TOKEN_COMMA",
+  /*   11 */ "TOKEN_STAR",
+  /*   12 */ "TOKEN_WHERE",
+  /*   13 */ "TOKEN_LIMIT",
+  /*   14 */ "TOKEN_INTEGER",
+  /*   15 */ "TOKEN_FLOATING",
+  /*   16 */ "TOKEN_PATH",
+  /*   17 */ "TOKEN_STR",
+  /*   18 */ "TOKEN_RSUBSTR",
+  /*   19 */ "TOKEN_LPAREN",
+  /*   20 */ "TOKEN_RPAREN",
+  /*   21 */ "TOKEN_AT",
+  /*   22 */ "TOKEN_GROUP_BY",
+  /*   23 */ "TOKEN_ORDER_BY",
+  /*   24 */ "TOKEN_TRUE",
+  /*   25 */ "TOKEN_FALSE",
+  /*   26 */ "TOKEN_DESC",
+  /*   27 */ "TOKEN_ASC",
+  /*   28 */ "TOKEN_NULL",
+  /*   29 */ "TOKEN_DOLLAR",
+  /*   30 */ "TOKEN_UNION_ALL",
+  /*   31 */ "TOKEN_MIN",
+  /*   32 */ "TOKEN_MAX",
+  /*   33 */ "TOKEN_SUM",
+  /*   34 */ "TOKEN_PERCENTILE",
+  /*   35 */ "TOKEN_PLUS",
+  /*   36 */ "TOKEN_OR",
+  /*   37 */ "TOKEN_AND",
+  /*   38 */ "TOKEN_DIVIDE",
+  /*   39 */ "TOKEN_EQ",
+  /*   40 */ "TOKEN_NEQ",
+  /*   41 */ "TOKEN_LIKE",
+  /*   42 */ "TOKEN_MATERIALIZE",
+  /*   43 */ "TOKEN_STRING",
+  /*   44 */ "TOKEN_INT",
+  /*   45 */ "TOKEN_FLOAT",
+  /*   46 */ "TOKEN_BOOL",
+  /*   47 */ "TOKEN_EXCLAMATION",
+  /*   48 */ "TOKEN_TIMESTAMP",
+  /*   49 */ "expression",
+  /*   50 */ "group_expression",
+  /*   51 */ "limit_opt",
+  /*   52 */ "select_list",
+  /*   53 */ "expression_list",
+  /*   54 */ "select_item",
+  /*   55 */ "floating_list",
+  /*   56 */ "group_select_list",
+  /*   57 */ "group_select_item",
+  /*   58 */ "group_by_opt",
+  /*   59 */ "group_by_list",
+  /*   60 */ "order_by_opt",
+  /*   61 */ "statement_list",
+  /*   62 */ "value",
+  /*   63 */ "value_list",
+  /*   64 */ "input",
+  /*   65 */ "statement",
+  /*   66 */ "relation",
+  /*   67 */ "select_source",
+  /*   68 */ "immediate_relation",
+  /*   69 */ "adhoc_relation",
+  /*   70 */ "file_source",
+  /*   71 */ "select_statement",
+  /*   72 */ "where_opt",
+  /*   73 */ "condition",
 };
 #endif /* defined(YYCOVERAGE) || !defined(NDEBUG) */
 
 #ifndef NDEBUG
 /* For tracing reduce actions, the names of all rules are required.
- */
-static const char* const yyRuleName[] = {
-    /*   0 */ "input ::= statement_list TOKEN_EOF",
-    /*   1 */ "statement_list ::= statement",
-    /*   2 */ "statement_list ::= statement_list statement",
-    /*   3 */ "statement ::= select_statement",
-    /*   4 */ "statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_LPAREN relation TOKEN_RPAREN",
-    /*   5 */
-    "statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation TOKEN_RPAREN",
-    /*   6 */ "relation ::= select_statement",
-    /*   7 */
-    "select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt "
-    "order_by_opt limit_opt",
-    /*   8 */ "select_source ::= file_source",
-    /*   9 */ "select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN",
-    /*  10 */ "select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER",
-    /*  11 */ "file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER",
-    /*  12 */ "file_source ::= TOKEN_PATH",
-    /*  13 */ "where_opt ::=",
-    /*  14 */ "where_opt ::= TOKEN_WHERE condition",
-    /*  15 */ "group_by_opt ::=",
-    /*  16 */ "group_by_opt ::= TOKEN_GROUP_BY group_by_list",
-    /*  17 */ "order_by_opt ::=",
-    /*  18 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list",
-    /*  19 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC",
-    /*  20 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC",
-    /*  21 */ "condition ::= expression",
-    /*  22 */ "limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER",
-    /*  23 */ "limit_opt ::=",
-    /*  24 */ "select_list ::= TOKEN_STAR",
-    /*  25 */ "select_list ::= select_item",
-    /*  26 */ "select_list ::= select_list TOKEN_COMMA select_item",
-    /*  27 */ "select_item ::= TOKEN_IDENTIFIER",
-    /*  28 */ "select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER",
-    /*  29 */ "group_by_list ::= select_item",
-    /*  30 */ "group_by_list ::= group_by_list TOKEN_COMMA select_item",
-    /*  31 */ "expression_list ::= expression",
-    /*  32 */ "expression_list ::= expression_list TOKEN_COMMA expression",
-    /*  33 */ "expression ::= TOKEN_STR",
-    /*  34 */ "expression ::= TOKEN_INTEGER",
-    /*  35 */ "expression ::= TOKEN_FLOATING",
-    /*  36 */ "expression ::= TOKEN_NULL",
-    /*  37 */ "expression ::= TOKEN_TRUE",
-    /*  38 */ "expression ::= TOKEN_FALSE",
-    /*  39 */ "expression ::= TOKEN_IDENTIFIER",
-    /*  40 */ "expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN",
-    /*  41 */ "expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN",
-    /*  42 */ "expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN",
-    /*  43 */ "expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN",
-    /*  44 */ "expression ::= TOKEN_EXCLAMATION expression",
-    /*  45 */ "expression ::= expression TOKEN_LIKE TOKEN_STR",
-    /*  46 */ "expression ::= expression TOKEN_EQ expression",
-    /*  47 */ "expression ::= expression TOKEN_NEQ expression",
-    /*  48 */ "expression ::= expression TOKEN_AND expression",
-    /*  49 */ "expression ::= expression TOKEN_OR expression",
-    /*  50 */ "expression ::= expression TOKEN_DIVIDE expression",
-    /*  51 */ "expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN",
-    /*  52 */ "expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN",
-    /*  53 */ "expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN",
-    /*  54 */ "expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN",
-    /*  55 */ "expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN",
-    /*  56 */
-    "expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN",
-    /*  57 */
-    "expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list "
-    "TOKEN_RPAREN",
-    /*  58 */ "expression ::= expression TOKEN_IN select_source",
-    /*  59 */ "floating_list ::= TOKEN_FLOATING",
-    /*  60 */ "floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING",
+*/
+static const char *const yyRuleName[] = {
+ /*   0 */ "input ::= statement_list TOKEN_EOF",
+ /*   1 */ "statement_list ::= statement",
+ /*   2 */ "statement_list ::= statement_list statement",
+ /*   3 */ "statement ::= relation",
+ /*   4 */ "statement ::= TOKEN_IDENTIFIER TOKEN_EQ select_source",
+ /*   5 */ "immediate_relation ::= adhoc_relation",
+ /*   6 */ "immediate_relation ::= file_source",
+ /*   7 */ "immediate_relation ::= TOKEN_DOLLAR TOKEN_IDENTIFIER",
+ /*   8 */ "immediate_relation ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation TOKEN_RPAREN",
+ /*   9 */ "relation ::= immediate_relation",
+ /*  10 */ "relation ::= select_statement",
+ /*  11 */ "relation ::= relation TOKEN_UNION_ALL relation",
+ /*  12 */ "adhoc_relation ::= TOKEN_LPAREN value_list TOKEN_RPAREN",
+ /*  13 */ "select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt",
+ /*  14 */ "select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN",
+ /*  15 */ "select_source ::= immediate_relation",
+ /*  16 */ "file_source ::= TOKEN_PATH",
+ /*  17 */ "file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER",
+ /*  18 */ "where_opt ::=",
+ /*  19 */ "where_opt ::= TOKEN_WHERE condition",
+ /*  20 */ "group_by_opt ::=",
+ /*  21 */ "group_by_opt ::= TOKEN_GROUP_BY group_by_list",
+ /*  22 */ "order_by_opt ::=",
+ /*  23 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list",
+ /*  24 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC",
+ /*  25 */ "order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC",
+ /*  26 */ "condition ::= expression",
+ /*  27 */ "limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER",
+ /*  28 */ "limit_opt ::=",
+ /*  29 */ "select_list ::= TOKEN_STAR",
+ /*  30 */ "select_list ::= select_item",
+ /*  31 */ "select_list ::= select_list TOKEN_COMMA select_item",
+ /*  32 */ "select_item ::= TOKEN_IDENTIFIER",
+ /*  33 */ "select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER",
+ /*  34 */ "group_by_list ::= select_item",
+ /*  35 */ "group_by_list ::= group_by_list TOKEN_COMMA select_item",
+ /*  36 */ "expression_list ::= expression",
+ /*  37 */ "expression_list ::= expression_list TOKEN_COMMA expression",
+ /*  38 */ "expression ::= value",
+ /*  39 */ "expression ::= TOKEN_IDENTIFIER",
+ /*  40 */ "expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  41 */ "expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  42 */ "expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  43 */ "expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  44 */ "expression ::= TOKEN_EXCLAMATION expression",
+ /*  45 */ "expression ::= expression TOKEN_LIKE TOKEN_STR",
+ /*  46 */ "expression ::= expression TOKEN_EQ expression",
+ /*  47 */ "expression ::= expression TOKEN_NEQ expression",
+ /*  48 */ "expression ::= expression TOKEN_AND expression",
+ /*  49 */ "expression ::= expression TOKEN_OR expression",
+ /*  50 */ "expression ::= expression TOKEN_DIVIDE expression",
+ /*  51 */ "expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  52 */ "expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  53 */ "expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  54 */ "expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN",
+ /*  55 */ "expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN",
+ /*  56 */ "expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN",
+ /*  57 */ "expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN",
+ /*  58 */ "expression ::= expression TOKEN_IN select_source",
+ /*  59 */ "value_list ::= value",
+ /*  60 */ "value_list ::= value_list TOKEN_COMMA value",
+ /*  61 */ "value ::= TOKEN_STR",
+ /*  62 */ "value ::= TOKEN_INTEGER",
+ /*  63 */ "value ::= TOKEN_FLOATING",
+ /*  64 */ "value ::= TOKEN_TRUE",
+ /*  65 */ "value ::= TOKEN_FALSE",
+ /*  66 */ "value ::= TOKEN_NULL",
+ /*  67 */ "floating_list ::= TOKEN_FLOATING",
+ /*  68 */ "floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING",
 };
 #endif /* NDEBUG */
+
 
 #if YYGROWABLESTACK
 /*
 ** Try to increase the size of the parser stack.  Return the number
 ** of errors.  Return 0 on success.
 */
-static int yyGrowStack(yyParser* p) {
-    int oldSize = 1 + (int)(p->yystackEnd - p->yystack);
-    int newSize;
-    int idx;
-    yyStackEntry* pNew;
+static int yyGrowStack(yyParser *p){
+  int oldSize = 1 + (int)(p->yystackEnd - p->yystack);
+  int newSize;
+  int idx;
+  yyStackEntry *pNew;
 #ifdef YYSIZELIMIT
-    int nLimit = YYSIZELIMIT(ParseCTX(p));
+  int nLimit = YYSIZELIMIT(ParseCTX(p));
 #endif
 
-    newSize = oldSize * 2 + 100;
+  newSize = oldSize*2 + 100;
 #ifdef YYSIZELIMIT
-    if (newSize > nLimit) {
-        newSize = nLimit;
-        if (newSize <= oldSize)
-            return 1;
-    }
+  if( newSize>nLimit ){
+    newSize = nLimit;
+    if( newSize<=oldSize ) return 1;
+  }
 #endif
-    idx = (int)(p->yytos - p->yystack);
-    if (p->yystack == p->yystk0) {
-        pNew = YYREALLOC(0, newSize * sizeof(pNew[0]), ParseCTX(p));
-        if (pNew == 0)
-            return 1;
-        memcpy(pNew, p->yystack, oldSize * sizeof(pNew[0]));
-    } else {
-        pNew = YYREALLOC(p->yystack, newSize * sizeof(pNew[0]), ParseCTX(p));
-        if (pNew == 0)
-            return 1;
-    }
-    p->yystack = pNew;
-    p->yytos = &p->yystack[idx];
+  idx = (int)(p->yytos - p->yystack);
+  if( p->yystack==p->yystk0 ){
+    pNew = YYREALLOC(0, newSize*sizeof(pNew[0]), ParseCTX(p));
+    if( pNew==0 ) return 1;
+    memcpy(pNew, p->yystack, oldSize*sizeof(pNew[0]));
+  }else{
+    pNew = YYREALLOC(p->yystack, newSize*sizeof(pNew[0]), ParseCTX(p));
+    if( pNew==0 ) return 1;
+  }
+  p->yystack = pNew;
+  p->yytos = &p->yystack[idx];
 #ifndef NDEBUG
-    if (yyTraceFILE) {
-        fprintf(
-            yyTraceFILE, "%sStack grows from %d to %d entries.\n", yyTracePrompt, oldSize, newSize);
-    }
+  if( yyTraceFILE ){
+    fprintf(yyTraceFILE,"%sStack grows from %d to %d entries.\n",
+            yyTracePrompt, oldSize, newSize);
+  }
 #endif
-    p->yystackEnd = &p->yystack[newSize - 1];
-    return 0;
+  p->yystackEnd = &p->yystack[newSize-1];
+  return 0;
 }
 #endif /* YYGROWABLESTACK */
 
@@ -698,7 +726,7 @@ static int yyGrowStack(yyParser* p) {
 /* For builds that do no have a growable stack, yyGrowStack always
 ** returns an error.
 */
-#define yyGrowStack(X) 1
+# define yyGrowStack(X) 1
 #endif
 
 /* Datatype of the argument to the memory allocated passed as the
@@ -707,29 +735,29 @@ static int yyGrowStack(yyParser* p) {
 ** grammar.
 */
 #ifndef YYMALLOCARGTYPE
-#define YYMALLOCARGTYPE size_t
+# define YYMALLOCARGTYPE size_t
 #endif
 
 /* Initialize a new parser that has already been allocated.
- */
-void ParseInit(void* yypRawParser ParseCTX_PDECL) {
-    yyParser* yypParser = (yyParser*)yypRawParser;
-    ParseCTX_STORE
+*/
+void ParseInit(void *yypRawParser ParseCTX_PDECL){
+  yyParser *yypParser = (yyParser*)yypRawParser;
+  ParseCTX_STORE
 #ifdef YYTRACKMAXSTACKDEPTH
-        yypParser->yyhwm = 0;
+  yypParser->yyhwm = 0;
 #endif
-    yypParser->yystack = yypParser->yystk0;
-    yypParser->yystackEnd = &yypParser->yystack[YYSTACKDEPTH - 1];
+  yypParser->yystack = yypParser->yystk0;
+  yypParser->yystackEnd = &yypParser->yystack[YYSTACKDEPTH-1];
 #ifndef YYNOERRORRECOVERY
-    yypParser->yyerrcnt = -1;
+  yypParser->yyerrcnt = -1;
 #endif
-    yypParser->yytos = yypParser->yystack;
-    yypParser->yystack[0].stateno = 0;
-    yypParser->yystack[0].major = 0;
+  yypParser->yytos = yypParser->yystack;
+  yypParser->yystack[0].stateno = 0;
+  yypParser->yystack[0].major = 0;
 }
 
 #ifndef Parse_ENGINEALWAYSONSTACK
-/*
+/* 
 ** This function allocates a new parser.
 ** The only argument is a pointer to a function which works like
 ** malloc.
@@ -741,44 +769,47 @@ void ParseInit(void* yypRawParser ParseCTX_PDECL) {
 ** A pointer to a parser.  This pointer is used in subsequent calls
 ** to Parse and ParseFree.
 */
-void* ParseAlloc(void* (*mallocProc)(YYMALLOCARGTYPE)ParseCTX_PDECL) {
-    yyParser* yypParser;
-    yypParser = (yyParser*)(*mallocProc)((YYMALLOCARGTYPE)sizeof(yyParser));
-    if (yypParser) {
-        ParseCTX_STORE ParseInit(yypParser ParseCTX_PARAM);
-    }
-    return (void*)yypParser;
+void *ParseAlloc(void *(*mallocProc)(YYMALLOCARGTYPE) ParseCTX_PDECL){
+  yyParser *yypParser;
+  yypParser = (yyParser*)(*mallocProc)( (YYMALLOCARGTYPE)sizeof(yyParser) );
+  if( yypParser ){
+    ParseCTX_STORE
+    ParseInit(yypParser ParseCTX_PARAM);
+  }
+  return (void*)yypParser;
 }
 #endif /* Parse_ENGINEALWAYSONSTACK */
+
 
 /* The following function deletes the "minor type" or semantic value
 ** associated with a symbol.  The symbol can be either a terminal
 ** or nonterminal. "yymajor" is the symbol code, and "yypminor" is
-** a pointer to the value to be deleted.  The code used to do the
+** a pointer to the value to be deleted.  The code used to do the 
 ** deletions is derived from the %destructor and/or %token_destructor
 ** directives of the input grammar.
 */
 static void yy_destructor(
-    yyParser* yypParser,  /* The parser */
-    YYCODETYPE yymajor,   /* Type code for object to destroy */
-    YYMINORTYPE* yypminor /* The object to be destroyed */
-) {
-    ParseARG_FETCH ParseCTX_FETCH switch (yymajor) {
-            /* Here is inserted the actions which take place when a
-            ** terminal or non-terminal is destroyed.  This can happen
-            ** when the symbol is popped from the stack during a
-            ** reduce or during error processing or when a parser is
-            ** being destroyed before it is finished parsing.
-            **
-            ** Note: during a reduce, the only symbols destroyed are those
-            ** which appear on the RHS of the rule, but which are *not* used
-            ** inside the C code.
-            */
-            /********* Begin destructor definitions ***************************************/
-            /********* End destructor definitions *****************************************/
-        default:
-            break; /* If no destructor action specified: do nothing */
-    }
+  yyParser *yypParser,    /* The parser */
+  YYCODETYPE yymajor,     /* Type code for object to destroy */
+  YYMINORTYPE *yypminor   /* The object to be destroyed */
+){
+  ParseARG_FETCH
+  ParseCTX_FETCH
+  switch( yymajor ){
+    /* Here is inserted the actions which take place when a
+    ** terminal or non-terminal is destroyed.  This can happen
+    ** when the symbol is popped from the stack during a
+    ** reduce or during error processing or when a parser is 
+    ** being destroyed before it is finished parsing.
+    **
+    ** Note: during a reduce, the only symbols destroyed are those
+    ** which appear on the RHS of the rule, but which are *not* used
+    ** inside the C code.
+    */
+/********* Begin destructor definitions ***************************************/
+/********* End destructor definitions *****************************************/
+    default:  break;   /* If no destructor action specified: do nothing */
+  }
 }
 
 /*
@@ -787,49 +818,53 @@ static void yy_destructor(
 ** If there is a destructor routine associated with the token which
 ** is popped from the stack, then call it.
 */
-static void yy_pop_parser_stack(yyParser* pParser) {
-    yyStackEntry* yytos;
-    assert(pParser->yytos != 0);
-    assert(pParser->yytos > pParser->yystack);
-    yytos = pParser->yytos--;
+static void yy_pop_parser_stack(yyParser *pParser){
+  yyStackEntry *yytos;
+  assert( pParser->yytos!=0 );
+  assert( pParser->yytos > pParser->yystack );
+  yytos = pParser->yytos--;
 #ifndef NDEBUG
-    if (yyTraceFILE) {
-        fprintf(yyTraceFILE, "%sPopping %s\n", yyTracePrompt, yyTokenName[yytos->major]);
-    }
+  if( yyTraceFILE ){
+    fprintf(yyTraceFILE,"%sPopping %s\n",
+      yyTracePrompt,
+      yyTokenName[yytos->major]);
+  }
 #endif
-    yy_destructor(pParser, yytos->major, &yytos->minor);
+  yy_destructor(pParser, yytos->major, &yytos->minor);
 }
 
 /*
 ** Clear all secondary memory allocations from the parser
 */
-void ParseFinalize(void* p) {
-    yyParser* pParser = (yyParser*)p;
+void ParseFinalize(void *p){
+  yyParser *pParser = (yyParser*)p;
 
-    /* In-lined version of calling yy_pop_parser_stack() for each
-    ** element left in the stack */
-    yyStackEntry* yytos = pParser->yytos;
-    while (yytos > pParser->yystack) {
+  /* In-lined version of calling yy_pop_parser_stack() for each
+  ** element left in the stack */
+  yyStackEntry *yytos = pParser->yytos;
+  while( yytos>pParser->yystack ){
 #ifndef NDEBUG
-        if (yyTraceFILE) {
-            fprintf(yyTraceFILE, "%sPopping %s\n", yyTracePrompt, yyTokenName[yytos->major]);
-        }
-#endif
-        if (yytos->major >= YY_MIN_DSTRCTR) {
-            yy_destructor(pParser, yytos->major, &yytos->minor);
-        }
-        yytos--;
+    if( yyTraceFILE ){
+      fprintf(yyTraceFILE,"%sPopping %s\n",
+        yyTracePrompt,
+        yyTokenName[yytos->major]);
     }
+#endif
+    if( yytos->major>=YY_MIN_DSTRCTR ){
+      yy_destructor(pParser, yytos->major, &yytos->minor);
+    }
+    yytos--;
+  }
 
 #if YYGROWABLESTACK
-    if (pParser->yystack != pParser->yystk0) {
-        YYFREE(pParser->yystack, ParseCTX(pParser));
-    }
+  if( pParser->yystack!=pParser->yystk0 ){
+    YYFREE(pParser->yystack, ParseCTX(pParser));
+  }
 #endif
 }
 
 #ifndef Parse_ENGINEALWAYSONSTACK
-/*
+/* 
 ** Deallocate and destroy a parser.  Destructors are called for
 ** all stack elements before shutting the parser down.
 **
@@ -838,15 +873,14 @@ void ParseFinalize(void* p) {
 ** assumed that the input pointer is never NULL.
 */
 void ParseFree(
-    void* p,                /* The parser to be deleted */
-    void (*freeProc)(void*) /* Function used to reclaim memory */
-) {
+  void *p,                    /* The parser to be deleted */
+  void (*freeProc)(void*)     /* Function used to reclaim memory */
+){
 #ifndef YYPARSEFREENEVERNULL
-    if (p == 0)
-        return;
+  if( p==0 ) return;
 #endif
-    ParseFinalize(p);
-    (*freeProc)(p);
+  ParseFinalize(p);
+  (*freeProc)(p);
 }
 #endif /* Parse_ENGINEALWAYSONSTACK */
 
@@ -854,9 +888,9 @@ void ParseFree(
 ** Return the peak depth of the stack for a parser.
 */
 #ifdef YYTRACKMAXSTACKDEPTH
-int ParseStackPeak(void* p) {
-    yyParser* pParser = (yyParser*)p;
-    return pParser->yyhwm;
+int ParseStackPeak(void *p){
+  yyParser *pParser = (yyParser*)p;
+  return pParser->yyhwm;
 }
 #endif
 
@@ -878,27 +912,22 @@ static unsigned char yycoverage[YYNSTATE][YYNTOKEN];
 ** Return the number of missed state/lookahead combinations.
 */
 #if defined(YYCOVERAGE)
-int ParseCoverage(FILE* out) {
-    int stateno, iLookAhead, i;
-    int nMissed = 0;
-    for (stateno = 0; stateno < YYNSTATE; stateno++) {
-        i = yy_shift_ofst[stateno];
-        for (iLookAhead = 0; iLookAhead < YYNTOKEN; iLookAhead++) {
-            if (yy_lookahead[i + iLookAhead] != iLookAhead)
-                continue;
-            if (yycoverage[stateno][iLookAhead] == 0)
-                nMissed++;
-            if (out) {
-                fprintf(
-                    out,
-                    "State %d lookahead %s %s\n",
-                    stateno,
-                    yyTokenName[iLookAhead],
-                    yycoverage[stateno][iLookAhead] ? "ok" : "missed");
-            }
-        }
+int ParseCoverage(FILE *out){
+  int stateno, iLookAhead, i;
+  int nMissed = 0;
+  for(stateno=0; stateno<YYNSTATE; stateno++){
+    i = yy_shift_ofst[stateno];
+    for(iLookAhead=0; iLookAhead<YYNTOKEN; iLookAhead++){
+      if( yy_lookahead[i+iLookAhead]!=iLookAhead ) continue;
+      if( yycoverage[stateno][iLookAhead]==0 ) nMissed++;
+      if( out ){
+        fprintf(out,"State %d lookahead %s %s\n", stateno,
+                yyTokenName[iLookAhead],
+                yycoverage[stateno][iLookAhead] ? "ok" : "missed");
+      }
     }
-    return nMissed;
+  }
+  return nMissed;
 }
 #endif
 
@@ -907,72 +936,64 @@ int ParseCoverage(FILE* out) {
 ** look-ahead token iLookAhead.
 */
 static YYACTIONTYPE yy_find_shift_action(
-    YYCODETYPE iLookAhead, /* The look-ahead token */
-    YYACTIONTYPE stateno   /* Current state number */
-) {
-    int i;
+  YYCODETYPE iLookAhead,    /* The look-ahead token */
+  YYACTIONTYPE stateno      /* Current state number */
+){
+  int i;
 
-    if (stateno > YY_MAX_SHIFT)
-        return stateno;
-    assert(stateno <= YY_SHIFT_COUNT);
+  if( stateno>YY_MAX_SHIFT ) return stateno;
+  assert( stateno <= YY_SHIFT_COUNT );
 #if defined(YYCOVERAGE)
-    yycoverage[stateno][iLookAhead] = 1;
+  yycoverage[stateno][iLookAhead] = 1;
 #endif
-    do {
-        i = yy_shift_ofst[stateno];
-        assert(i >= 0);
-        assert(i <= YY_ACTTAB_COUNT);
-        assert(i + YYNTOKEN <= (int)YY_NLOOKAHEAD);
-        assert(iLookAhead != YYNOCODE);
-        assert(iLookAhead < YYNTOKEN);
-        i += iLookAhead;
-        assert(i < (int)YY_NLOOKAHEAD);
-        if (yy_lookahead[i] != iLookAhead) {
+  do{
+    i = yy_shift_ofst[stateno];
+    assert( i>=0 );
+    assert( i<=YY_ACTTAB_COUNT );
+    assert( i+YYNTOKEN<=(int)YY_NLOOKAHEAD );
+    assert( iLookAhead!=YYNOCODE );
+    assert( iLookAhead < YYNTOKEN );
+    i += iLookAhead;
+    assert( i<(int)YY_NLOOKAHEAD );
+    if( yy_lookahead[i]!=iLookAhead ){
 #ifdef YYFALLBACK
-            YYCODETYPE iFallback; /* Fallback token */
-            assert(iLookAhead < sizeof(yyFallback) / sizeof(yyFallback[0]));
-            iFallback = yyFallback[iLookAhead];
-            if (iFallback != 0) {
+      YYCODETYPE iFallback;            /* Fallback token */
+      assert( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0]) );
+      iFallback = yyFallback[iLookAhead];
+      if( iFallback!=0 ){
 #ifndef NDEBUG
-                if (yyTraceFILE) {
-                    fprintf(
-                        yyTraceFILE,
-                        "%sFALLBACK %s => %s\n",
-                        yyTracePrompt,
-                        yyTokenName[iLookAhead],
-                        yyTokenName[iFallback]);
-                }
+        if( yyTraceFILE ){
+          fprintf(yyTraceFILE, "%sFALLBACK %s => %s\n",
+             yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[iFallback]);
+        }
 #endif
-                assert(yyFallback[iFallback] == 0); /* Fallback loop must terminate */
-                iLookAhead = iFallback;
-                continue;
-            }
+        assert( yyFallback[iFallback]==0 ); /* Fallback loop must terminate */
+        iLookAhead = iFallback;
+        continue;
+      }
 #endif
 #ifdef YYWILDCARD
-            {
-                int j = i - iLookAhead + YYWILDCARD;
-                assert(j < (int)(sizeof(yy_lookahead) / sizeof(yy_lookahead[0])));
-                if (yy_lookahead[j] == YYWILDCARD && iLookAhead > 0) {
+      {
+        int j = i - iLookAhead + YYWILDCARD;
+        assert( j<(int)(sizeof(yy_lookahead)/sizeof(yy_lookahead[0])) );
+        if( yy_lookahead[j]==YYWILDCARD && iLookAhead>0 ){
 #ifndef NDEBUG
-                    if (yyTraceFILE) {
-                        fprintf(
-                            yyTraceFILE,
-                            "%sWILDCARD %s => %s\n",
-                            yyTracePrompt,
-                            yyTokenName[iLookAhead],
-                            yyTokenName[YYWILDCARD]);
-                    }
+          if( yyTraceFILE ){
+            fprintf(yyTraceFILE, "%sWILDCARD %s => %s\n",
+               yyTracePrompt, yyTokenName[iLookAhead],
+               yyTokenName[YYWILDCARD]);
+          }
 #endif /* NDEBUG */
-                    return yy_action[j];
-                }
-            }
-#endif /* YYWILDCARD */
-            return yy_default[stateno];
-        } else {
-            assert(i >= 0 && i < (int)(sizeof(yy_action) / sizeof(yy_action[0])));
-            return yy_action[i];
+          return yy_action[j];
         }
-    } while (1);
+      }
+#endif /* YYWILDCARD */
+      return yy_default[stateno];
+    }else{
+      assert( i>=0 && i<(int)(sizeof(yy_action)/sizeof(yy_action[0])) );
+      return yy_action[i];
+    }
+  }while(1);
 }
 
 /*
@@ -980,257 +1001,257 @@ static YYACTIONTYPE yy_find_shift_action(
 ** look-ahead token iLookAhead.
 */
 static YYACTIONTYPE yy_find_reduce_action(
-    YYACTIONTYPE stateno, /* Current state number */
-    YYCODETYPE iLookAhead /* The look-ahead token */
-) {
-    int i;
+  YYACTIONTYPE stateno,     /* Current state number */
+  YYCODETYPE iLookAhead     /* The look-ahead token */
+){
+  int i;
 #ifdef YYERRORSYMBOL
-    if (stateno > YY_REDUCE_COUNT) {
-        return yy_default[stateno];
-    }
+  if( stateno>YY_REDUCE_COUNT ){
+    return yy_default[stateno];
+  }
 #else
-    assert(stateno <= YY_REDUCE_COUNT);
+  assert( stateno<=YY_REDUCE_COUNT );
 #endif
-    i = yy_reduce_ofst[stateno];
-    assert(iLookAhead != YYNOCODE);
-    i += iLookAhead;
+  i = yy_reduce_ofst[stateno];
+  assert( iLookAhead!=YYNOCODE );
+  i += iLookAhead;
 #ifdef YYERRORSYMBOL
-    if (i < 0 || i >= YY_ACTTAB_COUNT || yy_lookahead[i] != iLookAhead) {
-        return yy_default[stateno];
-    }
+  if( i<0 || i>=YY_ACTTAB_COUNT || yy_lookahead[i]!=iLookAhead ){
+    return yy_default[stateno];
+  }
 #else
-    assert(i >= 0 && i < YY_ACTTAB_COUNT);
-    assert(yy_lookahead[i] == iLookAhead);
+  assert( i>=0 && i<YY_ACTTAB_COUNT );
+  assert( yy_lookahead[i]==iLookAhead );
 #endif
-    return yy_action[i];
+  return yy_action[i];
 }
 
 /*
 ** The following routine is called if the stack overflows.
 */
-static void yyStackOverflow(yyParser* yypParser) {
-    ParseARG_FETCH ParseCTX_FETCH
+static void yyStackOverflow(yyParser *yypParser){
+   ParseARG_FETCH
+   ParseCTX_FETCH
 #ifndef NDEBUG
-        if (yyTraceFILE) {
-        fprintf(yyTraceFILE, "%sStack Overflow!\n", yyTracePrompt);
-    }
+   if( yyTraceFILE ){
+     fprintf(yyTraceFILE,"%sStack Overflow!\n",yyTracePrompt);
+   }
 #endif
-    while (yypParser->yytos > yypParser->yystack)
-        yy_pop_parser_stack(yypParser);
-    /* Here code is inserted which will execute if the parser
-    ** stack every overflows */
-    /******** Begin %stack_overflow code ******************************************/
-    /******** End %stack_overflow code ********************************************/
-    ParseARG_STORE /* Suppress warning about unused %extra_argument var */
-        ParseCTX_STORE
+   while( yypParser->yytos>yypParser->yystack ) yy_pop_parser_stack(yypParser);
+   /* Here code is inserted which will execute if the parser
+   ** stack every overflows */
+/******** Begin %stack_overflow code ******************************************/
+/******** End %stack_overflow code ********************************************/
+   ParseARG_STORE /* Suppress warning about unused %extra_argument var */
+   ParseCTX_STORE
 }
 
 /*
 ** Print tracing information for a SHIFT action
 */
 #ifndef NDEBUG
-static void yyTraceShift(yyParser* yypParser, int yyNewState, const char* zTag) {
-    if (yyTraceFILE) {
-        if (yyNewState < YYNSTATE) {
-            fprintf(
-                yyTraceFILE,
-                "%s%s '%s', go to state %d\n",
-                yyTracePrompt,
-                zTag,
-                yyTokenName[yypParser->yytos->major],
-                yyNewState);
-        } else {
-            fprintf(
-                yyTraceFILE,
-                "%s%s '%s', pending reduce %d\n",
-                yyTracePrompt,
-                zTag,
-                yyTokenName[yypParser->yytos->major],
-                yyNewState - YY_MIN_REDUCE);
-        }
+static void yyTraceShift(yyParser *yypParser, int yyNewState, const char *zTag){
+  if( yyTraceFILE ){
+    if( yyNewState<YYNSTATE ){
+      fprintf(yyTraceFILE,"%s%s '%s', go to state %d\n",
+         yyTracePrompt, zTag, yyTokenName[yypParser->yytos->major],
+         yyNewState);
+    }else{
+      fprintf(yyTraceFILE,"%s%s '%s', pending reduce %d\n",
+         yyTracePrompt, zTag, yyTokenName[yypParser->yytos->major],
+         yyNewState - YY_MIN_REDUCE);
     }
+  }
 }
 #else
-#define yyTraceShift(X, Y, Z)
+# define yyTraceShift(X,Y,Z)
 #endif
 
 /*
 ** Perform a shift action.
 */
 static void yy_shift(
-    yyParser* yypParser,     /* The parser to be shifted */
-    YYACTIONTYPE yyNewState, /* The new state to shift in */
-    YYCODETYPE yyMajor,      /* The major token to shift in */
-    ParseTOKENTYPE yyMinor   /* The minor token to shift in */
-) {
-    yyStackEntry* yytos;
-    yypParser->yytos++;
+  yyParser *yypParser,          /* The parser to be shifted */
+  YYACTIONTYPE yyNewState,      /* The new state to shift in */
+  YYCODETYPE yyMajor,           /* The major token to shift in */
+  ParseTOKENTYPE yyMinor        /* The minor token to shift in */
+){
+  yyStackEntry *yytos;
+  yypParser->yytos++;
 #ifdef YYTRACKMAXSTACKDEPTH
-    if ((int)(yypParser->yytos - yypParser->yystack) > yypParser->yyhwm) {
-        yypParser->yyhwm++;
-        assert(yypParser->yyhwm == (int)(yypParser->yytos - yypParser->yystack));
-    }
+  if( (int)(yypParser->yytos - yypParser->yystack)>yypParser->yyhwm ){
+    yypParser->yyhwm++;
+    assert( yypParser->yyhwm == (int)(yypParser->yytos - yypParser->yystack) );
+  }
 #endif
+  yytos = yypParser->yytos;
+  if( yytos>yypParser->yystackEnd ){
+    if( yyGrowStack(yypParser) ){
+      yypParser->yytos--;
+      yyStackOverflow(yypParser);
+      return;
+    }
     yytos = yypParser->yytos;
-    if (yytos > yypParser->yystackEnd) {
-        if (yyGrowStack(yypParser)) {
-            yypParser->yytos--;
-            yyStackOverflow(yypParser);
-            return;
-        }
-        yytos = yypParser->yytos;
-        assert(yytos <= yypParser->yystackEnd);
-    }
-    if (yyNewState > YY_MAX_SHIFT) {
-        yyNewState += YY_MIN_REDUCE - YY_MIN_SHIFTREDUCE;
-    }
-    yytos->stateno = yyNewState;
-    yytos->major = yyMajor;
-    yytos->minor.yy0 = yyMinor;
-    yyTraceShift(yypParser, yyNewState, "Shift");
+    assert( yytos <= yypParser->yystackEnd );
+  }
+  if( yyNewState > YY_MAX_SHIFT ){
+    yyNewState += YY_MIN_REDUCE - YY_MIN_SHIFTREDUCE;
+  }
+  yytos->stateno = yyNewState;
+  yytos->major = yyMajor;
+  yytos->minor.yy0 = yyMinor;
+  yyTraceShift(yypParser, yyNewState, "Shift");
 }
 
 /* For rule J, yyRuleInfoLhs[J] contains the symbol on the left-hand side
 ** of that rule */
 static const YYCODETYPE yyRuleInfoLhs[] = {
-    61, /* (0) input ::= statement_list TOKEN_EOF */
-    60, /* (1) statement_list ::= statement */
-    60, /* (2) statement_list ::= statement_list statement */
-    62, /* (3) statement ::= select_statement */
-    62, /* (4) statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_LPAREN relation TOKEN_RPAREN */
-    62, /* (5) statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation
-           TOKEN_RPAREN */
-    64, /* (6) relation ::= select_statement */
-    63, /* (7) select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt
-           group_by_opt order_by_opt limit_opt */
-    65, /* (8) select_source ::= file_source */
-    65, /* (9) select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
-    65, /* (10) select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
-    67, /* (11) file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
-    67, /* (12) file_source ::= TOKEN_PATH */
-    66, /* (13) where_opt ::= */
-    66, /* (14) where_opt ::= TOKEN_WHERE condition */
-    57, /* (15) group_by_opt ::= */
-    57, /* (16) group_by_opt ::= TOKEN_GROUP_BY group_by_list */
-    59, /* (17) order_by_opt ::= */
-    59, /* (18) order_by_opt ::= TOKEN_ORDER_BY expression_list */
-    59, /* (19) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
-    59, /* (20) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
-    68, /* (21) condition ::= expression */
-    50, /* (22) limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
-    50, /* (23) limit_opt ::= */
-    51, /* (24) select_list ::= TOKEN_STAR */
-    51, /* (25) select_list ::= select_item */
-    51, /* (26) select_list ::= select_list TOKEN_COMMA select_item */
-    53, /* (27) select_item ::= TOKEN_IDENTIFIER */
-    53, /* (28) select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
-    58, /* (29) group_by_list ::= select_item */
-    58, /* (30) group_by_list ::= group_by_list TOKEN_COMMA select_item */
-    52, /* (31) expression_list ::= expression */
-    52, /* (32) expression_list ::= expression_list TOKEN_COMMA expression */
-    48, /* (33) expression ::= TOKEN_STR */
-    48, /* (34) expression ::= TOKEN_INTEGER */
-    48, /* (35) expression ::= TOKEN_FLOATING */
-    48, /* (36) expression ::= TOKEN_NULL */
-    48, /* (37) expression ::= TOKEN_TRUE */
-    48, /* (38) expression ::= TOKEN_FALSE */
-    48, /* (39) expression ::= TOKEN_IDENTIFIER */
-    48, /* (40) expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
-    48, /* (41) expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
-    48, /* (42) expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
-    48, /* (43) expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
-    48, /* (44) expression ::= TOKEN_EXCLAMATION expression */
-    48, /* (45) expression ::= expression TOKEN_LIKE TOKEN_STR */
-    48, /* (46) expression ::= expression TOKEN_EQ expression */
-    48, /* (47) expression ::= expression TOKEN_NEQ expression */
-    48, /* (48) expression ::= expression TOKEN_AND expression */
-    48, /* (49) expression ::= expression TOKEN_OR expression */
-    48, /* (50) expression ::= expression TOKEN_DIVIDE expression */
-    48, /* (51) expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
-    48, /* (52) expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
-    48, /* (53) expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
-    48, /* (54) expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
-    48, /* (55) expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
-    48, /* (56) expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR
-           TOKEN_RPAREN */
-    48, /* (57) expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list
-           TOKEN_RPAREN */
-    48, /* (58) expression ::= expression TOKEN_IN select_source */
-    54, /* (59) floating_list ::= TOKEN_FLOATING */
-    54, /* (60) floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
+    64,  /* (0) input ::= statement_list TOKEN_EOF */
+    61,  /* (1) statement_list ::= statement */
+    61,  /* (2) statement_list ::= statement_list statement */
+    65,  /* (3) statement ::= relation */
+    65,  /* (4) statement ::= TOKEN_IDENTIFIER TOKEN_EQ select_source */
+    68,  /* (5) immediate_relation ::= adhoc_relation */
+    68,  /* (6) immediate_relation ::= file_source */
+    68,  /* (7) immediate_relation ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
+    68,  /* (8) immediate_relation ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation TOKEN_RPAREN */
+    66,  /* (9) relation ::= immediate_relation */
+    66,  /* (10) relation ::= select_statement */
+    66,  /* (11) relation ::= relation TOKEN_UNION_ALL relation */
+    69,  /* (12) adhoc_relation ::= TOKEN_LPAREN value_list TOKEN_RPAREN */
+    71,  /* (13) select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt */
+    67,  /* (14) select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
+    67,  /* (15) select_source ::= immediate_relation */
+    70,  /* (16) file_source ::= TOKEN_PATH */
+    70,  /* (17) file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
+    72,  /* (18) where_opt ::= */
+    72,  /* (19) where_opt ::= TOKEN_WHERE condition */
+    58,  /* (20) group_by_opt ::= */
+    58,  /* (21) group_by_opt ::= TOKEN_GROUP_BY group_by_list */
+    60,  /* (22) order_by_opt ::= */
+    60,  /* (23) order_by_opt ::= TOKEN_ORDER_BY expression_list */
+    60,  /* (24) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
+    60,  /* (25) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
+    73,  /* (26) condition ::= expression */
+    51,  /* (27) limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
+    51,  /* (28) limit_opt ::= */
+    52,  /* (29) select_list ::= TOKEN_STAR */
+    52,  /* (30) select_list ::= select_item */
+    52,  /* (31) select_list ::= select_list TOKEN_COMMA select_item */
+    54,  /* (32) select_item ::= TOKEN_IDENTIFIER */
+    54,  /* (33) select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
+    59,  /* (34) group_by_list ::= select_item */
+    59,  /* (35) group_by_list ::= group_by_list TOKEN_COMMA select_item */
+    53,  /* (36) expression_list ::= expression */
+    53,  /* (37) expression_list ::= expression_list TOKEN_COMMA expression */
+    49,  /* (38) expression ::= value */
+    49,  /* (39) expression ::= TOKEN_IDENTIFIER */
+    49,  /* (40) expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
+    49,  /* (41) expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
+    49,  /* (42) expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
+    49,  /* (43) expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
+    49,  /* (44) expression ::= TOKEN_EXCLAMATION expression */
+    49,  /* (45) expression ::= expression TOKEN_LIKE TOKEN_STR */
+    49,  /* (46) expression ::= expression TOKEN_EQ expression */
+    49,  /* (47) expression ::= expression TOKEN_NEQ expression */
+    49,  /* (48) expression ::= expression TOKEN_AND expression */
+    49,  /* (49) expression ::= expression TOKEN_OR expression */
+    49,  /* (50) expression ::= expression TOKEN_DIVIDE expression */
+    49,  /* (51) expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
+    49,  /* (52) expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
+    49,  /* (53) expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
+    49,  /* (54) expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
+    49,  /* (55) expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
+    49,  /* (56) expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN */
+    49,  /* (57) expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN */
+    49,  /* (58) expression ::= expression TOKEN_IN select_source */
+    63,  /* (59) value_list ::= value */
+    63,  /* (60) value_list ::= value_list TOKEN_COMMA value */
+    62,  /* (61) value ::= TOKEN_STR */
+    62,  /* (62) value ::= TOKEN_INTEGER */
+    62,  /* (63) value ::= TOKEN_FLOATING */
+    62,  /* (64) value ::= TOKEN_TRUE */
+    62,  /* (65) value ::= TOKEN_FALSE */
+    62,  /* (66) value ::= TOKEN_NULL */
+    55,  /* (67) floating_list ::= TOKEN_FLOATING */
+    55,  /* (68) floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
 };
 
 /* For rule J, yyRuleInfoNRhs[J] contains the negative of the number
 ** of symbols on the right-hand side of that rule. */
 static const signed char yyRuleInfoNRhs[] = {
-    -2, /* (0) input ::= statement_list TOKEN_EOF */
-    -1, /* (1) statement_list ::= statement */
-    -2, /* (2) statement_list ::= statement_list statement */
-    -1, /* (3) statement ::= select_statement */
-    -5, /* (4) statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_LPAREN relation TOKEN_RPAREN */
-    -6, /* (5) statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation
-           TOKEN_RPAREN */
-    -1, /* (6) relation ::= select_statement */
-    -8, /* (7) select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt
-           group_by_opt order_by_opt limit_opt */
-    -1, /* (8) select_source ::= file_source */
-    -3, /* (9) select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
-    -2, /* (10) select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
-    -5, /* (11) file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
-    -1, /* (12) file_source ::= TOKEN_PATH */
-    0,  /* (13) where_opt ::= */
-    -2, /* (14) where_opt ::= TOKEN_WHERE condition */
-    0,  /* (15) group_by_opt ::= */
-    -2, /* (16) group_by_opt ::= TOKEN_GROUP_BY group_by_list */
-    0,  /* (17) order_by_opt ::= */
-    -2, /* (18) order_by_opt ::= TOKEN_ORDER_BY expression_list */
-    -3, /* (19) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
-    -3, /* (20) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
-    -1, /* (21) condition ::= expression */
-    -2, /* (22) limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
-    0,  /* (23) limit_opt ::= */
-    -1, /* (24) select_list ::= TOKEN_STAR */
-    -1, /* (25) select_list ::= select_item */
-    -3, /* (26) select_list ::= select_list TOKEN_COMMA select_item */
-    -1, /* (27) select_item ::= TOKEN_IDENTIFIER */
-    -3, /* (28) select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
-    -1, /* (29) group_by_list ::= select_item */
-    -3, /* (30) group_by_list ::= group_by_list TOKEN_COMMA select_item */
-    -1, /* (31) expression_list ::= expression */
-    -3, /* (32) expression_list ::= expression_list TOKEN_COMMA expression */
-    -1, /* (33) expression ::= TOKEN_STR */
-    -1, /* (34) expression ::= TOKEN_INTEGER */
-    -1, /* (35) expression ::= TOKEN_FLOATING */
-    -1, /* (36) expression ::= TOKEN_NULL */
-    -1, /* (37) expression ::= TOKEN_TRUE */
-    -1, /* (38) expression ::= TOKEN_FALSE */
-    -1, /* (39) expression ::= TOKEN_IDENTIFIER */
-    -4, /* (40) expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
-    -4, /* (41) expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
-    -4, /* (42) expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
-    -4, /* (43) expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
-    -2, /* (44) expression ::= TOKEN_EXCLAMATION expression */
-    -3, /* (45) expression ::= expression TOKEN_LIKE TOKEN_STR */
-    -3, /* (46) expression ::= expression TOKEN_EQ expression */
-    -3, /* (47) expression ::= expression TOKEN_NEQ expression */
-    -3, /* (48) expression ::= expression TOKEN_AND expression */
-    -3, /* (49) expression ::= expression TOKEN_OR expression */
-    -3, /* (50) expression ::= expression TOKEN_DIVIDE expression */
-    -4, /* (51) expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
-    -4, /* (52) expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
-    -4, /* (53) expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
-    -4, /* (54) expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
-    -4, /* (55) expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
-    -6, /* (56) expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR
-           TOKEN_RPAREN */
-    -6, /* (57) expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list
-           TOKEN_RPAREN */
-    -3, /* (58) expression ::= expression TOKEN_IN select_source */
-    -1, /* (59) floating_list ::= TOKEN_FLOATING */
-    -3, /* (60) floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
+   -2,  /* (0) input ::= statement_list TOKEN_EOF */
+   -1,  /* (1) statement_list ::= statement */
+   -2,  /* (2) statement_list ::= statement_list statement */
+   -1,  /* (3) statement ::= relation */
+   -3,  /* (4) statement ::= TOKEN_IDENTIFIER TOKEN_EQ select_source */
+   -1,  /* (5) immediate_relation ::= adhoc_relation */
+   -1,  /* (6) immediate_relation ::= file_source */
+   -2,  /* (7) immediate_relation ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
+   -6,  /* (8) immediate_relation ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation TOKEN_RPAREN */
+   -1,  /* (9) relation ::= immediate_relation */
+   -1,  /* (10) relation ::= select_statement */
+   -3,  /* (11) relation ::= relation TOKEN_UNION_ALL relation */
+   -3,  /* (12) adhoc_relation ::= TOKEN_LPAREN value_list TOKEN_RPAREN */
+   -8,  /* (13) select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt */
+   -3,  /* (14) select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
+   -1,  /* (15) select_source ::= immediate_relation */
+   -1,  /* (16) file_source ::= TOKEN_PATH */
+   -5,  /* (17) file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
+    0,  /* (18) where_opt ::= */
+   -2,  /* (19) where_opt ::= TOKEN_WHERE condition */
+    0,  /* (20) group_by_opt ::= */
+   -2,  /* (21) group_by_opt ::= TOKEN_GROUP_BY group_by_list */
+    0,  /* (22) order_by_opt ::= */
+   -2,  /* (23) order_by_opt ::= TOKEN_ORDER_BY expression_list */
+   -3,  /* (24) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
+   -3,  /* (25) order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
+   -1,  /* (26) condition ::= expression */
+   -2,  /* (27) limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
+    0,  /* (28) limit_opt ::= */
+   -1,  /* (29) select_list ::= TOKEN_STAR */
+   -1,  /* (30) select_list ::= select_item */
+   -3,  /* (31) select_list ::= select_list TOKEN_COMMA select_item */
+   -1,  /* (32) select_item ::= TOKEN_IDENTIFIER */
+   -3,  /* (33) select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
+   -1,  /* (34) group_by_list ::= select_item */
+   -3,  /* (35) group_by_list ::= group_by_list TOKEN_COMMA select_item */
+   -1,  /* (36) expression_list ::= expression */
+   -3,  /* (37) expression_list ::= expression_list TOKEN_COMMA expression */
+   -1,  /* (38) expression ::= value */
+   -1,  /* (39) expression ::= TOKEN_IDENTIFIER */
+   -4,  /* (40) expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (41) expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (42) expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (43) expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
+   -2,  /* (44) expression ::= TOKEN_EXCLAMATION expression */
+   -3,  /* (45) expression ::= expression TOKEN_LIKE TOKEN_STR */
+   -3,  /* (46) expression ::= expression TOKEN_EQ expression */
+   -3,  /* (47) expression ::= expression TOKEN_NEQ expression */
+   -3,  /* (48) expression ::= expression TOKEN_AND expression */
+   -3,  /* (49) expression ::= expression TOKEN_OR expression */
+   -3,  /* (50) expression ::= expression TOKEN_DIVIDE expression */
+   -4,  /* (51) expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (52) expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (53) expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (54) expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
+   -4,  /* (55) expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
+   -6,  /* (56) expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN */
+   -6,  /* (57) expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN */
+   -3,  /* (58) expression ::= expression TOKEN_IN select_source */
+   -1,  /* (59) value_list ::= value */
+   -3,  /* (60) value_list ::= value_list TOKEN_COMMA value */
+   -1,  /* (61) value ::= TOKEN_STR */
+   -1,  /* (62) value ::= TOKEN_INTEGER */
+   -1,  /* (63) value ::= TOKEN_FLOATING */
+   -1,  /* (64) value ::= TOKEN_TRUE */
+   -1,  /* (65) value ::= TOKEN_FALSE */
+   -1,  /* (66) value ::= TOKEN_NULL */
+   -1,  /* (67) floating_list ::= TOKEN_FLOATING */
+   -3,  /* (68) floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
 };
 
-static void yy_accept(yyParser*); /* Forward Declaration */
+static void yy_accept(yyParser*);  /* Forward Declaration */
 
 /*
 ** Perform a reduce action and the shift that must immediately
@@ -1243,579 +1264,588 @@ static void yy_accept(yyParser*); /* Forward Declaration */
 ** means that the extra parameters have no performance impact.
 */
 static YYACTIONTYPE yy_reduce(
-    yyParser* yypParser,            /* The parser */
-    unsigned int yyruleno,          /* Number of the rule by which to reduce */
-    int yyLookahead,                /* Lookahead token, or YYNOCODE if none */
-    ParseTOKENTYPE yyLookaheadToken /* Value of the lookahead token */
-        ParseCTX_PDECL              /* %extra_context */
-) {
-    int yygoto;          /* The next state */
-    YYACTIONTYPE yyact;  /* The next action */
-    yyStackEntry* yymsp; /* The top of the parser's stack */
-    int yysize;          /* Amount to pop the stack */
-    ParseARG_FETCH(void) yyLookahead;
-    (void)yyLookaheadToken;
-    yymsp = yypParser->yytos;
+  yyParser *yypParser,         /* The parser */
+  unsigned int yyruleno,       /* Number of the rule by which to reduce */
+  int yyLookahead,             /* Lookahead token, or YYNOCODE if none */
+  ParseTOKENTYPE yyLookaheadToken  /* Value of the lookahead token */
+  ParseCTX_PDECL                   /* %extra_context */
+){
+  int yygoto;                     /* The next state */
+  YYACTIONTYPE yyact;             /* The next action */
+  yyStackEntry *yymsp;            /* The top of the parser's stack */
+  int yysize;                     /* Amount to pop the stack */
+  ParseARG_FETCH
+  (void)yyLookahead;
+  (void)yyLookaheadToken;
+  yymsp = yypParser->yytos;
 
-    switch (yyruleno) {
-        /* Beginning here are the reduction cases.  A typical example
-        ** follows:
-        **   case 0:
-        **  #line <lineno> <grammarfile>
-        **     { ... }           // User supplied code
-        **  #line <lineno> <thisfile>
-        **     break;
-        */
-        /********** Begin reduce actions **********************************************/
+  switch( yyruleno ){
+  /* Beginning here are the reduction cases.  A typical example
+  ** follows:
+  **   case 0:
+  **  #line <lineno> <grammarfile>
+  **     { ... }           // User supplied code
+  **  #line <lineno> <thisfile>
+  **     break;
+  */
+/********** Begin reduce actions **********************************************/
         YYMINORTYPE yylhsminor;
-        case 0: /* input ::= statement_list TOKEN_EOF */
-#line 90 "sql_grammar.y"
-        {
-            pCtx->root = std::make_unique<ast::Program>(yymsp[-1].minor.yy85);
-        }
-#line 1247 "sql_grammar.c"
+      case 0: /* input ::= statement_list TOKEN_EOF */
+#line 93 "sql_grammar.y"
+{
+    pCtx->root = std::make_unique<ast::Program>(yymsp[-1].minor.yy146);
+}
+#line 1299 "sql_grammar.c"
         break;
-        case 1: /* statement_list ::= statement */
-#line 94 "sql_grammar.y"
-        {
-            yylhsminor.yy85 = new std::vector<std::unique_ptr<ast::Node>>();
-            yylhsminor.yy85->emplace_back(yymsp[0].minor.yy125);
-        }
-#line 1255 "sql_grammar.c"
-            yymsp[0].minor.yy85 = yylhsminor.yy85;
-            break;
-        case 2: /* statement_list ::= statement_list statement */
-#line 99 "sql_grammar.y"
-        {
-            yylhsminor.yy85 = yymsp[-1].minor.yy85;
-            yylhsminor.yy85->emplace_back(yymsp[0].minor.yy125);
-        }
-#line 1264 "sql_grammar.c"
-            yymsp[-1].minor.yy85 = yylhsminor.yy85;
-            break;
-        case 3: /* statement ::= select_statement */
-        case 6: /* relation ::= select_statement */
-            yytestcase(yyruleno == 6);
-        case 8: /* select_source ::= file_source */
-            yytestcase(yyruleno == 8);
-#line 104 "sql_grammar.y"
-            {
-                yylhsminor.yy125 = yymsp[0].minor.yy125;
-            }
-#line 1272 "sql_grammar.c"
-            yymsp[0].minor.yy125 = yylhsminor.yy125;
-            break;
-        case 4: /* statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_LPAREN relation TOKEN_RPAREN */
-#line 105 "sql_grammar.y"
-        {
-            yylhsminor.yy125 = new ast::NamedRelation(
-                yymsp[-4].minor.yy0.text, std::unique_ptr<ast::Node>(yymsp[-1].minor.yy125));
-        }
-#line 1280 "sql_grammar.c"
-            yymsp[-4].minor.yy125 = yylhsminor.yy125;
-            break;
-        case 5: /* statement ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation
-                   TOKEN_RPAREN */
-#line 109 "sql_grammar.y"
-        {
-            auto M =
-                new ast::MaterializedRelation(std::unique_ptr<ast::Node>(yymsp[-1].minor.yy125));
-            yylhsminor.yy125 =
-                new ast::NamedRelation(yymsp[-5].minor.yy0.text, std::unique_ptr<ast::Node>(M));
-        }
-#line 1289 "sql_grammar.c"
-            yymsp[-5].minor.yy125 = yylhsminor.yy125;
-            break;
-        case 7: /* select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt
-                   group_by_opt order_by_opt limit_opt */
-#line 123 "sql_grammar.y"
-        {
-            yymsp[-7].minor.yy125 = yymsp[-4].minor.yy125;
-
-            if (yymsp[-3].minor.yy125 != nullptr) {
-                yymsp[-7].minor.yy125 = new ast::Where(
-                    std::unique_ptr<ast::Node>(yymsp[-3].minor.yy125),
-                    std::unique_ptr<ast::Node>(yymsp[-7].minor.yy125));
-            }
-
-            if (yymsp[-2].minor.yy51 != nullptr) {
-                yymsp[-7].minor.yy125 = new ast::GroupBySelect(
-                    yymsp[-2].minor.yy51,
-                    yymsp[-6].minor.yy51,
-                    std::unique_ptr<ast::Node>(yymsp[-7].minor.yy125));
-            } else {
-                yymsp[-7].minor.yy125 = new ast::SelectStatement(
-                    yymsp[-6].minor.yy51, std::unique_ptr<ast::Node>(yymsp[-7].minor.yy125));
-            }
-
-            if (yymsp[-1].minor.yy84 != nullptr) {
-                yymsp[-7].minor.yy125 = new ast::OrderBySelect(
-                    std::unique_ptr<ast::Node>(yymsp[-7].minor.yy125),
-                    std::unique_ptr<ast::OrderBy>(yymsp[-1].minor.yy84));
-            }
-
-            if (yymsp[0].minor.yy52 != -1) {
-                yymsp[-7].minor.yy125 = new ast::Limit(
-                    yymsp[0].minor.yy52, std::unique_ptr<ast::Node>(yymsp[-7].minor.yy125));
-            }
-        }
-#line 1319 "sql_grammar.c"
+      case 1: /* statement_list ::= statement */
+#line 97 "sql_grammar.y"
+{
+    yylhsminor.yy146 = new std::vector<std::unique_ptr<ast::Node>>();
+    yylhsminor.yy146->emplace_back(yymsp[0].minor.yy17);
+}
+#line 1307 "sql_grammar.c"
+  yymsp[0].minor.yy146 = yylhsminor.yy146;
         break;
-        case 9: /* select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
-#line 150 "sql_grammar.y"
-        {
-            yymsp[-2].minor.yy125 = yymsp[-1].minor.yy125;
-        }
-#line 1324 "sql_grammar.c"
+      case 2: /* statement_list ::= statement_list statement */
+#line 102 "sql_grammar.y"
+{
+    yylhsminor.yy146 = yymsp[-1].minor.yy146;
+    yylhsminor.yy146->emplace_back(yymsp[0].minor.yy17);
+}
+#line 1316 "sql_grammar.c"
+  yymsp[-1].minor.yy146 = yylhsminor.yy146;
         break;
-        case 10: /* select_source ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
-#line 151 "sql_grammar.y"
-        {
-            yymsp[-1].minor.yy125 = new ast::NamedRelationReference(yymsp[0].minor.yy0.text);
-        }
-#line 1331 "sql_grammar.c"
+      case 3: /* statement ::= relation */
+      case 5: /* immediate_relation ::= adhoc_relation */ yytestcase(yyruleno==5);
+      case 6: /* immediate_relation ::= file_source */ yytestcase(yyruleno==6);
+      case 9: /* relation ::= immediate_relation */ yytestcase(yyruleno==9);
+      case 10: /* relation ::= select_statement */ yytestcase(yyruleno==10);
+      case 15: /* select_source ::= immediate_relation */ yytestcase(yyruleno==15);
+#line 107 "sql_grammar.y"
+{
+    yylhsminor.yy17 = yymsp[0].minor.yy17;
+}
+#line 1329 "sql_grammar.c"
+  yymsp[0].minor.yy17 = yylhsminor.yy17;
         break;
-        case 11: /* file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
-#line 155 "sql_grammar.y"
-        {
-            yylhsminor.yy125 = new ast::FileIntervalReference(
-                std::string(yymsp[-4].minor.yy0.text),
-                std::string(yymsp[-2].minor.yy0.text),
-                std::stoi(yymsp[0].minor.yy0.text));
-        }
-#line 1342 "sql_grammar.c"
-            yymsp[-4].minor.yy125 = yylhsminor.yy125;
-            break;
-        case 12: /* file_source ::= TOKEN_PATH */
-#line 163 "sql_grammar.y"
-        {
-            yylhsminor.yy125 = new ast::FileReference(std::string(yymsp[0].minor.yy0.text));
-        }
-#line 1350 "sql_grammar.c"
-            yymsp[0].minor.yy125 = yylhsminor.yy125;
-            break;
-        case 13: /* where_opt ::= */
-#line 167 "sql_grammar.y"
-        {
-            yymsp[1].minor.yy125 = nullptr;
-        }
-#line 1356 "sql_grammar.c"
+      case 4: /* statement ::= TOKEN_IDENTIFIER TOKEN_EQ select_source */
+#line 111 "sql_grammar.y"
+{
+    yylhsminor.yy17 = new ast::NamedRelation(yymsp[-2].minor.yy0.text, std::unique_ptr<ast::Node>(yymsp[0].minor.yy17));
+}
+#line 1337 "sql_grammar.c"
+  yymsp[-2].minor.yy17 = yylhsminor.yy17;
         break;
-        case 14: /* where_opt ::= TOKEN_WHERE condition */
-#line 168 "sql_grammar.y"
-        {
-            yymsp[-1].minor.yy125 = yymsp[0].minor.yy125;
-        }
+      case 7: /* immediate_relation ::= TOKEN_DOLLAR TOKEN_IDENTIFIER */
+#line 124 "sql_grammar.y"
+{
+    yymsp[-1].minor.yy17 = new ast::NamedRelationReference(yymsp[0].minor.yy0.text);
+}
+#line 1345 "sql_grammar.c"
+        break;
+      case 8: /* immediate_relation ::= TOKEN_IDENTIFIER TOKEN_EQ TOKEN_MATERIALIZE TOKEN_LPAREN relation TOKEN_RPAREN */
+#line 129 "sql_grammar.y"
+{
+    auto M = new ast::MaterializedRelation(std::unique_ptr<ast::Node>(yymsp[-1].minor.yy17));
+    yymsp[-1].minor.yy17 = new ast::NamedRelation(yymsp[-5].minor.yy0.text, std::unique_ptr<ast::Node>(M));
+}
+#line 1353 "sql_grammar.c"
+  yymsp[-5].minor.yy17 = yylhsminor.yy17;
+        break;
+      case 11: /* relation ::= relation TOKEN_UNION_ALL relation */
+#line 143 "sql_grammar.y"
+{
+    yylhsminor.yy17 = new ast::UnionAll(std::unique_ptr<ast::Node>(yymsp[-2].minor.yy17), std::unique_ptr<ast::Node>(yymsp[0].minor.yy17));
+}
 #line 1361 "sql_grammar.c"
+  yymsp[-2].minor.yy17 = yylhsminor.yy17;
         break;
-        case 15: /* group_by_opt ::= */
-#line 170 "sql_grammar.y"
-        {
-            yymsp[1].minor.yy51 = nullptr;
-        }
-#line 1366 "sql_grammar.c"
+      case 12: /* adhoc_relation ::= TOKEN_LPAREN value_list TOKEN_RPAREN */
+#line 147 "sql_grammar.y"
+{
+    yymsp[-2].minor.yy17 = new ast::AdhocRelation(std::unique_ptr<std::vector<std::unique_ptr<ast::ValueExpression>>>(yymsp[-1].minor.yy53));
+}
+#line 1369 "sql_grammar.c"
         break;
-        case 16: /* group_by_opt ::= TOKEN_GROUP_BY group_by_list */
-#line 171 "sql_grammar.y"
-        {
-            yymsp[-1].minor.yy51 = yymsp[0].minor.yy51;
-        }
-#line 1371 "sql_grammar.c"
+      case 13: /* select_statement ::= TOKEN_SELECT select_list TOKEN_FROM select_source where_opt group_by_opt order_by_opt limit_opt */
+#line 157 "sql_grammar.y"
+{
+    yymsp[-7].minor.yy17 = yymsp[-4].minor.yy17;
+
+    if (yymsp[-3].minor.yy17 != nullptr) {
+        yymsp[-7].minor.yy17 = new ast::Where(std::unique_ptr<ast::Node>(yymsp[-3].minor.yy17), std::unique_ptr<ast::Node>(yymsp[-7].minor.yy17));
+    }
+
+    if (yymsp[-2].minor.yy51 != nullptr) {
+        yymsp[-7].minor.yy17 = new ast::GroupBySelect(
+            yymsp[-2].minor.yy51,
+            yymsp[-6].minor.yy51,
+            std::unique_ptr<ast::Node>(yymsp[-7].minor.yy17)
+        );
+    } else {
+        yymsp[-7].minor.yy17 = new ast::SelectStatement(yymsp[-6].minor.yy51, std::unique_ptr<ast::Node>(yymsp[-7].minor.yy17));
+    }
+
+    if (yymsp[-1].minor.yy106 != nullptr) {
+        yymsp[-7].minor.yy17 = new ast::OrderBySelect(std::unique_ptr<ast::Node>(yymsp[-7].minor.yy17), std::unique_ptr<ast::OrderBy>(yymsp[-1].minor.yy106));
+    }
+
+    if (yymsp[0].minor.yy8 != -1) {
+        yymsp[-7].minor.yy17 = new ast::Limit(yymsp[0].minor.yy8, std::unique_ptr<ast::Node>(yymsp[-7].minor.yy17));
+    }
+}
+#line 1398 "sql_grammar.c"
         break;
-        case 17: /* order_by_opt ::= */
-#line 173 "sql_grammar.y"
-        {
-            yymsp[1].minor.yy84 = nullptr;
-        }
-#line 1376 "sql_grammar.c"
+      case 14: /* select_source ::= TOKEN_LPAREN relation TOKEN_RPAREN */
+#line 184 "sql_grammar.y"
+{
+    yymsp[-2].minor.yy17 = yymsp[-1].minor.yy17;
+}
+#line 1405 "sql_grammar.c"
         break;
-        case 18: /* order_by_opt ::= TOKEN_ORDER_BY expression_list */
-#line 174 "sql_grammar.y"
-        {
-            yymsp[-1].minor.yy84 = new ast::OrderBy(yymsp[0].minor.yy92, false);
-        }
-#line 1381 "sql_grammar.c"
+      case 16: /* file_source ::= TOKEN_PATH */
+#line 193 "sql_grammar.y"
+{
+    yylhsminor.yy17 = new ast::FileReference(std::string(yymsp[0].minor.yy0.text));
+}
+#line 1412 "sql_grammar.c"
+  yymsp[0].minor.yy17 = yylhsminor.yy17;
         break;
-        case 19: /* order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
-#line 175 "sql_grammar.y"
-        {
-            yymsp[-2].minor.yy84 = new ast::OrderBy(yymsp[-1].minor.yy92, false);
-        }
-#line 1386 "sql_grammar.c"
-        break;
-        case 20: /* order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
-#line 176 "sql_grammar.y"
-        {
-            yymsp[-2].minor.yy84 = new ast::OrderBy(yymsp[-1].minor.yy92, true);
-        }
-#line 1391 "sql_grammar.c"
-        break;
-        case 21: /* condition ::= expression */
-#line 178 "sql_grammar.y"
-        {
-            yylhsminor.yy125 = yymsp[0].minor.yy31;
-        }
-#line 1396 "sql_grammar.c"
-            yymsp[0].minor.yy125 = yylhsminor.yy125;
-            break;
-        case 22: /* limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
-#line 180 "sql_grammar.y"
-        {
-            yymsp[-1].minor.yy52 = std::atoi(yymsp[0].minor.yy0.text);
-        }
-#line 1402 "sql_grammar.c"
-        break;
-        case 23: /* limit_opt ::= */
-#line 181 "sql_grammar.y"
-        {
-            yymsp[1].minor.yy52 = -1;
-        }
-#line 1407 "sql_grammar.c"
-        break;
-        case 24: /* select_list ::= TOKEN_STAR */
-#line 183 "sql_grammar.y"
-        {
-            yymsp[0].minor.yy51 = new ast::SelectList();
-        }
-#line 1414 "sql_grammar.c"
-        break;
-        case 25: /* select_list ::= select_item */
-        case 29: /* group_by_list ::= select_item */
-            yytestcase(yyruleno == 29);
-#line 187 "sql_grammar.y"
-            {
-                yylhsminor.yy51 = new ast::SelectList();
-                yylhsminor.yy51->push_back(std::unique_ptr<ast::SelectItem>(yymsp[0].minor.yy44));
-            }
-#line 1423 "sql_grammar.c"
-            yymsp[0].minor.yy51 = yylhsminor.yy51;
-            break;
-        case 26: /* select_list ::= select_list TOKEN_COMMA select_item */
-        case 30: /* group_by_list ::= group_by_list TOKEN_COMMA select_item */
-            yytestcase(yyruleno == 30);
-#line 192 "sql_grammar.y"
-            {
-                yylhsminor.yy51 = yymsp[-2].minor.yy51;
-                yylhsminor.yy51->push_back(std::unique_ptr<ast::SelectItem>(yymsp[0].minor.yy44));
-            }
-#line 1433 "sql_grammar.c"
-            yymsp[-2].minor.yy51 = yylhsminor.yy51;
-            break;
-        case 27: /* select_item ::= TOKEN_IDENTIFIER */
+      case 17: /* file_source ::= TOKEN_PATH TOKEN_AT TOKEN_TIMESTAMP TOKEN_PLUS TOKEN_INTEGER */
 #line 197 "sql_grammar.y"
-        {
-            yylhsminor.yy44 = new ast::SelectItem(
-                std::make_unique<ast::IdentifierExpression>(
-                    yymsp[0].minor.yy0.text, lsql::ValueType::String),
-                std::string(yymsp[0].minor.yy0.text));
-        }
-#line 1444 "sql_grammar.c"
-            yymsp[0].minor.yy44 = yylhsminor.yy44;
-            break;
-        case 28: /* select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
-#line 204 "sql_grammar.y"
-        {
-            yylhsminor.yy44 = new ast::SelectItem(
-                std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
-                std::string(yymsp[0].minor.yy0.text));
-        }
-#line 1452 "sql_grammar.c"
-            yymsp[-2].minor.yy44 = yylhsminor.yy44;
-            break;
-        case 31: /* expression_list ::= expression */
-#line 218 "sql_grammar.y"
-        {
-            yylhsminor.yy92 = new ast::ExpressionList();
-            yylhsminor.yy92->push_back(std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31));
-        }
-#line 1461 "sql_grammar.c"
-            yymsp[0].minor.yy92 = yylhsminor.yy92;
-            break;
-        case 32: /* expression_list ::= expression_list TOKEN_COMMA expression */
-#line 223 "sql_grammar.y"
-        {
-            yylhsminor.yy92 = yymsp[-2].minor.yy92;
-            yylhsminor.yy92->push_back(std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31));
-        }
+{
+    yylhsminor.yy17 = new ast::FileIntervalReference(
+        std::string(yymsp[-4].minor.yy0.text),
+        std::string(yymsp[-2].minor.yy0.text),
+        std::stoi(yymsp[0].minor.yy0.text)
+    );
+}
+#line 1424 "sql_grammar.c"
+  yymsp[-4].minor.yy17 = yylhsminor.yy17;
+        break;
+      case 18: /* where_opt ::= */
+#line 205 "sql_grammar.y"
+{ yymsp[1].minor.yy17 = nullptr; }
+#line 1430 "sql_grammar.c"
+        break;
+      case 19: /* where_opt ::= TOKEN_WHERE condition */
+#line 206 "sql_grammar.y"
+{ yymsp[-1].minor.yy17 = yymsp[0].minor.yy17; }
+#line 1435 "sql_grammar.c"
+        break;
+      case 20: /* group_by_opt ::= */
+#line 208 "sql_grammar.y"
+{ yymsp[1].minor.yy51 = nullptr; }
+#line 1440 "sql_grammar.c"
+        break;
+      case 21: /* group_by_opt ::= TOKEN_GROUP_BY group_by_list */
+#line 209 "sql_grammar.y"
+{ yymsp[-1].minor.yy51 = yymsp[0].minor.yy51; }
+#line 1445 "sql_grammar.c"
+        break;
+      case 22: /* order_by_opt ::= */
+#line 211 "sql_grammar.y"
+{ yymsp[1].minor.yy106 = nullptr; }
+#line 1450 "sql_grammar.c"
+        break;
+      case 23: /* order_by_opt ::= TOKEN_ORDER_BY expression_list */
+#line 212 "sql_grammar.y"
+{ yymsp[-1].minor.yy106 = new ast::OrderBy(yymsp[0].minor.yy140, false); }
+#line 1455 "sql_grammar.c"
+        break;
+      case 24: /* order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_ASC */
+#line 213 "sql_grammar.y"
+{ yymsp[-2].minor.yy106 = new ast::OrderBy(yymsp[-1].minor.yy140, false); }
+#line 1460 "sql_grammar.c"
+        break;
+      case 25: /* order_by_opt ::= TOKEN_ORDER_BY expression_list TOKEN_DESC */
+#line 214 "sql_grammar.y"
+{ yymsp[-2].minor.yy106 = new ast::OrderBy(yymsp[-1].minor.yy140, true); }
+#line 1465 "sql_grammar.c"
+        break;
+      case 26: /* condition ::= expression */
+#line 216 "sql_grammar.y"
+{ yylhsminor.yy17 = yymsp[0].minor.yy19; }
 #line 1470 "sql_grammar.c"
-            yymsp[-2].minor.yy92 = yylhsminor.yy92;
-            break;
-        case 33: /* expression ::= TOKEN_STR */
-#line 229 "sql_grammar.y"
-        {
-            yylhsminor.yy31 =
-                new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::String);
-        }
-#line 1478 "sql_grammar.c"
-            yymsp[0].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 34: /* expression ::= TOKEN_INTEGER */
-#line 233 "sql_grammar.y"
-        {
-            yylhsminor.yy31 =
-                new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Integer);
-        }
-#line 1486 "sql_grammar.c"
-            yymsp[0].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 35: /* expression ::= TOKEN_FLOATING */
-#line 237 "sql_grammar.y"
-        {
-            yylhsminor.yy31 =
-                new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Floating);
-        }
-#line 1494 "sql_grammar.c"
-            yymsp[0].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 36: /* expression ::= TOKEN_NULL */
-#line 241 "sql_grammar.y"
-        {
-            yymsp[0].minor.yy31 = new ast::ValueExpression("", lsql::ValueType::Null);
-        }
-#line 1502 "sql_grammar.c"
+  yymsp[0].minor.yy17 = yylhsminor.yy17;
         break;
-        case 37: /* expression ::= TOKEN_TRUE */
-        case 38: /* expression ::= TOKEN_FALSE */
-            yytestcase(yyruleno == 38);
-#line 245 "sql_grammar.y"
-            {
-                yylhsminor.yy31 =
-                    new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Boolean);
-            }
-#line 1510 "sql_grammar.c"
-            yymsp[0].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 39: /* expression ::= TOKEN_IDENTIFIER */
-#line 253 "sql_grammar.y"
-        {
-            yylhsminor.yy31 =
-                new ast::IdentifierExpression(yymsp[0].minor.yy0.text, lsql::ValueType::String);
-        }
+      case 27: /* limit_opt ::= TOKEN_LIMIT TOKEN_INTEGER */
+#line 218 "sql_grammar.y"
+{ yymsp[-1].minor.yy8 = std::atoi(yymsp[0].minor.yy0.text); }
+#line 1476 "sql_grammar.c"
+        break;
+      case 28: /* limit_opt ::= */
+#line 219 "sql_grammar.y"
+{ yymsp[1].minor.yy8 = -1; }
+#line 1481 "sql_grammar.c"
+        break;
+      case 29: /* select_list ::= TOKEN_STAR */
+#line 221 "sql_grammar.y"
+{
+    yymsp[0].minor.yy51 = new ast::SelectList();
+}
+#line 1488 "sql_grammar.c"
+        break;
+      case 30: /* select_list ::= select_item */
+      case 34: /* group_by_list ::= select_item */ yytestcase(yyruleno==34);
+#line 225 "sql_grammar.y"
+{
+    yylhsminor.yy51 = new ast::SelectList();
+    yylhsminor.yy51->push_back(std::unique_ptr<ast::SelectItem>(yymsp[0].minor.yy98));
+}
+#line 1497 "sql_grammar.c"
+  yymsp[0].minor.yy51 = yylhsminor.yy51;
+        break;
+      case 31: /* select_list ::= select_list TOKEN_COMMA select_item */
+      case 35: /* group_by_list ::= group_by_list TOKEN_COMMA select_item */ yytestcase(yyruleno==35);
+#line 230 "sql_grammar.y"
+{
+    yylhsminor.yy51 = yymsp[-2].minor.yy51;
+    yylhsminor.yy51->push_back(std::unique_ptr<ast::SelectItem>(yymsp[0].minor.yy98));
+}
+#line 1507 "sql_grammar.c"
+  yymsp[-2].minor.yy51 = yylhsminor.yy51;
+        break;
+      case 32: /* select_item ::= TOKEN_IDENTIFIER */
+#line 235 "sql_grammar.y"
+{
+    yylhsminor.yy98 = new ast::SelectItem(
+        std::make_unique<ast::IdentifierExpression>(yymsp[0].minor.yy0.text, lsql::ValueType::String),
+        std::string(yymsp[0].minor.yy0.text)
+    );
+}
 #line 1518 "sql_grammar.c"
-            yymsp[0].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 40: /* expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 257 "sql_grammar.y"
-        {
-            yymsp[-3].minor.yy31 = new ast::CastExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31), lsql::ValueType::String);
-        }
+  yymsp[0].minor.yy98 = yylhsminor.yy98;
+        break;
+      case 33: /* select_item ::= expression TOKEN_AS TOKEN_IDENTIFIER */
+#line 242 "sql_grammar.y"
+{
+    yylhsminor.yy98 = new ast::SelectItem(std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy19), std::string(yymsp[0].minor.yy0.text));
+}
 #line 1526 "sql_grammar.c"
+  yymsp[-2].minor.yy98 = yylhsminor.yy98;
         break;
-        case 41: /* expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
+      case 36: /* expression_list ::= expression */
+#line 256 "sql_grammar.y"
+{
+    yylhsminor.yy140 = new ast::ExpressionList();
+    yylhsminor.yy140->push_back(std::unique_ptr<ast::Expression>(yymsp[0].minor.yy19));
+}
+#line 1535 "sql_grammar.c"
+  yymsp[0].minor.yy140 = yylhsminor.yy140;
+        break;
+      case 37: /* expression_list ::= expression_list TOKEN_COMMA expression */
 #line 261 "sql_grammar.y"
-        {
-            yymsp[-3].minor.yy31 = new ast::CastExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31), lsql::ValueType::Integer);
-        }
-#line 1533 "sql_grammar.c"
+{
+    yylhsminor.yy140 = yymsp[-2].minor.yy140;
+    yylhsminor.yy140->push_back(std::unique_ptr<ast::Expression>(yymsp[0].minor.yy19));
+}
+#line 1544 "sql_grammar.c"
+  yymsp[-2].minor.yy140 = yylhsminor.yy140;
         break;
-        case 42: /* expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 265 "sql_grammar.y"
-        {
-            yymsp[-3].minor.yy31 = new ast::CastExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31), lsql::ValueType::Floating);
-        }
-#line 1540 "sql_grammar.c"
+      case 38: /* expression ::= value */
+#line 266 "sql_grammar.y"
+{ yylhsminor.yy19 = yymsp[0].minor.yy96; }
+#line 1550 "sql_grammar.c"
+  yymsp[0].minor.yy19 = yylhsminor.yy19;
         break;
-        case 43: /* expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 269 "sql_grammar.y"
-        {
-            yymsp[-3].minor.yy31 = new ast::CastExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31), lsql::ValueType::Boolean);
-        }
-#line 1547 "sql_grammar.c"
+      case 39: /* expression ::= TOKEN_IDENTIFIER */
+#line 268 "sql_grammar.y"
+{
+    yylhsminor.yy19 = new ast::IdentifierExpression(yymsp[0].minor.yy0.text, lsql::ValueType::String);
+}
+#line 1558 "sql_grammar.c"
+  yymsp[0].minor.yy19 = yylhsminor.yy19;
         break;
-        case 44: /* expression ::= TOKEN_EXCLAMATION expression */
-#line 273 "sql_grammar.y"
-        {
-            yymsp[-1].minor.yy31 = new ast::UnaryExpression(
-                std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
-                ast::UnaryExpressionType::BooleanNegate);
-        }
-#line 1557 "sql_grammar.c"
+      case 40: /* expression ::= TOKEN_STRING TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 272 "sql_grammar.y"
+{
+    yymsp[-3].minor.yy19 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy19), lsql::ValueType::String);
+}
+#line 1566 "sql_grammar.c"
         break;
-        case 45: /* expression ::= expression TOKEN_LIKE TOKEN_STR */
+      case 41: /* expression ::= TOKEN_INT TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 276 "sql_grammar.y"
+{
+    yymsp[-3].minor.yy19 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy19), lsql::ValueType::Integer);
+}
+#line 1573 "sql_grammar.c"
+        break;
+      case 42: /* expression ::= TOKEN_FLOAT TOKEN_LPAREN expression TOKEN_RPAREN */
 #line 280 "sql_grammar.y"
-        {
-            auto str = std::string(yymsp[0].minor.yy0.text);
-
-            yylhsminor.yy31 = new ast::LikeExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
-                str.substr(1, str.size() - 2));
-        }
-#line 1569 "sql_grammar.c"
-            yymsp[-2].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 46: /* expression ::= expression TOKEN_EQ expression */
-#line 289 "sql_grammar.y"
-        {
-            yylhsminor.yy31 = new ast::BinaryExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
-                std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
-                ast::BinExpressionType::Equal);
-        }
-#line 1581 "sql_grammar.c"
-            yymsp[-2].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 47: /* expression ::= expression TOKEN_NEQ expression */
-#line 297 "sql_grammar.y"
-        {
-            yylhsminor.yy31 = new ast::BinaryExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
-                std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
-                ast::BinExpressionType::NotEqual);
-        }
-#line 1593 "sql_grammar.c"
-            yymsp[-2].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 48: /* expression ::= expression TOKEN_AND expression */
-#line 305 "sql_grammar.y"
-        {
-            yylhsminor.yy31 = new ast::BinaryExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
-                std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
-                ast::BinExpressionType::And);
-        }
-#line 1605 "sql_grammar.c"
-            yymsp[-2].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 49: /* expression ::= expression TOKEN_OR expression */
-#line 313 "sql_grammar.y"
-        {
-            yylhsminor.yy31 = new ast::BinaryExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
-                std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
-                ast::BinExpressionType::Or);
-        }
-#line 1617 "sql_grammar.c"
-            yymsp[-2].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 50: /* expression ::= expression TOKEN_DIVIDE expression */
-#line 321 "sql_grammar.y"
-        {
-            yylhsminor.yy31 = new ast::BinaryExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
-                std::unique_ptr<ast::Expression>(yymsp[0].minor.yy31),
-                ast::BinExpressionType::Divide);
-        }
-#line 1629 "sql_grammar.c"
-            yymsp[-2].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 51: /* expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 329 "sql_grammar.y"
-        {
-            yymsp[-3].minor.yy31 = new ast::UnaryAggregateExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31),
-                ast::UnaryAggregateType::Count);
-        }
-#line 1640 "sql_grammar.c"
+{
+    yymsp[-3].minor.yy19 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy19), lsql::ValueType::Floating);
+}
+#line 1580 "sql_grammar.c"
         break;
-        case 52: /* expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
+      case 43: /* expression ::= TOKEN_BOOL TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 284 "sql_grammar.y"
+{
+    yymsp[-3].minor.yy19 = new ast::CastExpression(std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy19), lsql::ValueType::Boolean);
+}
+#line 1587 "sql_grammar.c"
+        break;
+      case 44: /* expression ::= TOKEN_EXCLAMATION expression */
+#line 288 "sql_grammar.y"
+{
+    yymsp[-1].minor.yy19 = new ast::UnaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy19),
+        ast::UnaryExpressionType::BooleanNegate
+    );
+}
+#line 1597 "sql_grammar.c"
+        break;
+      case 45: /* expression ::= expression TOKEN_LIKE TOKEN_STR */
+#line 295 "sql_grammar.y"
+{
+    auto str = std::string(yymsp[0].minor.yy0.text);
+
+    yylhsminor.yy19 = new ast::LikeExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy19),
+        str.substr(1, str.size() - 2)
+    );
+}
+#line 1609 "sql_grammar.c"
+  yymsp[-2].minor.yy19 = yylhsminor.yy19;
+        break;
+      case 46: /* expression ::= expression TOKEN_EQ expression */
+#line 304 "sql_grammar.y"
+{
+    yylhsminor.yy19 = new ast::BinaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy19),
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy19),
+        ast::BinExpressionType::Equal
+    );
+}
+#line 1621 "sql_grammar.c"
+  yymsp[-2].minor.yy19 = yylhsminor.yy19;
+        break;
+      case 47: /* expression ::= expression TOKEN_NEQ expression */
+#line 312 "sql_grammar.y"
+{
+    yylhsminor.yy19 = new ast::BinaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy19),
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy19),
+        ast::BinExpressionType::NotEqual
+    );
+}
+#line 1633 "sql_grammar.c"
+  yymsp[-2].minor.yy19 = yylhsminor.yy19;
+        break;
+      case 48: /* expression ::= expression TOKEN_AND expression */
+#line 320 "sql_grammar.y"
+{
+    yylhsminor.yy19 = new ast::BinaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy19),
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy19),
+        ast::BinExpressionType::And
+    );
+}
+#line 1645 "sql_grammar.c"
+  yymsp[-2].minor.yy19 = yylhsminor.yy19;
+        break;
+      case 49: /* expression ::= expression TOKEN_OR expression */
+#line 328 "sql_grammar.y"
+{
+    yylhsminor.yy19 = new ast::BinaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy19),
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy19),
+        ast::BinExpressionType::Or
+    );
+}
+#line 1657 "sql_grammar.c"
+  yymsp[-2].minor.yy19 = yylhsminor.yy19;
+        break;
+      case 50: /* expression ::= expression TOKEN_DIVIDE expression */
 #line 336 "sql_grammar.y"
-        {
-            yymsp[-3].minor.yy31 = new ast::UnaryAggregateExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31),
-                ast::UnaryAggregateType::Min);
-        }
-#line 1650 "sql_grammar.c"
+{
+    yylhsminor.yy19 = new ast::BinaryExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy19),
+        std::unique_ptr<ast::Expression>(yymsp[0].minor.yy19),
+        ast::BinExpressionType::Divide
+    );
+}
+#line 1669 "sql_grammar.c"
+  yymsp[-2].minor.yy19 = yylhsminor.yy19;
         break;
-        case 53: /* expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 343 "sql_grammar.y"
-        {
-            yymsp[-3].minor.yy31 = new ast::UnaryAggregateExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31),
-                ast::UnaryAggregateType::Max);
-        }
-#line 1660 "sql_grammar.c"
+      case 51: /* expression ::= TOKEN_COUNT TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 344 "sql_grammar.y"
+{
+    yymsp[-3].minor.yy19 = new ast::UnaryAggregateExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy19),
+        ast::UnaryAggregateType::Count
+    );
+}
+#line 1680 "sql_grammar.c"
         break;
-        case 54: /* expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
-#line 350 "sql_grammar.y"
-        {
-            yymsp[-3].minor.yy31 = new ast::UnaryAggregateExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy31),
-                ast::UnaryAggregateType::Sum);
-        }
-#line 1670 "sql_grammar.c"
+      case 52: /* expression ::= TOKEN_MIN TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 351 "sql_grammar.y"
+{
+    yymsp[-3].minor.yy19 = new ast::UnaryAggregateExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy19),
+        ast::UnaryAggregateType::Min
+    );
+}
+#line 1690 "sql_grammar.c"
         break;
-        case 55: /* expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
-#line 357 "sql_grammar.y"
-        {
-            yymsp[-3].minor.yy31 = new ast::CoalesceExpression(yymsp[-1].minor.yy92);
-        }
-#line 1677 "sql_grammar.c"
+      case 53: /* expression ::= TOKEN_MAX TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 358 "sql_grammar.y"
+{
+    yymsp[-3].minor.yy19 = new ast::UnaryAggregateExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy19),
+        ast::UnaryAggregateType::Max
+    );
+}
+#line 1700 "sql_grammar.c"
         break;
-        case 56: /* expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR
-                    TOKEN_RPAREN */
-#line 361 "sql_grammar.y"
-        {
-            auto str = std::string(yymsp[-1].minor.yy0.text);
+      case 54: /* expression ::= TOKEN_SUM TOKEN_LPAREN expression TOKEN_RPAREN */
+#line 365 "sql_grammar.y"
+{
+    yymsp[-3].minor.yy19 = new ast::UnaryAggregateExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-1].minor.yy19),
+        ast::UnaryAggregateType::Sum
+    );
+}
+#line 1710 "sql_grammar.c"
+        break;
+      case 55: /* expression ::= TOKEN_COALESCE TOKEN_LPAREN expression_list TOKEN_RPAREN */
+#line 372 "sql_grammar.y"
+{
+    yymsp[-3].minor.yy19 = new ast::CoalesceExpression(yymsp[-1].minor.yy140);
+}
+#line 1717 "sql_grammar.c"
+        break;
+      case 56: /* expression ::= TOKEN_RSUBSTR TOKEN_LPAREN expression TOKEN_COMMA TOKEN_STR TOKEN_RPAREN */
+#line 376 "sql_grammar.y"
+{
+    auto str = std::string(yymsp[-1].minor.yy0.text);
 
-            yymsp[-5].minor.yy31 = new ast::RSubstrExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-3].minor.yy31),
-                str.substr(1, str.size() - 2));
-        }
-#line 1689 "sql_grammar.c"
+    yymsp[-5].minor.yy19 = new ast::RSubstrExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-3].minor.yy19),
+        str.substr(1, str.size() - 2)
+    );
+}
+#line 1729 "sql_grammar.c"
         break;
-        case 57: /* expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA
-                    floating_list TOKEN_RPAREN */
-#line 370 "sql_grammar.y"
-        {
-            yymsp[-5].minor.yy31 = new ast::PercentileExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-3].minor.yy31), yymsp[-1].minor.yy111);
-        }
-#line 1699 "sql_grammar.c"
+      case 57: /* expression ::= TOKEN_PERCENTILE TOKEN_LPAREN expression TOKEN_COMMA floating_list TOKEN_RPAREN */
+#line 385 "sql_grammar.y"
+{
+    yymsp[-5].minor.yy19 = new ast::PercentileExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-3].minor.yy19),
+        yymsp[-1].minor.yy18
+    );
+}
+#line 1739 "sql_grammar.c"
         break;
-        case 58: /* expression ::= expression TOKEN_IN select_source */
-#line 377 "sql_grammar.y"
-        {
-            yylhsminor.yy31 = new ast::InExpression(
-                std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy31),
-                std::unique_ptr<ast::Node>(yymsp[0].minor.yy125));
-        }
-#line 1709 "sql_grammar.c"
-            yymsp[-2].minor.yy31 = yylhsminor.yy31;
-            break;
-        case 59: /* floating_list ::= TOKEN_FLOATING */
-#line 384 "sql_grammar.y"
-        {
-            yylhsminor.yy111 = new std::vector<float>();
-            yylhsminor.yy111->push_back(std::strtof(yymsp[0].minor.yy0.text, nullptr));
-        }
-#line 1718 "sql_grammar.c"
-            yymsp[0].minor.yy111 = yylhsminor.yy111;
-            break;
-        case 60: /* floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
-#line 389 "sql_grammar.y"
-        {
-            yylhsminor.yy111 = yymsp[-2].minor.yy111;
-            yylhsminor.yy111->push_back(std::strtof(yymsp[0].minor.yy0.text, nullptr));
-        }
-#line 1727 "sql_grammar.c"
-            yymsp[-2].minor.yy111 = yylhsminor.yy111;
-            break;
-        default:
-            break;
-            /********** End reduce actions ************************************************/
-    };
-    assert(yyruleno < sizeof(yyRuleInfoLhs) / sizeof(yyRuleInfoLhs[0]));
-    yygoto = yyRuleInfoLhs[yyruleno];
-    yysize = yyRuleInfoNRhs[yyruleno];
-    yyact = yy_find_reduce_action(yymsp[yysize].stateno, (YYCODETYPE)yygoto);
+      case 58: /* expression ::= expression TOKEN_IN select_source */
+#line 392 "sql_grammar.y"
+{
+    yylhsminor.yy19 = new ast::InExpression(
+        std::unique_ptr<ast::Expression>(yymsp[-2].minor.yy19),
+        std::unique_ptr<ast::Node>(yymsp[0].minor.yy17)
+    );
+}
+#line 1749 "sql_grammar.c"
+  yymsp[-2].minor.yy19 = yylhsminor.yy19;
+        break;
+      case 59: /* value_list ::= value */
+#line 399 "sql_grammar.y"
+{
+    yylhsminor.yy53 = new std::vector<std::unique_ptr<ast::ValueExpression>>();
+    yylhsminor.yy53->emplace_back(yymsp[0].minor.yy96);
+}
+#line 1758 "sql_grammar.c"
+  yymsp[0].minor.yy53 = yylhsminor.yy53;
+        break;
+      case 60: /* value_list ::= value_list TOKEN_COMMA value */
+#line 404 "sql_grammar.y"
+{
+    yylhsminor.yy53 = yymsp[-2].minor.yy53;
+    yylhsminor.yy53->emplace_back(yymsp[0].minor.yy96);
+}
+#line 1767 "sql_grammar.c"
+  yymsp[-2].minor.yy53 = yylhsminor.yy53;
+        break;
+      case 61: /* value ::= TOKEN_STR */
+#line 409 "sql_grammar.y"
+{
+    yylhsminor.yy96 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::String);
+}
+#line 1775 "sql_grammar.c"
+  yymsp[0].minor.yy96 = yylhsminor.yy96;
+        break;
+      case 62: /* value ::= TOKEN_INTEGER */
+#line 413 "sql_grammar.y"
+{
+    yylhsminor.yy96 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Integer);
+}
+#line 1783 "sql_grammar.c"
+  yymsp[0].minor.yy96 = yylhsminor.yy96;
+        break;
+      case 63: /* value ::= TOKEN_FLOATING */
+#line 417 "sql_grammar.y"
+{
+    yylhsminor.yy96 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Floating);
+}
+#line 1791 "sql_grammar.c"
+  yymsp[0].minor.yy96 = yylhsminor.yy96;
+        break;
+      case 64: /* value ::= TOKEN_TRUE */
+      case 65: /* value ::= TOKEN_FALSE */ yytestcase(yyruleno==65);
+#line 421 "sql_grammar.y"
+{
+    yylhsminor.yy96 = new ast::ValueExpression(yymsp[0].minor.yy0.text, lsql::ValueType::Boolean);
+}
+#line 1800 "sql_grammar.c"
+  yymsp[0].minor.yy96 = yylhsminor.yy96;
+        break;
+      case 66: /* value ::= TOKEN_NULL */
+#line 429 "sql_grammar.y"
+{
+    yymsp[0].minor.yy96 = new ast::ValueExpression("", lsql::ValueType::Null);
+}
+#line 1808 "sql_grammar.c"
+        break;
+      case 67: /* floating_list ::= TOKEN_FLOATING */
+#line 433 "sql_grammar.y"
+{
+    yylhsminor.yy18 = new std::vector<float>();
+    yylhsminor.yy18->push_back(std::strtof(yymsp[0].minor.yy0.text, nullptr));
+}
+#line 1816 "sql_grammar.c"
+  yymsp[0].minor.yy18 = yylhsminor.yy18;
+        break;
+      case 68: /* floating_list ::= floating_list TOKEN_COMMA TOKEN_FLOATING */
+#line 438 "sql_grammar.y"
+{
+    yylhsminor.yy18 = yymsp[-2].minor.yy18;
+    yylhsminor.yy18->push_back(std::strtof(yymsp[0].minor.yy0.text, nullptr));
+}
+#line 1825 "sql_grammar.c"
+  yymsp[-2].minor.yy18 = yylhsminor.yy18;
+        break;
+      default:
+        break;
+/********** End reduce actions ************************************************/
+  };
+  assert( yyruleno<sizeof(yyRuleInfoLhs)/sizeof(yyRuleInfoLhs[0]) );
+  yygoto = yyRuleInfoLhs[yyruleno];
+  yysize = yyRuleInfoNRhs[yyruleno];
+  yyact = yy_find_reduce_action(yymsp[yysize].stateno,(YYCODETYPE)yygoto);
 
-    /* There are no SHIFTREDUCE actions on nonterminals because the table
-    ** generator has simplified them to pure REDUCE actions. */
-    assert(!(yyact > YY_MAX_SHIFT && yyact <= YY_MAX_SHIFTREDUCE));
+  /* There are no SHIFTREDUCE actions on nonterminals because the table
+  ** generator has simplified them to pure REDUCE actions. */
+  assert( !(yyact>YY_MAX_SHIFT && yyact<=YY_MAX_SHIFTREDUCE) );
 
-    /* It is not possible for a REDUCE to be followed by an error */
-    assert(yyact != YY_ERROR_ACTION);
+  /* It is not possible for a REDUCE to be followed by an error */
+  assert( yyact!=YY_ERROR_ACTION );
 
-    yymsp += yysize + 1;
-    yypParser->yytos = yymsp;
-    yymsp->stateno = (YYACTIONTYPE)yyact;
-    yymsp->major = (YYCODETYPE)yygoto;
-    yyTraceShift(yypParser, yyact, "... then shift");
-    return yyact;
+  yymsp += yysize+1;
+  yypParser->yytos = yymsp;
+  yymsp->stateno = (YYACTIONTYPE)yyact;
+  yymsp->major = (YYCODETYPE)yygoto;
+  yyTraceShift(yypParser, yyact, "... then shift");
+  return yyact;
 }
 
 /*
@@ -1823,22 +1853,22 @@ static YYACTIONTYPE yy_reduce(
 */
 #ifndef YYNOERRORRECOVERY
 static void yy_parse_failed(
-    yyParser* yypParser /* The parser */
-) {
-    ParseARG_FETCH ParseCTX_FETCH
+  yyParser *yypParser           /* The parser */
+){
+  ParseARG_FETCH
+  ParseCTX_FETCH
 #ifndef NDEBUG
-        if (yyTraceFILE) {
-        fprintf(yyTraceFILE, "%sFail!\n", yyTracePrompt);
-    }
+  if( yyTraceFILE ){
+    fprintf(yyTraceFILE,"%sFail!\n",yyTracePrompt);
+  }
 #endif
-    while (yypParser->yytos > yypParser->yystack)
-        yy_pop_parser_stack(yypParser);
-    /* Here code is inserted which will be executed whenever the
-    ** parser fails */
-    /************ Begin %parse_failure code ***************************************/
-    /************ End %parse_failure code *****************************************/
-    ParseARG_STORE /* Suppress warning about unused %extra_argument variable */
-        ParseCTX_STORE
+  while( yypParser->yytos>yypParser->yystack ) yy_pop_parser_stack(yypParser);
+  /* Here code is inserted which will be executed whenever the
+  ** parser fails */
+/************ Begin %parse_failure code ***************************************/
+/************ End %parse_failure code *****************************************/
+  ParseARG_STORE /* Suppress warning about unused %extra_argument variable */
+  ParseCTX_STORE
 }
 #endif /* YYNOERRORRECOVERY */
 
@@ -1846,46 +1876,48 @@ static void yy_parse_failed(
 ** The following code executes when a syntax error first occurs.
 */
 static void yy_syntax_error(
-    yyParser* yypParser,   /* The parser */
-    int yymajor,           /* The major type of the error token */
-    ParseTOKENTYPE yyminor /* The minor type of the error token */
-) {
-    ParseARG_FETCH ParseCTX_FETCH
+  yyParser *yypParser,           /* The parser */
+  int yymajor,                   /* The major type of the error token */
+  ParseTOKENTYPE yyminor         /* The minor type of the error token */
+){
+  ParseARG_FETCH
+  ParseCTX_FETCH
 #define TOKEN yyminor
 /************ Begin %syntax_error code ****************************************/
-#line 394 "sql_grammar.y"
+#line 443 "sql_grammar.y"
 
-        const char* token_text = TOKEN.text;
+    const char* token_text = TOKEN.text;
     fprintf(stderr, "Syntax error at line near token: '%s'\n", token_text);
     pCtx->has_error = 1;
-#line 1795 "sql_grammar.c"
-    /************ End %syntax_error code ******************************************/
-    ParseARG_STORE /* Suppress warning about unused %extra_argument variable */
-        ParseCTX_STORE
+#line 1893 "sql_grammar.c"
+/************ End %syntax_error code ******************************************/
+  ParseARG_STORE /* Suppress warning about unused %extra_argument variable */
+  ParseCTX_STORE
 }
 
 /*
 ** The following is executed when the parser accepts
 */
 static void yy_accept(
-    yyParser* yypParser /* The parser */
-) {
-    ParseARG_FETCH ParseCTX_FETCH
+  yyParser *yypParser           /* The parser */
+){
+  ParseARG_FETCH
+  ParseCTX_FETCH
 #ifndef NDEBUG
-        if (yyTraceFILE) {
-        fprintf(yyTraceFILE, "%sAccept!\n", yyTracePrompt);
-    }
+  if( yyTraceFILE ){
+    fprintf(yyTraceFILE,"%sAccept!\n",yyTracePrompt);
+  }
 #endif
 #ifndef YYNOERRORRECOVERY
-    yypParser->yyerrcnt = -1;
+  yypParser->yyerrcnt = -1;
 #endif
-    assert(yypParser->yytos == yypParser->yystack);
-    /* Here code is inserted which will be executed whenever the
-    ** parser accepts */
-    /*********** Begin %parse_accept code *****************************************/
-    /*********** End %parse_accept code *******************************************/
-    ParseARG_STORE /* Suppress warning about unused %extra_argument variable */
-        ParseCTX_STORE
+  assert( yypParser->yytos==yypParser->yystack );
+  /* Here code is inserted which will be executed whenever the
+  ** parser accepts */
+/*********** Begin %parse_accept code *****************************************/
+/*********** End %parse_accept code *******************************************/
+  ParseARG_STORE /* Suppress warning about unused %extra_argument variable */
+  ParseCTX_STORE
 }
 
 /* The main parser program.
@@ -1908,238 +1940,221 @@ static void yy_accept(
 ** None.
 */
 void Parse(
-    void* yyp,             /* The parser */
-    int yymajor,           /* The major token code number */
-    ParseTOKENTYPE yyminor /* The value for the token */
-        ParseARG_PDECL     /* Optional %extra_argument parameter */
-) {
-    YYMINORTYPE yyminorunion;
-    YYACTIONTYPE yyact; /* The parser action. */
+  void *yyp,                   /* The parser */
+  int yymajor,                 /* The major token code number */
+  ParseTOKENTYPE yyminor       /* The value for the token */
+  ParseARG_PDECL               /* Optional %extra_argument parameter */
+){
+  YYMINORTYPE yyminorunion;
+  YYACTIONTYPE yyact;   /* The parser action. */
 #if !defined(YYERRORSYMBOL) && !defined(YYNOERRORRECOVERY)
-    int yyendofinput; /* True if we are at the end of input */
+  int yyendofinput;     /* True if we are at the end of input */
 #endif
 #ifdef YYERRORSYMBOL
-    int yyerrorhit = 0; /* True if yymajor has invoked an error */
+  int yyerrorhit = 0;   /* True if yymajor has invoked an error */
 #endif
-    yyParser* yypParser = (yyParser*)yyp; /* The parser */
-    ParseCTX_FETCH ParseARG_STORE
+  yyParser *yypParser = (yyParser*)yyp;  /* The parser */
+  ParseCTX_FETCH
+  ParseARG_STORE
 
-        assert(yypParser->yytos != 0);
+  assert( yypParser->yytos!=0 );
 #if !defined(YYERRORSYMBOL) && !defined(YYNOERRORRECOVERY)
-    yyendofinput = (yymajor == 0);
+  yyendofinput = (yymajor==0);
 #endif
 
-    yyact = yypParser->yytos->stateno;
+  yyact = yypParser->yytos->stateno;
 #ifndef NDEBUG
-    if (yyTraceFILE) {
-        if (yyact < YY_MIN_REDUCE) {
-            fprintf(
-                yyTraceFILE,
-                "%sInput '%s' in state %d\n",
-                yyTracePrompt,
-                yyTokenName[yymajor],
-                yyact);
-        } else {
-            fprintf(
-                yyTraceFILE,
-                "%sInput '%s' with pending reduce %d\n",
-                yyTracePrompt,
-                yyTokenName[yymajor],
-                yyact - YY_MIN_REDUCE);
-        }
+  if( yyTraceFILE ){
+    if( yyact < YY_MIN_REDUCE ){
+      fprintf(yyTraceFILE,"%sInput '%s' in state %d\n",
+              yyTracePrompt,yyTokenName[yymajor],yyact);
+    }else{
+      fprintf(yyTraceFILE,"%sInput '%s' with pending reduce %d\n",
+              yyTracePrompt,yyTokenName[yymajor],yyact-YY_MIN_REDUCE);
     }
+  }
 #endif
 
-    while (1) { /* Exit by "break" */
-        assert(yypParser->yytos >= yypParser->yystack);
-        assert(yyact == yypParser->yytos->stateno);
-        yyact = yy_find_shift_action((YYCODETYPE)yymajor, yyact);
-        if (yyact >= YY_MIN_REDUCE) {
-            unsigned int yyruleno = yyact - YY_MIN_REDUCE; /* Reduce by this rule */
+  while(1){ /* Exit by "break" */
+    assert( yypParser->yytos>=yypParser->yystack );
+    assert( yyact==yypParser->yytos->stateno );
+    yyact = yy_find_shift_action((YYCODETYPE)yymajor,yyact);
+    if( yyact >= YY_MIN_REDUCE ){
+      unsigned int yyruleno = yyact - YY_MIN_REDUCE; /* Reduce by this rule */
 #ifndef NDEBUG
-            assert(yyruleno < (int)(sizeof(yyRuleName) / sizeof(yyRuleName[0])));
-            if (yyTraceFILE) {
-                int yysize = yyRuleInfoNRhs[yyruleno];
-                if (yysize) {
-                    fprintf(
-                        yyTraceFILE,
-                        "%sReduce %d [%s]%s, pop back to state %d.\n",
-                        yyTracePrompt,
-                        yyruleno,
-                        yyRuleName[yyruleno],
-                        yyruleno < YYNRULE_WITH_ACTION ? "" : " without external action",
-                        yypParser->yytos[yysize].stateno);
-                } else {
-                    fprintf(
-                        yyTraceFILE,
-                        "%sReduce %d [%s]%s.\n",
-                        yyTracePrompt,
-                        yyruleno,
-                        yyRuleName[yyruleno],
-                        yyruleno < YYNRULE_WITH_ACTION ? "" : " without external action");
-                }
-            }
+      assert( yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) );
+      if( yyTraceFILE ){
+        int yysize = yyRuleInfoNRhs[yyruleno];
+        if( yysize ){
+          fprintf(yyTraceFILE, "%sReduce %d [%s]%s, pop back to state %d.\n",
+            yyTracePrompt,
+            yyruleno, yyRuleName[yyruleno],
+            yyruleno<YYNRULE_WITH_ACTION ? "" : " without external action",
+            yypParser->yytos[yysize].stateno);
+        }else{
+          fprintf(yyTraceFILE, "%sReduce %d [%s]%s.\n",
+            yyTracePrompt, yyruleno, yyRuleName[yyruleno],
+            yyruleno<YYNRULE_WITH_ACTION ? "" : " without external action");
+        }
+      }
 #endif /* NDEBUG */
 
-            /* Check that the stack is large enough to grow by a single entry
-            ** if the RHS of the rule is empty.  This ensures that there is room
-            ** enough on the stack to push the LHS value */
-            if (yyRuleInfoNRhs[yyruleno] == 0) {
+      /* Check that the stack is large enough to grow by a single entry
+      ** if the RHS of the rule is empty.  This ensures that there is room
+      ** enough on the stack to push the LHS value */
+      if( yyRuleInfoNRhs[yyruleno]==0 ){
 #ifdef YYTRACKMAXSTACKDEPTH
-                if ((int)(yypParser->yytos - yypParser->yystack) > yypParser->yyhwm) {
-                    yypParser->yyhwm++;
-                    assert(yypParser->yyhwm == (int)(yypParser->yytos - yypParser->yystack));
-                }
+        if( (int)(yypParser->yytos - yypParser->yystack)>yypParser->yyhwm ){
+          yypParser->yyhwm++;
+          assert( yypParser->yyhwm ==
+                  (int)(yypParser->yytos - yypParser->yystack));
+        }
 #endif
-                if (yypParser->yytos >= yypParser->yystackEnd) {
-                    if (yyGrowStack(yypParser)) {
-                        yyStackOverflow(yypParser);
-                        break;
-                    }
-                }
-            }
-            yyact = yy_reduce(yypParser, yyruleno, yymajor, yyminor ParseCTX_PARAM);
-        } else if (yyact <= YY_MAX_SHIFTREDUCE) {
-            yy_shift(yypParser, yyact, (YYCODETYPE)yymajor, yyminor);
-#ifndef YYNOERRORRECOVERY
-            yypParser->yyerrcnt--;
-#endif
+        if( yypParser->yytos>=yypParser->yystackEnd ){
+          if( yyGrowStack(yypParser) ){
+            yyStackOverflow(yypParser);
             break;
-        } else if (yyact == YY_ACCEPT_ACTION) {
-            yypParser->yytos--;
-            yy_accept(yypParser);
-            return;
-        } else {
-            assert(yyact == YY_ERROR_ACTION);
-            yyminorunion.yy0 = yyminor;
-#ifdef YYERRORSYMBOL
-            int yymx;
-#endif
-#ifndef NDEBUG
-            if (yyTraceFILE) {
-                fprintf(yyTraceFILE, "%sSyntax Error!\n", yyTracePrompt);
-            }
-#endif
-#ifdef YYERRORSYMBOL
-            /* A syntax error has occurred.
-            ** The response to an error depends upon whether or not the
-            ** grammar defines an error token "ERROR".
-            **
-            ** This is what we do if the grammar does define ERROR:
-            **
-            **  * Call the %syntax_error function.
-            **
-            **  * Begin popping the stack until we enter a state where
-            **    it is legal to shift the error symbol, then shift
-            **    the error symbol.
-            **
-            **  * Set the error count to three.
-            **
-            **  * Begin accepting and shifting new tokens.  No new error
-            **    processing will occur until three tokens have been
-            **    shifted successfully.
-            **
-            */
-            if (yypParser->yyerrcnt < 0) {
-                yy_syntax_error(yypParser, yymajor, yyminor);
-            }
-            yymx = yypParser->yytos->major;
-            if (yymx == YYERRORSYMBOL || yyerrorhit) {
-#ifndef NDEBUG
-                if (yyTraceFILE) {
-                    fprintf(
-                        yyTraceFILE,
-                        "%sDiscard input token %s\n",
-                        yyTracePrompt,
-                        yyTokenName[yymajor]);
-                }
-#endif
-                yy_destructor(yypParser, (YYCODETYPE)yymajor, &yyminorunion);
-                yymajor = YYNOCODE;
-            } else {
-                while (yypParser->yytos > yypParser->yystack) {
-                    yyact = yy_find_reduce_action(yypParser->yytos->stateno, YYERRORSYMBOL);
-                    if (yyact <= YY_MAX_SHIFTREDUCE)
-                        break;
-                    yy_pop_parser_stack(yypParser);
-                }
-                if (yypParser->yytos <= yypParser->yystack || yymajor == 0) {
-                    yy_destructor(yypParser, (YYCODETYPE)yymajor, &yyminorunion);
-                    yy_parse_failed(yypParser);
+          }
+        }
+      }
+      yyact = yy_reduce(yypParser,yyruleno,yymajor,yyminor ParseCTX_PARAM);
+    }else if( yyact <= YY_MAX_SHIFTREDUCE ){
+      yy_shift(yypParser,yyact,(YYCODETYPE)yymajor,yyminor);
 #ifndef YYNOERRORRECOVERY
-                    yypParser->yyerrcnt = -1;
+      yypParser->yyerrcnt--;
 #endif
-                    yymajor = YYNOCODE;
-                } else if (yymx != YYERRORSYMBOL) {
-                    yy_shift(yypParser, yyact, YYERRORSYMBOL, yyminor);
-                }
-            }
-            yypParser->yyerrcnt = 3;
-            yyerrorhit = 1;
-            if (yymajor == YYNOCODE)
-                break;
-            yyact = yypParser->yytos->stateno;
+      break;
+    }else if( yyact==YY_ACCEPT_ACTION ){
+      yypParser->yytos--;
+      yy_accept(yypParser);
+      return;
+    }else{
+      assert( yyact == YY_ERROR_ACTION );
+      yyminorunion.yy0 = yyminor;
+#ifdef YYERRORSYMBOL
+      int yymx;
+#endif
+#ifndef NDEBUG
+      if( yyTraceFILE ){
+        fprintf(yyTraceFILE,"%sSyntax Error!\n",yyTracePrompt);
+      }
+#endif
+#ifdef YYERRORSYMBOL
+      /* A syntax error has occurred.
+      ** The response to an error depends upon whether or not the
+      ** grammar defines an error token "ERROR".  
+      **
+      ** This is what we do if the grammar does define ERROR:
+      **
+      **  * Call the %syntax_error function.
+      **
+      **  * Begin popping the stack until we enter a state where
+      **    it is legal to shift the error symbol, then shift
+      **    the error symbol.
+      **
+      **  * Set the error count to three.
+      **
+      **  * Begin accepting and shifting new tokens.  No new error
+      **    processing will occur until three tokens have been
+      **    shifted successfully.
+      **
+      */
+      if( yypParser->yyerrcnt<0 ){
+        yy_syntax_error(yypParser,yymajor,yyminor);
+      }
+      yymx = yypParser->yytos->major;
+      if( yymx==YYERRORSYMBOL || yyerrorhit ){
+#ifndef NDEBUG
+        if( yyTraceFILE ){
+          fprintf(yyTraceFILE,"%sDiscard input token %s\n",
+             yyTracePrompt,yyTokenName[yymajor]);
+        }
+#endif
+        yy_destructor(yypParser, (YYCODETYPE)yymajor, &yyminorunion);
+        yymajor = YYNOCODE;
+      }else{
+        while( yypParser->yytos > yypParser->yystack ){
+          yyact = yy_find_reduce_action(yypParser->yytos->stateno,
+                                        YYERRORSYMBOL);
+          if( yyact<=YY_MAX_SHIFTREDUCE ) break;
+          yy_pop_parser_stack(yypParser);
+        }
+        if( yypParser->yytos <= yypParser->yystack || yymajor==0 ){
+          yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
+          yy_parse_failed(yypParser);
+#ifndef YYNOERRORRECOVERY
+          yypParser->yyerrcnt = -1;
+#endif
+          yymajor = YYNOCODE;
+        }else if( yymx!=YYERRORSYMBOL ){
+          yy_shift(yypParser,yyact,YYERRORSYMBOL,yyminor);
+        }
+      }
+      yypParser->yyerrcnt = 3;
+      yyerrorhit = 1;
+      if( yymajor==YYNOCODE ) break;
+      yyact = yypParser->yytos->stateno;
 #elif defined(YYNOERRORRECOVERY)
-            /* If the YYNOERRORRECOVERY macro is defined, then do not attempt to
-            ** do any kind of error recovery.  Instead, simply invoke the syntax
-            ** error routine and continue going as if nothing had happened.
-            **
-            ** Applications can set this macro (for example inside %include) if
-            ** they intend to abandon the parse upon the first syntax error seen.
-            */
-            yy_syntax_error(yypParser, yymajor, yyminor);
-            yy_destructor(yypParser, (YYCODETYPE)yymajor, &yyminorunion);
-            break;
-#else /* YYERRORSYMBOL is not defined */
-            /* This is what we do if the grammar does not define ERROR:
-            **
-            **  * Report an error message, and throw away the input token.
-            **
-            **  * If the input token is $, then fail the parse.
-            **
-            ** As before, subsequent error messages are suppressed until
-            ** three input tokens have been successfully shifted.
-            */
-            if (yypParser->yyerrcnt <= 0) {
-                yy_syntax_error(yypParser, yymajor, yyminor);
-            }
-            yypParser->yyerrcnt = 3;
-            yy_destructor(yypParser, (YYCODETYPE)yymajor, &yyminorunion);
-            if (yyendofinput) {
-                yy_parse_failed(yypParser);
+      /* If the YYNOERRORRECOVERY macro is defined, then do not attempt to
+      ** do any kind of error recovery.  Instead, simply invoke the syntax
+      ** error routine and continue going as if nothing had happened.
+      **
+      ** Applications can set this macro (for example inside %include) if
+      ** they intend to abandon the parse upon the first syntax error seen.
+      */
+      yy_syntax_error(yypParser,yymajor, yyminor);
+      yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
+      break;
+#else  /* YYERRORSYMBOL is not defined */
+      /* This is what we do if the grammar does not define ERROR:
+      **
+      **  * Report an error message, and throw away the input token.
+      **
+      **  * If the input token is $, then fail the parse.
+      **
+      ** As before, subsequent error messages are suppressed until
+      ** three input tokens have been successfully shifted.
+      */
+      if( yypParser->yyerrcnt<=0 ){
+        yy_syntax_error(yypParser,yymajor, yyminor);
+      }
+      yypParser->yyerrcnt = 3;
+      yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
+      if( yyendofinput ){
+        yy_parse_failed(yypParser);
 #ifndef YYNOERRORRECOVERY
-                yypParser->yyerrcnt = -1;
+        yypParser->yyerrcnt = -1;
 #endif
-            }
-            break;
+      }
+      break;
 #endif
-        }
     }
+  }
 #ifndef NDEBUG
-    if (yyTraceFILE) {
-        yyStackEntry* i;
-        char cDiv = '[';
-        fprintf(yyTraceFILE, "%sReturn. Stack=", yyTracePrompt);
-        for (i = &yypParser->yystack[1]; i <= yypParser->yytos; i++) {
-            fprintf(yyTraceFILE, "%c%s", cDiv, yyTokenName[i->major]);
-            cDiv = ' ';
-        }
-        fprintf(yyTraceFILE, "]\n");
+  if( yyTraceFILE ){
+    yyStackEntry *i;
+    char cDiv = '[';
+    fprintf(yyTraceFILE,"%sReturn. Stack=",yyTracePrompt);
+    for(i=&yypParser->yystack[1]; i<=yypParser->yytos; i++){
+      fprintf(yyTraceFILE,"%c%s", cDiv, yyTokenName[i->major]);
+      cDiv = ' ';
     }
+    fprintf(yyTraceFILE,"]\n");
+  }
 #endif
-    return;
+  return;
 }
 
 /*
 ** Return the fallback token corresponding to canonical token iToken, or
 ** 0 if iToken has no fallback.
 */
-int ParseFallback(int iToken) {
+int ParseFallback(int iToken){
 #ifdef YYFALLBACK
-    assert(iToken < (int)(sizeof(yyFallback) / sizeof(yyFallback[0])));
-    return yyFallback[iToken];
+  assert( iToken<(int)(sizeof(yyFallback)/sizeof(yyFallback[0])) );
+  return yyFallback[iToken];
 #else
-    (void)iToken;
-    return 0;
+  (void)iToken;
+  return 0;
 #endif
 }

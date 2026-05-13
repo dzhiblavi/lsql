@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/verify.h"
-#include "exec/op/Source.h"
 #include "exec/op/MemberSubscriber.h"
+#include "exec/op/Source.h"
 
 namespace lsql::exec {
 
@@ -81,7 +81,7 @@ class Materialize : public Source {
         }
 
         if (ctx.phase == first_phase_) {
-            auto item = ExplanationItem().line("Store passthrough [id={}]", uniq_id_).child(source);
+            auto item = ExplanationItem().line("{} store passthrough", fullName()).child(source);
 
             if (hasSubscriber(ctx.phase, ctx.requester)) {
                 return item;
@@ -96,7 +96,7 @@ class Materialize : public Source {
             return {};
         }
 
-        return ExplanationItem().line("Scan stored [id={}]", uniq_id_);
+        return ExplanationItem().line("{} scan stored", fullName());
     }
 
     OperationPtr source_;

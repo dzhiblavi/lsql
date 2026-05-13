@@ -65,9 +65,8 @@ struct Stats {
 };
 
 struct OperationStats {
-    OperationStats(size_t num_threads, std::string_view name)
+    explicit OperationStats(size_t num_threads)
         : num_threads_(num_threads)
-        , name_(name)
         , op_(num_threads) {}
 
     ThreadOperationStats* thread(size_t index) { return op_.thread(index); }
@@ -102,14 +101,11 @@ struct OperationStats {
         }
     }
 
-    std::string_view name() const { return name_; }
-
  private:
     template <typename T>
     using ThreadVec = std::vector<std::unique_ptr<T>>;
 
     size_t num_threads_;
-    std::string_view name_;
     Stats<ThreadOperationStats> op_;
     std::unordered_map<const Subscriber*, Stats<ThreadSubscriberStats>> inputs_;
 };
@@ -225,14 +221,14 @@ class Profiler {
     explicit Profiler(size_t num_threads);
     ~Profiler();
 
-    static OperationHandle registerOperation(const Operation* self, std::string_view name);
+    static OperationHandle registerOperation(const Operation* self);
     static std::string report();
     static void reset();
 
  private:
     static Profiler* profiler();
 
-    OperationHandle registerOperationImpl(const Operation* self, std::string_view name);
+    OperationHandle registerOperationImpl(const Operation* self);
     std::string reportImpl();
     void resetImpl();
 

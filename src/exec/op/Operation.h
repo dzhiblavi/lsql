@@ -17,7 +17,8 @@ class Operation {
  public:
     Operation(int min_out_phase, std::string_view name)
         : min_out_phase_(min_out_phase)
-        , prof_(prof::Profiler::registerOperation(this, name)) {}
+        , name_(name)
+        , prof_(prof::Profiler::registerOperation(this)) {}
 
     virtual ~Operation() = default;
 
@@ -42,6 +43,7 @@ class Operation {
     int maxPhase() const { return max_out_phase_; }
     int uniqId() const { return uniq_id_; }
     const Subscribers& subscribers() const { return subs_; }
+    std::string fullName() const { return std::format("{} [id={}]", name_, uniq_id_); }
 
  protected:
     // the way for downstream operations to ask for output on phase `out_phase`
@@ -82,6 +84,7 @@ class Operation {
     // the phase the result is available at
     const int min_out_phase_ = 0;
     const int uniq_id_ = util::uniqId();
+    const std::string_view name_;
 
  protected:
     // the max out phase
