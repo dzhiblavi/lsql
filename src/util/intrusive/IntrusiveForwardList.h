@@ -59,6 +59,7 @@ class IntrusiveForwardList {
     IntrusiveForwardList() = default;
 
     void push_front(T& item) {
+        assert(item.next_ == nullptr);
         item.next_ = head_;
         head_ = &item;
     }
@@ -66,7 +67,7 @@ class IntrusiveForwardList {
     void pop_front() {
         assert(!empty());
         assert(head_ != nullptr);
-        head_ = head_->next_;
+        head_ = std::exchange(head_->next_, nullptr);
     }
 
     bool empty() const { return head_ == nullptr; }
