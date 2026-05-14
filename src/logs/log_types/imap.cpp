@@ -27,7 +27,9 @@ void parseKeyValue<LogType::IMAP>(
         auto eq = token.find('=');
 
         if (eq == std::string::npos) {
-            out.emplace(AnonColumnNames[anon_index++], token);
+            if (anon_index < AnonColumnNames.size()) {
+                out.emplace(AnonColumnNames[anon_index++], token);
+            }
         } else {
             auto key = token.substr(0, eq);
             auto value = token.substr(eq + 1);

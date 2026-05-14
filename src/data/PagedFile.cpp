@@ -17,7 +17,8 @@ NativePagedFile::NativePagedFile(int fd, std::filesystem::path path)
 
 NativePagedFile::NativePagedFile(NativePagedFile&& rhs) noexcept
     : fd_(std::exchange(rhs.fd_, -1))
-    , size_(rhs.size_) {
+    , size_(rhs.size_)
+    , path_(std::move(rhs.path_)) {
 }
 
 NativePagedFile& NativePagedFile::operator=(NativePagedFile&& rhs) noexcept {
@@ -27,6 +28,7 @@ NativePagedFile& NativePagedFile::operator=(NativePagedFile&& rhs) noexcept {
 
     std::swap(fd_, rhs.fd_);
     std::swap(size_, rhs.size_);
+    std::swap(path_, rhs.path_);
     return *this;
 }
 

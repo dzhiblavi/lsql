@@ -95,7 +95,7 @@ inline bool trueish(const Value& val) {
             [](const std::string& s) { return !s.empty(); },
             [](bool b) { return b; },
             [](int64_t x) { return x != 0; },
-            [](float x) { return abs(x - 1e-6) > 0.f; },
+            [](float x) { return abs(x) > 1e-6f; },
             [](null_t) { return false; },
         });
 }

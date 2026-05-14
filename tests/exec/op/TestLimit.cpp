@@ -58,4 +58,13 @@ TEST_CASE_METHOD(LimitTest, "StopRequested") {
     pushFinal(src, 3);
 }
 
+TEST_CASE_METHOD(LimitTest, "EOFOnLimitExhaustion") {
+    set(2);
+
+    expect(1);
+    push(src, 1);
+    expect(eof);
+    pushFinal(src, eof);
+}
+
 }  // namespace lsql::exec

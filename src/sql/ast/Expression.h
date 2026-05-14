@@ -115,7 +115,7 @@ class RSubstrExpression : public Expression {
 class CoalesceExpression : public Expression {
  public:
     explicit CoalesceExpression(std::vector<std::unique_ptr<Expression>>* values)
-        : Expression(values->front()->type(), ValueType::Boolean)
+        : Expression(values->front()->type(), values->front()->valueType())
         , values(std::move(values)) {}
 
     void visit(Visitor& visitor) const override { visitor.visit(*this); }

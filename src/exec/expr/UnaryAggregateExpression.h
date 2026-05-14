@@ -246,7 +246,7 @@ struct PercentileOp {
         for (float p : result) {
             ss << p << ", ";
         }
-        ss << "\b\b]";
+        ss.seekp(-2, std::ios_base::end);  // remove last ', '
         return ss.str();
     }
 
