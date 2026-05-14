@@ -1,5 +1,5 @@
-#include "tests/exec/MockRecord.h"
 #include "tests/exec/op/MockOperation.h"
+#include "tests/exec/op/OperationTest.h"
 
 #include "exec/expr/IdentifierExpression.h"
 #include "exec/op/MergeSorted.h"
@@ -8,77 +8,31 @@
 
 namespace lsql::exec {
 
-struct MergeSortedTest : Subscriber {
-    static constexpr int64_t eof = -1;
-
+struct MergeSortedTest : OperationTest {
     MergeSortedTest() {
-        op = mergeSorted(
+        setOperation(mergeSorted(
             left,
             right,
             SortList{
                 std::make_shared<IdentifierExpression>("test-value"),
             },
-            false);
-
-        CHECK(op->minPhase() == 0);
-        op->subscribe(0, this);
-    }
-
-    ~MergeSortedTest() {
-        CAPTURE(expected_values.size());
-        CHECK(expected_values.empty());
-    }
-
-    bool consume(int /*phase*/, const exec::Record* record) override {
-        CAPTURE(record ? record->value("test-value").get<int64_t>() : eof);
-
-        REQUIRE(!expected_values.empty());
-        auto val = expected_values.front();
-        expected_values.pop();
-
-        if (val == eof) {
-            CHECK(record == nullptr);
-            return false;
-        } else {
-            REQUIRE(record != nullptr);
-            CHECK(record->value("test-value").get<int64_t>() == val);
-        }
-
-        return !request_stop;
-    }
-
-    void push(auto op, int64_t value) {
-        if (value == eof) {
-            op->push(0, nullptr);
-        } else {
-            MockRecord record({{"test-value", Value(value)}});
-            op->push(0, &record);
-        }
-    }
-
-    template <std::convertible_to<int64_t>... Values>
-    void expect(Values... values) {
-        (expected_values.push(values), ...);
+            false));
     }
 
     std::shared_ptr<MockOperation> left = std::make_shared<MockOperation>();
     std::shared_ptr<MockOperation> right = std::make_shared<MockOperation>();
-    OperationPtr op;
-
-    bool request_stop = false;
-    std::queue<int> expected_values;
 };
 
 TEST_CASE_METHOD(MergeSortedTest, "BothStreamsEmpty") {
     expect(eof);
 
     SECTION("left, right") {
-        push(left, eof);
-        push(right, eof);
+        pushFinal(left, eof);
+        pushFinal(right, eof);
     }
     SECTION("right, left") {
-        push(right, eof);
-        push(left, eof);
+        pushFinal(right, eof);
+        pushFinal(left, eof);
     }
 }
 
@@ -91,10 +45,10 @@ TEST_CASE_METHOD(MergeSortedTest, "OneStreamPushingBuffering") {
     push(pusher, 2);
     push(pusher, 3);
     push(pusher, 4);
-    push(pusher, eof);
+    pushFinal(pusher, eof);
 
     expect(1, 2, 3, 4, eof);
-    push(sleeper, eof);
+    pushFinal(sleeper, eof);
 }
 
 TEST_CASE_METHOD(MergeSortedTest, "OneStreamPushingStreaming") {
@@ -102,7 +56,7 @@ TEST_CASE_METHOD(MergeSortedTest, "OneStreamPushingStreaming") {
     auto pusher = index == 0 ? left : right;
     auto sleeper = index == 0 ? right : left;
 
-    push(sleeper, eof);
+    pushFinal(sleeper, eof);
 
     expect(1);
     push(pusher, 1);
@@ -117,7 +71,7 @@ TEST_CASE_METHOD(MergeSortedTest, "OneStreamPushingStreaming") {
     push(pusher, 4);
 
     expect(eof);
-    push(pusher, eof);
+    pushFinal(pusher, eof);
 }
 
 TEST_CASE_METHOD(MergeSortedTest, "InterleavedEqualKeys") {
@@ -132,9 +86,9 @@ TEST_CASE_METHOD(MergeSortedTest, "InterleavedEqualKeys") {
     push(right, 2);
 
     expect(2);
-    push(left, eof);
+    pushFinal(left, eof);
     expect(eof);
-    push(right, eof);
+    pushFinal(right, eof);
 }
 
 TEST_CASE_METHOD(MergeSortedTest, "AlternatingInterleaved") {
@@ -156,10 +110,10 @@ TEST_CASE_METHOD(MergeSortedTest, "AlternatingInterleaved") {
     push(right, 6);
 
     expect(6);
-    push(left, eof);
+    pushFinal(left, eof);
 
     expect(eof);
-    push(right, eof);
+    pushFinal(right, eof);
 }
 
 TEST_CASE_METHOD(MergeSortedTest, "RightSmallerValues") {
@@ -180,9 +134,9 @@ TEST_CASE_METHOD(MergeSortedTest, "RightSmallerValues") {
     push(left, 6);
 
     expect(6);
-    push(left, eof);
+    pushFinal(left, eof);
     expect(eof);
-    push(right, eof);
+    pushFinal(right, eof);
 }
 
 TEST_CASE_METHOD(MergeSortedTest, "LeftSmallerValues") {
@@ -203,13 +157,13 @@ TEST_CASE_METHOD(MergeSortedTest, "LeftSmallerValues") {
     push(right, 6);
 
     expect(6);
-    push(left, eof);
+    pushFinal(left, eof);
     expect(eof);
-    push(right, eof);
+    pushFinal(right, eof);
 }
 
 TEST_CASE_METHOD(MergeSortedTest, "OneStreamEmptyBeforeMerge") {
-    push(left, eof);
+    pushFinal(left, eof);
 
     expect(1);
     push(right, 1);
@@ -221,7 +175,7 @@ TEST_CASE_METHOD(MergeSortedTest, "OneStreamEmptyBeforeMerge") {
     push(right, 3);
 
     expect(eof);
-    push(right, eof);
+    pushFinal(right, eof);
 }
 
 TEST_CASE_METHOD(MergeSortedTest, "UnevenBursts") {
@@ -247,10 +201,10 @@ TEST_CASE_METHOD(MergeSortedTest, "UnevenBursts") {
     push(right, 10);
 
     expect(10);
-    push(left, eof);
+    pushFinal(left, eof);
 
     expect(eof);
-    push(right, eof);
+    pushFinal(right, eof);
 }
 
 }  // namespace lsql::exec

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core/verify.h"
 #include "exec/op/MemberSubscriber.h"
 #include "exec/op/Operation.h"
 
@@ -21,12 +20,15 @@ class Limit : public Operation {
             curr_limit_ = limit_;
         }
 
-        verify(curr_limit_ > 0);
-        if (!emit(phase, record)) {
-            return false;
+        if (curr_limit_ > 0) {
+            --curr_limit_;
+
+            if (!emit(phase, record)) {
+                return false;
+            }
         }
 
-        if (--curr_limit_ == 0) {
+        if (curr_limit_ == 0) {
             return emit(phase, nullptr);
         } else {
             return active(phase);
