@@ -3,8 +3,8 @@
 #include "util/instrument/SequenceProfile.h"
 #include "util/instrument/types.h"
 
-#include "exec/op/prof/detail/Stats.h"
-#include "exec/op/prof/detail/ThreadStats.h"
+#include "exec/prof/detail/Stats.h"
+#include "exec/prof/detail/ThreadStats.h"
 
 namespace lsql::exec::prof {
 

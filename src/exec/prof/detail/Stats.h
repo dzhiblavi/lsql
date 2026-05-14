@@ -1,11 +1,11 @@
 #pragma once
 
-#include "exec/op/prof/Metrics.h"
+#include "exec/prof/Metrics.h"
 
 #include "core/verify.h"
 #include "util/thread_name.h"
 
-#include "exec/op/prof/detail/ThreadStats.h"
+#include "exec/prof/detail/ThreadStats.h"
 
 #include <unordered_map>
 #include <vector>

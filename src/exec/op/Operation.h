@@ -2,8 +2,8 @@
 
 #include "core/verify.h"
 #include "exec/op/Explanation.h"
-#include "exec/op/prof/Profiler.h"
 #include "exec/op/Subscriber.h"
+#include "exec/prof/Profiler.h"
 #include "util/uniq_id.h"
 
 #include <memory>

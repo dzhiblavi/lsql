@@ -154,7 +154,9 @@ struct SumOp {
 };
 
 struct PercentileOp {
-    using State = std::vector<Value>;
+    struct State {
+        std::vector<Value> values;
+    };
 
     PercentileOp(std::vector<float> perc, ValueType type)
         : percentiles([&](auto p) {
@@ -163,19 +165,19 @@ struct PercentileOp {
         }(std::move(perc)))
         , type(type) {}
 
-    void update(State* curr, const Value& value) const { curr->push_back(value); }
+    void update(State* curr, const Value& value) const { curr->values.push_back(value); }
 
     Value result(State* state) const {
         llog::info(
             "percentile dataset size: {} (percentiles count: {})",
-            state->size(),
+            state->values.size(),
             percentiles.size());
 
         std::vector<float> result;
         result.reserve(percentiles.size());
 
-        std::ptrdiff_t size = static_cast<std::ptrdiff_t>(state->size());
-        auto left = state->begin();
+        std::ptrdiff_t size = static_cast<std::ptrdiff_t>(state->values.size());
+        auto left = state->values.begin();
 
         auto get = [](auto&& v) {
             return visit(
@@ -204,10 +206,10 @@ struct PercentileOp {
                     size - 1, static_cast<std::ptrdiff_t>(static_cast<float>(size) * p));
             }();
 
-            auto it = std::next(state->begin(), pos);
+            auto it = std::next(state->values.begin(), pos);
             assert(left <= it);
 
-            std::nth_element(left, it, state->end(), [](auto&& l, auto&& r) {
+            std::nth_element(left, it, state->values.end(), [](auto&& l, auto&& r) {
                 return visit(
                     util::Overloaded{
                         [](float x, float y) { return x < y; },

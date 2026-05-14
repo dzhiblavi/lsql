@@ -3,8 +3,8 @@
 #include "util/instrument/SequenceProfile.h"
 #include "util/instrument/types.h"
 
-#include "exec/op/prof/InputHandle.h"
-#include "exec/op/prof/detail/ThreadStats.h"
+#include "exec/prof/InputHandle.h"
+#include "exec/prof/detail/ThreadStats.h"
 
 namespace lsql::exec::prof {
 
@@ -79,5 +79,7 @@ class OperationHandle {
     detail::OperationStats* stats_ = nullptr;
     InputHandle::ConsumeScope* consume_scope = nullptr;
 };
+
+OperationHandle& currentOperation();
 
 }  // namespace lsql::exec::prof
