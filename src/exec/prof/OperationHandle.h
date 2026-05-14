@@ -2,13 +2,14 @@
 
 #include "util/instrument/SequenceProfile.h"
 #include "util/instrument/types.h"
+#include "util/intrusive/IntrusiveForwardList.h"
 
 #include "exec/prof/InputHandle.h"
 #include "exec/prof/detail/ThreadStats.h"
 
 namespace lsql::exec::prof {
 
-class OperationHandle {
+class OperationHandle : public util::IntrusiveForwardListNode<> {
     struct EmitScope {
         EmitScope() = default;
 
