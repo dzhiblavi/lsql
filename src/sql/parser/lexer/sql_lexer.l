@@ -2,8 +2,8 @@
 %{
 
 #include "sql/parser/grammar/sql_grammar.h"
-#include "sql/parser/token.h"
-#include "sql/parser/parser.h"
+#include "sql/parser/Token.h"
+#include "sql/parser/grammar/parse.h"
 
 #include <string.h>
 
@@ -283,7 +283,11 @@ RSUBSTR          {
 
 %%
 
-void set_parser_context(void* parser, lsql::sql::parse::Context* ctx) {
+namespace lsql::sql::parse {
+
+void setParserContext(void* parser, lsql::sql::parse::Context* ctx) {
     g_parser = parser;
     g_parse_context = ctx;
 }
+
+}  // namespace lsql::sql::parse

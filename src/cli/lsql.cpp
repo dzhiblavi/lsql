@@ -1,7 +1,10 @@
 #include "exec/op/Operation.h"
 #include "sql/ast/ExecVisitor.h"
-#include "sql/parser/parser.h"
+#include "sql/parser/Context.h"
 #include "util/ThreadPool.h"
+
+#include "sql/parser/grammar/parse.h"
+#include "sql/parser/lexer/tokenize.h"
 
 #include <llog/load.h>
 #include <llog/log.h>
@@ -9,12 +12,6 @@
 #include <latch>
 #include <magic_enum/magic_enum.hpp>
 #include <tclap/CmdLine.h>
-
-void set_parser_context(void* parser, lsql::sql::parse::Context* ctx);
-int yylex_init(void** scanner);
-void yyset_in(FILE* in, void* scanner);
-int yylex(void* scanner);
-int yylex_destroy(void* scanner);
 
 namespace lsql {
 
@@ -108,7 +105,7 @@ std::unique_ptr<sql::ast::Node> parseQuery(std::string maybe_path) {
     sql::parse::Context ctx = {nullptr, 0};
     void* parser = ParseAlloc(malloc);
 
-    set_parser_context(parser, &ctx);
+    sql::parse::setParserContext(parser, &ctx);
 
     yylex(scanner);
     Parse(parser, 0, {.code = 0, .text = "", .length = 0}, &ctx);

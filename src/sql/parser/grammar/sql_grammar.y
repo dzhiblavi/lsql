@@ -3,8 +3,8 @@
 %extra_argument {lsql::sql::parse::Context *pCtx}
 
 %include {
-    #include "sql/parser/token.h"
-    #include "sql/parser/parser.h"
+    #include "sql/parser/Token.h"
+    #include "sql/parser/grammar/parse.h"
 
     #include "sql/ast/SelectStatement.h"
     #include "sql/ast/Expression.h"
@@ -53,18 +53,11 @@
 %token TOKEN_DOLLAR.
 %token TOKEN_UNION_ALL.
 %token TOKEN_UNION_ALL_SORTED_BY.
-
 %token TOKEN_MIN.
 %token TOKEN_MAX.
 %token TOKEN_SUM.
 %token TOKEN_PERCENTILE.
-
 %token TOKEN_PLUS.
-%left TOKEN_OR.
-%left TOKEN_AND.
-%left TOKEN_DIVIDE.
-%left TOKEN_EQ.
-%left TOKEN_NEQ.
 %token TOKEN_LIKE.
 %token TOKEN_MATERIALIZE.
 %token TOKEN_STRING.
@@ -72,6 +65,15 @@
 %token TOKEN_FLOAT.
 %token TOKEN_BOOL.
 %token TOKEN_EXCLAMATION.
+
+// Precedence (from LOWEST to HIGHEST)
+%left TOKEN_UNION_ALL.
+%left TOKEN_UNION_ALL_SORTED_BY.
+%left TOKEN_OR.
+%left TOKEN_AND.
+%left TOKEN_EQ TOKEN_NEQ.
+%left TOKEN_DIVIDE.
+%right TOKEN_EXCLAMATION.
 
 %type expression {ast::Expression*}
 %type group_expression {ast::Expression*}
@@ -129,7 +131,7 @@ immediate_relation(R) ::= TOKEN_DOLLAR TOKEN_IDENTIFIER(Name). {
 immediate_relation(R) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ TOKEN_MATERIALIZE
                           TOKEN_LPAREN relation(S) TOKEN_RPAREN. {
     auto M = new ast::MaterializedRelation(std::unique_ptr<ast::Node>(S));
-    S = new ast::NamedRelation(Name.text, std::unique_ptr<ast::Node>(M));
+    R = new ast::NamedRelation(Name.text, std::unique_ptr<ast::Node>(M));
 }
 
 // all kinds of relations that can be used on top level
