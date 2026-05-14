@@ -8,6 +8,12 @@
 
 namespace lsql::exec::prof {
 
+class OperationHandle;
+
+void pushCurrentOperation(OperationHandle* handle);
+void popCurrentOperation(OperationHandle* handle);
+OperationHandle& currentOperation();
+
 class InputHandle {
     friend class OperationHandle;
 
@@ -20,6 +26,7 @@ class InputHandle {
             , self(self) {
             *self->current_ = this;
             ++stats->records_in;
+            pushCurrentOperation(self->operation_);
         }
 
         ~ConsumeScope() {
@@ -30,6 +37,8 @@ class InputHandle {
             *self->current_ = nullptr;
             stats_->consume_profile.add(
                 instr::MonotonicClock::now() - started_at - ignore_duration);
+
+            popCurrentOperation(self->operation_);
         }
 
         instr::MonotonicTimePoint started_at = {};
@@ -41,9 +50,15 @@ class InputHandle {
  public:
     InputHandle() = default;
 
-    InputHandle(detail::Stats<detail::ThreadSubscriberStats>* stats, ConsumeScope** current)
+    InputHandle(
+        detail::Stats<detail::ThreadSubscriberStats>* stats,
+        OperationHandle* operation,
+        ConsumeScope** current)
         : current_(current)
-        , stats_(stats) {}
+        , operation_(operation)
+        , stats_(stats) {
+        verify(operation_ != nullptr);
+    }
 
     ConsumeScope consumeScope() {
         if (!current_) {
@@ -54,6 +69,7 @@ class InputHandle {
 
  private:
     ConsumeScope** current_ = nullptr;
+    OperationHandle* operation_ = nullptr;
     detail::Stats<detail::ThreadSubscriberStats>* stats_ = nullptr;
 };
 

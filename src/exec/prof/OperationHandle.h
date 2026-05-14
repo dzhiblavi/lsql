@@ -56,7 +56,7 @@ class OperationHandle {
         if (!stats_) {
             return {};
         }
-        return {stats_->input(sub), &consume_scope};
+        return {stats_->input(sub), this, &consume_scope};
     }
 
     detail::ThreadOperationStats* currentThread() {
@@ -73,6 +73,14 @@ class OperationHandle {
         stats_->registerMetric(metric);
     }
 
+    template <typename T, typename... Args>
+    T* addTransientMetric(Args&&... args) {
+        if (!stats_) {
+            return nullptr;
+        }
+        return stats_->template addTransientMetric<T, Args...>(std::forward<Args>(args)...);
+    }
+
     operator bool() const { return stats_ != nullptr; }
 
  private:
@@ -80,6 +88,8 @@ class OperationHandle {
     InputHandle::ConsumeScope* consume_scope = nullptr;
 };
 
+void pushCurrentOperation(OperationHandle* handle);
+void popCurrentOperation(OperationHandle* handle);
 OperationHandle& currentOperation();
 
 }  // namespace lsql::exec::prof

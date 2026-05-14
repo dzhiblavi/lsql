@@ -1,6 +1,9 @@
 #pragma once
 
 #include "exec/expr/Expression.h"
+#include "exec/prof/Metrics.h"
+#include "exec/prof/OperationHandle.h"
+#include "util/instrument/Timer.h"
 
 #include <llog/log.h>
 
@@ -155,7 +158,10 @@ struct SumOp {
 
 struct PercentileOp {
     struct State {
+        State() : info(prof::currentOperation().addTransientMetric<prof::Message>()) {}
+
         std::vector<Value> values;
+        prof::Message* info;
     };
 
     PercentileOp(std::vector<float> perc, ValueType type)
@@ -168,11 +174,6 @@ struct PercentileOp {
     void update(State* curr, const Value& value) const { curr->values.push_back(value); }
 
     Value result(State* state) const {
-        llog::info(
-            "percentile dataset size: {} (percentiles count: {})",
-            state->values.size(),
-            percentiles.size());
-
         std::vector<float> result;
         result.reserve(percentiles.size());
 
@@ -193,6 +194,8 @@ struct PercentileOp {
         };
 
         constexpr float threshold = 1e-6;
+
+        instr::Timer timer;
 
         for (float p : percentiles) {
             auto pos = [&] -> std::ptrdiff_t {
@@ -228,6 +231,14 @@ struct PercentileOp {
 
         if (result.empty()) {
             return "";
+        }
+
+        if (state->info) {
+            state->info->set(
+                "percentile size: {}, percentiles: {}, time={}",
+                state->values.size(),
+                percentiles.size(),
+                instr::prettyDuration(timer.elapsed()));
         }
 
         std::stringstream ss;

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/verify.h"
-#include "exec/prof/Profiler.h"
 #include "exec/op/Subscriber.h"
+#include "exec/prof/InputHandle.h"
 
 namespace lsql::exec {
 

@@ -71,17 +71,30 @@ struct OperationStats {
         }
 
         std::ranges::for_each(metrics_, &Metric::reset);
+        transient_metrics_.clear();
     }
 
     void registerMetric(Metric* metric) { metrics_.push_back(metric); }
 
+    template <typename T, typename... Args>
+    T* addTransientMetric(Args&&... args) {
+        auto metric = std::make_unique<T>(std::forward<Args>(args)...);
+        T* res = metric.get();
+        transient_metrics_.push_back(std::move(metric));
+        return res;
+    }
+
     const std::vector<Metric*>& metrics() const { return metrics_; }
+    const std::vector<std::unique_ptr<Metric>>& transientMetrics() const {
+        return transient_metrics_;
+    }
 
  private:
     size_t num_threads_;
     Stats<ThreadOperationStats> op_;
     std::unordered_map<const Subscriber*, Stats<ThreadSubscriberStats>> inputs_;
     std::vector<Metric*> metrics_;
+    std::vector<std::unique_ptr<Metric>> transient_metrics_;
 };
 
 }  // namespace lsql::exec::prof::detail

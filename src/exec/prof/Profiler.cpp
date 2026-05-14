@@ -69,11 +69,20 @@ std::string Profiler::reportImpl() {
             oss << std::format("      emit profile: {}\n", tstats->emit_profile.format());
         }
 
-        if (!oss.str().empty() && !stats.metrics().empty()) {
-            oss << std::format("  - metrics:\n");
+        if (!oss.str().empty() && (!stats.metrics().empty() || !stats.transientMetrics().empty())) {
+            if (!stats.metrics().empty()) {
+                oss << std::format("  - metrics:\n");
 
-            for (auto&& metric : stats.metrics()) {
-                oss << std::format("      {}\n", metric->format());
+                for (auto&& metric : stats.metrics()) {
+                    oss << std::format("      {}\n", metric->format());
+                }
+            }
+            if (!stats.transientMetrics().empty()) {
+                oss << std::format("  - transient:\n");
+
+                for (auto&& metric : stats.transientMetrics()) {
+                    oss << std::format("      {}\n", metric->format());
+                }
             }
         }
 
