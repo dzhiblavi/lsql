@@ -88,7 +88,7 @@ class ExecVisitor : public Visitor {
         auto list = projectorsList(*node.select_list);
 
         if (std::ranges::any_of(*node.select_list, [](const std::unique_ptr<ast::SelectItem>& x) {
-                return x->expr->type() == ExpressionType::Group;
+                return x->expr && x->expr->type() == ExpressionType::Group;
             })) {
             auto op = exec::aggregate(popOperation(), std::move(list));
             sources.push_back(op);
@@ -289,8 +289,12 @@ class ExecVisitor : public Visitor {
     }
 
     void visit(const SelectItem& e) override {
-        e.expr->visit(*this);
-        projectors.push_back(std::make_unique<exec::Projector>(e.name, popExpression()));
+        if (e.expr == nullptr) {  // check *
+            projectors.push_back(std::make_unique<exec::Projector>(e.name, nullptr));
+        } else {
+            e.expr->visit(*this);
+            projectors.push_back(std::make_unique<exec::Projector>(e.name, popExpression()));
+        }
     }
 
     void visit(const NamedRelation& e) override {

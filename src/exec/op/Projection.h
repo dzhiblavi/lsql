@@ -12,48 +12,49 @@ namespace lsql::exec {
 struct Projector {
     std::string name;
     std::shared_ptr<Expression> expr;
+
+    bool all() const { return expr == nullptr; }
 };
 
 using ProjectionList = std::vector<std::unique_ptr<Projector>>;
+using ProjectionMap = std::unordered_map<std::string_view, std::unique_ptr<Projector>>;
 
 class ProjectionRecord : public Record {
  public:
-    ProjectionRecord(RecordRef child, std::shared_ptr<const ProjectionList> projectors)
+    ProjectionRecord(RecordRef child, std::shared_ptr<const ProjectionMap> projectors, bool has_all)
         : child_(std::move(child))
-        , projectors_(std::move(projectors)) {}
+        , projectors_(std::move(projectors))
+        , has_all_(has_all) {}
 
     values_t values() const override {
-        if (projectors_->empty()) {
-            return get(child_)->values();
-        }
-
         values_t values;
-        for (auto&& col : *projectors_) {
-            values.emplace(col->name, col->expr->eval(*get(child_)));
+        if (has_all_) {
+            values = get(child_)->values();
+        }
+        for (auto&& [name, proj] : *projectors_) {
+            values[std::string(name)] = proj->expr->eval(*get(child_));
         }
         return values;
     }
 
     Value value(std::string_view name) const override {
-        if (projectors_->empty()) {
+        if (auto it = projectors_->find(name); it != projectors_->end()) {
+            return it->second->expr->eval(*get(child_));
+        }
+        if (has_all_) {
             return get(child_)->value(name);
         }
-
-        auto it = std::ranges::find(*projectors_, name, [](auto&& i) { return i->name; });
-        if (it == projectors_->end()) {
-            throw std::runtime_error(std::format("no field {}", name));
-        }
-
-        return (*it)->expr->eval(*get(child_));
+        return null;
     }
 
     ConstRecordPtr cloneImpl() const override {
-        return std::make_shared<ProjectionRecord>(pin(child_), projectors_);
+        return std::make_shared<ProjectionRecord>(pin(child_), projectors_, has_all_);
     }
 
  private:
     RecordRef child_;
-    std::shared_ptr<const ProjectionList> projectors_;
+    std::shared_ptr<const ProjectionMap> projectors_;
+    const bool has_all_ = false;
 };
 
 class Projection : public Operation, public std::enable_shared_from_this<Projection> {
@@ -61,7 +62,7 @@ class Projection : public Operation, public std::enable_shared_from_this<Project
     Projection(OperationPtr source, ProjectionList projectors)
         : Operation(source->minPhase(), "Projection")
         , source_(std::move(source))
-        , projectors_(std::move(projectors)) {}
+        , projectors_(buildProjectionMap(std::move(projectors))) {}
 
  private:
     bool consume(int phase, const Record* record) {
@@ -69,7 +70,7 @@ class Projection : public Operation, public std::enable_shared_from_this<Project
             return emit(phase, nullptr);
         }
 
-        ProjectionRecord rec(record, {shared_from_this(), &projectors_});
+        ProjectionRecord rec(record, {shared_from_this(), &projectors_}, has_all_);
         return emit(phase, &rec);
     }
 
@@ -84,12 +85,26 @@ class Projection : public Operation, public std::enable_shared_from_this<Project
         }
 
         return ExplanationItem()
-            .line("{} ({} projectors)", fullName(), projectors_.size())
+            .line("{} ({} non-* projectors)", fullName(), projectors_.size())
             .child(source);
     }
 
+    ProjectionMap buildProjectionMap(ProjectionList proj) {
+        has_all_ = std::erase_if(proj, [](auto& p) { return p->all(); }) > 0;
+        ProjectionMap res;
+        res.reserve(proj.size());
+
+        for (auto&& p : proj) {
+            std::string_view name = p->name;
+            res.emplace(name, std::move(p));
+        }
+
+        return res;
+    }
+
     OperationPtr source_;
-    ProjectionList projectors_;
+    bool has_all_ = false;
+    ProjectionMap projectors_;
     MemberSubscriber<Projection> sub_{
         this,
         &Projection::consume,

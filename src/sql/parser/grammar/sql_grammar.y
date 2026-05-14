@@ -239,10 +239,6 @@ condition(C) ::= expression(E). { C = E; }
 limit_opt(A) ::= TOKEN_LIMIT TOKEN_INTEGER(N). { A = std::atoi(N.text); }
 limit_opt(A) ::= . { A = -1; }
 
-select_list(A) ::= TOKEN_STAR. {
-    A = new ast::SelectList();
-}
-
 select_list(A) ::= select_item(B). {
     A = new ast::SelectList();
     A->push_back(std::unique_ptr<ast::SelectItem>(B));
@@ -251,6 +247,10 @@ select_list(A) ::= select_item(B). {
 select_list(A) ::= select_list(B) TOKEN_COMMA select_item(C). {
     A = B;
     A->push_back(std::unique_ptr<ast::SelectItem>(C));
+}
+
+select_item(A) ::= TOKEN_STAR. {
+    A = new ast::SelectItem(nullptr, "");
 }
 
 select_item(A) ::= TOKEN_IDENTIFIER(Id). {
