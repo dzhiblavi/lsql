@@ -39,7 +39,7 @@ struct OperationStats {
     explicit OperationStats(size_t num_threads) : num_threads_(num_threads), op_(num_threads) {}
 
     ThreadOperationStats* thread(size_t index) { return op_.thread(index); }
-    ThreadOperationStats* current() { return op_.current(); }
+    ThreadOperationStats* currentThread() { return op_.current(); }
 
     Stats<ThreadSubscriberStats>* input(const Subscriber* sub) {
         auto it = inputs_.find(sub);
@@ -78,9 +78,6 @@ struct OperationStats {
     const std::vector<Metric*>& metrics() const { return metrics_; }
 
  private:
-    template <typename T>
-    using ThreadVec = std::vector<std::unique_ptr<T>>;
-
     size_t num_threads_;
     Stats<ThreadOperationStats> op_;
     std::unordered_map<const Subscriber*, Stats<ThreadSubscriberStats>> inputs_;

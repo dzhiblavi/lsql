@@ -49,7 +49,7 @@ class OperationHandle {
         if (!stats_) {
             return {};
         }
-        return {stats_->current(), this, &consume_scope};
+        return {stats_->currentThread(), this, &consume_scope};
     }
 
     InputHandle inputHandle(const Subscriber* sub) {
@@ -59,11 +59,11 @@ class OperationHandle {
         return {stats_->input(sub), &consume_scope};
     }
 
-    detail::ThreadOperationStats* current() {
+    detail::ThreadOperationStats* currentThread() {
         if (!stats_) {
             return nullptr;
         }
-        return stats_->current();
+        return stats_->currentThread();
     }
 
     void registerMetric(Metric* metric) {

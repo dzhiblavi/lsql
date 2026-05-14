@@ -36,16 +36,10 @@ deps: _prepare_target_dirs
 		--settings:build=build_type=$(BUILD_TYPE)
 
 configure: deps
-	cmake --preset $(CONAN_PRESET)                        \
-		-DASAN=$(ASAN)                                    \
-		-DTSAN=$(TSAN)                                    \
+	cmake --preset $(CONAN_PRESET) \
+		-DASAN=$(ASAN)             \
+		-DTSAN=$(TSAN)             \
 		-DUBSAN=$(UBSAN)
-
-generate-parser:
-	cd src/sql/parser/grammar && lemon sql_grammar.y; mv sql_grammar.c sql_grammar.cpp || true
-
-generate-lexer:
-	cd src/sql/parser/lexer && reflex --flex sql_lexer.l || true
 
 build: configure
 	cmake --build --preset $(CONAN_PRESET)
@@ -68,12 +62,12 @@ test: build
 	cd $(TARGET_DIR) && ctest --output-on-failure -V
 
 check-tidy: configure
-	run-clang-tidy                   \
-		-quiet                       \
-		-use-color                   \
-		-j `nproc`                   \
-		-p $(TARGET_DIR)             \
-		-header-filter=src/          \
+	run-clang-tidy          \
+		-quiet              \
+		-use-color          \
+		-j `nproc`          \
+		-p $(TARGET_DIR)    \
+		-header-filter=src/ \
 		`find src/ -name '*.cpp' -o -name '*.h'
 
 check-format:
