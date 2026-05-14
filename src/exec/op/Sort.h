@@ -95,7 +95,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
             return {};
         }
 
-        return ExplanationItem().line(fullName()).child(source);
+        return ExplanationItem().line("{} desc={}", fullName(), desc_).child(source);
     }
 
     prof::NamedCounter<size_t> dataset_size_{"dataset size", size_t(0)};

@@ -14,13 +14,11 @@ RUN chmod +x ./install_cmake.sh && ./install_cmake.sh
 COPY ./build/scripts/install_llvm.sh .
 RUN chmod +x ./install_llvm.sh && ./install_llvm.sh "${LLVM_VERSION}"
 
-COPY cmake ./cmake
-COPY conan ./conan
-COPY src ./src
-COPY tests ./tests
-COPY CMakeLists.txt .
-COPY conanfile.txt .
-COPY ./build/scripts/Makefile .
+COPY ./build/scripts/install_lemon.sh .
+RUN chmod +x ./install_lemon.sh && ./install_lemon.sh "${LLVM_VERSION}"
+
+COPY ./build/scripts/install_flex.sh .
+RUN chmod +x ./install_flex.sh && ./install_flex.sh "${LLVM_VERSION}"
 
 COPY ./build/scripts/build_linux.sh .
 RUN chmod +x /build/build_linux.sh

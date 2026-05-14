@@ -50,8 +50,8 @@ build-docker-linux-builder:
 		-f ./build/images/Dockerfile.ubuntu2004 .
 
 build-docker-linux-%:
-	docker run                         \
-		-v $(shell pwd)/output:/output \
+	docker run                      \
+		-v $(shell pwd):/build/lsql \
 		logsql-builder:latest amd64 $*
 
 gen-doc: deps
