@@ -89,6 +89,7 @@ class OperationHandle : public util::IntrusiveForwardListNode<> {
     InputHandle::ConsumeScope* consume_scope = nullptr;
 };
 
+// the following functions are not threadsafe
 void pushCurrentOperation(OperationHandle* handle);
 void popCurrentOperation(OperationHandle* handle);
 OperationHandle& currentOperation();

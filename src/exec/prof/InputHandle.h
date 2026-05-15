@@ -1,5 +1,6 @@
 #pragma once
 
+#include "util/NonCopyable.h"
 #include "util/instrument/SequenceProfile.h"
 #include "util/instrument/types.h"
 
@@ -17,8 +18,16 @@ OperationHandle& currentOperation();
 class InputHandle {
     friend class OperationHandle;
 
-    struct ConsumeScope {
+    struct ConsumeScope : util::NonCopyable {
         ConsumeScope() = default;
+
+        ConsumeScope(ConsumeScope&& rhs) noexcept
+            : started_at(rhs.started_at)
+            , ignore_duration(rhs.ignore_duration)
+            , stats_(std::exchange(rhs.stats_, nullptr))
+            , self(std::exchange(rhs.self, nullptr)) {
+            *self->current_ = this;
+        }
 
         ConsumeScope(detail::ThreadSubscriberStats* stats, InputHandle* self)
             : started_at(instr::MonotonicClock::now())
@@ -34,6 +43,7 @@ class InputHandle {
                 return;
             }
 
+            verify(*self->current_ == this);
             *self->current_ = nullptr;
             stats_->consume_profile.add(
                 instr::MonotonicClock::now() - started_at - ignore_duration);

@@ -31,7 +31,7 @@ class MergeSorted : public Operation {
     // Subscriber
     template <int Index>
     bool consume(int phase, const Record* record) {
-        std::lock_guard lg(m_);
+        static_assert(Index == 0 || Index == 1);
 
         if (delay_done_) {
             verify(eof_[1 - Index]);
@@ -257,18 +257,20 @@ class MergeSorted : public Operation {
     SortList slist_;
     bool desc_;
 
-    MemberSubscriber<MergeSorted> sub_l_{
+    std::mutex m_;
+    MemberSubscriber<MergeSorted, LockMixin> sub_l_{
         this,
         &MergeSorted::consume<0>,
+        &m_,
         prof_.inputHandle(&sub_l_),
     };
-    MemberSubscriber<MergeSorted> sub_r_{
+    MemberSubscriber<MergeSorted, LockMixin> sub_r_{
         this,
         &MergeSorted::consume<1>,
+        &m_,
         prof_.inputHandle(&sub_r_),
     };
 
-    std::mutex m_;
     bool delay_done_ = false;
     std::array<bool, 2> eof_ = {false};
     std::array<std::queue<std::pair<ConstRecordPtr, SortKey>>, 2> buffers_ = {};

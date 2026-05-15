@@ -21,8 +21,6 @@ class UnionAll : public Operation {
  private:
     template <int Index>
     bool consume(int phase, const Record* record) {
-        std::lock_guard lg(m_emit_);
-
         if (done_[Index]) {
             // the stream has ended prematurely via receiver request
             verify(done_[1 - Index]);
@@ -82,10 +80,20 @@ class UnionAll : public Operation {
     OperationPtr l_;
     OperationPtr r_;
 
-    std::mutex m_emit_;
+    std::mutex m_;
     bool done_[2] = {false};
-    MemberSubscriber<UnionAll> sub_l_{this, &UnionAll::consume<0>, prof_.inputHandle(&sub_l_)};
-    MemberSubscriber<UnionAll> sub_r_{this, &UnionAll::consume<1>, prof_.inputHandle(&sub_r_)};
+    MemberSubscriber<UnionAll, LockMixin> sub_l_{
+        this,
+        &UnionAll::consume<0>,
+        &m_,
+        prof_.inputHandle(&sub_l_),
+    };
+    MemberSubscriber<UnionAll, LockMixin> sub_r_{
+        this,
+        &UnionAll::consume<1>,
+        &m_,
+        prof_.inputHandle(&sub_r_),
+    };
 };
 
 OperationPtr unionAll(OperationPtr l, OperationPtr r) {
