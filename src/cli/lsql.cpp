@@ -6,10 +6,9 @@
 #include "sql/parser/grammar/parse.h"
 #include "sql/parser/lexer/tokenize.h"
 
+#include <latch>
 #include <llog/load.h>
 #include <llog/log.h>
-
-#include <latch>
 #include <magic_enum/magic_enum.hpp>
 #include <tclap/CmdLine.h>
 
@@ -66,6 +65,12 @@ TCLAP::SwitchArg profile_arg{
     "profile",
     "enable profiling (printed to stderr)",
 };
+
+void println(std::string_view s) {
+    static std::mutex m;
+    std::lock_guard lg(m);
+    std::cout << s << '\n';
+}
 
 bool parseArgs(std::span<const char*> argv) {
     TCLAP::CmdLine cmd{"tsql", ' ', "0.0.1"};
@@ -165,8 +170,6 @@ class Print : public exec::Subscriber {
         source_->subscribe(source_->minPhase(), this);
     }
 
-    void done() const { std::cout << ss_.str() << '\n'; }
-
     exec::ExplanationItem explain(exec::ExplanationCtx ctx) const {
         auto source = source_->explain(ctx.withRequester(this));
 
@@ -180,10 +183,16 @@ class Print : public exec::Subscriber {
     }
 
  private:
+    void done() const {
+        println(ss_.str());
+        ss_.str() = "";
+    }
+
     bool consume(int phase, const exec::Record* record) override {
         verify(phase == source_->minPhase());
 
         if (record == nullptr) {
+            done();
             return false;
         }
 
@@ -206,6 +215,8 @@ class Print : public exec::Subscriber {
 };
 
 void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
+    std::stringstream prof;
+
     for (int phase = 0; phase <= max_phase; ++phase) {
         llog::info("executing phase {}", phase);
         std::latch latch(sources.size());
@@ -228,10 +239,14 @@ void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
         llog::info("phase {} completed", phase);
 
         if (profile_arg.getValue()) {
-            std::cerr << std::format(
-                "profile [phase={}]\n{}", phase, exec::prof::Profiler::report());
+            prof << std::format("profile [phase={}]\n{}", phase, exec::prof::Profiler::report());
             exec::prof::Profiler::reset();
         }
+    }
+
+    if (profile_arg.getValue()) {
+        llog::info("dumping profile");
+        std::cerr << prof.str() << std::endl;
     }
 }
 
@@ -313,11 +328,6 @@ void main(std::span<const char*> argv) {
         run(max_phase, sources, pool);
         pool.stop();
         pool.join();
-
-        llog::info("dumping the output");
-        for (auto&& op : ops) {
-            op->done();
-        }
     }
 }
 
