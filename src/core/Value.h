@@ -33,12 +33,10 @@ class Value {
 
     template <typename T>
     const T& get() const {
-        return std::visit(
-            util::Overloaded{
-                [](auto&&) -> const T& { throw std::runtime_error("type mismatch"); },
-                [](const T& value) -> const T& { return value; },
-            },
-            val_);
+        if (const T* val = std::get_if<T>(&val_)) {
+            return *val;
+        }
+        throw std::runtime_error("type mismatch");
     }
 
     ValueType type() const {

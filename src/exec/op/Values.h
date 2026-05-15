@@ -33,11 +33,21 @@ class Values : public Source,
     explicit Values(std::vector<Value> values) : OperationBase(0), values_(std::move(values)) {}
 
     void push(int phase) override {
-        for (const auto& value : values_) {
-            ValueRecord record({shared_from_this(), &value});
+        if (requiredFields(phase).empty()) {
+            auto* record = EmptyRecord::instance().get();
 
-            if (!emit(phase, &record)) {
-                return;
+            for (size_t i = 0; i < values_.size(); ++i) {
+                if (!emit(phase, record)) {
+                    return;
+                }
+            }
+        } else {
+            for (const auto& value : values_) {
+                ValueRecord record({shared_from_this(), &value});
+
+                if (!emit(phase, &record)) {
+                    return;
+                }
             }
         }
 
@@ -46,7 +56,9 @@ class Values : public Source,
 
  private:
     // Operation
-    void init(int /*phase*/) override {}
+    void init(int phase, const RequiredFields& fields) override {
+        updateRequiredFields(phase, fields);
+    }
 
     // Operation
     ExplanationItem explain(ExplanationCtx ctx) const override {
@@ -54,7 +66,7 @@ class Values : public Source,
             return {};
         }
 
-        return ExplanationItem().line("{} [count={}]", name(), values_.size());
+        return ExplanationItem().line("{} [count={}]", description(ctx.phase), values_.size());
     }
 
     std::vector<Value> values_;

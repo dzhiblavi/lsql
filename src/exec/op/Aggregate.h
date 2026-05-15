@@ -73,15 +73,31 @@ class Aggregate : public Source, public OperationBase<Aggregate>, public Record 
     }
 
     // Operation
-    void init(int out_phase) override {
-        if (first_phase_ != -1) {
+    void init(int out_phase, const RequiredFields& downstream) override {
+        if (first_phase_ == -1) {
+            first_phase_ = out_phase;
+        } else {
             // this may be an incorrect expectation
             verify(out_phase >= first_phase_);
-            return;
         }
 
-        first_phase_ = out_phase;
-        source_->subscribe(out_phase, &sub_);
+        // resubscribe even if already subscribed
+        // idempotent but will update required fields if needed
+        source_->subscribe(first_phase_, &sub_, getRequiredFields(downstream));
+    }
+
+    RequiredFields getRequiredFields(const RequiredFields& downstream) const {
+        RequiredFields result = RequiredFields::withNone();
+
+        for (auto&& proj : projectors_) {
+            if (!downstream.requiresField(proj->name)) {
+                continue;
+            }
+
+            result.merge(proj->expr->requiredFields());
+        }
+
+        return result;
     }
 
     // Record
@@ -113,9 +129,10 @@ class Aggregate : public Source, public OperationBase<Aggregate>, public Record 
         }
 
         if (ctx.phase == first_phase_) {
-            auto item = ExplanationItem()
-                            .line("{} (store, {} projections)", name(), projectors_.size())
-                            .child(source);
+            auto item =
+                ExplanationItem()
+                    .line("{} (store, {} projections)", description(ctx.phase), projectors_.size())
+                    .child(source);
 
             if (hasSubscriber(ctx.phase, ctx.requester)) {
                 return item;
@@ -127,7 +144,7 @@ class Aggregate : public Source, public OperationBase<Aggregate>, public Record 
 
         // phase > first_phase_
         if (hasSubscriber(ctx.phase, ctx.requester)) {
-            return ExplanationItem().line("{} (push stored)", name());
+            return ExplanationItem().line("{} (push stored)", description(ctx.phase));
         }
 
         return {};

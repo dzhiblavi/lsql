@@ -89,9 +89,20 @@ class MergeSorted : public OperationBase<MergeSorted> {
     }
 
     // Operation
-    void init(int phase) override {
-        l_->subscribe(phase, &sub_l_);
-        r_->subscribe(phase, &sub_r_);
+    void init(int phase, const RequiredFields& downstream) override {
+        auto upstream = getRequiredFields(downstream);
+        l_->subscribe(phase, &sub_l_, upstream);
+        r_->subscribe(phase, &sub_r_, upstream);
+    }
+
+    RequiredFields getRequiredFields(const RequiredFields& downstream) const {
+        RequiredFields upstream = downstream;
+
+        for (auto&& proj : slist_) {
+            upstream.merge(proj->requiredFields());
+        }
+
+        return upstream;
     }
 
     bool shouldWait(int index) const {
@@ -239,7 +250,7 @@ class MergeSorted : public OperationBase<MergeSorted> {
         }
 
         return ExplanationItem()
-            .line("{} cols={} desc={}", name(), slist_.size(), desc_)
+            .line("{} cols={} desc={}", description(ctx.phase), slist_.size(), desc_)
             .child(l)
             .child(r);
     }

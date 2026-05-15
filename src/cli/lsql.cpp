@@ -167,7 +167,7 @@ void printRecordJSON(const exec::Record::values_t& values, std::stringstream& ou
 class Print : public exec::Subscriber {
  public:
     Print(exec::OperationPtr source, Format format) : source_(std::move(source)), format_(format) {
-        source_->subscribe(source_->minPhase(), this);
+        source_->subscribe(source_->minPhase(), this, exec::RequiredFields::withAll());
     }
 
     exec::ExplanationItem explain(exec::ExplanationCtx ctx) const {

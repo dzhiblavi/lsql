@@ -42,6 +42,10 @@ class BinaryExpression : public Expression {
         }
     }
 
+    RequiredFields requiredFields() const override {
+        return RequiredFields::merge(l_->requiredFields(), r_->requiredFields());
+    }
+
     ValueType valueType() const override { return op_.valueType(); }
 
     AggregatorPtr aggregator() const override {

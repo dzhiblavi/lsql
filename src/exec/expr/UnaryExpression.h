@@ -34,6 +34,8 @@ class UnaryExpression : public Expression {
         }
     }
 
+    RequiredFields requiredFields() const override { return arg_->requiredFields(); }
+
     ValueType valueType() const override { return op_.valueType(); }
 
     AggregatorPtr aggregator() const override {

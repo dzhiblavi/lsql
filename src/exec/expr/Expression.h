@@ -2,6 +2,7 @@
 
 #include "core/Value.h"
 #include "exec/Record.h"
+#include "exec/RequiredFields.h"
 
 #include <reflex/matcher.h>
 #include <reflex/pattern.h>
@@ -24,6 +25,7 @@ class Expression {
  public:
     virtual ~Expression() = default;
 
+    virtual RequiredFields requiredFields() const = 0;
     virtual ValueType valueType() const = 0;
     virtual AggregatorPtr aggregator() const = 0;
     virtual Value eval(const exec::Record& record) const = 0;

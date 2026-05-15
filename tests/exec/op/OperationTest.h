@@ -20,7 +20,7 @@ struct OperationTest : Subscriber {
     void setOperation(OperationPtr o) {
         CHECK(o->minPhase() == 0);
         op = o;
-        op->subscribe(0, this);
+        op->subscribe(0, this, RequiredFields::withFields({"test-value"}));
     }
 
     bool consume(int /*phase*/, const exec::Record* record) override {

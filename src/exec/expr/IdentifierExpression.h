@@ -8,6 +8,8 @@ class IdentifierExpression : public Expression {
  public:
     explicit IdentifierExpression(std::string name) : name_(std::move(name)) {}
 
+    RequiredFields requiredFields() const override { return RequiredFields::withFields({name_}); }
+
     ValueType valueType() const override { return ValueType::String; }
 
     Value eval(const exec::Record& record) const override { return record.value(name_); }

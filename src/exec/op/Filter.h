@@ -28,7 +28,10 @@ class Filter : public OperationBase<Filter> {
     }
 
     // Operation
-    void init(int out_phase) override { source_->subscribe(out_phase, &sub_); }
+    void init(int out_phase, const RequiredFields& downstream) override {
+        RequiredFields upstream = RequiredFields::merge(condition_->requiredFields(), downstream);
+        source_->subscribe(out_phase, &sub_, upstream);
+    }
 
     // Operation
     ExplanationItem explain(ExplanationCtx ctx) const override {
@@ -38,7 +41,7 @@ class Filter : public OperationBase<Filter> {
             return {};
         }
 
-        return ExplanationItem().line(name()).child(source);
+        return ExplanationItem().line(description(ctx.phase)).child(source);
     }
 
     OperationPtr source_;

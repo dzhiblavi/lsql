@@ -20,17 +20,14 @@ class OperationBase : public virtual Operation {
 
     // outbound operations call this method to receive records
     // idempotent
-    void subscribe(int out_phase, Subscriber* sub) override {
+    void subscribe(int out_phase, Subscriber* sub, const RequiredFields& fields) override {
         verify(out_phase >= minPhase());
 
-        if (subs_[out_phase].contains(sub)) {
-            return;
-        }
-
+        // all of the following operations are idempotent
+        updateRequiredFields(out_phase, fields);
         max_out_phase_ = std::max(max_out_phase_, out_phase);
         subs_[out_phase].insert(sub);
-
-        init(out_phase);
+        init(out_phase, requiredFields(out_phase));
     }
 
     int minPhase() const override { return min_out_phase_; }
@@ -44,7 +41,26 @@ class OperationBase : public virtual Operation {
  protected:
     // the way for downstream operations to ask for output on phase `out_phase`
     // idempotent
-    virtual void init(int out_phase) = 0;
+    virtual void init(int out_phase, const RequiredFields& fields) = 0;
+
+    std::string description(int phase) const {
+        return std::format("{} [required-out: {}]", name(), to_string(requiredFields(phase)));
+    }
+
+    void updateRequiredFields(int phase, const RequiredFields& fields) {
+        auto& required_fields =
+            phase_required_fields_.try_emplace(phase, RequiredFields::withNone()).first->second;
+        required_fields.merge(fields);
+    }
+
+    const RequiredFields& requiredFields(int phase) const {
+        static RequiredFields none = RequiredFields::withNone();
+
+        if (auto it = phase_required_fields_.find(phase); it != phase_required_fields_.end()) {
+            return it->second;
+        }
+        return none;
+    }
 
     bool hasSubscriber(int phase, const Subscriber* sub) const {
         auto it = subs_.find(phase);
@@ -82,11 +98,13 @@ class OperationBase : public virtual Operation {
 
  private:
     using Subscribers = std::unordered_map<int, std::unordered_set<Subscriber*>>;
+    using PhaseRequiredFields = std::unordered_map<int, RequiredFields>;
 
     const int min_out_phase_ = 0;
     const int uniq_id_ = util::uniqId();
     int max_out_phase_ = 0;
     Subscribers subs_;
+    PhaseRequiredFields phase_required_fields_;
 };
 
 }  // namespace lsql::exec

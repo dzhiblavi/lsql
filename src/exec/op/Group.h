@@ -15,7 +15,9 @@ class GroupEnrichedRecord : public Record {
  public:
     GroupEnrichedRecord(RecordRef child, std::shared_ptr<GroupValues> values)
         : child_(std::move(child))
-        , values_(std::move(values)) {}
+        , values_(std::move(values)) {
+        assert(values_ != nullptr);
+    }
 
     values_t values() const override {
         auto values = get(child_)->values();
@@ -43,38 +45,41 @@ class GroupEnrichedRecord : public Record {
 
 class GroupRecord : public Record {
  public:
-    explicit GroupRecord(std::shared_ptr<GroupValues> values) : values_(std::move(values)) {}
+    explicit GroupRecord(GroupValues values) : values_(std::move(values)) {}
 
     values_t values() const override {
         values_t values;
-        for (auto&& [k, v] : *values_) {
+        for (auto&& [k, v] : values_) {
             values.emplace(k, v);
         }
         return values;
     }
 
     Value value(std::string_view name) const override {
-        auto it = values_->find(name);
-        return it == values_->end() ? null : it->second;
+        auto it = values_.find(name);
+        return it == values_.end() ? null : it->second;
     }
 
     ConstRecordPtr cloneImpl() const override { return std::make_shared<GroupRecord>(*this); }
 
  private:
-    std::shared_ptr<GroupValues> values_;
+    GroupValues values_;
 };
 
 class Group : public OperationBase<Group>, public std::enable_shared_from_this<Group> {
     friend class GroupRecord;
 
+    using ProjectionMap = std::unordered_map<std::string_view, std::unique_ptr<Projector>>;
+
  public:
     Group(OperationPtr source, ProjectionList glist, ProjectionList slist)
         : OperationBase(source->minPhase())
         , source_(std::move(source))
-        , glist_(std::move(glist))
-        , slist_(std::move(slist)) {
-        if (slist_.empty()) {
-            throw std::runtime_error("GROUP select list cannot be empty");
+        , glist_(toProjectionMap(std::move(glist)))
+        , slist_(toProjectionMap(std::move(slist))) {
+        // remove all glist_ columns from slist_
+        for (auto&& [name, _] : glist_) {
+            slist_.erase(name);
         }
     }
 
@@ -89,27 +94,20 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
             auto group_kv = std::make_shared<GroupValues>();
             std::vector<Value> key;
             key.reserve(glist_.size());
-            for (auto&& col : glist_) {
-                auto value = col->expr->eval(*record);
-                group_kv->emplace(col->name, value);
+            for (auto&& [name, proj] : glist_) {
+                auto value = proj->expr->eval(*record);
+                group_kv->emplace(name, value);
                 key.push_back(std::move(value));
             }
 
             auto&& aggregators = groups_[key];
 
             if (aggregators.empty()) {
-                for (auto&& proj : slist_) {
-                    auto&& name = proj->name;
-
-                    if (std::ranges::find(glist_, name, [](auto&& proj) { return proj->name; }) ==
-                        glist_.end()) {
-                        aggregators.push_back(proj->expr->aggregator());
-                    }
-                }
+                prepareAggregators(phase, aggregators);
             }
 
-            for (auto&& aggregator : aggregators) {
-                GroupEnrichedRecord enriched_record(record, std::move(group_kv));
+            for (auto&& [_, aggregator] : aggregators) {
+                GroupEnrichedRecord enriched_record(record, group_kv);
                 aggregator->feed(enriched_record);
             }
 
@@ -122,32 +120,41 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         }
 
         // end of stream
+        auto&& required_fields = requiredFields(phase);
+
         while (!groups_.empty()) {
             auto node = groups_.extract(groups_.begin());
             auto group_values = std::move(node.key());
             auto aggregators = std::move(node.mapped());
 
             GroupValues group_kv;
-            for (size_t i = 0; i < glist_.size(); ++i) {
-                group_kv.emplace(glist_[i]->name, std::move(group_values[i]));
+            size_t group_by_column_index = 0;
+            for (auto&& [name, _] : glist_) {
+                group_kv.emplace(name, std::move(group_values[group_by_column_index++]));
             }
 
-            auto values = std::make_shared<GroupValues>();
-            size_t agr = 0;
+            GroupValues values;
 
-            for (size_t i = 0; i < slist_.size(); ++i) {
-                auto&& name = slist_[i]->name;
-                auto it = std::ranges::find(glist_, name, [](auto&& proj) { return proj->name; });
-
-                if (it == glist_.end()) {
-                    values->emplace(name, aggregators[agr++]->get());
-                } else {
-                    values->emplace(name, group_kv[name]);
+            {
+                // pass required group by fields
+                for (auto&& [name, value] : group_kv) {
+                    if (required_fields.requiresField(name)) {
+                        values.emplace(name, std::move(value));
+                    }
                 }
             }
 
-            GroupRecord record(std::move(values));
-            if (!emit(phase, &record)) {
+            {
+                // pass required slist fields
+                for (auto&& [name, _] : slist_) {
+                    if (required_fields.requiresField(name)) {
+                        values.emplace(name, aggregators[name]->get());
+                    }
+                }
+            }
+
+            auto record = std::make_shared<GroupRecord>(std::move(values));
+            if (!emit(phase, record.get())) {
                 groups_.clear();
                 return false;
             }
@@ -157,7 +164,73 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     }
 
     // Operation
-    void init(int phase) override { source_->subscribe(phase, &sub_); }
+    void init(int phase, const RequiredFields& downstream) override {
+        source_->subscribe(phase, &sub_, getRequiredFields(downstream));
+    }
+
+    RequiredFields getRequiredFields(const RequiredFields& downstream) const {
+        RequiredFields upstream = RequiredFields::withNone();
+
+        // all group projections are always needed
+        for (auto&& [_, proj] : glist_) {
+            upstream.merge(proj->expr->requiredFields());
+        }
+
+        if (downstream.all()) {
+            // additionally request everything that comes from slist_ and not glist_
+            for (auto&& [name, proj] : slist_) {
+                verify(!glist_.contains(name));
+                upstream.merge(proj->expr->requiredFields());
+            }
+        } else {
+            for (auto&& name : downstream.names()) {
+                if (glist_.contains(name)) {
+                    // already requested
+                    continue;
+                }
+
+                if (auto it = slist_.find(name); it != slist_.end()) {
+                    upstream.merge(it->second->expr->requiredFields());
+                }
+            }
+        }
+
+        return upstream;
+    }
+
+    void prepareAggregators(int phase, auto& aggregators) {
+        auto&& required_fields = requiredFields(phase);
+
+        if (required_fields.all()) {
+            // aggregate all fields from select list
+            for (auto&& [name, proj] : slist_) {
+                verify(!glist_.contains(name));
+                aggregators.emplace(name, proj->expr->aggregator());
+            }
+        } else {
+            // aggregate only required fields
+            for (auto&& name : required_fields.names()) {
+                if (glist_.contains(name)) {
+                    // comes from group list, no need to calculate additionally
+                    continue;
+                }
+
+                if (auto it = slist_.find(name); it != slist_.end()) {
+                    aggregators.emplace(name, it->second->expr->aggregator());
+                }
+            }
+        }
+    }
+
+    static ProjectionMap toProjectionMap(ProjectionList list) {
+        ProjectionMap map;
+        map.reserve(list.size());
+        for (auto&& proj : list) {
+            std::string_view name = proj->name;
+            map.emplace(name, std::move(proj));
+        }
+        return map;
+    }
 
     // Operation
     ExplanationItem explain(ExplanationCtx ctx) const override {
@@ -167,12 +240,12 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
             return {};
         }
 
-        return ExplanationItem().line(name()).child(source);
+        return ExplanationItem().line(description(ctx.phase)).child(source);
     }
 
     OperationPtr source_;
-    ProjectionList glist_;
-    ProjectionList slist_;
+    ProjectionMap glist_;
+    ProjectionMap slist_;
     MemberSubscriber<Group> sub_{
         this,
         &Group::consume,
@@ -180,7 +253,8 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     };
 
     // phase state
-    using Groups = std::unordered_map<std::vector<Value>, std::vector<AggregatorPtr>>;
+    using Groups =
+        std::unordered_map<std::vector<Value>, std::unordered_map<std::string_view, AggregatorPtr>>;
 
     int curr_phase_ = 0;
     Groups groups_;

@@ -8,6 +8,7 @@ class ValueExpression : public Expression {
  public:
     explicit ValueExpression(Value value) : value_(std::move(value)) {}
 
+    RequiredFields requiredFields() const override { return RequiredFields::withNone(); }
     const Value& get() const { return value_; }
     ValueType valueType() const override { return value_.type(); }
     Value eval(const exec::Record& /*record*/) const override { return value_; }

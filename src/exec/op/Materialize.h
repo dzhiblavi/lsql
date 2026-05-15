@@ -60,15 +60,15 @@ class Materialize : public Source, public OperationBase<Materialize> {
     }
 
     // Operation
-    void init(int out_phase) override {
-        if (first_phase_ != -1) {
+    void init(int out_phase, const RequiredFields& downstream) override {
+        if (first_phase_ == -1) {
+            first_phase_ = out_phase;
+        } else {
             // this may be an incorrect expectation
             verify(out_phase >= first_phase_);
-            return;
         }
 
-        first_phase_ = out_phase;
-        source_->subscribe(first_phase_, &sub_);
+        source_->subscribe(first_phase_, &sub_, downstream);
     }
 
     // Operation
@@ -82,7 +82,9 @@ class Materialize : public Source, public OperationBase<Materialize> {
         }
 
         if (ctx.phase == first_phase_) {
-            auto item = ExplanationItem().line("{} store passthrough", name()).child(source);
+            auto item = ExplanationItem()
+                            .line("{} store passthrough", description(ctx.phase))
+                            .child(source);
 
             if (hasSubscriber(ctx.phase, ctx.requester)) {
                 return item;
@@ -97,7 +99,7 @@ class Materialize : public Source, public OperationBase<Materialize> {
             return {};
         }
 
-        return ExplanationItem().line("{} scan stored", name());
+        return ExplanationItem().line("{} scan stored", description(ctx.phase));
     }
 
     OperationPtr source_;

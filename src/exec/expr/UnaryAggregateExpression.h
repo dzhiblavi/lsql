@@ -43,6 +43,8 @@ class UnaryAggregateExpression : public Expression {
         }
     }
 
+    RequiredFields requiredFields() const override { return arg_->requiredFields(); }
+
     ValueType valueType() const override { return op_.valueType(); }
 
     AggregatorPtr aggregator() const override { return std::make_shared<Aggr>(arg_, &op_); }
@@ -247,6 +249,7 @@ struct PercentileOp {
             ss << p << ", ";
         }
         ss.seekp(-2, std::ios_base::end);  // remove last ', '
+        ss << ']';
         return ss.str();
     }
 

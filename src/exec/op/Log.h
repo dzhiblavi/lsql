@@ -25,8 +25,13 @@ class LineRecord : public Record {
     }
 
     Value value(std::string_view name) const override {
-        auto it = kv_.find(name);
-        return it == kv_.end() ? Value() : Value(std::string(it->second));
+        auto it = cache_.find(name);
+        if (it == cache_.end()) {
+            auto kit = kv_.find(name);
+            it = cache_.emplace(name, kit == kv_.end() ? Value() : Value(std::string(kit->second)))
+                     .first;
+        }
+        return it->second;
     }
 
     ConstRecordPtr cloneImpl() const override { return std::make_shared<LineRecord>(*this); }
@@ -34,6 +39,7 @@ class LineRecord : public Record {
  private:
     data::Line line_;
     absl::flat_hash_map<std::string_view, std::string_view> kv_;
+    mutable absl::flat_hash_map<std::string_view, Value> cache_;
 };
 
 class Log : public Source, public OperationBase<Log> {
@@ -62,7 +68,7 @@ class Log : public Source, public OperationBase<Log> {
 
  private:
     // Operation
-    void init(int) override {}
+    void init(int, const RequiredFields&) override {}
 
     // Operation
     ExplanationItem explain(ExplanationCtx ctx) const override {
@@ -70,7 +76,7 @@ class Log : public Source, public OperationBase<Log> {
             return {};
         }
 
-        return ExplanationItem().line("{} source: {}", name(), log_->describe());
+        return ExplanationItem().line("{} source: {}", description(ctx.phase), log_->describe());
     }
 
     std::shared_ptr<data::Log> log_;

@@ -76,7 +76,19 @@ class Sort : public OperationBase<Sort>, public std::enable_shared_from_this<Sor
         return emit(phase, nullptr);
     }
 
-    void init(int phase) override { source_->subscribe(phase, &sub_); }
+    void init(int phase, const RequiredFields& fields) override {
+        source_->subscribe(phase, &sub_, getRequiredFields(fields));
+    }
+
+    RequiredFields getRequiredFields(const RequiredFields& downstream) const {
+        RequiredFields result = downstream;
+
+        for (auto&& proj : sort_list_) {
+            result.merge(proj->requiredFields());
+        }
+
+        return result;
+    }
 
     Key key(const Record& record) const {
         Key result;
@@ -95,7 +107,7 @@ class Sort : public OperationBase<Sort>, public std::enable_shared_from_this<Sor
             return {};
         }
 
-        return ExplanationItem().line("{} desc={}", name(), desc_).child(source);
+        return ExplanationItem().line("{} desc={}", description(ctx.phase), desc_).child(source);
     }
 
     prof::NamedCounter<size_t> dataset_size_{"dataset size", size_t(0)};

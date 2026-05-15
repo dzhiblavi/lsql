@@ -51,18 +51,19 @@ class In : public OperationBase<In> {
         return false;
     }
 
-    void init(int out_phase) override {
+    void init(int out_phase, const RequiredFields& downstream) override {
         verify(out_phase >= minPhase());
 
         if (match_phase_ == -1) {
             match_phase_ = out_phase - 1;
-            match_source_->subscribe(out_phase - 1, &sub_match_);
+            match_source_->subscribe(out_phase - 1, &sub_match_, RequiredFields::withAll());
         }
 
         // this may be an incorrect expectation
         verify(out_phase > match_phase_);
 
-        source_->subscribe(out_phase, &sub_source_);
+        source_->subscribe(
+            out_phase, &sub_source_, RequiredFields::merge(proj_->requiredFields(), downstream));
     }
 
     void cleanIfDone(int phase) {
@@ -88,7 +89,8 @@ class In : public OperationBase<In> {
         if (ctx.phase == match_phase_) {
             verify(source.empty());
 
-            auto item = ExplanationItem().line("{}: store match set", name()).child(match);
+            auto item =
+                ExplanationItem().line("{}: store match set", description(ctx.phase)).child(match);
 
             if (hasSubscriber(ctx.phase, ctx.requester)) {
                 return item;
@@ -102,7 +104,7 @@ class In : public OperationBase<In> {
             return {};
         }
 
-        return ExplanationItem().line("{}: stream match", name()).child(source);
+        return ExplanationItem().line("{}: stream match", description(ctx.phase)).child(source);
     }
 
     OperationPtr source_;

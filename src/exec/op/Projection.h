@@ -74,7 +74,35 @@ class Projection : public OperationBase<Projection>,
         return emit(phase, &rec);
     }
 
-    void init(int phase) override { source_->subscribe(phase, &sub_); }
+    void init(int phase, const RequiredFields& downstream) override {
+        source_->subscribe(phase, &sub_, getRequiredFields(downstream));
+    }
+
+    RequiredFields getRequiredFields(const RequiredFields& downstream) const {
+        RequiredFields result = RequiredFields::withNone();
+
+        if (downstream.all()) {
+            if (has_all_) {
+                return RequiredFields::withAll();
+            }
+
+            for (auto&& [_, proj] : projectors_) {
+                result.merge(proj->expr->requiredFields());
+            }
+
+            return result;
+        }
+
+        for (auto&& name : downstream.names()) {
+            if (auto it = projectors_.find(name); it != projectors_.end()) {
+                result.merge(it->second->expr->requiredFields());
+            } else if (has_all_) {
+                result.require(name);
+            }
+        }
+
+        return result;
+    }
 
     // Operation
     ExplanationItem explain(ExplanationCtx ctx) const override {
@@ -85,7 +113,7 @@ class Projection : public OperationBase<Projection>,
         }
 
         return ExplanationItem()
-            .line("{} (*: {}, non-*: {})", name(), has_all_, projectors_.size())
+            .line("{} (*: {}, non-*: {})", description(ctx.phase), has_all_, projectors_.size())
             .child(source);
     }
 

@@ -55,9 +55,9 @@ class UnionAll : public OperationBase<UnionAll> {
     void reset() { done_[0] = done_[1] = false; }
 
     // Operation
-    void init(int phase) override {
-        l_->subscribe(phase, &sub_l_);
-        r_->subscribe(phase, &sub_r_);
+    void init(int phase, const RequiredFields& downstream) override {
+        l_->subscribe(phase, &sub_l_, downstream);
+        r_->subscribe(phase, &sub_r_, downstream);
     }
 
     // Operation
@@ -69,7 +69,7 @@ class UnionAll : public OperationBase<UnionAll> {
             return {};
         }
 
-        return ExplanationItem().line(name()).child(l).child(r);
+        return ExplanationItem().line(description(ctx.phase)).child(l).child(r);
     }
 
     OperationPtr l_;

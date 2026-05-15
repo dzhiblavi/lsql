@@ -33,6 +33,22 @@ class Record : public std::enable_shared_from_this<Record> {
 using RecordPtr = std::shared_ptr<Record>;
 using ConstRecordPtr = std::shared_ptr<const Record>;
 
+class EmptyRecord : public Record {
+ public:
+    EmptyRecord() = default;
+
+    values_t values() const override { return {}; }
+    Value value(std::string_view /*name*/) const override { return null; }
+
+    static ConstRecordPtr instance() {
+        static ConstRecordPtr record = std::make_shared<EmptyRecord>();
+        return record;
+    }
+
+ private:
+    std::shared_ptr<const Record> cloneImpl() const override { return instance(); }
+};
+
 using RecordRef = std::variant<const Record*, ConstRecordPtr>;
 
 inline ConstRecordPtr pin(const RecordRef& ref) {

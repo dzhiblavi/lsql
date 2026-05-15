@@ -4,4 +4,5 @@
 /prog.sql
 /ref.out
 /output
-/_profile
+/profile/*.perf
+/profile/*.svg

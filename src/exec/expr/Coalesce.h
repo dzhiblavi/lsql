@@ -30,6 +30,14 @@ class Coalesce : public Expression, public std::enable_shared_from_this<Coalesce
  public:
     explicit Coalesce(std::vector<ExpressionPtr> values) : values_(std::move(values)) {}
 
+    RequiredFields requiredFields() const override {
+        RequiredFields result = RequiredFields::withNone();
+        for (auto&& value : values_) {
+            result.merge(value->requiredFields());
+        }
+        return result;
+    }
+
     ValueType valueType() const override { return values_.front()->valueType(); }
 
     AggregatorPtr aggregator() const override {
