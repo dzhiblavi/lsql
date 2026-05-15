@@ -18,18 +18,18 @@ class Counter {
     void sub(T value) { value_.fetch_sub(value, std::memory_order_relaxed); }
 
     void max(T value) {
-        T expected, new_value;
+        T expected = this->value();
+        T new_value;
         do {
-            expected = this->value();
             new_value = std::max(expected, value);
         } while (!value_.compare_exchange_weak(
             expected, new_value, std::memory_order_relaxed, std::memory_order_relaxed));
     }
 
     void min(T value) {
-        T expected, new_value;
+        T expected = this->value();
+        T new_value;
         do {
-            expected = this->value();
             new_value = std::min(expected, value);
         } while (!value_.compare_exchange_weak(
             expected, new_value, std::memory_order_relaxed, std::memory_order_relaxed));
