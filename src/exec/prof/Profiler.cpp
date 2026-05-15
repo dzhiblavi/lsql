@@ -122,10 +122,6 @@ std::string Profiler::reportImpl() {
 }
 
 void Profiler::resetImpl() {
-    if (!profiler()) {
-        return;
-    }
-
     for (auto&& [_, stats] : profiler()->stats_) {
         stats.reset();
     }
