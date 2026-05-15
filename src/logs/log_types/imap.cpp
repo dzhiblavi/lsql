@@ -11,9 +11,10 @@ TimeFormat time_format<LogType::IMAP> = TimeFormat::ORACLE;
 
 template <>
 void parseKeyValue<LogType::IMAP>(
-    std::string_view line, std::unordered_map<std::string_view, std::string_view>& out) {
+    std::string_view line, absl::flat_hash_map<std::string_view, std::string_view>& out) {
     assert(line.size() >= 30);
 
+    out.reserve(ExpectedKeysCountTunable);
     out["lsql_line"] = line;
     auto timestamp = line.substr(1, 20);
     out["timestamp"] = timestamp;

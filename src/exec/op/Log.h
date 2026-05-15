@@ -10,8 +10,8 @@ namespace lsql::exec {
 
 class LineRecord : public Record {
  public:
-    LineRecord(data::Line line, logs::LogType type) : line_(line) {
-        parseKeyValue(line_.view(), type, kv_);
+    LineRecord(data::Line line, logs::ParseKeyValueFunc parse_func) : line_(line) {
+        parse_func(line.view(), kv_);
     }
 
     values_t values() const override {
@@ -33,7 +33,7 @@ class LineRecord : public Record {
 
  private:
     data::Line line_;
-    std::unordered_map<std::string_view, std::string_view> kv_;
+    absl::flat_hash_map<std::string_view, std::string_view> kv_;
 };
 
 class Log : public Source, public OperationBase<Log> {
@@ -41,7 +41,7 @@ class Log : public Source, public OperationBase<Log> {
     Log(std::shared_ptr<data::Log> log, logs::LogType type)
         : OperationBase(0)
         , log_(std::move(log))
-        , type_(type) {}
+        , parse_func_(logs::parseKeyValueFunc(type)) {}
 
     void push(int phase) override {
         if (!active(phase)) {
@@ -49,7 +49,7 @@ class Log : public Source, public OperationBase<Log> {
         }
 
         for (auto line : log_->lines()) {
-            LineRecord record(line, type_);
+            LineRecord record(line, parse_func_);
 
             if (!emit(phase, &record)) {
                 // no more subscribers
@@ -74,7 +74,7 @@ class Log : public Source, public OperationBase<Log> {
     }
 
     std::shared_ptr<data::Log> log_;
-    logs::LogType type_;
+    logs::ParseKeyValueFunc parse_func_;
 };
 
 }  // namespace lsql::exec

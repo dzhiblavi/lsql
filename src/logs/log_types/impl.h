@@ -4,9 +4,11 @@
 
 namespace lsql::logs {
 
+static constexpr size_t ExpectedKeysCountTunable = 32;
+
 template <LogType Type>
 void parseKeyValue(
-    std::string_view line, std::unordered_map<std::string_view, std::string_view>& out);
+    std::string_view line, absl::flat_hash_map<std::string_view, std::string_view>& out);
 
 template <LogType Type>
 bool detectLogType(std::string_view line);

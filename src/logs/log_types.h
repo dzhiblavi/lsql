@@ -2,8 +2,9 @@
 
 #include "core/time_formats.h"
 
+#include <absl/container/flat_hash_map.h>
+
 #include <string_view>
-#include <unordered_map>
 
 namespace lsql::logs {
 
@@ -12,10 +13,10 @@ enum class LogType {
     IMAP,
 };
 
-void parseKeyValue(
-    std::string_view line,
-    LogType type,
-    std::unordered_map<std::string_view, std::string_view>& out);
+using ParseKeyValueFunc =
+    void (*)(std::string_view, absl::flat_hash_map<std::string_view, std::string_view>&);
+
+ParseKeyValueFunc parseKeyValueFunc(LogType type);
 
 std::optional<LogType> detectLogType(std::string_view line);
 

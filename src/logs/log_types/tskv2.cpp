@@ -10,7 +10,8 @@ TimeFormat time_format<LogType::TSKV2> = TimeFormat::SQL;
 
 template <>
 void parseKeyValue<LogType::TSKV2>(
-    std::string_view line, std::unordered_map<std::string_view, std::string_view>& out) {
+    std::string_view line, absl::flat_hash_map<std::string_view, std::string_view>& out) {
+    out.reserve(ExpectedKeysCountTunable);
     out["lsql_line"] = line;
 
     auto curr = line;

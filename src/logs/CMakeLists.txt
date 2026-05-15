@@ -1,4 +1,5 @@
 find_package(magic_enum REQUIRED)
+find_package(absl REQUIRED)
 
 add_library(
     lsql-logs STATIC
@@ -9,4 +10,4 @@ add_library(
     SearchTimestamp.cpp
 )
 
-target_link_libraries(lsql-logs PUBLIC lsql-util lsql-core)
+target_link_libraries(lsql-logs PUBLIC lsql-util lsql-core abseil::abseil)

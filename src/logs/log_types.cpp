@@ -5,7 +5,7 @@ namespace lsql::logs {
 
 template <LogType Type>
 void parseKeyValue(
-    std::string_view line, std::unordered_map<std::string_view, std::string_view>& out);
+    std::string_view line, absl::flat_hash_map<std::string_view, std::string_view>& out);
 
 template <LogType Type>
 bool detectLogType(std::string_view line);
@@ -13,17 +13,11 @@ bool detectLogType(std::string_view line);
 template <LogType Type>
 TimeFormat time_format;
 
-void parseKeyValue(
-    std::string_view line,
-    LogType type,
-    std::unordered_map<std::string_view, std::string_view>& out) {
-    using parse_func =
-        void (*)(std::string_view, std::unordered_map<std::string_view, std::string_view>&);
-
-    static const std::array<parse_func, magic_enum::enum_count<LogType>()> funcs =
+ParseKeyValueFunc parseKeyValueFunc(LogType type) {
+    static const std::array<ParseKeyValueFunc, magic_enum::enum_count<LogType>()> funcs =
         util::enum_apply<LogType>([]<LogType... F> { return std::array{&parseKeyValue<F>...}; });
 
-    return funcs[*magic_enum::enum_index(type)](line, out);
+    return funcs[*magic_enum::enum_index(type)];
 }
 
 std::optional<LogType> detectLogType(std::string_view line) {
