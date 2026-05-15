@@ -110,8 +110,10 @@ class MergeSorted : public OperationBase<MergeSorted> {
         return !eof_[index] && buffers_[index].empty();
     }
 
-    void push(int index, const Record* record) {
-        buffers_[index].emplace(record->clone(), key(*record));
+    void push(int index, const Record* record) { push(index, record, key(*record)); }
+
+    void push(int index, const Record* record, SortKey key) {
+        buffers_[index].emplace(record->clone(), std::move(key));
 
         if (prof_) {
             buf_sizes_[index].counter.max(buffers_[index].size());
@@ -196,7 +198,7 @@ class MergeSorted : public OperationBase<MergeSorted> {
 
         // other buffer is drained
         // need to push record to be processed later
-        push(curr_side, record);
+        push(curr_side, record, std::move(k));
         return DrainResult::Continue;
     }
 

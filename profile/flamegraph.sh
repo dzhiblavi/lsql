@@ -8,4 +8,8 @@ output_svg="profile/out/${input_name}.svg"
 mkdir -p profile/out
 scp "dev-vm:/home/dzhiblavi/logsql/${script_in}" "${script_in}"
 
+if [[ -f "${output_svg}" ]]; then
+    mv "${output_svg}" "prev.${output_svg}"
+fi
+
 cat "${script_in}" | stackcollapse-perf.pl | flamegraph.pl > "${output_svg}"

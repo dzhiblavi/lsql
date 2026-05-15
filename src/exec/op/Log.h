@@ -10,13 +10,13 @@ namespace lsql::exec {
 
 class LineRecord : public Record {
  public:
-    LineRecord(data::Line line, logs::ParseKeyValueFunc parse_func) : line_(line) {
-        parse_func(line.view(), kv_);
-    }
+    LineRecord(data::Line line, absl::flat_hash_map<std::string_view, std::string_view> values)
+        : line_(line)
+        , values_(std::move(values)) {}
 
     values_t values() const override {
         values_t values;
-        for (auto&& [k, v] : kv_) {
+        for (auto&& [k, v] : values_) {
             if (k != "lsql_line") {
                 values.emplace(k, std::string(v));
             }
@@ -25,21 +25,15 @@ class LineRecord : public Record {
     }
 
     Value value(std::string_view name) const override {
-        auto it = cache_.find(name);
-        if (it == cache_.end()) {
-            auto kit = kv_.find(name);
-            it = cache_.emplace(name, kit == kv_.end() ? Value() : Value(std::string(kit->second)))
-                     .first;
-        }
-        return it->second;
+        auto it = values_.find(name);
+        return it == values_.end() ? null : Value(std::string(it->second));
     }
 
     ConstRecordPtr cloneImpl() const override { return std::make_shared<LineRecord>(*this); }
 
  private:
     data::Line line_;
-    absl::flat_hash_map<std::string_view, std::string_view> kv_;
-    mutable absl::flat_hash_map<std::string_view, Value> cache_;
+    absl::flat_hash_map<std::string_view, std::string_view> values_;
 };
 
 class Log : public Source, public OperationBase<Log> {
@@ -47,19 +41,62 @@ class Log : public Source, public OperationBase<Log> {
     Log(std::shared_ptr<data::Log> log, logs::LogType type)
         : OperationBase(0)
         , log_(std::move(log))
-        , parse_func_(logs::parseKeyValueFunc(type)) {}
+        , type_(type) {}
 
     void push(int phase) override {
         if (!active(phase)) {
             return;
         }
 
-        for (auto line : log_->lines()) {
-            LineRecord record(line, parse_func_);
+        auto&& required_fields = requiredFields(phase);
 
-            if (!emit(phase, &record)) {
-                // no more subscribers
-                return;
+        if (required_fields.empty()) {
+            auto* record = EmptyRecord::instance().get();
+
+            for (auto _ : log_->lines()) {
+                if (!emit(phase, record)) {
+                    return;
+                }
+            }
+        } else if (required_fields.all()) {
+            absl::flat_hash_map<std::string_view, std::string_view> values;
+
+            auto parser = [&](std::string_view name, std::string_view value) {
+                values.emplace(name, value);
+            };
+            auto parse_func = logs::parseKeyValueFunc<decltype(parser)&>(type_);
+
+            for (auto line : log_->lines()) {
+                values.reserve(logs::ExpectedKeysCountTunable);
+                parse_func(line.view(), parser);
+                LineRecord record(line, std::move(values));
+                values = {};
+
+                if (!emit(phase, &record)) {
+                    return;
+                }
+            }
+        } else {
+            absl::flat_hash_map<std::string_view, std::string_view> values;
+
+            auto parser = [&](std::string_view name, std::string_view value) {
+                if (!required_fields.requiresField(name)) {
+                    return;
+                }
+                values.emplace(name, value);
+            };
+
+            auto parse_func = logs::parseKeyValueFunc<decltype(parser)&>(type_);
+
+            for (auto line : log_->lines()) {
+                values.reserve(required_fields.names().size());
+                parse_func(line.view(), parser);
+                LineRecord record(line, std::move(values));
+                values = {};
+
+                if (!emit(phase, &record)) {
+                    return;
+                }
             }
         }
 
@@ -80,7 +117,7 @@ class Log : public Source, public OperationBase<Log> {
     }
 
     std::shared_ptr<data::Log> log_;
-    logs::ParseKeyValueFunc parse_func_;
+    logs::LogType type_;
 };
 
 }  // namespace lsql::exec

@@ -10,21 +10,11 @@ void parseKeyValue(
 template <LogType Type>
 bool detectLogType(std::string_view line);
 
-template <LogType Type>
-TimeFormat time_format;
-
-ParseKeyValueFunc parseKeyValueFunc(LogType type) {
-    static const std::array<ParseKeyValueFunc, magic_enum::enum_count<LogType>()> funcs =
-        util::enum_apply<LogType>([]<LogType... F> { return std::array{&parseKeyValue<F>...}; });
-
-    return funcs[*magic_enum::enum_index(type)];
-}
-
 std::optional<LogType> detectLogType(std::string_view line) {
     std::optional<LogType> result;
 
     auto test = [&]<LogType T> {
-        if (detectLogType<T>(line)) {
+        if (LogTypeImpl<T>::detectLogType(line)) {
             result = T;
             return true;
         }
@@ -38,7 +28,9 @@ std::optional<LogType> detectLogType(std::string_view line) {
 
 TimeFormat timeFormat(LogType type) {
     static const std::array<TimeFormat, magic_enum::enum_count<LogType>()> formats =
-        util::enum_apply<LogType>([]<LogType... F> { return std::array{time_format<F>...}; });
+        util::enum_apply<LogType>([]<LogType... F> {
+            return std::array{LogTypeImpl<F>::time_format...};
+        });
 
     return formats[*magic_enum::enum_index(type)];
 }
