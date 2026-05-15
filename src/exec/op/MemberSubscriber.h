@@ -11,7 +11,7 @@ namespace lsql::exec {
 template <typename F>
 concept SubscriberMixin = requires(F& f) {
     typename F::ScopeValueType;
-    { f.beforeConsume() } -> std::same_as<typename F::ScopeValueType>;
+    { f.consumeScope() } -> std::same_as<typename F::ScopeValueType>;
 };
 
 template <typename Self, SubscriberMixin... Mixins>
@@ -29,14 +29,14 @@ class MemberSubscriberBase : public Subscriber {
     }
 
     bool consume(int phase, const Record* record) override {
-        auto scope = beforeConsume();
+        auto scope = consumeScope();
         return (self_->*method_)(phase, record);
     }
 
  private:
-    std::tuple<typename Mixins::ScopeValueType...> beforeConsume() {
+    std::tuple<typename Mixins::ScopeValueType...> consumeScope() {
         return std::apply(
-            [](Mixins&... mixins) { return std::tuple{mixins.beforeConsume()...}; }, mixins_);
+            [](Mixins&... mixins) { return std::tuple{mixins.consumeScope()...}; }, mixins_);
     }
 
     Self* self_;
@@ -47,7 +47,7 @@ class MemberSubscriberBase : public Subscriber {
 struct ProfilerMixin {
     using ScopeValueType = decltype(prof::InputHandle().consumeScope());
     explicit ProfilerMixin(prof::InputHandle handle) : handle_(std::move(handle)) {}
-    ScopeValueType beforeConsume() { return handle_.consumeScope(); }
+    ScopeValueType consumeScope() { return handle_.consumeScope(); }
 
  private:
     prof::InputHandle handle_;
@@ -56,7 +56,7 @@ struct ProfilerMixin {
 struct LockMixin {
     using ScopeValueType = std::unique_lock<std::mutex>;
     explicit LockMixin(std::mutex* m) : m_(m) {}
-    ScopeValueType beforeConsume() { return std::unique_lock(*m_); }
+    ScopeValueType consumeScope() { return std::unique_lock(*m_); }
 
  private:
     std::mutex* m_;
