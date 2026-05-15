@@ -64,12 +64,12 @@ class GroupRecord : public Record {
     std::shared_ptr<GroupValues> values_;
 };
 
-class Group : public Operation, public std::enable_shared_from_this<Group> {
+class Group : public OperationBase<Group>, public std::enable_shared_from_this<Group> {
     friend class GroupRecord;
 
  public:
     Group(OperationPtr source, ProjectionList glist, ProjectionList slist)
-        : Operation(source->minPhase(), "Group")
+        : OperationBase(source->minPhase(), "Group")
         , source_(std::move(source))
         , glist_(std::move(glist))
         , slist_(std::move(slist)) {
@@ -167,7 +167,7 @@ class Group : public Operation, public std::enable_shared_from_this<Group> {
             return {};
         }
 
-        return ExplanationItem().line(fullName()).child(source);
+        return ExplanationItem().line(name()).child(source);
     }
 
     OperationPtr source_;

@@ -3,14 +3,14 @@
 #include "core/verify.h"
 #include "exec/expr/Expression.h"
 #include "exec/op/MemberSubscriber.h"
-#include "exec/op/Operation.h"
+#include "exec/op/OperationBase.h"
 
 namespace lsql::exec {
 
-class In : public Operation {
+class In : public OperationBase<In> {
  public:
     In(OperationPtr source, OperationPtr match_source, ExpressionPtr proj)
-        : Operation(std::max(source->minPhase(), match_source->minPhase() + 1), "In")
+        : OperationBase(std::max(source->minPhase(), match_source->minPhase() + 1), "In")
         , source_(std::move(source))
         , match_source_(std::move(match_source))
         , proj_(std::move(proj)) {}
@@ -88,7 +88,7 @@ class In : public Operation {
         if (ctx.phase == match_phase_) {
             verify(source.empty());
 
-            auto item = ExplanationItem().line("{}: store match set", fullName()).child(match);
+            auto item = ExplanationItem().line("{}: store match set", name()).child(match);
 
             if (hasSubscriber(ctx.phase, ctx.requester)) {
                 return item;
@@ -102,7 +102,7 @@ class In : public Operation {
             return {};
         }
 
-        return ExplanationItem().line("{}: stream match", fullName()).child(source);
+        return ExplanationItem().line("{}: stream match", name()).child(source);
     }
 
     OperationPtr source_;

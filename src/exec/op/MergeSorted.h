@@ -2,7 +2,7 @@
 
 #include "core/verify.h"
 #include "exec/op/MemberSubscriber.h"
-#include "exec/op/Operation.h"
+#include "exec/op/OperationBase.h"
 #include "exec/op/types.h"
 
 #include <array>
@@ -10,7 +10,7 @@
 
 namespace lsql::exec {
 
-class MergeSorted : public Operation {
+class MergeSorted : public OperationBase<MergeSorted> {
     enum class DrainResult : uint8_t {
         Continue,
         StopRequested,
@@ -18,7 +18,7 @@ class MergeSorted : public Operation {
 
  public:
     MergeSorted(OperationPtr l, OperationPtr r, SortList slist, bool desc)
-        : Operation(std::max(l->minPhase(), r->minPhase()), "MergeSorted")
+        : OperationBase(std::max(l->minPhase(), r->minPhase()), "MergeSorted")
         , l_(std::move(l))
         , r_(std::move(r))
         , slist_(std::move(slist))
@@ -239,7 +239,7 @@ class MergeSorted : public Operation {
         }
 
         return ExplanationItem()
-            .line("{} cols={} desc={}", fullName(), slist_.size(), desc_)
+            .line("{} cols={} desc={}", name(), slist_.size(), desc_)
             .child(l)
             .child(r);
     }

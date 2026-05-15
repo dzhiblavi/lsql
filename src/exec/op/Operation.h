@@ -1,100 +1,37 @@
 #pragma once
 
-#include "core/verify.h"
 #include "exec/op/Explanation.h"
 #include "exec/op/Subscriber.h"
-#include "exec/prof/Profiler.h"
-#include "util/uniq_id.h"
 
 #include <memory>
-#include <unordered_set>
 
 namespace lsql::exec {
 
 class Operation {
-    using Subscribers = std::unordered_map<int, std::unordered_set<Subscriber*>>;
-
  public:
-    Operation(int min_out_phase, std::string_view name)
-        : min_out_phase_(min_out_phase)
-        , name_(name)
-        , prof_(prof::Profiler::registerOperation(this)) {}
-
     virtual ~Operation() = default;
 
-    // outbound operations call this method to receive records
-    // idempotent
-    void subscribe(int out_phase, Subscriber* sub) {
-        verify(out_phase >= minPhase());
+    // Subscribe for this operation's output on a given phase.
+    // The operation never pushes results concurrently (see Subscriber::consume)
+    //
+    // Parameters:
+    // - sub: the subscriber that records will be passed to
+    // - out_phase: the phase at which records will be passsed to the subscriber.
+    //
+    // pre:  out_phase >= minPhase()
+    // post: out_phase <= maxPhase()
+    virtual void subscribe(int out_phase, Subscriber* sub) = 0;
 
-        if (subs_[out_phase].contains(sub)) {
-            return;
-        }
+    // Min phase on which this operation can produce results
+    virtual int minPhase() const = 0;
 
-        max_out_phase_ = std::max(max_out_phase_, out_phase);
-        subs_[out_phase].insert(sub);
+    // Max phase at which this operation has been requested and will produce results
+    virtual int maxPhase() const = 0;
 
-        init(out_phase);
-    }
+    // Unique operation name
+    virtual std::string name() const = 0;
 
     virtual ExplanationItem explain(ExplanationCtx ctx) const = 0;
-
-    int minPhase() const { return min_out_phase_; }
-    int maxPhase() const { return max_out_phase_; }
-    int uniqId() const { return uniq_id_; }
-    const Subscribers& subscribers() const { return subs_; }
-    std::string fullName() const { return std::format("{} [id={}]", name_, uniq_id_); }
-
- protected:
-    // the way for downstream operations to ask for output on phase `out_phase`
-    // idempotent
-    virtual void init(int out_phase) = 0;
-
-    bool hasSubscriber(int phase, const Subscriber* sub) const {
-        auto it = subs_.find(phase);
-        return it != subs_.end() && it->second.contains(const_cast<Subscriber*>(sub));  // NOLINT
-    }
-
-    bool active(int phase) const {
-        auto it = subs_.find(phase);
-        return it != subs_.end() && !it->second.empty();
-    }
-
-    // returns active(phase)
-    bool emit(int phase, const Record* record) {
-        verify(active(phase));
-        auto _ = prof_.emitScope();
-
-        auto&& subs = subs_[phase];
-        auto it = subs.begin();
-
-        while (it != subs.end()) {
-            bool cont = (*it)->consume(phase, record);
-
-            if (cont) {
-                ++it;
-            } else {
-                it = subs.erase(it);
-            }
-        }
-
-        return active(phase);
-    }
-
-    // the phase the result is available at
-    const int min_out_phase_ = 0;
-    const int uniq_id_ = util::uniqId();
-    const std::string_view name_;
-
- protected:
-    // the max out phase
-    int max_out_phase_ = 0;
-
-    // global phase -> subscribers
-    Subscribers subs_;
-
-    // profiler handle
-    prof::OperationHandle prof_;
 };
 
 using OperationPtr = std::shared_ptr<Operation>;

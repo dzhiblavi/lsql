@@ -1,6 +1,8 @@
 #pragma once
 
 #include "core/verify.h"
+#include "exec/Record.h"
+#include "exec/op/OperationBase.h"
 #include "exec/op/Source.h"
 
 namespace lsql::exec {
@@ -25,9 +27,13 @@ class ValueRecord : public Record {
     std::shared_ptr<const Value> value_;
 };
 
-class Values : public Source, public std::enable_shared_from_this<Values> {
+class Values : public Source,
+               public OperationBase<Values>,
+               public std::enable_shared_from_this<Values> {
  public:
-    explicit Values(std::vector<Value> values) : Source(0, "Values"), values_(std::move(values)) {}
+    explicit Values(std::vector<Value> values)
+        : OperationBase(0, "Values")
+        , values_(std::move(values)) {}
 
     void push(int phase) override {
         for (const auto& value : values_) {
@@ -51,7 +57,7 @@ class Values : public Source, public std::enable_shared_from_this<Values> {
             return {};
         }
 
-        return ExplanationItem().line("{} [count={}]", fullName(), values_.size());
+        return ExplanationItem().line("{} [count={}]", name(), values_.size());
     }
 
     std::vector<Value> values_;

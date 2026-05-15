@@ -26,7 +26,9 @@ class InputHandle {
             , ignore_duration(rhs.ignore_duration)
             , stats_(std::exchange(rhs.stats_, nullptr))
             , self(std::exchange(rhs.self, nullptr)) {
-            *self->current_ = this;
+            if (self) {
+                *self->current_ = this;
+            }
         }
 
         ConsumeScope(detail::ThreadSubscriberStats* stats, InputHandle* self)

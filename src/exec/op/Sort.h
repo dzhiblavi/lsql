@@ -2,7 +2,7 @@
 
 #include "core/verify.h"
 #include "exec/op/MemberSubscriber.h"
-#include "exec/op/Operation.h"
+#include "exec/op/OperationBase.h"
 #include "exec/op/types.h"
 #include "util/instrument/Timer.h"
 
@@ -13,12 +13,12 @@
 
 namespace lsql::exec {
 
-class Sort : public Operation, public std::enable_shared_from_this<Sort> {
+class Sort : public OperationBase<Sort>, public std::enable_shared_from_this<Sort> {
     using Key = std::vector<Value>;
 
  public:
     Sort(OperationPtr source, bool desc, SortList sort_list)
-        : Operation(source->minPhase(), "Sort")
+        : OperationBase(source->minPhase(), "Sort")
         , source_(std::move(source))
         , desc_(desc)
         , sort_list_(std::move(sort_list)) {
@@ -95,7 +95,7 @@ class Sort : public Operation, public std::enable_shared_from_this<Sort> {
             return {};
         }
 
-        return ExplanationItem().line("{} desc={}", fullName(), desc_).child(source);
+        return ExplanationItem().line("{} desc={}", name(), desc_).child(source);
     }
 
     prof::NamedCounter<size_t> dataset_size_{"dataset size", size_t(0)};

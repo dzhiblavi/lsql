@@ -108,7 +108,7 @@ std::string Profiler::reportImpl() {
         }
 
         if (!oss.str().empty() || !ass.str().empty()) {
-            ss << std::format("Operation {}\n", op->fullName());
+            ss << std::format("Operation {}\n", op->name());
         }
         if (!oss.str().empty()) {
             ss << "  - output\n" << oss.str();

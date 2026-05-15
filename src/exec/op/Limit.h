@@ -1,14 +1,14 @@
 #pragma once
 
 #include "exec/op/MemberSubscriber.h"
-#include "exec/op/Operation.h"
+#include "exec/op/OperationBase.h"
 
 namespace lsql::exec {
 
-class Limit : public Operation {
+class Limit : public OperationBase<Limit> {
  public:
     Limit(OperationPtr source, int limit)
-        : Operation(source->minPhase(), "Limit")
+        : OperationBase(source->minPhase(), "Limit")
         , source_(std::move(source))
         , limit_(limit) {}
 
@@ -46,7 +46,7 @@ class Limit : public Operation {
             return {};
         }
 
-        return ExplanationItem().line("{} [limit={}]", fullName(), limit_).child(source);
+        return ExplanationItem().line("{} [limit={}]", name(), limit_).child(source);
     }
 
     OperationPtr source_;

@@ -2,7 +2,6 @@
 
 #include "core/verify.h"
 #include "exec/expr/Expression.h"
-#include "exec/prof/Profiler.h"
 #include "exec/op/Projection.h"
 #include "exec/op/Source.h"
 
@@ -10,10 +9,10 @@
 
 namespace lsql::exec {
 
-class Aggregate : public Source, public Record {
+class Aggregate : public Source, public OperationBase<Aggregate>, public Record {
  public:
     Aggregate(OperationPtr source, ProjectionList projectors)
-        : Source(source->minPhase(), "Aggregate")
+        : OperationBase(source->minPhase(), "Aggregate")
         , source_(std::move(source))
         , projectors_(std::move(projectors)) {}
 
@@ -115,7 +114,7 @@ class Aggregate : public Source, public Record {
 
         if (ctx.phase == first_phase_) {
             auto item = ExplanationItem()
-                            .line("{} (store, {} projections)", fullName(), projectors_.size())
+                            .line("{} (store, {} projections)", name(), projectors_.size())
                             .child(source);
 
             if (hasSubscriber(ctx.phase, ctx.requester)) {
@@ -128,7 +127,7 @@ class Aggregate : public Source, public Record {
 
         // phase > first_phase_
         if (hasSubscriber(ctx.phase, ctx.requester)) {
-            return ExplanationItem().line("{} (push stored)", fullName());
+            return ExplanationItem().line("{} (push stored)", name());
         }
 
         return {};

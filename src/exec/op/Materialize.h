@@ -2,14 +2,15 @@
 
 #include "core/verify.h"
 #include "exec/op/MemberSubscriber.h"
+#include "exec/op/OperationBase.h"
 #include "exec/op/Source.h"
 
 namespace lsql::exec {
 
-class Materialize : public Source {
+class Materialize : public Source, public OperationBase<Materialize> {
  public:
     Materialize(OperationPtr source)
-        : Source(source->minPhase(), "Materialize")
+        : OperationBase(source->minPhase(), "Materialize")
         , source_(std::move(source)) {}
 
     void push(int phase) override {
@@ -81,7 +82,7 @@ class Materialize : public Source {
         }
 
         if (ctx.phase == first_phase_) {
-            auto item = ExplanationItem().line("{} store passthrough", fullName()).child(source);
+            auto item = ExplanationItem().line("{} store passthrough", name()).child(source);
 
             if (hasSubscriber(ctx.phase, ctx.requester)) {
                 return item;
@@ -96,7 +97,7 @@ class Materialize : public Source {
             return {};
         }
 
-        return ExplanationItem().line("{} scan stored", fullName());
+        return ExplanationItem().line("{} scan stored", name());
     }
 
     OperationPtr source_;

@@ -1,13 +1,15 @@
 #pragma once
 
 #include "exec/op/Operation.h"
+#include <memory>
 
 namespace lsql::exec {
 
-class Source : public Operation {
+class Source : public virtual Operation {
  public:
-    using Operation::Operation;
+    virtual ~Source() = default;
 
+    // Push records for a given phase
     virtual void push(int phase) = 0;
 };
 

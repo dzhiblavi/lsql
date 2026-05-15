@@ -1,11 +1,11 @@
 #pragma once
 
-#include "exec/op/Operation.h"
+#include "exec/op/OperationBase.h"
 
 namespace lsql::exec {
 
-struct MockOperation : Operation {
-    MockOperation() : Operation(0, "MockOperation") {}
+struct MockOperation : OperationBase<MockOperation> {
+    MockOperation() : OperationBase(0, "MockOperation") {}
 
     ExplanationItem explain(ExplanationCtx /*ctx*/) const override { return {}; }
     void init(int out_phase) override { init_calls.push_back(out_phase); }

@@ -2,14 +2,14 @@
 
 #include "exec/expr/Expression.h"
 #include "exec/op/MemberSubscriber.h"
-#include "exec/op/Operation.h"
+#include "exec/op/OperationBase.h"
 
 namespace lsql::exec {
 
-class Filter : public Operation {
+class Filter : public OperationBase<Filter> {
  public:
     Filter(OperationPtr source, ExpressionPtr condition)
-        : Operation(source->minPhase(), "Filter")
+        : OperationBase(source->minPhase(), "Filter")
         , source_(std::move(source))
         , condition_(std::move(condition)) {}
 
@@ -38,7 +38,7 @@ class Filter : public Operation {
             return {};
         }
 
-        return ExplanationItem().line(fullName()).child(source);
+        return ExplanationItem().line(name()).child(source);
     }
 
     OperationPtr source_;

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "data/Log.h"
+#include "exec/Record.h"
+#include "exec/op/OperationBase.h"
 #include "exec/op/Source.h"
 #include "logs/log_types.h"
 
@@ -34,10 +36,10 @@ class LineRecord : public Record {
     std::unordered_map<std::string_view, std::string_view> kv_;
 };
 
-class Log : public Source {
+class Log : public Source, public OperationBase<Log> {
  public:
     Log(std::shared_ptr<data::Log> log, logs::LogType type)
-        : Source(0, "LogScan")
+        : OperationBase(0, "LogScan")
         , log_(std::move(log))
         , type_(type) {}
 
@@ -68,7 +70,7 @@ class Log : public Source {
             return {};
         }
 
-        return ExplanationItem().line("{} source: {}", fullName(), log_->describe());
+        return ExplanationItem().line("{} source: {}", name(), log_->describe());
     }
 
     std::shared_ptr<data::Log> log_;

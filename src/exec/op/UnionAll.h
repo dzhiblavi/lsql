@@ -2,19 +2,14 @@
 
 #include "core/verify.h"
 #include "exec/op/MemberSubscriber.h"
-#include "exec/op/Operation.h"
+#include "exec/op/OperationBase.h"
 
 namespace lsql::exec {
 
-class UnionAll : public Operation {
-    enum class State {
-        RunningBoth,  // both subscriptions active
-        RunningOne,   // only one subscription active (done_[I] == 0)
-    };
-
+class UnionAll : public OperationBase<UnionAll> {
  public:
     UnionAll(OperationPtr l, OperationPtr r)
-        : Operation(std::max(l->minPhase(), r->minPhase()), "UnionAll")
+        : OperationBase(std::max(l->minPhase(), r->minPhase()), "UnionAll")
         , l_(std::move(l))
         , r_(std::move(r)) {}
 
@@ -74,14 +69,14 @@ class UnionAll : public Operation {
             return {};
         }
 
-        return ExplanationItem().line(fullName()).child(l).child(r);
+        return ExplanationItem().line(name()).child(l).child(r);
     }
 
     OperationPtr l_;
     OperationPtr r_;
+    bool done_[2] = {false};
 
     std::mutex m_;
-    bool done_[2] = {false};
     MemberSubscriber<UnionAll, LockMixin> sub_l_{
         this,
         &UnionAll::consume<0>,

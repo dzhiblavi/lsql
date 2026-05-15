@@ -2,9 +2,8 @@
 
 #include "exec/expr/Expression.h"
 #include "exec/op/MemberSubscriber.h"
-#include "exec/op/Operation.h"
+#include "exec/op/OperationBase.h"
 
-#include <algorithm>
 #include <vector>
 
 namespace lsql::exec {
@@ -57,10 +56,11 @@ class ProjectionRecord : public Record {
     const bool has_all_ = false;
 };
 
-class Projection : public Operation, public std::enable_shared_from_this<Projection> {
+class Projection : public OperationBase<Projection>,
+                   public std::enable_shared_from_this<Projection> {
  public:
     Projection(OperationPtr source, ProjectionList projectors)
-        : Operation(source->minPhase(), "Projection")
+        : OperationBase(source->minPhase(), "Projection")
         , source_(std::move(source))
         , projectors_(buildProjectionMap(std::move(projectors))) {}
 
@@ -85,7 +85,7 @@ class Projection : public Operation, public std::enable_shared_from_this<Project
         }
 
         return ExplanationItem()
-            .line("{} ({} non-* projectors)", fullName(), projectors_.size())
+            .line("{} ({} non-* projectors)", name(), projectors_.size())
             .child(source);
     }
 
