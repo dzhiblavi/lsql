@@ -330,27 +330,27 @@ class ExecVisitor : public Visitor {
     }
 
     exec::OperationPtr popOperation() {
-        assert(!operations.empty());
+        verify(!operations.empty());
         auto top = operations.top();
         operations.pop();
         return top;
     }
 
     std::vector<exec::ExpressionPtr> expressionList(const ast::ExpressionList& list) {
-        assert(exprs.empty());
+        verify(exprs.empty());
         for (auto&& item : list) {
             item->visit(*this);
         }
-        assert(exprs.size() == list.size());
+        verify(exprs.size() == list.size());
         return std::move(exprs);
     }
 
     exec::ProjectionList projectorsList(const ast::SelectList& list) {
-        assert(projectors.empty());
+        verify(projectors.empty());
         for (auto&& item : list) {
             item->visit(*this);
         }
-        assert(projectors.size() == list.size());
+        verify(projectors.size() == list.size());
         return std::move(projectors);
     }
 

@@ -1,7 +1,7 @@
 #include "data/PagedFile.h"
+#include "core/verify.h"
 #include "util/PageSize.h"
 
-#include <cassert>
 #include <fcntl.h>
 #include <format>
 #include <sys/mman.h>
@@ -63,26 +63,25 @@ size_t NativePagedFile::pageCount() const {
 }
 
 std::shared_ptr<Page> NativePagedFile::page(size_t index) const {
-    assert(index * util::pageSize() < size());
+    verify(index * util::pageSize() < size());
 
     size_t offset = index * util::pageSize();
     size_t size = std::min(util::pageSize(), size_ - offset);
 
     void* addr = ::mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd_,
-                        offset);  // NOLINT
-    std::ignore = ::madvise(addr, size, MADV_SEQUENTIAL);
-
+                        offset);                // NOLINT
     if (addr == reinterpret_cast<void*>(-1)) {  // NOLINT
         throw std::runtime_error(
             std::format(
                 "failed to map a page {}: errno={}, error={}", index, errno, strerror(errno)));
     }
 
+    std::ignore = ::madvise(addr, size, MADV_SEQUENTIAL);
     return std::make_shared<MappedPage>(addr, size);
 }
 
 size_t NativePagedFile::read(size_t offset, std::span<char> dest) const {
-    assert(offset < size());
+    verify(offset < size());
 
     if (lseek(fd_, offset, SEEK_SET) == -1) {  // NOLINT
         throw std::runtime_error(

@@ -1,4 +1,5 @@
 #include "data/Page.h"
+#include "core/verify.h"
 
 #include <cassert>
 #include <sys/mman.h>
@@ -13,8 +14,8 @@ MappedPage::MappedPage(void* addr, size_t size) : addr_(addr), size_(size) {
 MappedPage::MappedPage(MappedPage&& rhs) noexcept
     : addr_(std::exchange(rhs.addr_, nullptr))
     , size_(std::exchange(rhs.size_, 0)) {
-    assert(addr_ != nullptr);
-    assert(size_ > 0);
+    verify(addr_ != nullptr);
+    verify(size_ > 0);
 }
 
 MappedPage& MappedPage::operator=(MappedPage&& rhs) noexcept {
@@ -36,7 +37,7 @@ MappedPage::~MappedPage() {
 }
 
 std::string_view MappedPage::data() const {
-    assert(addr_ != nullptr);
+    verify(addr_ != nullptr);
     return {static_cast<const char*>(addr_), size_};
 }
 

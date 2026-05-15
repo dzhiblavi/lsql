@@ -102,7 +102,7 @@ std::unique_ptr<sql::ast::Node> parseQuery(std::string maybe_path) {
         yyset_in(stdin, scanner);
     } else {
         fd = ::fopen(maybe_path.data(), "r");
-        assert(fd != nullptr);
+        verify(fd != nullptr);
         yyset_in(fd, scanner);
     }
 
