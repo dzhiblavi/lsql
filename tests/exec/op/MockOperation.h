@@ -5,7 +5,7 @@
 namespace lsql::exec {
 
 struct MockOperation : OperationBase<MockOperation> {
-    MockOperation() : OperationBase(0, "MockOperation") {}
+    MockOperation() : OperationBase(0) {}
 
     ExplanationItem explain(ExplanationCtx /*ctx*/) const override { return {}; }
     void init(int out_phase) override { init_calls.push_back(out_phase); }

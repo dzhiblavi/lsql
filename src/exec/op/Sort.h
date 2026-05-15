@@ -18,7 +18,7 @@ class Sort : public OperationBase<Sort>, public std::enable_shared_from_this<Sor
 
  public:
     Sort(OperationPtr source, bool desc, SortList sort_list)
-        : OperationBase(source->minPhase(), "Sort")
+        : OperationBase(source->minPhase())
         , source_(std::move(source))
         , desc_(desc)
         , sort_list_(std::move(sort_list)) {

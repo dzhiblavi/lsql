@@ -10,7 +10,7 @@ namespace lsql::exec {
 class Materialize : public Source, public OperationBase<Materialize> {
  public:
     Materialize(OperationPtr source)
-        : OperationBase(source->minPhase(), "Materialize")
+        : OperationBase(source->minPhase())
         , source_(std::move(source)) {}
 
     void push(int phase) override {

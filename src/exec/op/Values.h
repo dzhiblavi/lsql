@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core/verify.h"
 #include "exec/Record.h"
 #include "exec/op/OperationBase.h"
 #include "exec/op/Source.h"
@@ -31,9 +30,7 @@ class Values : public Source,
                public OperationBase<Values>,
                public std::enable_shared_from_this<Values> {
  public:
-    explicit Values(std::vector<Value> values)
-        : OperationBase(0, "Values")
-        , values_(std::move(values)) {}
+    explicit Values(std::vector<Value> values) : OperationBase(0), values_(std::move(values)) {}
 
     void push(int phase) override {
         for (const auto& value : values_) {

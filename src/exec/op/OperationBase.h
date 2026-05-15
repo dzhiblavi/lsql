@@ -6,19 +6,17 @@
 
 #include "exec/op/Operation.h"
 
+#include <rfl.hpp>
 #include <unordered_set>
 
 namespace lsql::exec {
 
 template <typename Self>
 class OperationBase : public virtual Operation {
-    using Subscribers = std::unordered_map<int, std::unordered_set<Subscriber*>>;
-
  public:
-    OperationBase(int min_out_phase, std::string_view name)
-        : min_out_phase_(min_out_phase)
-        , name_(name)
-        , prof_(prof::Profiler::registerOperation(this)) {}
+    explicit OperationBase(int min_out_phase)
+        : prof_(prof::Profiler::registerOperation(this))
+        , min_out_phase_(min_out_phase) {}
 
     // outbound operations call this method to receive records
     // idempotent
@@ -37,7 +35,11 @@ class OperationBase : public virtual Operation {
 
     int minPhase() const override { return min_out_phase_; }
     int maxPhase() const override { return max_out_phase_; }
-    std::string name() const override { return std::format("{} [id={}]", name_, uniq_id_); }
+
+    std::string name() const override {
+        auto class_name = rfl::type_name_t<Self>().name().substr(sizeof("lsql::exec::") - 1);
+        return std::format("{} [id={}]", class_name, uniq_id_);
+    }
 
  protected:
     // the way for downstream operations to ask for output on phase `out_phase`
@@ -75,20 +77,16 @@ class OperationBase : public virtual Operation {
         return active(phase);
     }
 
-    // the phase the result is available at
+ protected:
+    prof::OperationHandle prof_;
+
+ private:
+    using Subscribers = std::unordered_map<int, std::unordered_set<Subscriber*>>;
+
     const int min_out_phase_ = 0;
     const int uniq_id_ = util::uniqId();
-    const std::string_view name_;
-
- protected:
-    // the max out phase
     int max_out_phase_ = 0;
-
-    // global phase -> subscribers
     Subscribers subs_;
-
-    // profiler handle
-    prof::OperationHandle prof_;
 };
 
 }  // namespace lsql::exec

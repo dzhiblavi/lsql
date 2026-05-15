@@ -39,7 +39,7 @@ class LineRecord : public Record {
 class Log : public Source, public OperationBase<Log> {
  public:
     Log(std::shared_ptr<data::Log> log, logs::LogType type)
-        : OperationBase(0, "LogScan")
+        : OperationBase(0)
         , log_(std::move(log))
         , type_(type) {}
 

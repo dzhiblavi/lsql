@@ -9,7 +9,7 @@ namespace lsql::exec {
 class UnionAll : public OperationBase<UnionAll> {
  public:
     UnionAll(OperationPtr l, OperationPtr r)
-        : OperationBase(std::max(l->minPhase(), r->minPhase()), "UnionAll")
+        : OperationBase(std::max(l->minPhase(), r->minPhase()))
         , l_(std::move(l))
         , r_(std::move(r)) {}
 

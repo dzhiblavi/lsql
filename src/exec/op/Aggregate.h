@@ -12,7 +12,7 @@ namespace lsql::exec {
 class Aggregate : public Source, public OperationBase<Aggregate>, public Record {
  public:
     Aggregate(OperationPtr source, ProjectionList projectors)
-        : OperationBase(source->minPhase(), "Aggregate")
+        : OperationBase(source->minPhase())
         , source_(std::move(source))
         , projectors_(std::move(projectors)) {}
 

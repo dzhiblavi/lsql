@@ -9,7 +9,7 @@ namespace lsql::exec {
 class Filter : public OperationBase<Filter> {
  public:
     Filter(OperationPtr source, ExpressionPtr condition)
-        : OperationBase(source->minPhase(), "Filter")
+        : OperationBase(source->minPhase())
         , source_(std::move(source))
         , condition_(std::move(condition)) {}
 

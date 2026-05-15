@@ -60,7 +60,7 @@ class Projection : public OperationBase<Projection>,
                    public std::enable_shared_from_this<Projection> {
  public:
     Projection(OperationPtr source, ProjectionList projectors)
-        : OperationBase(source->minPhase(), "Projection")
+        : OperationBase(source->minPhase())
         , source_(std::move(source))
         , projectors_(buildProjectionMap(std::move(projectors))) {}
 
@@ -85,7 +85,7 @@ class Projection : public OperationBase<Projection>,
         }
 
         return ExplanationItem()
-            .line("{} ({} non-* projectors)", name(), projectors_.size())
+            .line("{} (*: {}, non-*: {})", name(), has_all_, projectors_.size())
             .child(source);
     }
 

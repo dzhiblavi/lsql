@@ -69,7 +69,7 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
 
  public:
     Group(OperationPtr source, ProjectionList glist, ProjectionList slist)
-        : OperationBase(source->minPhase(), "Group")
+        : OperationBase(source->minPhase())
         , source_(std::move(source))
         , glist_(std::move(glist))
         , slist_(std::move(slist)) {

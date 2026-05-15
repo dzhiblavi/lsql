@@ -18,7 +18,7 @@ class MergeSorted : public OperationBase<MergeSorted> {
 
  public:
     MergeSorted(OperationPtr l, OperationPtr r, SortList slist, bool desc)
-        : OperationBase(std::max(l->minPhase(), r->minPhase()), "MergeSorted")
+        : OperationBase(std::max(l->minPhase(), r->minPhase()))
         , l_(std::move(l))
         , r_(std::move(r))
         , slist_(std::move(slist))
