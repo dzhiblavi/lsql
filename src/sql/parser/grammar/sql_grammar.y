@@ -464,5 +464,5 @@ floating_list(L) ::= floating_list(A) TOKEN_COMMA TOKEN_FLOATING(I). {
 %syntax_error {
     const char* token_text = TOKEN.text;
     fprintf(stderr, "Syntax error at line near token: '%s'\n", token_text);
-    pCtx->has_error = 1;
+    pCtx->has_error = true;
 }

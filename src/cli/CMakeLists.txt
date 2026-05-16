@@ -26,7 +26,7 @@ target_link_libraries(
     lsql-util
     lsql-core
     lsql-parser
-    lsql-ast
+    lsql-sql-plan
     lsql-logs
 )
 

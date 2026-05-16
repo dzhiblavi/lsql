@@ -8,7 +8,7 @@ namespace lsql::sql::parse {
 
 struct Context {
     std::unique_ptr<ast::Node> root;
-    int has_error;
+    bool has_error = false;
 };
 
 }  // namespace lsql::sql::parse

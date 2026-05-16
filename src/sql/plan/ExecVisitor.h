@@ -34,9 +34,9 @@
 #include <stack>
 #include <vector>
 
-namespace lsql::sql::ast {
+namespace lsql::sql::plan {
 
-class ExecVisitor : public Visitor {
+class ExecVisitor : public ast::Visitor {
  public:
     logs::LogType getLogType(const data::PagedFile& file) {
         // TODO: this assumes the file starts with a line
@@ -47,7 +47,7 @@ class ExecVisitor : public Visitor {
         throw std::runtime_error("failed to detect log type");
     }
 
-    void visit(const FileReference& node) override {
+    void visit(const ast::FileReference& node) override {
         auto file = data::NativePagedFile::open(node.path);
 
         auto op =
@@ -57,7 +57,7 @@ class ExecVisitor : public Visitor {
         pushOperation(op);
     }
 
-    void visit(const FileIntervalReference& node) override {
+    void visit(const ast::FileIntervalReference& node) override {
         auto from = timestampFromString(node.ts_from, TimeFormat::ISO8601);
         auto to = from + node.interval;
 
@@ -78,17 +78,17 @@ class ExecVisitor : public Visitor {
         pushOperation(op);
     }
 
-    void visit(const Limit& node) override {
+    void visit(const ast::Limit& node) override {
         node.source->visit(*this);
         pushOperation(exec::limit(popOperation(), node.limit));
     }
 
-    void visit(const SelectStatement& node) override {
+    void visit(const ast::SelectStatement& node) override {
         node.source->visit(*this);
         auto list = projectorsList(*node.select_list);
 
         if (std::ranges::any_of(*node.select_list, [](const std::unique_ptr<ast::SelectItem>& x) {
-                return x->expr && x->expr->type() == ExpressionType::Group;
+                return x->expr && x->expr->type() == ast::ExpressionType::Group;
             })) {
             auto op = exec::aggregate(popOperation(), std::move(list));
             sources.push_back(op);
@@ -98,7 +98,7 @@ class ExecVisitor : public Visitor {
         }
     }
 
-    void visit(const GroupBySelect& node) override {
+    void visit(const ast::GroupBySelect& node) override {
         node.source->visit(*this);
         pushOperation(
             exec::group(
@@ -107,14 +107,14 @@ class ExecVisitor : public Visitor {
                 projectorsList(*node.select_list)));
     }
 
-    void visit(const OrderBySelect& node) override {
+    void visit(const ast::OrderBySelect& node) override {
         node.source->visit(*this);
         pushOperation(
             exec::sort(
                 popOperation(), expressionList(*node.order_by->order_list), node.order_by->desc));
     }
 
-    void visit(const UnionAll& node) override {
+    void visit(const ast::UnionAll& node) override {
         node.l->visit(*this);
         auto l = popOperation();
         node.r->visit(*this);
@@ -123,7 +123,7 @@ class ExecVisitor : public Visitor {
         pushOperation(exec::unionAll(l, r));
     }
 
-    void visit(const UnionAllSortedBy& node) override {
+    void visit(const ast::UnionAllSortedBy& node) override {
         node.l->visit(*this);
         auto l = popOperation();
         node.r->visit(*this);
@@ -133,7 +133,7 @@ class ExecVisitor : public Visitor {
         pushOperation(exec::mergeSorted(l, r, std::move(slist), node.desc));
     }
 
-    void visit(const AdhocRelation& node) override {
+    void visit(const ast::AdhocRelation& node) override {
         std::vector<Value> values;
         values.reserve(node.values->size());
         for (auto&& node : *node.values) {
@@ -145,7 +145,7 @@ class ExecVisitor : public Visitor {
         pushOperation(op);
     }
 
-    void visit(const BinaryExpression& e) override {
+    void visit(const ast::BinaryExpression& e) override {
         e.l->visit(*this);
         e.r->visit(*this);
         auto r = popExpression();
@@ -153,17 +153,17 @@ class ExecVisitor : public Visitor {
 
         auto expr = [&] -> exec::ExpressionPtr {
             switch (e.bin_type) {
-                case BinExpressionType::Equal:
+                case ast::BinExpressionType::Equal:
                     return std::make_shared<exec::BinaryExpression<exec::EqualOp>>(
                         l, r, l->valueType(), r->valueType());
-                case BinExpressionType::NotEqual:
+                case ast::BinExpressionType::NotEqual:
                     return std::make_shared<exec::BinaryExpression<exec::NotEqualOp>>(
                         l, r, l->valueType(), r->valueType());
-                case BinExpressionType::And:
+                case ast::BinExpressionType::And:
                     return std::make_shared<exec::BinaryExpression<exec::AndOp>>(l, r);
-                case BinExpressionType::Or:
+                case ast::BinExpressionType::Or:
                     return std::make_shared<exec::BinaryExpression<exec::OrOp>>(l, r);
-                case BinExpressionType::Divide:
+                case ast::BinExpressionType::Divide:
                     return std::make_shared<exec::BinaryExpression<exec::DivideOp>>(
                         l, r, e.valueType());
             }
@@ -172,13 +172,13 @@ class ExecVisitor : public Visitor {
         exprs.push_back(expr);
     }
 
-    void visit(const UnaryExpression& e) override {
+    void visit(const ast::UnaryExpression& e) override {
         e.a->visit(*this);
         auto arg = popExpression();
 
         auto expr = [&] -> exec::ExpressionPtr {
             switch (e.un_type) {
-                case UnaryExpressionType::BooleanNegate:
+                case ast::UnaryExpressionType::BooleanNegate:
                     return std::make_shared<exec::UnaryExpression<exec::BooleanNegationOp>>(arg);
             }
         }();
@@ -186,29 +186,29 @@ class ExecVisitor : public Visitor {
         exprs.push_back(expr);
     }
 
-    void visit(const LikeExpression& e) override {
+    void visit(const ast::LikeExpression& e) override {
         e.a->visit(*this);
         exprs.push_back(
             std::make_shared<exec::UnaryExpression<exec::LikeOp>>(popExpression(), e.regex));
     }
 
-    void visit(const RSubstrExpression& e) override {
+    void visit(const ast::RSubstrExpression& e) override {
         e.arg->visit(*this);
         exprs.push_back(
             std::make_shared<exec::UnaryExpression<exec::RSubstrOp>>(popExpression(), e.regex));
     }
 
-    void visit(const CoalesceExpression& e) override {
+    void visit(const ast::CoalesceExpression& e) override {
         exprs.push_back(std::make_shared<exec::Coalesce>(expressionList(*e.values)));
     }
 
-    void visit(const IdentifierExpression& e) override {
+    void visit(const ast::IdentifierExpression& e) override {
         exprs.push_back(std::make_shared<exec::IdentifierExpression>(e.id));
     }
 
-    void visit(const ValueExpression& e) override { exprs.push_back(getExpression(e)); }
+    void visit(const ast::ValueExpression& e) override { exprs.push_back(getExpression(e)); }
 
-    std::shared_ptr<exec::ValueExpression> getExpression(const ValueExpression& e) {
+    std::shared_ptr<exec::ValueExpression> getExpression(const ast::ValueExpression& e) {
         switch (e.valueType()) {
             case ValueType::String:
                 return std::make_shared<exec::ValueExpression>(
@@ -226,7 +226,7 @@ class ExecVisitor : public Visitor {
         }
     }
 
-    void visit(const CastExpression& e) override {
+    void visit(const ast::CastExpression& e) override {
         e.expr->visit(*this);
         auto arg = popExpression();
 
@@ -235,21 +235,21 @@ class ExecVisitor : public Visitor {
                 arg, arg->valueType(), e.valueType()));
     }
 
-    void visit(const UnaryAggregateExpression& e) override {
+    void visit(const ast::UnaryAggregateExpression& e) override {
         e.condition->visit(*this);
         auto arg = popExpression();
 
         auto expr = [&] -> exec::ExpressionPtr {
             switch (e.type) {
-                case UnaryAggregateType::Count:
+                case ast::UnaryAggregateType::Count:
                     return std::make_shared<exec::UnaryAggregateExpression<exec::CountOp>>(arg);
-                case UnaryAggregateType::Min:
+                case ast::UnaryAggregateType::Min:
                     return std::make_shared<exec::UnaryAggregateExpression<exec::MinOp>>(
                         arg, e.valueType());
-                case UnaryAggregateType::Max:
+                case ast::UnaryAggregateType::Max:
                     return std::make_shared<exec::UnaryAggregateExpression<exec::MaxOp>>(
                         arg, e.valueType());
-                case UnaryAggregateType::Sum:
+                case ast::UnaryAggregateType::Sum:
                     return std::make_shared<exec::UnaryAggregateExpression<exec::SumOp>>(
                         arg, e.valueType());
             }
@@ -258,7 +258,7 @@ class ExecVisitor : public Visitor {
         exprs.push_back(expr);
     }
 
-    void visit(const Where& w) override {
+    void visit(const ast::Where& w) override {
         w.source->visit(*this);
         w.expr->visit(*this);
 
@@ -269,7 +269,7 @@ class ExecVisitor : public Visitor {
         pushOperation(exec::filter(popOperation(), popExpression()));
     }
 
-    void visit(const InExpression& e) override {
+    void visit(const ast::InExpression& e) override {
         auto source = popOperation();
 
         e.left->visit(*this);
@@ -280,7 +280,7 @@ class ExecVisitor : public Visitor {
         pushOperation(exec::in(source, match, left));
     }
 
-    void visit(const PercentileExpression& e) override {
+    void visit(const ast::PercentileExpression& e) override {
         e.value->visit(*this);
 
         exprs.push_back(
@@ -288,7 +288,7 @@ class ExecVisitor : public Visitor {
                 popExpression(), *e.percentiles, e.value->valueType()));
     }
 
-    void visit(const SelectItem& e) override {
+    void visit(const ast::SelectItem& e) override {
         if (e.expr == nullptr) {  // check *
             projectors.push_back(std::make_unique<exec::Projector>(e.name, nullptr));
         } else {
@@ -297,12 +297,12 @@ class ExecVisitor : public Visitor {
         }
     }
 
-    void visit(const NamedRelation& e) override {
+    void visit(const ast::NamedRelation& e) override {
         e.relation->visit(*this);
         named_ops[e.name] = popOperation();
     }
 
-    void visit(const NamedRelationReference& e) override {
+    void visit(const ast::NamedRelationReference& e) override {
         if (!named_ops.contains(e.name)) {
             throw std::runtime_error(std::format("no such named relation {}", e.name));
         }
@@ -310,14 +310,14 @@ class ExecVisitor : public Visitor {
         pushOperation(named_ops[e.name]);
     }
 
-    void visit(const MaterializedRelation& e) override {
+    void visit(const ast::MaterializedRelation& e) override {
         e.relation->visit(*this);
         auto op = exec::materialize(popOperation());
         pushOperation(op);
         sources.push_back(op);
     }
 
-    void visit(const Program& e) override {
+    void visit(const ast::Program& e) override {
         for (auto&& statement : *e.statements) {
             statement->visit(*this);
         }
@@ -356,6 +356,9 @@ class ExecVisitor : public Visitor {
 
     void pushOperation(exec::OperationPtr op) { operations.push(op); }
 
+    auto result() && { return std::make_pair(std::move(sources), std::move(operations)); }
+
+ private:
     std::unordered_map<std::string, exec::OperationPtr> named_ops;
     exec::ProjectionList projectors;
     std::vector<exec::ExpressionPtr> exprs;
@@ -364,4 +367,4 @@ class ExecVisitor : public Visitor {
     std::stack<exec::OperationPtr> operations;
 };
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::sql::plan

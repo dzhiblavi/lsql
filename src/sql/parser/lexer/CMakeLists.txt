@@ -10,7 +10,7 @@ set_source_files_properties(
 
 add_custom_command(
     OUTPUT ${LEXER_OUTPUT_SOURCE_FILE} ${LEXER_OUTPUT_HEADER_FILE}  # ← List BOTH outputs
-    COMMAND flex
+    COMMAND reflex --flex
         --header-file=${LEXER_OUTPUT_HEADER_FILE}
         --outfile=${LEXER_OUTPUT_SOURCE_FILE}
         ${LEXER_SOURCE_FILE}
@@ -26,7 +26,7 @@ add_custom_target(lsql-parser-lexer-generate
 )
 
 add_library(lsql-parser-lexer STATIC)
-target_link_libraries(lsql-parser-lexer PUBLIC lsql-parser-grammar)
+target_link_libraries(lsql-parser-lexer PUBLIC lsql-parser-grammar ReflexLibStatic)
 target_sources(lsql-parser-lexer PRIVATE ${LEXER_OUTPUT_SOURCE_FILE})
 target_include_directories(lsql-parser-lexer INTERFACE ${CMAKE_BINARY_DIR}/src)
 

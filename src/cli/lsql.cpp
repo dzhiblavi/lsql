@@ -1,16 +1,17 @@
 #include "exec/op/Operation.h"
-#include "sql/ast/ExecVisitor.h"
-#include "sql/parser/Context.h"
+#include "exec/prof/Profiler.h"
+#include "sql/parser/parse.h"
+#include "sql/plan/plan.h"
 #include "util/ThreadPool.h"
 
-#include "sql/parser/grammar/parse.h"
-#include "sql/parser/lexer/tokenize.h"
-
-#include <latch>
 #include <llog/load.h>
 #include <llog/log.h>
+
 #include <magic_enum/magic_enum.hpp>
 #include <tclap/CmdLine.h>
+
+#include <fstream>
+#include <latch>
 
 namespace lsql {
 
@@ -93,42 +94,17 @@ bool parseArgs(std::span<const char*> argv) {
 }
 
 std::unique_ptr<sql::ast::Node> parseQuery(std::string maybe_path) {
-    // Initialize Flex scanner
-    void* scanner = nullptr;
-    yylex_init(&scanner);
-    FILE* fd = nullptr;
+    std::ifstream ifs;
+    std::istream* is = [&] -> std::istream* {
+        if (maybe_path.empty()) {
+            return &std::cin;
+        } else {
+            ifs.open(maybe_path.c_str());
+            return &ifs;
+        }
+    }();
 
-    if (maybe_path.empty()) {
-        yyset_in(stdin, scanner);
-    } else {
-        fd = ::fopen(maybe_path.data(), "r");
-        verify(fd != nullptr);
-        yyset_in(fd, scanner);
-    }
-
-    // Initialize Lemon parser
-    sql::parse::Context ctx = {nullptr, 0};
-    void* parser = ParseAlloc(malloc);
-
-    sql::parse::setParserContext(parser, &ctx);
-
-    yylex(scanner);
-    Parse(parser, 0, {.code = 0, .text = "", .length = 0}, &ctx);
-
-    /* Cleanup */
-    yylex_destroy(scanner);
-    ParseFree(parser, free);
-
-    if (fd != nullptr) {
-        ::fclose(fd);
-    }
-
-    if (ctx.has_error) {
-        throw std::runtime_error("parsing failed");
-    }
-
-    assert(ctx.root);
-    return std::move(ctx.root);
+    return sql::parse::parse(*is);
 }
 
 void printRecordTSKV(const exec::Record::values_t& values, std::stringstream& out) {
@@ -293,6 +269,7 @@ void main(std::span<const char*> argv) {
 
     llog::info("parsing the query");
     auto root = parseQuery(sql_file_arg.getValue());
+    verify(root != nullptr);
 
     std::optional<exec::prof::Profiler> profiler;
     if (profile_arg.getValue()) {
@@ -303,17 +280,13 @@ void main(std::span<const char*> argv) {
     }
 
     llog::info("building operations");
-    sql::ast::ExecVisitor exec_visitor;
-    root->visit(exec_visitor);
-
-    auto sources = std::move(exec_visitor.sources);
+    auto [sources, top_operations] = sql::plan::plan(*root);
 
     llog::info("collecting print operations");
     std::vector<std::shared_ptr<Print>> ops;
-    while (!exec_visitor.operations.empty()) {
-        ops.push_back(std::make_shared<Print>(exec_visitor.popOperation(), *format));
+    for (auto&& op : top_operations) {
+        ops.push_back(std::make_shared<Print>(op, *format));
     }
-    std::ranges::reverse(ops);
 
     llog::info("determining phase count");
     int max_phase = 0;
