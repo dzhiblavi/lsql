@@ -1,15 +1,7 @@
 #pragma once
 
-#include "core/time_formats.h"
-#include "exec/expr/BinaryExpression.h"
-#include "exec/expr/Coalesce.h"
-#include "exec/expr/Expression.h"
-#include "exec/expr/IdentifierExpression.h"
-#include "exec/expr/UnaryAggregateExpression.h"
-#include "exec/expr/UnaryExpression.h"
-#include "exec/expr/ValueExpression.h"
-#include "exec/op/In.h"
-#include "logs/SearchTimestamp.h"
+#include "sql/plan/FileSourceFunc.h"
+
 #include "sql/ast/BinExpression.h"
 #include "sql/ast/FileReference.h"
 #include "sql/ast/Program.h"
@@ -18,11 +10,19 @@
 #include "sql/ast/UnaryExpression.h"
 #include "sql/ast/Visitor.h"
 
+#include "exec/expr/BinaryExpression.h"
+#include "exec/expr/Coalesce.h"
+#include "exec/expr/Expression.h"
+#include "exec/expr/IdentifierExpression.h"
+#include "exec/expr/UnaryAggregateExpression.h"
+#include "exec/expr/UnaryExpression.h"
+#include "exec/expr/ValueExpression.h"
+
 #include "exec/op/Aggregate.h"
 #include "exec/op/Filter.h"
 #include "exec/op/Group.h"
+#include "exec/op/In.h"
 #include "exec/op/Limit.h"
-#include "exec/op/Log.h"
 #include "exec/op/Materialize.h"
 #include "exec/op/MergeSorted.h"
 #include "exec/op/Projection.h"
@@ -38,41 +38,22 @@ namespace lsql::sql::plan {
 
 class ExecVisitor : public ast::Visitor {
  public:
-    logs::LogType getLogType(const data::PagedFile& file) {
-        // TODO: this assumes the file starts with a line
-        if (auto type = logs::detectLogType(file.page(0)->data())) {
-            return *type;
-        }
-
-        throw std::runtime_error("failed to detect log type");
-    }
+    explicit ExecVisitor(GetFileSourceFuncType get_file_source_func)
+        : get_file_source_func_(std::move(get_file_source_func)) {}
 
     void visit(const ast::FileReference& node) override {
-        auto file = data::NativePagedFile::open(node.path);
-
-        auto op =
-            std::make_shared<exec::Log>(std::make_shared<data::PagedLog>(file), getLogType(*file));
-
+        auto op = get_file_source_func_(node.path, std::nullopt);
         sources.push_back(op);
         pushOperation(op);
     }
 
     void visit(const ast::FileIntervalReference& node) override {
-        auto from = timestampFromString(node.ts_from, TimeFormat::ISO8601);
-        auto to = from + node.interval;
-
-        auto file = data::NativePagedFile::open(node.path);
-        auto log_type = getLogType(*file);
-        auto time_format = logs::timeFormat(log_type);
-        auto from_pos = logs::lowerBoundLine(*file, from, time_format);
-        auto to_pos = logs::upperBoundLine(*file, to, time_format);
-
-        if (from_pos == std::string::npos || to_pos <= from_pos) {
-            from_pos = to_pos = 0;
-        }
-
-        auto op = std::make_shared<exec::Log>(
-            std::make_shared<data::PagedLog>(file, from_pos, to_pos), log_type);
+        auto op = get_file_source_func_(
+            node.path,
+            TimeRange{
+                .ts_from = node.ts_from,
+                .interval_s = node.interval,
+            });
 
         sources.push_back(op);
         pushOperation(op);
@@ -359,6 +340,8 @@ class ExecVisitor : public ast::Visitor {
     auto result() && { return std::make_pair(std::move(sources), std::move(operations)); }
 
  private:
+    GetFileSourceFuncType get_file_source_func_;
+
     std::unordered_map<std::string, exec::OperationPtr> named_ops;
     exec::ProjectionList projectors;
     std::vector<exec::ExpressionPtr> exprs;

@@ -4,8 +4,8 @@
 
 namespace lsql::sql::plan {
 
-Plan plan(const ast::Node& root) {
-    ExecVisitor exec_visitor;
+Plan plan(const ast::Node& root, GetFileSourceFuncType get_file_source) {
+    ExecVisitor exec_visitor(get_file_source);
     root.visit(exec_visitor);
 
     auto [sources, operations] = std::move(exec_visitor).result();

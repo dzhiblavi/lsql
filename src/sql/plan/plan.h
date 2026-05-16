@@ -4,6 +4,7 @@
 #include "exec/op/Source.h"
 
 #include "sql/ast/Node.h"
+#include "sql/plan/FileSourceFunc.h"
 
 #include <vector>
 
@@ -14,6 +15,6 @@ struct Plan {
     std::vector<exec::OperationPtr> top_operations;
 };
 
-Plan plan(const ast::Node& root);
+Plan plan(const ast::Node& root, GetFileSourceFuncType get_file_source = defaultFileSourceFunc());
 
 }  // namespace lsql::sql::plan
