@@ -25,10 +25,9 @@ include(./cmake/thirdparty/reflect-cpp.cmake)
 include(./cmake/CompileOptions.cmake)
 include(./cmake/Werror.cmake)
 
-include(./cmake/Testing.cmake)
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 add_subdirectory(src)
 
+include(./cmake/Testing.cmake)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(tests)

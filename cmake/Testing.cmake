@@ -2,11 +2,12 @@ option(LOGSQL_BUILD_TESTS "Build tests" ON)
 
 if(LOGSQL_BUILD_TESTS)
     if (PROJECT_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+        set(BUILD_TESTING ON)
+        include(CTest)
         enable_testing()
     endif()
 
-    function(add_test path)
-        include(CTest)
+    function(add_unit_test path)
         include(Catch)
         find_package(Catch2 CONFIG REQUIRED)
 
@@ -20,10 +21,10 @@ if(LOGSQL_BUILD_TESTS)
 
         catch_discover_tests(${name} DISCOVERY_MODE PRE_TEST WORKING_DIRECTORY
                              ${CMAKE_CURRENT_SOURCE_DIR})
-    endfunction(add_test)
+    endfunction(add_unit_test)
 
 else()
-    function(add_test path)
+    function(add_unit_test path)
         # nothing
     endfunction()
 endif()
