@@ -1,15 +1,40 @@
+# arguments: CLI, TEST_DIR
+
+# check query file
+set(QUERY_FILE ${TEST_DIR}/query.sql)
+if(NOT EXISTS ${QUERY_FILE})
+    message(FATAL_ERROR "Query file not found: ${QUERY_FILE}")
+endif()
+
+# check expected output file
+set(EXPECTED_OUTPUT_FILE ${TEST_DIR}/output.txt)
+if(NOT EXISTS ${EXPECTED_OUTPUT_FILE})
+    message(FATAL_ERROR "Expected output file not found: ${EXPECTED_OUTPUT_FILE}")
+endif()
+
+file(READ ${EXPECTED_OUTPUT_FILE} expected_output)
+
+# run prepare.py
+set(PREPARE_SCRIPT ${TEST_DIR}/prepare.py)
+if(EXISTS ${PREPARE_SCRIPT})
+    execute_process(
+        COMMAND python3 ${PREPARE_SCRIPT}
+        RESULT_VARIABLE py_result
+        OUTPUT_VARIABLE py_output
+        ERROR_VARIABLE py_error
+    )
+
+    if(NOT py_result EQUAL 0)
+        message(FATAL_ERROR "Python generator failed: ${py_error}: ${py_output}")
+    endif()
+endif()
+
 execute_process(
-    COMMAND ${CLI} ${QUERY}
+    COMMAND ${CLI} ${QUERY_FILE}
     OUTPUT_VARIABLE actual_output
     ERROR_VARIABLE error_output
     RESULT_VARIABLE exit_code
 )
-
-if(NOT exit_code EQUAL 0)
-    message(FATAL_ERROR "CLI failed with exit code ${exit_code}\nError: ${error_output}")
-endif()
-
-file(READ ${EXPECTED} expected_output)
 
 function(normalize_output var output)
     string(REGEX REPLACE "\r\n" "\n" output "${output}")
