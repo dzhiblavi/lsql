@@ -1,2 +1,4 @@
 include(./cmake/add_sql_test.cmake)
-include(./cmake/discover_all.cmake)
+
+add_sql_test(test_aggregate)
+add_sql_test(test_group_by)

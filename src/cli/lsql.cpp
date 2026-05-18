@@ -137,7 +137,7 @@ void printRecordJSON(const exec::Record::values_t& values, std::stringstream& ou
         out << std::format("\"{}\":{}", k, toJSONStr(v)) << ',';
     }
     out.seekp(-1, std::ios_base::end);  // remove last comma
-    out << "}";
+    out << "}\n";
 }
 
 class Print : public exec::Subscriber {

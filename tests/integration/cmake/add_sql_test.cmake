@@ -5,12 +5,14 @@ function(add_sql_test TEST_DIR)
 
     set(TEST_DIR_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/${TEST_DIR}")
     set(TEST_DIR_BINARY "${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIR}")
+    set(COMPARE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compare_json.py")
 
     add_test(
         NAME ${TEST_NAME}
         COMMAND ${CMAKE_COMMAND}
             -DCLI=$<TARGET_FILE:lsql>
             -DTEST_DIR=${TEST_DIR_BINARY}
+            -DCOMPARE_SCRIPT=${COMPARE_SCRIPT}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/run_compare_test.cmake
     )
 

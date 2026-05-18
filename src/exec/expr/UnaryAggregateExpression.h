@@ -68,28 +68,15 @@ class UnaryAggregateExpression : public Expression {
 };
 
 struct CountOp {
-    using State = Value;
+    using State = int64_t;
 
     void update(State* curr, const Value& condition) const {
-        if (*curr == null) {
-            *curr = int64_t(0);
+        if (condition.get<bool>()) {
+            ++*curr;
         }
-
-        if (!condition.get<bool>()) {
-            return;
-        }
-
-        *curr = curr->get<int64_t>() + 1;
     }
 
-    Value result(const State* state) const {
-        if (*state == null) {
-            return int64_t(0);
-        }
-
-        return *state;
-    }
-
+    Value result(const State* state) const { return *state; }
     ValueType argType() const { return ValueType::Boolean; }
     ValueType valueType() const { return ValueType::Integer; }
 };
