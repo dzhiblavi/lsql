@@ -3,7 +3,7 @@
 #include "core/ValueType.h"
 #include "interface/sql/ast/Expression.h"
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 enum class UnaryExpressionType {
     BooleanNegate,
@@ -24,4 +24,4 @@ class UnaryExpression : public Expression {
     std::unique_ptr<Expression> a;
 };
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast

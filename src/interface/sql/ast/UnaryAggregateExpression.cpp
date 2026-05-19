@@ -2,7 +2,7 @@
 
 #include "core/ValueType.h"
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 ValueType unaryAggregateResultType(UnaryAggregateType type, ValueType a) {
     switch (type) {
@@ -17,4 +17,4 @@ ValueType unaryAggregateResultType(UnaryAggregateType type, ValueType a) {
     }
 }
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast

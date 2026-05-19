@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 class FileReference : public Node {
  public:
@@ -30,4 +30,4 @@ class FileIntervalReference : public Node {
     int interval;
 };
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast

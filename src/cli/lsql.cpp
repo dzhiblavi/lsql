@@ -1,7 +1,6 @@
 #include "exec/op/Operation.h"
 #include "exec/prof/Profiler.h"
-#include "interface/sql/parser/parse.h"
-#include "interface/sql/plan/plan.h"
+#include "interface/sql/Interface.h"
 #include "util/ThreadPool.h"
 
 #include <llog/load.h>
@@ -93,7 +92,7 @@ bool parseArgs(std::span<const char*> argv) {
     }
 }
 
-std::unique_ptr<sql::ast::Node> parseQuery(std::string maybe_path) {
+iface::Plan makePlan(std::string maybe_path) {
     std::ifstream ifs;
     std::istream* is = [&] -> std::istream* {
         if (maybe_path.empty()) {
@@ -104,7 +103,54 @@ std::unique_ptr<sql::ast::Node> parseQuery(std::string maybe_path) {
         }
     }();
 
-    return sql::parse::parse(*is);
+    iface::sql::Interface iface(is, iface::sql::defaultFileSourceFunc());
+    return iface.plan();
+}
+
+std::string escapeForJSON(const std::string& input) {
+    std::string output;
+    output.reserve(input.size() * 1.2);  // Pre-allocate some extra space
+
+    for (char c : input) {
+        switch (c) {
+            case '"':
+                output += "\\\"";
+                break;
+            case '\\':
+                output += "\\\\";
+                break;
+            case '/':
+                output += "\\/";
+                break;
+            case '\b':
+                output += "\\b";
+                break;
+            case '\f':
+                output += "\\f";
+                break;
+            case '\n':
+                output += "\\n";
+                break;
+            case '\r':
+                output += "\\r";
+                break;
+            case '\t':
+                output += "\\t";
+                break;
+            default:
+                if (static_cast<unsigned char>(c) < 0x20) {
+                    // Unicode escape for control characters
+                    char buf[8];
+                    snprintf(buf, sizeof(buf), "\\u00%02X", static_cast<unsigned char>(c));
+                    output += buf;
+                } else {
+                    output += c;
+                }
+                break;
+        }
+    }
+
+    return output;
 }
 
 void printRecordTSKV(const exec::Record::values_t& values, std::stringstream& out) {
@@ -121,7 +167,9 @@ std::string toJSONStr(const Value& v) {
             [](bool x) -> std::string { return x ? "true" : "false"; },
             [](int64_t x) -> std::string { return std::to_string(x); },
             [](float x) -> std::string { return std::to_string(x); },
-            [](const std::string& x) -> std::string { return std::format("\"{}\"", x); },
+            [](const std::string& x) -> std::string {
+                return std::format("\"{}\"", escapeForJSON(x));
+            },
         },
         v);
 }
@@ -267,10 +315,6 @@ void main(std::span<const char*> argv) {
             std::format("invalid value for format: {}", format_arg.getValue()));
     }
 
-    llog::info("parsing the query");
-    auto root = parseQuery(sql_file_arg.getValue());
-    verify(root != nullptr);
-
     std::optional<exec::prof::Profiler> profiler;
     if (profile_arg.getValue()) {
         llog::info("enabling profiling [threads={}]", threads_arg.getValue());
@@ -279,8 +323,8 @@ void main(std::span<const char*> argv) {
         llog::info("profiling disabled");
     }
 
-    llog::info("building operations");
-    auto [sources, top_operations] = sql::plan::plan(*root);
+    llog::info("parsing the query and building operations");
+    auto [sources, top_operations] = makePlan(sql_file_arg.getValue());
 
     llog::info("collecting print operations");
     std::vector<std::shared_ptr<Print>> ops;

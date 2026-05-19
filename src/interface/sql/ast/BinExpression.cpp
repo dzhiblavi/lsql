@@ -4,7 +4,7 @@
 #include <magic_enum/magic_enum.hpp>
 #include <stdexcept>
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 ValueType binExprResultType(BinExpressionType type, ValueType l, ValueType r) {
     switch (type) {
@@ -37,4 +37,4 @@ ValueType binExprResultType(BinExpressionType type, ValueType l, ValueType r) {
     }
 }
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast

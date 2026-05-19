@@ -1,13 +1,18 @@
-#include "interface/sql/plan/FileSourceFunc.h"
+#include "interface/sql/Interface.h"
+
+#include "interface/sql/ExecVisitor.h"
+#include "interface/sql/parser/parse.h"
 
 #include "data/Log.h"
 #include "data/PagedFile.h"
-#include "exec/op/Log.h"
+
 #include "logs/LogType.h"
 #include "logs/SearchTimestamp.h"
 #include "logs/log_types.h"
 
-namespace lsql::sql::plan {
+#include "exec/op/Log.h"
+
+namespace lsql::iface::sql {
 
 namespace {
 
@@ -56,4 +61,24 @@ GetFileSourceFuncType defaultFileSourceFunc() {
     return &getFileSource;
 }
 
-}  // namespace lsql::sql::plan
+Plan Interface::plan() const {
+    auto root = parse::parse(*query_in_);
+
+    ExecVisitor exec_visitor(get_file_source_func_);
+    root->visit(exec_visitor);
+    auto [sources, operations] = std::move(exec_visitor).result();
+
+    Plan plan;
+    plan.sources = std::move(sources);
+    plan.top_operations.reserve(operations.size());
+
+    while (!operations.empty()) {
+        plan.top_operations.push_back(std::move(operations.top()));
+        operations.pop();
+    }
+
+    std::ranges::reverse(plan.top_operations);
+    return plan;
+}
+
+}  // namespace lsql::iface::sql

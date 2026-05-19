@@ -1,6 +1,6 @@
 #pragma once
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 class Program;
 class NamedRelation;
@@ -63,4 +63,4 @@ class Visitor {
     virtual void visit(const AdhocRelation&) {}
 };
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast

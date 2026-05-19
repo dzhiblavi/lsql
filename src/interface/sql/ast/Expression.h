@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 class Expression : public sql::ast::Node {
  public:
@@ -133,4 +133,4 @@ class AdhocRelation : public Node {
     std::unique_ptr<std::vector<std::unique_ptr<ValueExpression>>> values;
 };
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast

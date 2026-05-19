@@ -1,6 +1,6 @@
-%token_type {lsql::sql::parse::Token}
-%default_type {lsql::sql::ast::Node*}
-%extra_argument {lsql::sql::parse::Context *pCtx}
+%token_type {lsql::iface::sql::parse::Token}
+%default_type {lsql::iface::sql::ast::Node*}
+%extra_argument {lsql::iface::sql::parse::Context *pCtx}
 
 %include {
     #include "interface/sql/parser/Token.h"
@@ -19,7 +19,7 @@
     #include <cstring>
     #include <vector>
 
-    namespace ast = lsql::sql::ast;
+    namespace ast = lsql::iface::sql::ast;
 }
 
 %token TOKEN_SELECT.

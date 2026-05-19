@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interface/sql/plan/FileSourceFunc.h"
+#include "interface/sql/Interface.h"
 
 #include "interface/sql/ast/BinExpression.h"
 #include "interface/sql/ast/FileReference.h"
@@ -34,7 +34,7 @@
 #include <stack>
 #include <vector>
 
-namespace lsql::sql::plan {
+namespace lsql::iface::sql {
 
 class ExecVisitor : public ast::Visitor {
  public:
@@ -350,4 +350,4 @@ class ExecVisitor : public ast::Visitor {
     std::stack<exec::OperationPtr> operations;
 };
 
-}  // namespace lsql::sql::plan
+}  // namespace lsql::iface::sql

@@ -3,7 +3,7 @@
 #include "core/ValueType.h"
 #include "interface/sql/ast/Expression.h"
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 enum class UnaryAggregateType {
     Count,
@@ -27,4 +27,4 @@ class UnaryAggregateExpression : public Expression {
     UnaryAggregateType type;
 };
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast

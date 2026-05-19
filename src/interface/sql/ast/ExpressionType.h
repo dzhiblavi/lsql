@@ -3,7 +3,7 @@
 #include <cassert>
 #include <stdexcept>
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 enum class ExpressionType {
     Row,
@@ -27,4 +27,4 @@ inline ExpressionType composed(ExpressionType a, ExpressionType b) {
     return a == ExpressionType::Const ? b : a;
 }
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast

@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 ValueType unaryExprResultType(UnaryExpressionType type, ValueType a) {
     switch (type) {
@@ -14,4 +14,4 @@ ValueType unaryExprResultType(UnaryExpressionType type, ValueType a) {
     }
 }
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast

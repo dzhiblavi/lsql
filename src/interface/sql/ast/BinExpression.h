@@ -3,7 +3,7 @@
 #include "core/ValueType.h"
 #include "interface/sql/ast/Expression.h"
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 enum class BinExpressionType {
     Equal,
@@ -33,4 +33,4 @@ class BinaryExpression : public Expression {
     std::unique_ptr<Expression> r;
 };
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast

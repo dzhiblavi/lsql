@@ -9,7 +9,7 @@
 
 #include "interface/sql/parser/lexer/lex.yy.h"
 
-namespace lsql::sql::parse {
+namespace lsql::iface::sql::parse {
 
 namespace {
 
@@ -18,7 +18,7 @@ class SQLFlexLexer : public yyFlexLexer {
     explicit SQLFlexLexer(std::istream* input) : yyFlexLexer(input) {}
 
     void setParser(void* parser) { m_parser = parser; }
-    void setParseContext(lsql::sql::parse::Context* ctx) { m_parse_context = ctx; }
+    void setParseContext(Context* ctx) { m_parse_context = ctx; }
 
     void run() {
         verify(m_parse_context);
@@ -30,7 +30,7 @@ class SQLFlexLexer : public yyFlexLexer {
                 continue;
             }
 
-            lsql::sql::parse::Token t{
+            Token t{
                 .code = token,
                 .text = strdup(YYText()),
             };
@@ -48,13 +48,13 @@ class SQLFlexLexer : public yyFlexLexer {
 
  private:
     void* m_parser = nullptr;
-    lsql::sql::parse::Context* m_parse_context = nullptr;
+    Context* m_parse_context = nullptr;
 };
 
 }  // namespace
 
 std::unique_ptr<ast::Node> parse(std::istream& is) {
-    sql::parse::Context ctx;
+    Context ctx;
     void* parser = ParseAlloc(malloc);
 
     SQLFlexLexer lexer(&is);
@@ -73,4 +73,4 @@ std::unique_ptr<ast::Node> parse(std::istream& is) {
     return std::move(ctx.root);
 }
 
-}  // namespace lsql::sql
+}  // namespace lsql::iface::sql::parse

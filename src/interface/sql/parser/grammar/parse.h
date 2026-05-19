@@ -7,6 +7,11 @@
 
 // Lemon parser functions (sql_grammar.cpp)
 void* ParseAlloc(void* (*mallocProc)(size_t));
+
 void ParseFree(void* pParser, void (*freeProc)(void*));
+
 void Parse(
-    void* yyp, int yymajor, lsql::sql::parse::Token yyminor, lsql::sql::parse::Context* pCtx);
+    void* yyp,
+    int yymajor,
+    lsql::iface::sql::parse::Token yyminor,
+    lsql::iface::sql::parse::Context* pCtx);

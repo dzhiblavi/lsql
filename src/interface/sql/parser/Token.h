@@ -2,11 +2,11 @@
 
 #include <cstddef>
 
-namespace lsql::sql::parse {
+namespace lsql::iface::sql::parse {
 
 struct Token {
     int code;
     const char* text;
 };
 
-}  // namespace lsql::sql::parse
+}  // namespace lsql::iface::sql::parse

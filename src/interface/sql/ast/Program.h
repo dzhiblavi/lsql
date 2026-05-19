@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 class NamedRelation : public Node {
  public:
@@ -57,4 +57,4 @@ class Program : public Node {
     std::unique_ptr<std::vector<std::unique_ptr<Node>>> statements;
 };
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast

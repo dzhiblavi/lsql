@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace lsql::sql::ast {
+namespace lsql::iface::sql::ast {
 
 class SelectItem : public Node {
  public:
@@ -110,4 +110,4 @@ class UnionAllSortedBy : public Node {
     std::unique_ptr<ExpressionList> slist;
 };
 
-}  // namespace lsql::sql::ast
+}  // namespace lsql::iface::sql::ast
