@@ -25,9 +25,9 @@ target_link_libraries(
     lsql-data
     lsql-util
     lsql-core
-    lsql-parser
-    lsql-sql-plan
     lsql-logs
+    lsql-interface-sql-parser
+    lsql-interface-sql-plan
 )
 
 target_link_options(lsql PRIVATE

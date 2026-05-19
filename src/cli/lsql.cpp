@@ -1,7 +1,7 @@
 #include "exec/op/Operation.h"
 #include "exec/prof/Profiler.h"
-#include "sql/parser/parse.h"
-#include "sql/plan/plan.h"
+#include "interface/sql/parser/parse.h"
+#include "interface/sql/plan/plan.h"
 #include "util/ThreadPool.h"
 
 #include <llog/load.h>
