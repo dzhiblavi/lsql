@@ -43,7 +43,6 @@ class SQLFlexLexer : public yyFlexLexer {
         }
 
         Parse(m_parser, 0, {.code = 0, .text = ""}, m_parse_context);
-        verify(m_parse_context->root != nullptr);
     }
 
  private:
@@ -53,7 +52,7 @@ class SQLFlexLexer : public yyFlexLexer {
 
 }  // namespace
 
-std::unique_ptr<ast::Node> parse(std::istream& is) {
+ast::Program parse(std::istream& is) {
     Context ctx;
     void* parser = ParseAlloc(malloc);
 
@@ -69,8 +68,7 @@ std::unique_ptr<ast::Node> parse(std::istream& is) {
         throw std::runtime_error("parsing failed");
     }
 
-    verify(ctx.root != nullptr);
-    return std::move(ctx.root);
+    return std::move(ctx.program);
 }
 
 }  // namespace lsql::iface::sql::parse

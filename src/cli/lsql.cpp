@@ -1,7 +1,15 @@
 #include "exec/op/Operation.h"
 #include "exec/prof/Profiler.h"
-#include "interface/sql/Interface.h"
 #include "util/ThreadPool.h"
+
+#include "interface/sql/ast/Stringifier.h"
+#include "interface/sql/bind/bind.h"
+#include "interface/sql/exec/plan.h"
+#include "interface/sql/parser/parse.h"
+
+#include "interface/sql/bind/Expressions.h"  // IWYU pragma: keep
+#include "interface/sql/bind/Relations.h"    // IWYU pragma: keep
+#include "interface/sql/bind/Statement.h"    // IWYU pragma: keep
 
 #include <llog/load.h>
 #include <llog/log.h>
@@ -92,7 +100,7 @@ bool parseArgs(std::span<const char*> argv) {
     }
 }
 
-iface::Plan makePlan(std::string maybe_path) {
+iface::sql::exe::Plan makePlan(std::string maybe_path) {
     std::ifstream ifs;
     std::istream* is = [&] -> std::istream* {
         if (maybe_path.empty()) {
@@ -103,54 +111,56 @@ iface::Plan makePlan(std::string maybe_path) {
         }
     }();
 
-    iface::sql::Interface iface(is, iface::sql::defaultFileSourceFunc());
-    return iface.plan();
+    auto program = iface::sql::parse::parse(*is);
+    if (false) {
+        std::cout << iface::sql::ast::Stringifier().print(program) << std::endl;
+    }
+    auto bind = iface::sql::bind::bind(std::move(program));
+    return iface::sql::exe::plan(std::move(bind));
 }
 
 std::string escapeForJSON(const std::string& input) {
-    std::string output;
-    output.reserve(input.size() * 1.2);  // Pre-allocate some extra space
+    std::ostringstream oss;
 
     for (char c : input) {
         switch (c) {
             case '"':
-                output += "\\\"";
+                oss << "\\\"";
                 break;
             case '\\':
-                output += "\\\\";
+                oss << "\\\\";
                 break;
             case '/':
-                output += "\\/";
+                oss << "\\/";
                 break;
             case '\b':
-                output += "\\b";
+                oss << "\\b";
                 break;
             case '\f':
-                output += "\\f";
+                oss << "\\f";
                 break;
             case '\n':
-                output += "\\n";
+                oss << "\\n";
                 break;
             case '\r':
-                output += "\\r";
+                oss << "\\r";
                 break;
             case '\t':
-                output += "\\t";
+                oss << "\\t";
                 break;
             default:
+                // Control characters (0x00-0x1F) should be escaped as \uXXXX
                 if (static_cast<unsigned char>(c) < 0x20) {
-                    // Unicode escape for control characters
-                    char buf[8];
-                    snprintf(buf, sizeof(buf), "\\u00%02X", static_cast<unsigned char>(c));
-                    output += buf;
+                    oss << "\\u00" << std::hex << std::uppercase
+                        << static_cast<int>(static_cast<unsigned char>(c));
                 } else {
-                    output += c;
+                    oss << c;
                 }
                 break;
         }
     }
 
-    return output;
+    return oss.str();
 }
 
 void printRecordTSKV(const exec::Record::values_t& values, std::stringstream& out) {
@@ -252,7 +262,7 @@ void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
                         source->push(phase);
                     }
                 } catch (const std::exception& e) {
-                    verify(false, "unhandled exception: {}", e.what());
+                    panic("unhandled exception: {}", e.what());
                 }
 
                 latch.count_down();

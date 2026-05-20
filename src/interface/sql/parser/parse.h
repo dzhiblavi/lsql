@@ -1,12 +1,11 @@
 #pragma once
 
-#include "interface/sql/ast/Node.h"
+#include "interface/sql/ast/Statement.h"
 
 #include <istream>
-#include <memory>
 
 namespace lsql::iface::sql::parse {
 
-std::unique_ptr<ast::Node> parse(std::istream& is);
+ast::Program parse(std::istream& is);
 
-}  // namespace lsql::iface::sql
+}  // namespace lsql::iface::sql::parse

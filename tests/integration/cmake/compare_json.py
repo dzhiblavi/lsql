@@ -1,40 +1,61 @@
-# compare two naked arrays of json (i.e. without '[]')
-
 import json
 import sys
 
 
 def try_unmarshal(s):
     try:
-        return json.loads(line)
+        return json.loads(s)
     except Exception as e:
-        print(f"failed to unmarshal line '{line}': {str(e)}")
+        print(f"failed to unmarshal line '{s}': {str(e)}")
         sys.exit(1)
 
 
-actual = []
+def read_block_json_file(f):
+    blocks = []
+    curr_block = []
 
-
-for line in sys.stdin:
-    line = line.strip()
-    if not line:
-        continue
-    actual.append(try_unmarshal(line))
-
-
-expected = []
-with open(sys.argv[1]) as f:
     for line in f:
-        expected.append(try_unmarshal(line))
+        line = line.strip()
+        if not line:
+            if curr_block:
+                blocks.append(curr_block)
+                curr_block = []
+            continue
+        curr_block.append(try_unmarshal(line))
+
+    if curr_block:
+        blocks.append(curr_block)
+
+    return blocks
 
 
-def sort_key(d):
-    return sorted(d.items())
+with open(sys.argv[1], "r") as f:
+    expected_blocks = read_block_json_file(f)
+actual_blocks = read_block_json_file(sys.stdin)
 
 
-if sorted(expected, key=sort_key) == sorted(actual, key=sort_key):
-    sys.exit(0)
+if len(actual_blocks) != len(expected_blocks):
+    print(
+        f"Different number of blocks: actual={len(actual_blocks)}, expected={len(expected_blocks)}"
+    )
 
 
-print(f"{expected} != {actual}", file=sys.stderr)
-sys.exit(1)
+def sort_key(block):
+    sorted_block_strings = sorted(
+        [json.dumps(item, sort_keys=True, separators=(",", ":")) for item in block],
+    )
+    return ":".join(sorted_block_strings)
+
+
+actual_blocks = sorted(actual_blocks, key=sort_key)
+expected_blocks = sorted(expected_blocks, key=sort_key)
+
+
+for b, (ab, eb) in enumerate(zip(actual_blocks, expected_blocks)):
+    for a, e in zip(ab, eb):
+        if a != e:
+            print(f"Lines differ block #{b}:\n\t{a}\n\t{e}")
+            sys.exit(1)
+
+
+sys.exit(0)

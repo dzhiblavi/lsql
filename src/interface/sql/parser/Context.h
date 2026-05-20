@@ -1,13 +1,13 @@
 #pragma once
 
-#include "interface/sql/ast/Node.h"
-
-#include <memory>
+#include "interface/sql/ast/Expressions.h"  // IWYU pragma: keep
+#include "interface/sql/ast/Relations.h"    // IWYU pragma: keep
+#include "interface/sql/ast/Statement.h"
 
 namespace lsql::iface::sql::parse {
 
 struct Context {
-    std::unique_ptr<ast::Node> root;
+    ast::Program program;
     bool has_error = false;
 };
 

@@ -50,8 +50,7 @@ class UnaryAggregateExpression : public Expression {
     AggregatorPtr aggregator() const override { return std::make_shared<Aggr>(arg_, &op_); }
 
     Value eval(const exec::Record& /*record*/) const override {
-        assert(false);
-        throw std::runtime_error("aggregate expression");
+        panic("aggregate expression should not be called on row basis");
     }
 
     Value eval(const std::vector<exec::ConstRecordPtr>& group) const override {

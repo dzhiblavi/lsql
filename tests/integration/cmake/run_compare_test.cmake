@@ -30,7 +30,7 @@ if(EXISTS ${PREPARE_SCRIPT})
 endif()
 
 execute_process(
-    COMMAND ${CLI} ${QUERY_FILE} -f JSON
+    COMMAND ${CLI} ${QUERY_FILE} -f JSON -j 1
     OUTPUT_VARIABLE actual_output
     ERROR_VARIABLE error_output
     RESULT_VARIABLE exit_code
@@ -46,25 +46,5 @@ execute_process(
 if(NOT COMPARE_RESULT EQUAL 0)
     message(FATAL_ERROR "JSON comparison failed: ${COMPARE_ERROR}")
 endif()
-
-#function(normalize_output var output)
-    #string(REGEX REPLACE "\r\n" "\n" output "${output}")
-    #string(REGEX REPLACE "\r" "\n" output "${output}")
-    #string(REGEX REPLACE "[ \t]+$" "" output "${output}")
-    #string(REGEX REPLACE "\n+" "\n" output "${output}")
-    #string(REGEX REPLACE "^\n+" "" output "${output}")
-    #string(REGEX REPLACE "\n+$" "" output "${output}")
-    #string(REGEX REPLACE "\t+$" "" output "${output}")
-    #set(${var} "${output}" PARENT_SCOPE)
-#endfunction()
-
-#normalize_output(actual_normalized "${actual_output}")
-#normalize_output(expected_normalized "${expected_output}")
-
-#if(NOT actual_normalized STREQUAL expected_normalized)
-    #message("Expected output:\n${expected_normalized}")
-    #message("Actual output:\n${actual_normalized}")
-    #message(FATAL_ERROR "Output mismatch")
-#endif()
 
 message("✓ Test passed - output matches expected")
