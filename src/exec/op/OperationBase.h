@@ -14,8 +14,9 @@ namespace lsql::exec {
 template <typename Self>
 class OperationBase : public virtual Operation {
  public:
-    explicit OperationBase(int min_out_phase)
+    OperationBase(int min_out_phase, ConstFieldBindingPtr binding)
         : prof_(prof::Profiler::registerOperation(this))
+        , binding_(std::move(binding))
         , min_out_phase_(min_out_phase) {}
 
     // outbound operations call this method to receive records
@@ -44,7 +45,8 @@ class OperationBase : public virtual Operation {
     virtual void init(int out_phase, const RequiredFields& fields) = 0;
 
     std::string description(int phase) const {
-        return std::format("{} [required-out: {}]", name(), to_string(requiredFields(phase)));
+        return std::format(
+            "{} [required-out: {}]", name(), to_string(requiredFields(phase), *binding_));
     }
 
     void updateRequiredFields(int phase, const RequiredFields& fields) {
@@ -95,6 +97,7 @@ class OperationBase : public virtual Operation {
 
  protected:
     prof::OperationHandle prof_;
+    ConstFieldBindingPtr binding_;
 
  private:
     using Subscribers = std::unordered_map<int, std::unordered_set<Subscriber*>>;

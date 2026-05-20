@@ -22,12 +22,14 @@ logs::LogType getLogType(const data::PagedFile& file) {
     throw std::runtime_error("failed to detect log type");
 }
 
-exec::SourcePtr getFileSourceWhole(std::string path) {
+exec::SourcePtr getFileSourceWhole(std::string path, ConstFieldBindingPtr binding) {
     auto file = data::NativePagedFile::open(path);
-    return std::make_shared<exec::Log>(std::make_shared<data::PagedLog>(file), getLogType(*file));
+    return std::make_shared<exec::Log>(
+        std::make_shared<data::PagedLog>(file), getLogType(*file), std::move(binding));
 }
 
-exec::SourcePtr getFileSourceRange(std::string path, TimeRange range) {
+exec::SourcePtr getFileSourceRange(
+    std::string path, TimeRange range, ConstFieldBindingPtr binding) {
     auto file = data::NativePagedFile::open(path);
     auto log_type = getLogType(*file);
     auto time_format = logs::timeFormat(log_type);
@@ -39,14 +41,15 @@ exec::SourcePtr getFileSourceRange(std::string path, TimeRange range) {
     }
 
     return std::make_shared<exec::Log>(
-        std::make_shared<data::PagedLog>(file, from_pos, to_pos), log_type);
+        std::make_shared<data::PagedLog>(file, from_pos, to_pos), log_type, std::move(binding));
 }
 
-exec::SourcePtr getFileSource(std::string path, std::optional<TimeRange> range) {
+exec::SourcePtr getFileSource(
+    std::string path, ConstFieldBindingPtr binding, std::optional<TimeRange> range) {
     if (range.has_value()) {
-        return getFileSourceRange(path, *range);
+        return getFileSourceRange(path, *range, std::move(binding));
     }
-    return getFileSourceWhole(path);
+    return getFileSourceWhole(path, std::move(binding));
 }
 
 }  // namespace

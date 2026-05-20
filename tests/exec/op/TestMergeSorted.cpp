@@ -14,9 +14,10 @@ struct MergeSortedTest : OperationTest {
             left,
             right,
             SortList{
-                std::make_shared<IdentifierExpression>("test-value"),
+                std::make_shared<IdentifierExpression>(binding->id("test-value")),
             },
-            false));
+            false,
+            binding));
     }
 
     std::shared_ptr<MockOperation> left = std::make_shared<MockOperation>();

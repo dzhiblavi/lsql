@@ -4,6 +4,7 @@
 #include "iface/sql/bind/ExprKindLevel.h"
 #include "iface/sql/bind/Relation.h"
 
+#include "core/Fields.h"
 #include "core/Value.h"
 #include "core/types.h"
 
@@ -13,7 +14,7 @@ ValueType valueTypeOf(const Expr& e);
 ExprKindLevel exprKindLevelOf(const Expr& e);
 
 struct FieldExpr {
-    std::string identifier;
+    FieldId field_id;
 
     ValueType valueType() const { return ValueType::String; }
     ExprKindLevel level() const { return ExprKindLevel::Row; }

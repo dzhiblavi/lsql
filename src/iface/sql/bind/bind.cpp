@@ -1,4 +1,4 @@
-#include "iface/sql/bind/Statement.h"
+#include "iface/sql/bind/bind.h"
 
 #include "iface/sql/ast/Expr.h"
 #include "iface/sql/ast/Expressions.h"  // IWYU pragma: keep
@@ -117,31 +117,22 @@ ValueType valueType(UnaryAggregateExprType type, ValueType arg) {
     }
 }
 
-void add(const Projector& proj, RelationFields& out) {
-    util::match(
-        proj,
-        [&](const StarProjector&) { out.setUnknown(); },
-        [&](const ExprProjector& p) { out.add(p.alias, valueTypeOf(*p.expr)); });
-}
-
-void addAll(const std::vector<Projector>& projectors, RelationFields& out) {
-    for (auto&& p : projectors) {
-        add(p, out);
-    }
-}
-
 class Binder {
  public:
     Binder() = default;
 
-    Program bind(ast::Program program) && {
+    BoundProgram bind(ast::Program program) && {
+        binding_ = std::make_shared<FieldBinding>();
         program_.reserve(program.size());
 
         for (auto&& statement : program) {
             program_.push_back(bindStatement(std::move(statement)));
         }
 
-        return std::move(program_);
+        return {
+            .program = std::move(program_),
+            .field_binding = std::move(binding_),
+        };
     }
 
  private:
@@ -187,7 +178,7 @@ class Binder {
 
         auto fields = RelationFields::emptySet();
         auto type = values.empty() ? ValueType::Null : values.front().type();
-        fields.add("anon1", type);
+        fields.add(binding_->getOrAdd("anon1"), type);
 
         return AdhocRelation{
             .values = std::move(values),
@@ -350,7 +341,7 @@ class Binder {
 
     Expr bindExpr(ast::IdentifierExpr e) {
         return FieldExpr{
-            .identifier = std::move(e.identifier),
+            .field_id = binding_->getOrAdd(e.identifier),
         };
     }
 
@@ -525,17 +516,19 @@ class Binder {
         return util::match(
             std::move(p),
             [](ast::StarProjector) -> Projector { return StarProjector{}; },
-            [](ast::IdentifierProjector p) -> Projector {
+            [this](ast::IdentifierProjector p) -> Projector {
+                auto id = binding_->getOrAdd(p.identifier);
+
                 return ExprProjector{
-                    .alias = p.identifier,
+                    .alias_field_id = id,
                     .expr = std::make_unique<Expr>(FieldExpr{
-                        .identifier = p.identifier,
+                        .field_id = id,
                     }),
                 };
             },
             [this](ast::ExprProjector p) -> Projector {
                 return ExprProjector{
-                    .alias = std::move(p.alias),
+                    .alias_field_id = binding_->getOrAdd(p.alias),
                     .expr = std::make_unique<Expr>(bindExpr(std::move(*p.expr))),
                 };
             });
@@ -559,13 +552,27 @@ class Binder {
         return result;
     }
 
+    void add(const Projector& proj, RelationFields& out) {
+        util::match(
+            proj,
+            [&](const StarProjector&) { out.setUnknown(); },
+            [&](const ExprProjector& p) { out.add(p.alias_field_id, valueTypeOf(*p.expr)); });
+    }
+
+    void addAll(const std::vector<Projector>& projectors, RelationFields& out) {
+        for (auto&& p : projectors) {
+            add(p, out);
+        }
+    }
+
     Program program_;
+    FieldBindingPtr binding_;
     std::unordered_map<std::string, const Relation*> named_relations_;
 };
 
 }  // namespace
 
-Program bind(ast::Program program) {
+BoundProgram bind(ast::Program program) {
     return Binder().bind(std::move(program));
 }
 

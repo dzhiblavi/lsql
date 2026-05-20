@@ -1,4 +1,5 @@
 find_package(magic_enum REQUIRED)
+find_package(absl REQUIRED)
 
 add_library(
     lsql-core STATIC
@@ -14,4 +15,5 @@ target_link_libraries(
     ReflexLibStatic
     magic_enum::magic_enum
     llog
+    abseil::abseil
 )

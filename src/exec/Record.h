@@ -1,22 +1,23 @@
 #pragma once
 
+#include "core/Fields.h"
 #include "core/Value.h"
 
+#include <absl/container/flat_hash_set.h>
+
 #include <memory>
-#include <string>
-#include <string_view>
-#include <unordered_map>
 
 namespace lsql::exec {
 
 class Record : public std::enable_shared_from_this<Record> {
  public:
-    using values_t = std::unordered_map<std::string, Value>;
+    using ids_t = absl::flat_hash_set<FieldId>;
 
     virtual ~Record() = default;
 
-    virtual values_t values() const = 0;
-    virtual Value value(std::string_view name) const = 0;
+    virtual ids_t ids() const = 0;
+
+    virtual Value value(FieldId id) const = 0;
 
     std::shared_ptr<const Record> clone() const {
         if (!weak_from_this().expired()) {
@@ -37,8 +38,9 @@ class EmptyRecord : public Record {
  public:
     EmptyRecord() = default;
 
-    values_t values() const override { return {}; }
-    Value value(std::string_view /*name*/) const override { return null; }
+    ids_t ids() const override { return {}; }
+
+    Value value(FieldId) const override { return null; }
 
     static ConstRecordPtr instance() {
         static ConstRecordPtr record = std::make_shared<EmptyRecord>();

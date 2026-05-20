@@ -2,6 +2,7 @@
 
 #include "exec/op/Source.h"
 
+#include "core/Fields.h"
 #include "core/types.h"
 
 #include <functional>
@@ -14,7 +15,8 @@ struct TimeRange {
     timestamp_t ts_to;
 };
 
-using GetFileSourceFuncType = std::function<exec::SourcePtr(std::string, std::optional<TimeRange>)>;
+using GetFileSourceFuncType =
+    std::function<exec::SourcePtr(std::string, ConstFieldBindingPtr, std::optional<TimeRange>)>;
 
 GetFileSourceFuncType defaultFileSourceFunc();
 

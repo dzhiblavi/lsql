@@ -10,22 +10,20 @@ namespace lsql::exec {
 
 class LineRecord : public Record {
  public:
-    LineRecord(data::Line line, absl::flat_hash_map<std::string_view, std::string_view> values)
+    LineRecord(data::Line line, absl::flat_hash_map<FieldId, std::string_view> values)
         : line_(line)
         , values_(std::move(values)) {}
 
-    values_t values() const override {
-        values_t values;
-        for (auto&& [k, v] : values_) {
-            if (k != "lsql_line") {
-                values.emplace(k, std::string(v));
-            }
+    ids_t ids() const override {
+        ids_t ids;
+        for (auto&& [id, _] : values_) {
+            ids.insert(id);
         }
-        return values;
+        return ids;
     }
 
-    Value value(std::string_view name) const override {
-        auto it = values_.find(name);
+    Value value(FieldId id) const override {
+        auto it = values_.find(id);
         return it == values_.end() ? null : Value(std::string(it->second));
     }
 
@@ -33,13 +31,13 @@ class LineRecord : public Record {
 
  private:
     data::Line line_;
-    absl::flat_hash_map<std::string_view, std::string_view> values_;
+    absl::flat_hash_map<FieldId, std::string_view> values_;
 };
 
 class Log : public Source, public OperationBase<Log> {
  public:
-    Log(std::shared_ptr<data::Log> log, logs::LogType type)
-        : OperationBase(0)
+    Log(std::shared_ptr<data::Log> log, logs::LogType type, ConstFieldBindingPtr binding)
+        : OperationBase(0, std::move(binding))
         , log_(std::move(log))
         , type_(type) {}
 
@@ -59,10 +57,13 @@ class Log : public Source, public OperationBase<Log> {
                 }
             }
         } else if (required_fields.all()) {
-            absl::flat_hash_map<std::string_view, std::string_view> values;
+            absl::flat_hash_map<FieldId, std::string_view> values;
 
             auto parser = [&](std::string_view name, std::string_view value) {
-                values.emplace(name, value);
+                auto id = binding_->id(name);
+                if (id != UnknownFieldId) {
+                    values.emplace(id, value);
+                }
             };
             auto parse_func = logs::parseKeyValueFunc<decltype(parser)&>(type_);
 
@@ -77,19 +78,20 @@ class Log : public Source, public OperationBase<Log> {
                 }
             }
         } else {
-            absl::flat_hash_map<std::string_view, std::string_view> values;
+            absl::flat_hash_map<FieldId, std::string_view> values;
 
             auto parser = [&](std::string_view name, std::string_view value) {
-                if (!required_fields.requiresField(name)) {
+                auto id = binding_->id(name);
+                if (id == UnknownFieldId || !required_fields.requiresField(id)) {
                     return;
                 }
-                values.emplace(name, value);
+                values.emplace(id, value);
             };
 
             auto parse_func = logs::parseKeyValueFunc<decltype(parser)&>(type_);
 
             for (auto line : log_->lines()) {
-                values.reserve(required_fields.names().size());
+                values.reserve(required_fields.ids().size());
                 parse_func(line.view(), parser);
                 LineRecord record(line, std::move(values));
                 values = {};

@@ -9,7 +9,7 @@
 
 namespace lsql::exec {
 
-using GroupValues = std::unordered_map<std::string_view, Value>;
+using GroupValues = std::unordered_map<FieldId, Value>;
 
 class GroupEnrichedRecord : public Record {
  public:
@@ -19,19 +19,19 @@ class GroupEnrichedRecord : public Record {
         assert(values_ != nullptr);
     }
 
-    values_t values() const override {
-        auto values = get(child_)->values();
-        for (auto&& [k, v] : *values_) {
-            values.emplace(k, v);
+    ids_t ids() const override {
+        auto ids = get(child_)->ids();
+        for (auto&& [k, _] : *values_) {
+            ids.insert(k);
         }
-        return values;
+        return ids;
     }
 
-    Value value(std::string_view name) const override {
-        if (auto it = values_->find(name); it != values_->end()) {
+    Value value(FieldId id) const override {
+        if (auto it = values_->find(id); it != values_->end()) {
             return it->second;
         }
-        return get(child_)->value(name);
+        return get(child_)->value(id);
     }
 
     std::shared_ptr<const Record> cloneImpl() const override {
@@ -47,16 +47,16 @@ class GroupRecord : public Record {
  public:
     explicit GroupRecord(GroupValues values) : values_(std::move(values)) {}
 
-    values_t values() const override {
-        values_t values;
-        for (auto&& [k, v] : values_) {
-            values.emplace(k, v);
+    ids_t ids() const override {
+        ids_t ids;
+        for (auto&& [k, _] : values_) {
+            ids.insert(k);
         }
-        return values;
+        return ids;
     }
 
-    Value value(std::string_view name) const override {
-        auto it = values_.find(name);
+    Value value(FieldId id) const override {
+        auto it = values_.find(id);
         return it == values_.end() ? null : it->second;
     }
 
@@ -69,11 +69,15 @@ class GroupRecord : public Record {
 class Group : public OperationBase<Group>, public std::enable_shared_from_this<Group> {
     friend class GroupRecord;
 
-    using ProjectionMap = std::unordered_map<std::string_view, std::unique_ptr<Projector>>;
+    using ProjectionMap = std::unordered_map<FieldId, std::unique_ptr<Projector>>;
 
  public:
-    Group(OperationPtr source, ProjectionList glist, ProjectionList slist)
-        : OperationBase(source->minPhase())
+    Group(
+        OperationPtr source,
+        ProjectionList glist,
+        ProjectionList slist,
+        ConstFieldBindingPtr binding)
+        : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , glist_(toProjectionMap(std::move(glist)))
         , slist_(toProjectionMap(std::move(slist))) {
@@ -137,18 +141,18 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
 
             {
                 // pass required group by fields
-                for (auto&& [name, value] : group_kv) {
-                    if (required_fields.requiresField(name)) {
-                        values.emplace(name, std::move(value));
+                for (auto&& [id, value] : group_kv) {
+                    if (required_fields.requiresField(id)) {
+                        values.emplace(id, std::move(value));
                     }
                 }
             }
 
             {
                 // pass required slist fields
-                for (auto&& [name, _] : slist_) {
-                    if (required_fields.requiresField(name)) {
-                        values.emplace(name, aggregators[name]->get());
+                for (auto&& [id, _] : slist_) {
+                    if (required_fields.requiresField(id)) {
+                        values.emplace(id, aggregators[id]->get());
                     }
                 }
             }
@@ -178,18 +182,18 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
 
         if (downstream.all()) {
             // additionally request everything that comes from slist_ and not glist_
-            for (auto&& [name, proj] : slist_) {
-                verify(!glist_.contains(name));
+            for (auto&& [id, proj] : slist_) {
+                verify(!glist_.contains(id));
                 upstream.merge(proj->expr->requiredFields());
             }
         } else {
-            for (auto&& name : downstream.names()) {
-                if (glist_.contains(name)) {
+            for (auto&& id : downstream.ids()) {
+                if (glist_.contains(id)) {
                     // already requested
                     continue;
                 }
 
-                if (auto it = slist_.find(name); it != slist_.end()) {
+                if (auto it = slist_.find(id); it != slist_.end()) {
                     upstream.merge(it->second->expr->requiredFields());
                 }
             }
@@ -203,20 +207,20 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
 
         if (required_fields.all()) {
             // aggregate all fields from select list
-            for (auto&& [name, proj] : slist_) {
-                verify(!glist_.contains(name));
-                aggregators.emplace(name, proj->expr->aggregator());
+            for (auto&& [id, proj] : slist_) {
+                verify(!glist_.contains(id));
+                aggregators.emplace(id, proj->expr->aggregator());
             }
         } else {
             // aggregate only required fields
-            for (auto&& name : required_fields.names()) {
-                if (glist_.contains(name)) {
+            for (auto&& id : required_fields.ids()) {
+                if (glist_.contains(id)) {
                     // comes from group list, no need to calculate additionally
                     continue;
                 }
 
-                if (auto it = slist_.find(name); it != slist_.end()) {
-                    aggregators.emplace(name, it->second->expr->aggregator());
+                if (auto it = slist_.find(id); it != slist_.end()) {
+                    aggregators.emplace(id, it->second->expr->aggregator());
                 }
             }
         }
@@ -226,8 +230,8 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         ProjectionMap map;
         map.reserve(list.size());
         for (auto&& proj : list) {
-            std::string_view name = proj->name;
-            map.emplace(name, std::move(proj));
+            auto id = proj->field_id;
+            map.emplace(id, std::move(proj));
         }
         return map;
     }
@@ -254,14 +258,16 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
 
     // phase state
     using Groups =
-        std::unordered_map<std::vector<Value>, std::unordered_map<std::string_view, AggregatorPtr>>;
+        std::unordered_map<std::vector<Value>, std::unordered_map<FieldId, AggregatorPtr>>;
 
     int curr_phase_ = 0;
     Groups groups_;
 };
 
-OperationPtr group(OperationPtr source, ProjectionList glist, ProjectionList slist) {
-    return std::make_shared<Group>(std::move(source), std::move(glist), std::move(slist));
+OperationPtr group(
+    OperationPtr source, ProjectionList glist, ProjectionList slist, ConstFieldBindingPtr binding) {
+    return std::make_shared<Group>(
+        std::move(source), std::move(glist), std::move(slist), std::move(binding));
 }
 
 }  // namespace lsql::exec

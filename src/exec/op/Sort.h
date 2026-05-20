@@ -17,8 +17,8 @@ class Sort : public OperationBase<Sort>, public std::enable_shared_from_this<Sor
     using Key = std::vector<Value>;
 
  public:
-    Sort(OperationPtr source, bool desc, SortList sort_list)
-        : OperationBase(source->minPhase())
+    Sort(OperationPtr source, bool desc, SortList sort_list, ConstFieldBindingPtr binding)
+        : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , desc_(desc)
         , sort_list_(std::move(sort_list)) {
@@ -123,8 +123,8 @@ class Sort : public OperationBase<Sort>, public std::enable_shared_from_this<Sor
     std::vector<std::pair<ConstRecordPtr, Key>> records_;
 };
 
-OperationPtr sort(OperationPtr source, SortList glist, bool desc) {
-    return std::make_shared<Sort>(std::move(source), desc, std::move(glist));
+OperationPtr sort(OperationPtr source, SortList glist, bool desc, ConstFieldBindingPtr binding) {
+    return std::make_shared<Sort>(std::move(source), desc, std::move(glist), std::move(binding));
 }
 
 }  // namespace lsql::exec

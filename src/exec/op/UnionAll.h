@@ -8,8 +8,8 @@ namespace lsql::exec {
 
 class UnionAll : public OperationBase<UnionAll> {
  public:
-    UnionAll(OperationPtr l, OperationPtr r)
-        : OperationBase(std::max(l->minPhase(), r->minPhase()))
+    UnionAll(OperationPtr l, OperationPtr r, ConstFieldBindingPtr binding)
+        : OperationBase(std::max(l->minPhase(), r->minPhase()), std::move(binding))
         , l_(std::move(l))
         , r_(std::move(r)) {}
 
@@ -91,8 +91,8 @@ class UnionAll : public OperationBase<UnionAll> {
     };
 };
 
-OperationPtr unionAll(OperationPtr l, OperationPtr r) {
-    return std::make_shared<UnionAll>(std::move(l), std::move(r));
+OperationPtr unionAll(OperationPtr l, OperationPtr r, ConstFieldBindingPtr binding) {
+    return std::make_shared<UnionAll>(std::move(l), std::move(r), std::move(binding));
 }
 
 }  // namespace lsql::exec

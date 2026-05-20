@@ -3,6 +3,8 @@
 #include "util/ThreadPool.h"
 
 #include "iface/sql/ast/Stringifier.h"
+#include "iface/sql/bind/Stringifier.h"
+
 #include "iface/sql/bind/bind.h"
 #include "iface/sql/exec/plan.h"
 #include "iface/sql/parser/parse.h"
@@ -62,10 +64,30 @@ TCLAP::ValueArg<unsigned> threads_arg{
     "unsigned",
 };
 
+bool run_query = true;
+
+TCLAP::SwitchArg force_run_arg{
+    "",
+    "run",
+    "force run query (useful with other flags)",
+};
+
 TCLAP::SwitchArg explain_arg{
     "e",
     "explain",
     "show execution plan",
+};
+
+TCLAP::SwitchArg debug_ast_arg{
+    "",
+    "debug-ast",
+    "show AST",
+};
+
+TCLAP::SwitchArg debug_bind_arg{
+    "",
+    "debug-bind",
+    "show bound AST",
 };
 
 TCLAP::SwitchArg profile_arg{
@@ -85,19 +107,27 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&sql_file_arg);
     cmd.add(&format_arg);
     cmd.add(&log_level_arg);
+    cmd.add(&force_run_arg);
     cmd.add(&explain_arg);
+    cmd.add(&debug_ast_arg);
+    cmd.add(&debug_bind_arg);
     cmd.add(&threads_arg);
     cmd.add(&profile_arg);
     cmd.setExceptionHandling(false);
 
     try {
         cmd.parse(static_cast<int>(argv.size()), argv.data());
-        return true;
     } catch (const TCLAP::ArgException& e) {
         throw std::runtime_error(std::format("error for argument '{}': {}", e.argId(), e.error()));
     } catch (const TCLAP::ExitException& e) {
         return false;
     }
+
+    if ((explain_arg || debug_ast_arg || debug_bind_arg) && !force_run_arg) {
+        run_query = false;
+    }
+
+    return true;
 }
 
 iface::sql::exe::Plan makePlan(std::string maybe_path) {
@@ -112,10 +142,15 @@ iface::sql::exe::Plan makePlan(std::string maybe_path) {
     }();
 
     auto program = iface::sql::parse::parse(*is);
-    if (false) {
+    if (debug_ast_arg) {
+        std::cout << "AST dump:" << std::endl;
         std::cout << iface::sql::ast::Stringifier().print(program) << std::endl;
     }
     auto bind = iface::sql::bind::bind(std::move(program));
+    if (debug_bind_arg) {
+        std::cout << "Bound AST dump:" << std::endl;
+        std::cout << iface::sql::bind::Stringifier().print(bind) << std::endl;
+    }
     return iface::sql::exe::plan(std::move(bind));
 }
 
@@ -163,13 +198,6 @@ std::string escapeForJSON(const std::string& input) {
     return oss.str();
 }
 
-void printRecordTSKV(const exec::Record::values_t& values, std::stringstream& out) {
-    for (auto&& [k, v] : values) {
-        out << std::format("{}={}", k, to_string(v)) << '\t';
-    }
-    out << '\n';
-}
-
 std::string toJSONStr(const Value& v) {
     return visit(
         util::Overloaded{
@@ -184,23 +212,12 @@ std::string toJSONStr(const Value& v) {
         v);
 }
 
-void printRecordJSON(const exec::Record::values_t& values, std::stringstream& out) {
-    if (values.empty()) {
-        out << "{}";
-        return;
-    }
-
-    out << '{';
-    for (auto&& [k, v] : values) {
-        out << std::format("\"{}\":{}", k, toJSONStr(v)) << ',';
-    }
-    out.seekp(-1, std::ios_base::end);  // remove last comma
-    out << "}\n";
-}
-
 class Print : public exec::Subscriber {
  public:
-    Print(exec::OperationPtr source, Format format) : source_(std::move(source)), format_(format) {
+    Print(exec::OperationPtr source, Format format, ConstFieldBindingPtr binding)
+        : source_(std::move(source))
+        , format_(format)
+        , binding_(std::move(binding)) {
         source_->subscribe(source_->minPhase(), this, exec::RequiredFields::withAll());
     }
 
@@ -232,20 +249,42 @@ class Print : public exec::Subscriber {
 
         switch (format_) {
             case Format::TSKV:
-                printRecordTSKV(record->values(), ss_);
+                printRecordTSKV(*record);
                 break;
 
             case Format::JSON:
-                printRecordJSON(record->values(), ss_);
+                printRecordJSON(*record);
                 break;
         }
 
         return true;
     }
 
+    void printRecordTSKV(const exec::Record& record) {
+        for (auto id : record.ids()) {
+            ss_ << std::format("{}={}", binding_->name(id), to_string(record.value(id))) << '\t';
+        }
+        ss_ << '\n';
+    }
+
+    void printRecordJSON(const exec::Record& record) {
+        if (record.ids().empty()) {
+            ss_ << "{}";
+            return;
+        }
+
+        ss_ << '{';
+        for (auto id : record.ids()) {
+            ss_ << std::format("\"{}\":{}", binding_->name(id), toJSONStr(record.value(id))) << ',';
+        }
+        ss_.seekp(-1, std::ios_base::end);  // remove last comma
+        ss_ << "}\n";
+    }
+
     exec::OperationPtr source_;
     Format format_;
     std::stringstream ss_;
+    ConstFieldBindingPtr binding_;
 };
 
 void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
@@ -334,12 +373,12 @@ void main(std::span<const char*> argv) {
     }
 
     llog::info("parsing the query and building operations");
-    auto [sources, top_operations] = makePlan(sql_file_arg.getValue());
+    auto [sources, top_operations, binding] = makePlan(sql_file_arg.getValue());
 
     llog::info("collecting print operations");
     std::vector<std::shared_ptr<Print>> ops;
     for (auto&& op : top_operations) {
-        ops.push_back(std::make_shared<Print>(op, *format));
+        ops.push_back(std::make_shared<Print>(op, *format, binding));
     }
 
     llog::info("determining phase count");
@@ -350,7 +389,9 @@ void main(std::span<const char*> argv) {
 
     if (explain_arg.getValue()) {
         explain(max_phase, ops);
-    } else {
+    }
+
+    if (run_query) {
         util::ThreadPool pool(threads_arg.getValue());
         run(max_phase, sources, pool);
         pool.stop();

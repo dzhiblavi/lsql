@@ -32,8 +32,10 @@ namespace {
 
 class Planner {
  public:
-    Plan plan(bind::Program program) && {
-        for (auto&& statement : program) {
+    Plan plan(bind::BoundProgram program) && {
+        binding_ = program.field_binding;
+        plan_.field_binding = binding_;
+        for (auto&& statement : program.program) {
             planStatement(std::move(statement));
         }
         return std::move(plan_);
@@ -67,7 +69,7 @@ class Planner {
     }
 
     void planRelation(bind::AdhocRelation r) {
-        auto src = exec::values(std::move(r.values));
+        auto src = exec::values(std::move(r.values), binding_);
         operations.push(src);
         plan_.sources.push_back(src);
     }
@@ -80,21 +82,22 @@ class Planner {
             planExpr(std::move(*r.where->condition));
 
             if (!exprs.empty()) {
-                operations.push(exec::filter(popOperation(), popExpression()));
+                operations.push(exec::filter(popOperation(), popExpression(), binding_));
             }
         }
 
         if (r.group_by) {
             auto group_list = projectorsList(std::move(r.group_by->group_list));
             operations.push(
-                exec::group(popOperation(), std::move(group_list), std::move(projectors)));
+                exec::group(
+                    popOperation(), std::move(group_list), std::move(projectors), binding_));
         } else {
             if (r.aggregate) {
-                auto src = exec::aggregate(popOperation(), std::move(projectors));
+                auto src = exec::aggregate(popOperation(), std::move(projectors), binding_);
                 plan_.sources.push_back(src);
                 operations.push(src);
             } else {
-                operations.push(exec::projection(popOperation(), std::move(projectors)));
+                operations.push(exec::projection(popOperation(), std::move(projectors), binding_));
             }
         }
 
@@ -103,11 +106,12 @@ class Planner {
                 exec::sort(
                     popOperation(),
                     expressionList(std::move(r.order_by->order_list)),
-                    r.order_by->desc));
+                    r.order_by->desc,
+                    binding_));
         }
 
         if (r.limit) {
-            operations.push(exec::limit(popOperation(), r.limit->limit));
+            operations.push(exec::limit(popOperation(), r.limit->limit, binding_));
         }
     }
 
@@ -116,7 +120,7 @@ class Planner {
         auto left = popOperation();
         planRelation(std::move(*r.right));
         auto right = popOperation();
-        operations.push(exec::unionAll(left, right));
+        operations.push(exec::unionAll(left, right, binding_));
     }
 
     void planRelation(bind::UnionAllSortedByRelation r) {
@@ -125,11 +129,12 @@ class Planner {
         planRelation(std::move(*r.right));
         auto right = popOperation();
         auto order_list = expressionList(std::move(r.order_by.order_list));
-        operations.push(exec::mergeSorted(left, right, std::move(order_list), r.order_by.desc));
+        operations.push(
+            exec::mergeSorted(left, right, std::move(order_list), r.order_by.desc, binding_));
     }
 
     void planRelation(bind::FileRelation r) {
-        auto op = file_source_func_(r.path, std::nullopt);
+        auto op = file_source_func_(r.path, binding_, std::nullopt);
         plan_.sources.push_back(op);
         operations.push(op);
     }
@@ -137,6 +142,7 @@ class Planner {
     void planRelation(bind::FileIntervalRelation r) {
         auto op = file_source_func_(
             r.path,
+            binding_,
             TimeRange{
                 .ts_from = r.ts_from,
                 .ts_to = r.ts_to,
@@ -156,13 +162,13 @@ class Planner {
 
     void planRelation(bind::MaterializeRelation r) {
         planRelation(std::move(*r.relation));
-        auto op = exec::materialize(popOperation());
+        auto op = exec::materialize(popOperation(), binding_);
         plan_.sources.push_back(op);
         operations.push(op);
     }
 
     void planExpr(bind::FieldExpr e) {
-        exprs.push_back(std::make_shared<exec::IdentifierExpression>(e.identifier));
+        exprs.push_back(std::make_shared<exec::IdentifierExpression>(e.field_id));
     }
 
     void planExpr(bind::ValueExpr e) {
@@ -175,7 +181,7 @@ class Planner {
         auto expr = popExpression();
         planRelation(std::move(*e.source));
         auto match = popOperation();
-        operations.push(exec::in(source, match, expr));
+        operations.push(exec::in(source, match, expr, binding_));
     }
 
     void planExpr(bind::CoalesceExpr e) {
@@ -272,12 +278,12 @@ class Planner {
     }
 
     void planProjector(bind::StarProjector) {
-        projectors.push_back(std::make_unique<exec::Projector>("", nullptr));
+        projectors.push_back(std::make_unique<exec::Projector>(0, nullptr));
     }
 
     void planProjector(bind::ExprProjector p) {
         planExpr(std::move(*p.expr));
-        projectors.push_back(std::make_unique<exec::Projector>(p.alias, popExpression()));
+        projectors.push_back(std::make_unique<exec::Projector>(p.alias_field_id, popExpression()));
     }
 
     std::shared_ptr<exec::Expression> popExpression() {
@@ -321,11 +327,12 @@ class Planner {
     Plan plan_;
 
     GetFileSourceFuncType file_source_func_ = defaultFileSourceFunc();
+    ConstFieldBindingPtr binding_;
 };
 
 }  // namespace
 
-Plan plan(bind::Program program) {
+Plan plan(bind::BoundProgram program) {
     return Planner().plan(std::move(program));
 }
 

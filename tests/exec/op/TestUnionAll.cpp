@@ -8,7 +8,7 @@
 namespace lsql::exec {
 
 struct UnionAllTest : OperationTest {
-    UnionAllTest() { setOperation(unionAll(left, right)); }
+    UnionAllTest() { setOperation(unionAll(left, right, binding)); }
 
     std::shared_ptr<MockOperation> left = std::make_shared<MockOperation>();
     std::shared_ptr<MockOperation> right = std::make_shared<MockOperation>();

@@ -8,21 +8,20 @@ namespace lsql::exec {
 
 class ValueRecord : public Record {
  public:
-    explicit ValueRecord(std::shared_ptr<const Value> value) : value_(std::move(value)) {}
+    ValueRecord(FieldId id, std::shared_ptr<const Value> value)
+        : id_(id)
+        , value_(std::move(value)) {}
 
-    values_t values() const override {
-        values_t res;
-        res["anon"] = *value_;
-        return res;
-    }
+    ids_t ids() const override { return {id_}; }
 
-    Value value(std::string_view /*name*/) const override { return *value_; }
+    Value value(FieldId id) const override { return id == id_ ? *value_ : null; }
 
  private:
     std::shared_ptr<const Record> cloneImpl() const override {
         return std::make_shared<ValueRecord>(*this);
     }
 
+    FieldId id_;
     std::shared_ptr<const Value> value_;
 };
 
@@ -30,7 +29,10 @@ class Values : public Source,
                public OperationBase<Values>,
                public std::enable_shared_from_this<Values> {
  public:
-    explicit Values(std::vector<Value> values) : OperationBase(0), values_(std::move(values)) {}
+    Values(std::vector<Value> values, ConstFieldBindingPtr binding)
+        : OperationBase(0, std::move(binding))
+        , id_(binding_->id("anon1"))
+        , values_(std::move(values)) {}
 
     void push(int phase) override {
         if (requiredFields(phase).empty()) {
@@ -43,7 +45,7 @@ class Values : public Source,
             }
         } else {
             for (const auto& value : values_) {
-                ValueRecord record({shared_from_this(), &value});
+                ValueRecord record(id_, {shared_from_this(), &value});
 
                 if (!emit(phase, &record)) {
                     return;
@@ -69,11 +71,12 @@ class Values : public Source,
         return ExplanationItem().line("{} [count={}]", description(ctx.phase), values_.size());
     }
 
+    FieldId id_;
     std::vector<Value> values_;
 };
 
-SourcePtr values(std::vector<Value> values) {
-    return std::make_shared<Values>(std::move(values));
+SourcePtr values(std::vector<Value> values, ConstFieldBindingPtr binding) {
+    return std::make_shared<Values>(std::move(values), std::move(binding));
 }
 
 }  // namespace lsql::exec

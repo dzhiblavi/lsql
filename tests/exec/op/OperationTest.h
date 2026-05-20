@@ -12,19 +12,23 @@ namespace lsql::exec {
 struct OperationTest : Subscriber {
     static constexpr int64_t eof = -1;
 
-    ~OperationTest() {
-        CAPTURE(expected_values.size());
+    OperationTest() {
+        binding = std::make_shared<FieldBinding>();
+        binding->add("test-value");
+    }
+
+    ~OperationTest() { CAPTURE(expected_values.size());
         CHECK(expected_values.empty());
     }
 
     void setOperation(OperationPtr o) {
         CHECK(o->minPhase() == 0);
         op = o;
-        op->subscribe(0, this, RequiredFields::withFields({"test-value"}));
+        op->subscribe(0, this, RequiredFields::withFields({0}));
     }
 
     bool consume(int /*phase*/, const exec::Record* record) override {
-        CAPTURE(record ? record->value("test-value").get<int64_t>() : eof);
+        CAPTURE(record ? record->value(0).get<int64_t>() : eof);
 
         REQUIRE(!expected_values.empty());
         auto val = expected_values.front();
@@ -35,7 +39,7 @@ struct OperationTest : Subscriber {
             return false;
         } else {
             REQUIRE(record != nullptr);
-            CHECK(record->value("test-value").get<int64_t>() == val);
+            CHECK(record->value(0).get<int64_t>() == val);
         }
 
         return !request_stop;
@@ -45,7 +49,7 @@ struct OperationTest : Subscriber {
         if (value == eof) {
             return op->push(0, nullptr);
         } else {
-            MockRecord record({{"test-value", Value(value)}});
+            MockRecord record({{0, Value(value)}});
             return op->push(0, &record);
         }
     }
@@ -61,6 +65,7 @@ struct OperationTest : Subscriber {
     OperationPtr op;
     bool request_stop = false;
     std::queue<int> expected_values;
+    FieldBindingPtr binding;
 };
 
 }  // namespace lsql::exec

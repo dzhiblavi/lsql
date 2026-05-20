@@ -2,17 +2,19 @@
 
 #include "exec/expr/Expression.h"
 
+#include "core/Fields.h"
+
 namespace lsql::exec {
 
 class IdentifierExpression : public Expression {
  public:
-    explicit IdentifierExpression(std::string name) : name_(std::move(name)) {}
+    explicit IdentifierExpression(FieldId id) : id_(id) {}
 
-    RequiredFields requiredFields() const override { return RequiredFields::withFields({name_}); }
+    RequiredFields requiredFields() const override { return RequiredFields::withFields({id_}); }
 
     ValueType valueType() const override { return ValueType::String; }
 
-    Value eval(const exec::Record& record) const override { return record.value(name_); }
+    Value eval(const exec::Record& record) const override { return record.value(id_); }
 
     Value eval(const std::vector<exec::ConstRecordPtr>& group) const override {
         return eval(*group.front());
@@ -40,7 +42,7 @@ class IdentifierExpression : public Expression {
     }
 
  private:
-    std::string name_;
+    FieldId id_;
 };
 
 }  // namespace lsql::exec

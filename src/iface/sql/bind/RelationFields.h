@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Fields.h"
 #include "core/ValueType.h"
 #include "core/verify.h"
 
@@ -9,18 +10,18 @@ namespace lsql::iface::sql::bind {
 
 class RelationFields {
  public:
-    void add(std::string name, ValueType type) {
-        auto it = fields_.find(name);
+    void add(FieldId id, ValueType type) {
+        auto it = fields_.find(id);
         if (it == fields_.end()) {
-            fields_.emplace(std::move(name), type);
+            fields_.emplace(id, type);
             return;
         }
 
         verify(it->second == type);
     }
 
-    bool contains(const std::string& name, ValueType type) const {
-        if (containsField(name, type)) {
+    bool contains(FieldId id, ValueType type) const {
+        if (containsField(id, type)) {
             return true;
         }
 
@@ -30,6 +31,10 @@ class RelationFields {
 
         return false;
     }
+
+    bool hasUnknown() const { return unknown_; }
+
+    const std::unordered_map<FieldId, ValueType>& fields() const { return fields_; };
 
     void merge(const RelationFields& other) {
         for (auto&& [name, type] : other.fields_) {
@@ -55,12 +60,12 @@ class RelationFields {
     }
 
  private:
-    RelationFields(bool unknown, std::unordered_map<std::string, ValueType> fields)
+    RelationFields(bool unknown, std::unordered_map<FieldId, ValueType> fields)
         : unknown_(unknown)
         , fields_(std::move(fields)) {}
 
-    bool containsField(const std::string& name, ValueType type) const {
-        auto it = fields_.find(name);
+    bool containsField(FieldId id, ValueType type) const {
+        auto it = fields_.find(id);
         if (it == fields_.end()) {
             return false;
         }
@@ -71,7 +76,7 @@ class RelationFields {
     bool unknown_ = false;
 
     // concrete fields that this relation provides
-    std::unordered_map<std::string, ValueType> fields_;
+    std::unordered_map<FieldId, ValueType> fields_;
 };
 
 }  // namespace lsql::iface::sql::bind

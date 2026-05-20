@@ -8,8 +8,8 @@ namespace lsql::exec {
 
 class Filter : public OperationBase<Filter> {
  public:
-    Filter(OperationPtr source, ExpressionPtr condition)
-        : OperationBase(source->minPhase())
+    Filter(OperationPtr source, ExpressionPtr condition, ConstFieldBindingPtr binding)
+        : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , condition_(std::move(condition)) {}
 
@@ -53,8 +53,8 @@ class Filter : public OperationBase<Filter> {
     };
 };
 
-OperationPtr filter(OperationPtr source, ExpressionPtr condition) {
-    return std::make_shared<Filter>(std::move(source), std::move(condition));
+OperationPtr filter(OperationPtr source, ExpressionPtr condition, ConstFieldBindingPtr binding) {
+    return std::make_shared<Filter>(std::move(source), std::move(condition), std::move(binding));
 }
 
 }  // namespace lsql::exec

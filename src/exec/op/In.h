@@ -9,8 +9,12 @@ namespace lsql::exec {
 
 class In : public OperationBase<In> {
  public:
-    In(OperationPtr source, OperationPtr match_source, ExpressionPtr proj)
-        : OperationBase(std::max(source->minPhase(), match_source->minPhase() + 1))
+    In(OperationPtr source,
+       OperationPtr match_source,
+       ExpressionPtr proj,
+       ConstFieldBindingPtr binding)
+        : OperationBase(
+              std::max(source->minPhase(), match_source->minPhase() + 1), std::move(binding))
         , source_(std::move(source))
         , match_source_(std::move(match_source))
         , proj_(std::move(proj)) {}
@@ -24,12 +28,12 @@ class In : public OperationBase<In> {
             return false;
         }
 
-        auto val = record->values();
-        if (val.size() != 1) {
+        auto ids = record->ids();
+        if (ids.size() != 1) {
             throw std::runtime_error("expected exactly 1 column in IN rhs");
         }
 
-        values_.insert(val.begin()->second);
+        values_.insert(record->value(*ids.begin()));
         return active(phase + 1);
     }
 
@@ -127,8 +131,10 @@ class In : public OperationBase<In> {
     std::unordered_set<Value> values_;
 };
 
-OperationPtr in(OperationPtr source, OperationPtr match, ExpressionPtr proj) {
-    return std::make_shared<In>(std::move(source), std::move(match), std::move(proj));
+OperationPtr in(
+    OperationPtr source, OperationPtr match, ExpressionPtr proj, ConstFieldBindingPtr binding) {
+    return std::make_shared<In>(
+        std::move(source), std::move(match), std::move(proj), std::move(binding));
 }
 
 }  // namespace lsql::exec

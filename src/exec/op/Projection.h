@@ -9,14 +9,14 @@
 namespace lsql::exec {
 
 struct Projector {
-    std::string name;
+    FieldId field_id;
     std::shared_ptr<Expression> expr;
 
     bool all() const { return expr == nullptr; }
 };
 
 using ProjectionList = std::vector<std::unique_ptr<Projector>>;
-using ProjectionMap = std::unordered_map<std::string_view, std::unique_ptr<Projector>>;
+using ProjectionMap = std::unordered_map<FieldId, std::unique_ptr<Projector>>;
 
 class ProjectionRecord : public Record {
  public:
@@ -25,23 +25,23 @@ class ProjectionRecord : public Record {
         , projectors_(std::move(projectors))
         , has_all_(has_all) {}
 
-    values_t values() const override {
-        values_t values;
+    ids_t ids() const override {
+        ids_t ids;
         if (has_all_) {
-            values = get(child_)->values();
+            ids = get(child_)->ids();
         }
-        for (auto&& [name, proj] : *projectors_) {
-            values[std::string(name)] = proj->expr->eval(*get(child_));
+        for (auto&& [id, _] : *projectors_) {
+            ids.insert(id);
         }
-        return values;
+        return ids;
     }
 
-    Value value(std::string_view name) const override {
-        if (auto it = projectors_->find(name); it != projectors_->end()) {
+    Value value(FieldId id) const override {
+        if (auto it = projectors_->find(id); it != projectors_->end()) {
             return it->second->expr->eval(*get(child_));
         }
         if (has_all_) {
-            return get(child_)->value(name);
+            return get(child_)->value(id);
         }
         return null;
     }
@@ -59,8 +59,8 @@ class ProjectionRecord : public Record {
 class Projection : public OperationBase<Projection>,
                    public std::enable_shared_from_this<Projection> {
  public:
-    Projection(OperationPtr source, ProjectionList projectors)
-        : OperationBase(source->minPhase())
+    Projection(OperationPtr source, ProjectionList projectors, ConstFieldBindingPtr binding)
+        : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , projectors_(buildProjectionMap(std::move(projectors))) {}
 
@@ -93,11 +93,11 @@ class Projection : public OperationBase<Projection>,
             return result;
         }
 
-        for (auto&& name : downstream.names()) {
-            if (auto it = projectors_.find(name); it != projectors_.end()) {
+        for (auto&& id : downstream.ids()) {
+            if (auto it = projectors_.find(id); it != projectors_.end()) {
                 result.merge(it->second->expr->requiredFields());
             } else if (has_all_) {
-                result.require(name);
+                result.require(id);
             }
         }
 
@@ -123,8 +123,8 @@ class Projection : public OperationBase<Projection>,
         res.reserve(proj.size());
 
         for (auto&& p : proj) {
-            std::string_view name = p->name;
-            res.emplace(name, std::move(p));
+            auto id = p->field_id;
+            res.emplace(id, std::move(p));
         }
 
         return res;
@@ -140,8 +140,8 @@ class Projection : public OperationBase<Projection>,
     };
 };
 
-OperationPtr projection(OperationPtr source, ProjectionList slist) {
-    return std::make_shared<Projection>(std::move(source), std::move(slist));
+OperationPtr projection(OperationPtr source, ProjectionList slist, ConstFieldBindingPtr binding) {
+    return std::make_shared<Projection>(std::move(source), std::move(slist), std::move(binding));
 }
 
 }  // namespace lsql::exec

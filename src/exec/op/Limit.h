@@ -7,8 +7,8 @@ namespace lsql::exec {
 
 class Limit : public OperationBase<Limit> {
  public:
-    Limit(OperationPtr source, int limit)
-        : OperationBase(source->minPhase())
+    Limit(OperationPtr source, int limit, ConstFieldBindingPtr binding)
+        : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , limit_(limit) {}
 
@@ -66,8 +66,8 @@ class Limit : public OperationBase<Limit> {
     int curr_limit_ = limit_;
 };
 
-OperationPtr limit(OperationPtr source, int limit) {
-    return std::make_shared<Limit>(std::move(source), limit);
+OperationPtr limit(OperationPtr source, int limit, ConstFieldBindingPtr binding) {
+    return std::make_shared<Limit>(std::move(source), limit, std::move(binding));
 }
 
 }  // namespace lsql::exec

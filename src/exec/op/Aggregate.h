@@ -11,8 +11,8 @@ namespace lsql::exec {
 
 class Aggregate : public Source, public OperationBase<Aggregate>, public Record {
  public:
-    Aggregate(OperationPtr source, ProjectionList projectors)
-        : OperationBase(source->minPhase())
+    Aggregate(OperationPtr source, ProjectionList projectors, ConstFieldBindingPtr binding)
+        : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , projectors_(std::move(projectors)) {}
 
@@ -65,7 +65,7 @@ class Aggregate : public Source, public OperationBase<Aggregate>, public Record 
         // end of stream
         values_.reserve(aggregators_.size());
         for (size_t i = 0; i < projectors_.size(); ++i) {
-            values_.emplace(projectors_[i]->name, aggregators_[i]->get());
+            values_.emplace(projectors_[i]->field_id, aggregators_[i]->get());
         }
         aggregators_.clear();
 
@@ -90,7 +90,7 @@ class Aggregate : public Source, public OperationBase<Aggregate>, public Record 
         RequiredFields result = RequiredFields::withNone();
 
         for (auto&& proj : projectors_) {
-            if (!downstream.requiresField(proj->name)) {
+            if (!downstream.requiresField(proj->field_id)) {
                 continue;
             }
 
@@ -101,17 +101,17 @@ class Aggregate : public Source, public OperationBase<Aggregate>, public Record 
     }
 
     // Record
-    values_t values() const override {
-        values_t values;
-        for (auto&& [k, v] : values_) {
-            values.emplace(k, v);
+    ids_t ids() const override {
+        ids_t ids;
+        for (auto&& [id, _] : values_) {
+            ids.insert(id);
         }
-        return values;
+        return ids;
     }
 
     // Record
-    Value value(std::string_view name) const override {
-        auto it = values_.find(name);
+    Value value(FieldId id) const override {
+        auto it = values_.find(id);
         return it == values_.end() ? null : it->second;
     }
 
@@ -162,11 +162,11 @@ class Aggregate : public Source, public OperationBase<Aggregate>, public Record 
     // phase state
     int first_phase_ = -1;
     std::vector<AggregatorPtr> aggregators_;
-    std::unordered_map<std::string_view, Value> values_;
+    std::unordered_map<FieldId, Value> values_;
 };
 
-SourcePtr aggregate(OperationPtr source, ProjectionList slist) {
-    return std::make_shared<Aggregate>(std::move(source), std::move(slist));
+SourcePtr aggregate(OperationPtr source, ProjectionList slist, ConstFieldBindingPtr binding) {
+    return std::make_shared<Aggregate>(std::move(source), std::move(slist), std::move(binding));
 }
 
 }  // namespace lsql::exec

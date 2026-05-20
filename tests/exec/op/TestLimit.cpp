@@ -8,7 +8,7 @@
 namespace lsql::exec {
 
 struct LimitTest : OperationTest {
-    void set(int lim) { setOperation(limit(src, lim)); }
+    void set(int lim) { setOperation(limit(src, lim, binding)); }
 
     std::shared_ptr<MockOperation> src = std::make_shared<MockOperation>();
 };

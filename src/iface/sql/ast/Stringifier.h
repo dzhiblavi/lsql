@@ -4,6 +4,8 @@
 #include "iface/sql/ast/Relations.h"    // IWYU pragma: keep
 #include "iface/sql/ast/Statement.h"    // IWYU pragma: keep
 
+#include "util/StrBuilder.h"
+
 #include <magic_enum/magic_enum.hpp>
 
 #include <format>
@@ -11,274 +13,203 @@
 
 namespace lsql::iface::sql::ast {
 
+inline std::string to_string(const ast::Literal& v) {
+    return std::format("str={},type={}", v.value_str, magic_enum::enum_name(v.type));
+}
+
 class Stringifier {
+    using StrBuilder = util::StrBuilder;
+
  public:
     Stringifier() = default;
 
     std::string print(const Program& program) {
-        std::stringstream ss;
-
+        auto b = StrBuilder("Program AST");
         for (auto&& s : program) {
-            ss << print(s) << '\n';
+            b.child(print(s));
         }
-
-        return ss.str();
+        return b.render();
     }
 
  private:
-    struct IndentScope {
-        IndentScope(int* indent) : indent(indent) { ++*indent; }
-        ~IndentScope() { --*indent; }
-        int* indent;
-    };
+    template <typename T>
+    static std::string toString(const std::vector<T>& values) {
+        using std::to_string;
 
-    auto indentScope() { return IndentScope{&indent_}; }
-
-    std::string indent() const {
         std::stringstream ss;
-        for (int i = 0; i < indent_; ++i) {
-            ss << "  ";
+        ss << '[';
+        for (auto&& v : values) {
+            ss << to_string(v) << ',';
         }
+        if (!values.empty()) {
+            ss.seekp(-1, std::ios_base::end);
+        }
+        ss << ']';
         return ss.str();
     }
-    std::string print(const Statement& st) {
+
+    StrBuilder print(const Statement& st) {
         return std::visit([this](auto&& arg) { return this->print(arg); }, st);
     }
 
-    std::string print(const QueryStatement& s) {
-        std::string relation;
-        {
-            auto _ = indentScope();
-            relation = print(*s.relation);
-        }
-        return std::format("{}QueryStatement:\n{}", indent(), relation);
+    StrBuilder print(const QueryStatement& s) {
+        return StrBuilder("QueryStatement").child(print(*s.relation));
     }
 
-    std::string print(const NamedRelationStatement& s) {
-        std::string relation;
-        {
-            auto _ = indentScope();
-            relation = print(*s.relation);
-        }
-        return std::format("{}Name to {}:\n{}", indent(), s.name, relation);
+    StrBuilder print(const NamedRelationStatement& s) {
+        return StrBuilder("NamedRelationStatement name={}", s.name).child(print(*s.relation));
     }
 
-    std::string print(const Relation& r) {
+    StrBuilder print(const Relation& r) {
         return std::visit([this](auto&& arg) { return this->print(arg); }, r);
     }
 
-    std::string print(const AdhocRelation& r) {
-        std::stringstream ss;
-        ss << indent() << "Adhoc (";
-        for (auto&& literal : r.literals) {
-            ss << std::format(
-                "[{} (type {})],", literal.value_str, magic_enum::enum_name(literal.type));
-        }
-        ss << ")";
-        return ss.str();
+    StrBuilder print(const AdhocRelation& r) {
+        return StrBuilder("AdhocRelation count={}", r.literals.size())
+            .child(StrBuilder("literals").child(toString(r.literals)));
     }
 
-    std::string print(const SelectRelation& r) {
-        std::stringstream ss;
-        ss << indent() << "SelectRelation source:";
-        {
-            auto _ = indentScope();
-            ss << '\n' << print(*r.source);
-        }
-        ss << '\n' << indent() << "Projectors:";
+    StrBuilder print(const SelectRelation& r) {
+        auto p = StrBuilder("projectors");
         for (auto&& proj : r.projectors) {
-            auto _ = indentScope();
-            ss << '\n' << print(proj);
+            p.child(print(proj));
         }
+
+        auto b = StrBuilder("SelectRelation")
+                     .child(StrBuilder("source").child(print(*r.source)))
+                     .child(p);
+
         if (r.where) {
-            ss << '\n' << indent() << "Where:";
-            {
-                auto _ = indentScope();
-                ss << '\n' << print(*r.where);
-            }
+            b.child(print(*r.where));
         }
         if (r.limit) {
-            ss << '\n' << indent() << "Limit:";
-            {
-                auto _ = indentScope();
-                ss << '\n' << print(*r.limit);
-            }
+            b.child(print(*r.limit));
         }
         if (r.order_by) {
-            ss << '\n' << indent() << "OrderBy:";
-            {
-                auto _ = indentScope();
-                ss << '\n' << print(*r.order_by);
-            }
+            b.child(print(*r.order_by));
         }
         if (r.group_by) {
-            ss << '\n' << indent() << "GroupBy:";
-            {
-                auto _ = indentScope();
-                ss << '\n' << print(*r.group_by);
-            }
+            b.child(print(*r.group_by));
         }
 
-        return ss.str();
+        return b;
     }
 
-    std::string print(const Projector& p) {
+    StrBuilder print(const Projector& p) {
         return std::visit([this](auto&& p) { return print(p); }, p);
     }
 
-    std::string print(const StarProjector&) { return std::format("{}*-projector", indent()); }
+    StrBuilder print(const StarProjector&) { return StrBuilder("*-projector"); }
 
-    std::string print(const IdentifierProjector& p) {
-        return std::format("{}Identifier projector '{}'", indent(), p.identifier);
+    StrBuilder print(const IdentifierProjector& p) {
+        return StrBuilder("IdentifierProjector '{}'", p.identifier);
     }
 
-    std::string print(const ExprProjector& p) {
-        std::stringstream ss;
-        ss << indent() << std::format("Expression projector alias={}", p.alias);
-        auto _ = indentScope();
-        ss << '\n' << print(*p.expr);
-        return ss.str();
+    StrBuilder print(const ExprProjector& p) {
+        return StrBuilder("ExprProjector alias={}", p.alias).child(print(*p.expr));
     }
 
-    std::string print(const Where& w) {
-        std::stringstream ss;
-        ss << indent() << "Where";
-        auto _ = indentScope();
-        ss << '\n' << print(*w.condition);
-        return ss.str();
-    }
+    StrBuilder print(const Where& w) { return StrBuilder("Where").child(print(*w.condition)); }
 
-    std::string print(const Limit& l) { return std::format("{}Limit={}", indent(), l.limit); }
+    StrBuilder print(const Limit& l) { return StrBuilder("Limit={}", l.limit); }
 
-    std::string print(const OrderBy& o) {
-        std::stringstream ss;
-        ss << indent() << std::format("OrderBy desc={}", o.desc);
+    StrBuilder print(const OrderBy& o) {
+        auto b = StrBuilder("OrderBy desc={}", o.desc);
         for (auto&& e : o.order_list) {
-            auto _ = indentScope();
-            ss << '\n' << print(e);
+            b.child(StrBuilder("- child").child(print(e)));
         }
-        return ss.str();
+        return b;
     }
 
-    std::string print(const GroupBy& g) {
-        std::stringstream ss;
-        ss << indent() << "GroupBy";
+    StrBuilder print(const GroupBy& g) {
+        auto b = StrBuilder("GroupBy");
         for (auto&& p : g.group_list) {
-            auto _ = indentScope();
-            ss << '\n' << print(p);
+            b.child(print(p));
         }
-        return ss.str();
+        return b;
     }
 
-    std::string print(const UnionAllRelation& r) {
-        std::stringstream ss;
-        ss << indent() << "UnionAll";
-        auto _ = indentScope();
-        ss << '\n' << print(*r.left);
-        ss << '\n' << print(*r.right);
-        return ss.str();
+    StrBuilder print(const UnionAllRelation& r) {
+        return StrBuilder("UnionAll")
+            .child(StrBuilder("- left").child(print(*r.left)))
+            .child(StrBuilder("- right").child(print(*r.right)));
     }
 
-    std::string print(const UnionAllSortedByRelation& r) {
-        std::stringstream ss;
-        ss << indent() << std::format("UnionAllSortedBy desc={}", r.order_by.desc);
+    StrBuilder print(const UnionAllSortedByRelation& r) {
+        auto order = StrBuilder("order list");
         for (auto&& item : r.order_by.order_list) {
-            auto _ = indentScope();
-            ss << '\n' << print(item);
+            order.child(print(item));
         }
-        auto _ = indentScope();
-        ss << '\n' << print(*r.left);
-        ss << '\n' << print(*r.right);
-        return ss.str();
+
+        return StrBuilder("UnionAll")
+            .child(StrBuilder("- left").child(print(*r.left)))
+            .child(StrBuilder("- right").child(print(*r.right)))
+            .child(order);
     }
 
-    std::string print(const FileRelation& r) { return std::format("{}File {}", indent(), r.path); }
+    StrBuilder print(const FileRelation& r) { return StrBuilder("FileRelation path={}", r.path); }
 
-    std::string print(const FileIntervalRelation& r) {
-        return std::format(
-            "{}File {} [from {}, interval {}s]", indent(), r.path, r.ts_from, r.interval_s);
+    StrBuilder print(const FileIntervalRelation& r) {
+        return StrBuilder(
+            "FileIntervalRelation path={} ts_from={}, interval={}",
+            r.path,
+            r.ts_from,
+            r.interval_s);
     }
 
-    std::string print(const NamedRelationReferenceRelation& r) {
-        return std::format("{}Reference relation name={}", indent(), r.name);
+    StrBuilder print(const NamedRelationReferenceRelation& r) {
+        return StrBuilder("NamedRelationReferenceRelation name={}", r.name);
     }
 
-    std::string print(const MaterializeRelation& r) {
-        std::stringstream ss;
-        ss << indent() << "Materialize";
-        auto _ = indentScope();
-        ss << '\n' << print(*r.relation);
-        return ss.str();
+    StrBuilder print(const MaterializeRelation& r) {
+        return StrBuilder("MaterializeRelation").child(print(*r.relation));
     }
 
-    std::string print(const Expr& e) {
+    StrBuilder print(const Expr& e) {
         return std::visit([this](auto&& arg) { return this->print(arg); }, e);
     }
 
-    std::string print(const IdentifierExpr& e) {
-        return std::format("{}Identifier {}", indent(), e.identifier);
+    StrBuilder print(const IdentifierExpr& e) {
+        return StrBuilder("IdentifierExpr id={}", e.identifier);
     }
 
-    std::string print(const LiteralExpr& e) {
-        return std::format(
-            "{}Literal {} (type {})",
-            indent(),
-            e.literal.value_str,
-            magic_enum::enum_name(e.literal.type));
+    StrBuilder print(const LiteralExpr& e) {
+        return StrBuilder("LiteralExpr literal={}", to_string(e.literal));
     }
 
-    std::string print(const CastExpr& e) {
-        std::stringstream ss;
-        ss << indent() << std::format("Cast to type {}", magic_enum::enum_name(e.cast_to));
-        auto _ = indentScope();
-        ss << '\n' << print(*e.expr);
-        return ss.str();
+    StrBuilder print(const CastExpr& e) {
+        return StrBuilder("CastExpr to type {}", magic_enum::enum_name(e.cast_to))
+            .child(print(*e.expr));
     }
 
-    std::string print(const InExpr& e) {
-        std::stringstream ss;
-        ss << indent() << "In (expr, source)";
-        auto _ = indentScope();
-        ss << '\n' << print(*e.expr);
-        ss << '\n' << print(*e.source);
-        return ss.str();
+    StrBuilder print(const InExpr& e) {
+        return StrBuilder("InExpr")
+            .child(StrBuilder("expression").child(print(*e.expr)))
+            .child(StrBuilder("match source").child(print(*e.source)));
     }
 
-    std::string print(const LikeExpr& e) {
-        std::stringstream ss;
-        ss << indent() << std::format("Like '{}'", e.regex);
-        auto _ = indentScope();
-        ss << '\n' << print(*e.expr);
-        return ss.str();
+    StrBuilder print(const LikeExpr& e) {
+        return StrBuilder("LikeExpr '{}'", e.regex).child(print(*e.expr));
     }
 
-    std::string print(const FnCallExpr& e) {
-        std::stringstream ss;
-        ss << indent() << std::format("Function call name: {}", e.func);
+    StrBuilder print(const FnCallExpr& e) {
+        auto a = StrBuilder("args");
         for (auto&& arg : e.args) {
-            auto _ = indentScope();
-            ss << '\n' << print(arg);
+            a.child(print(arg));
         }
-        return ss.str();
+        return StrBuilder("FnCallExpr name={}", e.func).child(a);
     }
 
-    std::string print(const BinaryExpr& e) {
-        std::stringstream ss;
-        ss << indent() << std::format("BinaryExpr type: {}", magic_enum::enum_name(e.type));
-        auto _ = indentScope();
-        ss << '\n' << print(*e.left);
-        ss << '\n' << print(*e.right);
-        return ss.str();
+    StrBuilder print(const BinaryExpr& e) {
+        return StrBuilder("BinaryExpr type: {}", magic_enum::enum_name(e.type))
+            .child(StrBuilder("left").child(print(*e.left)))
+            .child(StrBuilder("right").child(print(*e.right)));
     }
 
-    std::string print(const UnaryExpr& e) {
-        std::stringstream ss;
-        ss << indent() << std::format("UnaryExpr type: {}", magic_enum::enum_name(e.type));
-        auto _ = indentScope();
-        ss << '\n' << print(*e.expr);
-        return ss.str();
+    StrBuilder print(const UnaryExpr& e) {
+        return StrBuilder("UnaryExpr type: {}", magic_enum::enum_name(e.type))
+            .child(print(*e.expr));
     }
-    int indent_ = 0;
 };
 
 }  // namespace lsql::iface::sql::ast

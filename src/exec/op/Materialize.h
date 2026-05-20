@@ -9,8 +9,8 @@ namespace lsql::exec {
 
 class Materialize : public Source, public OperationBase<Materialize> {
  public:
-    Materialize(OperationPtr source)
-        : OperationBase(source->minPhase())
+    Materialize(OperationPtr source, ConstFieldBindingPtr binding)
+        : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source)) {}
 
     void push(int phase) override {
@@ -112,8 +112,8 @@ class Materialize : public Source, public OperationBase<Materialize> {
     int first_phase_ = -1;
 };
 
-SourcePtr materialize(OperationPtr source) {
-    return std::make_shared<Materialize>(std::move(source));
+SourcePtr materialize(OperationPtr source, ConstFieldBindingPtr binding) {
+    return std::make_shared<Materialize>(std::move(source), std::move(binding));
 }
 
 }  // namespace lsql::exec

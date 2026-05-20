@@ -17,8 +17,9 @@ class MergeSorted : public OperationBase<MergeSorted> {
     };
 
  public:
-    MergeSorted(OperationPtr l, OperationPtr r, SortList slist, bool desc)
-        : OperationBase(std::max(l->minPhase(), r->minPhase()))
+    MergeSorted(
+        OperationPtr l, OperationPtr r, SortList slist, bool desc, ConstFieldBindingPtr binding)
+        : OperationBase(std::max(l->minPhase(), r->minPhase()), std::move(binding))
         , l_(std::move(l))
         , r_(std::move(r))
         , slist_(std::move(slist))
@@ -289,8 +290,10 @@ class MergeSorted : public OperationBase<MergeSorted> {
     std::array<std::queue<std::pair<ConstRecordPtr, SortKey>>, 2> buffers_ = {};
 };
 
-OperationPtr mergeSorted(OperationPtr l, OperationPtr r, SortList slist, bool desc) {
-    return std::make_shared<MergeSorted>(std::move(l), std::move(r), std::move(slist), desc);
+OperationPtr mergeSorted(
+    OperationPtr l, OperationPtr r, SortList slist, bool desc, ConstFieldBindingPtr binding) {
+    return std::make_shared<MergeSorted>(
+        std::move(l), std::move(r), std::move(slist), desc, std::move(binding));
 }
 
 }  // namespace lsql::exec

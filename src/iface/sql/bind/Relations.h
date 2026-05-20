@@ -23,7 +23,7 @@ struct AdhocRelation {
 struct StarProjector {};
 
 struct ExprProjector {
-    std::string alias;
+    FieldId alias_field_id;
     Box<Expr> expr;
 };
 
