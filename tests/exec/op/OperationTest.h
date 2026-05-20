@@ -17,7 +17,8 @@ struct OperationTest : Subscriber {
         binding->add("test-value");
     }
 
-    ~OperationTest() { CAPTURE(expected_values.size());
+    ~OperationTest() {
+        CAPTURE(expected_values.size());
         CHECK(expected_values.empty());
     }
 

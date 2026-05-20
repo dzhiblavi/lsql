@@ -338,11 +338,11 @@ void explain(int max_phase, const auto& operations) {
             auto explain = op->explain(ctx);
 
             if (!explain.empty()) {
-                std::cout << explain.format() << std::endl;
+                std::cout << explain.render() << std::endl;
             }
         }
 
-        std::cout << explanation.format() << std::endl;
+        std::cout << explanation.render() << std::endl;
     }
 }
 

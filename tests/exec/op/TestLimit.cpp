@@ -10,7 +10,7 @@ namespace lsql::exec {
 struct LimitTest : OperationTest {
     void set(int lim) { setOperation(limit(src, lim, binding)); }
 
-    std::shared_ptr<MockOperation> src = std::make_shared<MockOperation>();
+    std::shared_ptr<MockOperation> src = std::make_shared<MockOperation>(binding);
 };
 
 TEST_CASE_METHOD(LimitTest, "EmptyStream") {

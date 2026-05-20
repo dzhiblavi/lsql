@@ -16,7 +16,9 @@ class StrBuilder {
         lines_.push_back(std::format(fmt, args...));
     }
 
-    std::string render() {
+    bool empty() const { return lines_.empty(); }
+
+    std::string render() const {
         std::stringstream ss;
         for (auto&& line : lines_) {
             ss << line << '\n';
@@ -28,6 +30,18 @@ class StrBuilder {
         for (auto&& line : builder.lines_) {
             lines_.push_back(std::format("  {}", line));
         }
+        return *this;
+    }
+
+    StrBuilder& block(StrBuilder builder) {
+        for (auto&& line : builder.lines_) {
+            lines_.push_back(std::move(line));
+        }
+        return *this;
+    }
+
+    StrBuilder& line(std::string s) {
+        lines_.push_back(std::move(s));
         return *this;
     }
 
