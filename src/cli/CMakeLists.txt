@@ -26,7 +26,7 @@ target_link_libraries(
     lsql-util
     lsql-core
     lsql-logs
-    lsql-interface-sql
+    lsql-iface-sql
 )
 
 target_link_options(lsql PRIVATE
@@ -44,7 +44,7 @@ target_link_options(lsql PRIVATE
     #lsql-util
     #lsql-core
     #lsql-logs
-    #lsql-interface-sql
+    #lsql-iface-sql
 #)
 
 #target_link_options(play PRIVATE

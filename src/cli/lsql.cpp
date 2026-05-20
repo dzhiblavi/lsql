@@ -2,14 +2,14 @@
 #include "exec/prof/Profiler.h"
 #include "util/ThreadPool.h"
 
-#include "interface/sql/ast/Stringifier.h"
-#include "interface/sql/bind/bind.h"
-#include "interface/sql/exec/plan.h"
-#include "interface/sql/parser/parse.h"
+#include "iface/sql/ast/Stringifier.h"
+#include "iface/sql/bind/bind.h"
+#include "iface/sql/exec/plan.h"
+#include "iface/sql/parser/parse.h"
 
-#include "interface/sql/bind/Expressions.h"  // IWYU pragma: keep
-#include "interface/sql/bind/Relations.h"    // IWYU pragma: keep
-#include "interface/sql/bind/Statement.h"    // IWYU pragma: keep
+#include "iface/sql/bind/Expressions.h"  // IWYU pragma: keep
+#include "iface/sql/bind/Relations.h"    // IWYU pragma: keep
+#include "iface/sql/bind/Statement.h"    // IWYU pragma: keep
 
 #include <llog/load.h>
 #include <llog/log.h>
