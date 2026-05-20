@@ -8,4 +8,9 @@ add_library(
     SearchTimestamp.cpp
 )
 
-target_link_libraries(lsql-logs PUBLIC lsql-util lsql-core abseil::abseil)
+target_link_libraries(
+    lsql-logs PUBLIC
+    lsql-util
+    lsql-core
+    abseil::abseil
+)

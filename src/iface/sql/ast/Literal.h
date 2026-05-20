@@ -11,4 +11,4 @@ struct Literal {
     std::string value_str;
 };
 
-}  // namespace lsql::iface::sql
+}  // namespace lsql::iface::sql::ast

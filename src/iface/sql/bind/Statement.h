@@ -13,7 +13,7 @@ struct NamedRelationStatement;
 struct QueryStatement;
 
 using Statement = std::variant<  //
-    NamedRelationStatement,
+    NamedRelationStatement, //
     QueryStatement //
 >;
 

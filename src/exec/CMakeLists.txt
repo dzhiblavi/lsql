@@ -4,4 +4,10 @@ add_library(
     prof/OperationHandle.cpp
 )
 
-target_link_libraries(lsql-exec PUBLIC lsql-core lsql-logs reflectcpp libcoro)
+target_link_libraries(
+    lsql-exec PUBLIC
+    lsql-core
+    lsql-logs
+    reflectcpp
+    libcoro
+)

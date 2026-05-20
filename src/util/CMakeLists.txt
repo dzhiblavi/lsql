@@ -6,4 +6,8 @@ add_library(
     instrument/duration.cpp
 )
 
-target_link_libraries(lsql-util INTERFACE magic_enum::magic_enum llog)
+target_link_libraries(
+    lsql-util INTERFACE
+    magic_enum::magic_enum
+    llog
+)

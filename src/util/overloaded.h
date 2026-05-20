@@ -19,9 +19,7 @@ decltype(auto) match(V&& variant, F&&... funcs) {
 
 template <typename V, typename... F>
 void matchPartial(V&& variant, F&&... funcs) {
-    std::visit(
-        Overloaded{std::forward<F>(funcs)..., [](auto&&...) {}},
-        std::forward<V>(variant));
+    std::visit(Overloaded{std::forward<F>(funcs)..., [](auto&&...) {}}, std::forward<V>(variant));
 }
 
 }  // namespace lsql::util
