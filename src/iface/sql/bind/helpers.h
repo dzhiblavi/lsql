@@ -3,19 +3,11 @@
 #include "iface/sql/ast/Literal.h"
 
 #include "core/Value.h"
+#include "core/require.h"
 
 #include <format>
 
 namespace lsql::iface::sql::bind {
-
-template <typename... Args>
-void require(bool value, std::format_string<const Args&...> fmt, const Args&... args) {
-    if (value) [[likely]] {
-        return;
-    }
-
-    throw std::runtime_error(std::format(fmt, args...));
-}
 
 inline std::string removeQuotes(const std::string& s) {
     require(s.size() >= 2, "string literal is too small");
