@@ -2,7 +2,7 @@
 
 #include <format>
 
-namespace lsql::iface::sql::bind {
+namespace lsql {
 
 template <typename... Args>
 [[noreturn]] void throwError(std::format_string<const Args&...> fmt, const Args&... args) {
@@ -18,4 +18,4 @@ void require(bool value, std::format_string<const Args&...> fmt, const Args&... 
     throwError(fmt, args...);
 }
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql

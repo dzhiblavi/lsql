@@ -15,6 +15,8 @@ struct Projector {
     bool all() const { return expr == nullptr; }
 };
 
+using ProjectorPtr = std::unique_ptr<Projector>;
+
 using ProjectionList = std::vector<std::unique_ptr<Projector>>;
 using ProjectionMap = std::unordered_map<FieldId, std::unique_ptr<Projector>>;
 
