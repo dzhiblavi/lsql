@@ -13,7 +13,7 @@
 #include "exec/op/Aggregate.h"
 #include "exec/op/Filter.h"
 #include "exec/op/Group.h"
-#include "exec/op/In.h"
+#include "exec/op/SemiJoin.h"
 #include "exec/op/Limit.h"
 #include "exec/op/Materialize.h"
 #include "exec/op/MergeSorted.h"
@@ -124,7 +124,7 @@ class Planner {
         planExpr(std::move(*r.expr));
         auto expr = popExpression();
 
-        operations.push(exec::in(source, match, expr, binding_));
+        operations.push(exec::semiJoin(source, match, expr, binding_));
     }
 
     void planRelation(ir::UnionAllRelation r) {

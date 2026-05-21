@@ -7,12 +7,13 @@
 
 namespace lsql::exec {
 
-class In : public OperationBase<In> {
+class SemiJoin : public OperationBase<SemiJoin> {
  public:
-    In(OperationPtr source,
-       OperationPtr match_source,
-       ExpressionPtr proj,
-       ConstFieldBindingPtr binding)
+    SemiJoin(
+        OperationPtr source,
+        OperationPtr match_source,
+        ExpressionPtr proj,
+        ConstFieldBindingPtr binding)
         : OperationBase(
               std::max(source->minPhase(), match_source->minPhase() + 1), std::move(binding))
         , source_(std::move(source))
@@ -115,14 +116,14 @@ class In : public OperationBase<In> {
     OperationPtr match_source_;
     ExpressionPtr proj_;
 
-    MemberSubscriber<In> sub_source_{
+    MemberSubscriber<SemiJoin> sub_source_{
         this,
-        &In::consumeSource,
+        &SemiJoin::consumeSource,
         prof_.inputHandle(&sub_source_),
     };
-    MemberSubscriber<In> sub_match_{
+    MemberSubscriber<SemiJoin> sub_match_{
         this,
-        &In::consumeMatch,
+        &SemiJoin::consumeMatch,
         prof_.inputHandle(&sub_match_),
     };
 
@@ -131,9 +132,9 @@ class In : public OperationBase<In> {
     std::unordered_set<Value> values_;
 };
 
-OperationPtr in(
+OperationPtr semiJoin(
     OperationPtr source, OperationPtr match, ExpressionPtr proj, ConstFieldBindingPtr binding) {
-    return std::make_shared<In>(
+    return std::make_shared<SemiJoin>(
         std::move(source), std::move(match), std::move(proj), std::move(binding));
 }
 
