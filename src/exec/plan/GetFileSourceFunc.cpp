@@ -1,4 +1,4 @@
-#include "iface/sql/exec/GetFileSourceFunc.h"
+#include "exec/plan/GetFileSourceFunc.h"
 
 #include "data/Log.h"
 #include "data/PagedFile.h"
@@ -9,7 +9,7 @@
 
 #include "exec/op/Log.h"
 
-namespace lsql::iface::sql::exe {
+namespace lsql::exec {
 
 namespace {
 
@@ -22,14 +22,13 @@ logs::LogType getLogType(const data::PagedFile& file) {
     throw std::runtime_error("failed to detect log type");
 }
 
-exec::SourcePtr getFileSourceWhole(std::string path, ConstFieldBindingPtr binding) {
+SourcePtr getFileSourceWhole(std::string path, ConstFieldBindingPtr binding) {
     auto file = data::NativePagedFile::open(path);
-    return std::make_shared<exec::Log>(
+    return std::make_shared<Log>(
         std::make_shared<data::PagedLog>(file), getLogType(*file), std::move(binding));
 }
 
-exec::SourcePtr getFileSourceRange(
-    std::string path, TimeRange range, ConstFieldBindingPtr binding) {
+SourcePtr getFileSourceRange(std::string path, TimeRange range, ConstFieldBindingPtr binding) {
     auto file = data::NativePagedFile::open(path);
     auto log_type = getLogType(*file);
     auto time_format = logs::timeFormat(log_type);
@@ -40,11 +39,11 @@ exec::SourcePtr getFileSourceRange(
         from_pos = to_pos = 0;
     }
 
-    return std::make_shared<exec::Log>(
+    return std::make_shared<Log>(
         std::make_shared<data::PagedLog>(file, from_pos, to_pos), log_type, std::move(binding));
 }
 
-exec::SourcePtr getFileSource(
+SourcePtr getFileSource(
     std::string path, ConstFieldBindingPtr binding, std::optional<TimeRange> range) {
     if (range.has_value()) {
         return getFileSourceRange(path, *range, std::move(binding));
@@ -58,4 +57,4 @@ GetFileSourceFuncType defaultFileSourceFunc() {
     return &getFileSource;
 }
 
-}  // namespace lsql::iface::sql::exe
+}  // namespace lsql::exec

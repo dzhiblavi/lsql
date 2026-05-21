@@ -8,7 +8,7 @@
 #include <functional>
 #include <string>
 
-namespace lsql::iface::sql::exe {
+namespace lsql::exec {
 
 struct TimeRange {
     timestamp_t ts_from;

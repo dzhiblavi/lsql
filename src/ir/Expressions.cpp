@@ -1,9 +1,9 @@
-#include "iface/sql/bind/Expressions.h"
+#include "ir/Expressions.h"
 
-#include "iface/sql/bind/Expr.h"
-#include "iface/sql/bind/ExprKindLevel.h"
+#include "ir/Expr.h"
+#include "ir/ExprKindLevel.h"
 
-namespace lsql::iface::sql::bind {
+namespace lsql::ir {
 
 ValueType valueTypeOf(const Expr& e) {
     return std::visit([](auto&& e) { return e.valueType(); }, e);
@@ -49,4 +49,4 @@ ExprKindLevel BinaryExpr::level() const {
     return composed(exprKindLevelOf(*left), exprKindLevelOf(*right));
 }
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::ir

@@ -1,14 +1,14 @@
 #pragma once
 
-#include "iface/sql/bind/Expr.h"
-#include "iface/sql/bind/ExprKindLevel.h"
-#include "iface/sql/bind/Relation.h"
+#include "ir/Expr.h"
+#include "ir/ExprKindLevel.h"
+#include "ir/Relation.h"
 
 #include "core/Fields.h"
 #include "core/Value.h"
 #include "core/types.h"
 
-namespace lsql::iface::sql::bind {
+namespace lsql::ir {
 
 ValueType valueTypeOf(const Expr& e);
 ExprKindLevel exprKindLevelOf(const Expr& e);
@@ -121,4 +121,4 @@ struct BinaryExpr {
     ExprKindLevel level() const;
 };
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::ir

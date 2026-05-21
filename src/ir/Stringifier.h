@@ -1,15 +1,14 @@
 #pragma once
 
-#include "iface/sql/bind/Expressions.h"  // IWYU pragma: keep
-#include "iface/sql/bind/Relations.h"    // IWYU pragma: keep
-#include "iface/sql/bind/Statement.h"    // IWYU pragma: keep
-#include "iface/sql/bind/bind.h"
+#include "ir/Expressions.h"  // IWYU pragma: keep
+#include "ir/Relations.h"    // IWYU pragma: keep
+#include "ir/Statement.h"    // IWYU pragma: keep
 
 #include "util/StrBuilder.h"
 
 #include <magic_enum/magic_enum.hpp>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::ir {
 
 class Stringifier {
     using StrBuilder = util::StrBuilder;
@@ -17,11 +16,11 @@ class Stringifier {
  public:
     Stringifier() = default;
 
-    std::string print(const BoundProgram& program) {
+    std::string print(const Program& program) {
         binding_ = program.field_binding;
         StrBuilder b("BoundProgram");
 
-        for (auto&& s : program.program) {
+        for (auto&& s : program.statements) {
             b.child(print(s));
         }
 
@@ -252,4 +251,4 @@ class Stringifier {
     ConstFieldBindingPtr binding_;
 };
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::ir

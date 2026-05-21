@@ -1,8 +1,8 @@
 #pragma once
 
-#include "iface/sql/bind/Expr.h"
-#include "iface/sql/bind/Relation.h"
-#include "iface/sql/bind/RelationFields.h"
+#include "ir/Expr.h"
+#include "ir/Relation.h"
+#include "ir/RelationFields.h"
 
 #include "util/overloaded.h"
 
@@ -11,7 +11,7 @@
 
 #include <vector>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::ir {
 
 RelationFields fieldsOf(const Relation& r);
 

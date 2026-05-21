@@ -1,10 +1,8 @@
 #pragma once
 
-#include "iface/sql/ast/Relation.h"
-
 #include <variant>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::ir {
 
 struct AdhocRelation;
 struct SelectRelation;

@@ -3,15 +3,16 @@
 #include "util/ThreadPool.h"
 
 #include "iface/sql/ast/Stringifier.h"
-#include "iface/sql/bind/Stringifier.h"
+#include "ir/Stringifier.h"
+
+#include "exec/plan/plan.h"
 
 #include "iface/sql/bind/bind.h"
-#include "iface/sql/exec/plan.h"
 #include "iface/sql/parser/parse.h"
 
-#include "iface/sql/bind/Expressions.h"  // IWYU pragma: keep
-#include "iface/sql/bind/Relations.h"    // IWYU pragma: keep
-#include "iface/sql/bind/Statement.h"    // IWYU pragma: keep
+#include "ir/Expressions.h"  // IWYU pragma: keep
+#include "ir/Relations.h"    // IWYU pragma: keep
+#include "ir/Statement.h"    // IWYU pragma: keep
 
 #include <llog/load.h>
 #include <llog/log.h>
@@ -84,10 +85,10 @@ TCLAP::SwitchArg debug_ast_arg{
     "show AST",
 };
 
-TCLAP::SwitchArg debug_bind_arg{
+TCLAP::SwitchArg debug_ir_arg{
     "",
-    "debug-bind",
-    "show bound AST",
+    "debug-ir",
+    "show IR",
 };
 
 TCLAP::SwitchArg profile_arg{
@@ -110,7 +111,7 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&force_run_arg);
     cmd.add(&explain_arg);
     cmd.add(&debug_ast_arg);
-    cmd.add(&debug_bind_arg);
+    cmd.add(&debug_ir_arg);
     cmd.add(&threads_arg);
     cmd.add(&profile_arg);
     cmd.setExceptionHandling(false);
@@ -123,14 +124,14 @@ bool parseArgs(std::span<const char*> argv) {
         return false;
     }
 
-    if ((explain_arg || debug_ast_arg || debug_bind_arg) && !force_run_arg) {
+    if ((explain_arg || debug_ast_arg || debug_ir_arg) && !force_run_arg) {
         run_query = false;
     }
 
     return true;
 }
 
-iface::sql::exe::Plan makePlan(std::string maybe_path) {
+exec::Plan makePlan(std::string maybe_path) {
     std::ifstream ifs;
     std::istream* is = [&] -> std::istream* {
         if (maybe_path.empty()) {
@@ -147,11 +148,11 @@ iface::sql::exe::Plan makePlan(std::string maybe_path) {
         std::cout << iface::sql::ast::Stringifier().print(program) << std::endl;
     }
     auto bind = iface::sql::bind::bind(std::move(program));
-    if (debug_bind_arg) {
-        std::cout << "Bound AST dump:" << std::endl;
-        std::cout << iface::sql::bind::Stringifier().print(bind) << std::endl;
+    if (debug_ir_arg) {
+        std::cout << "IR dump:" << std::endl;
+        std::cout << ir::Stringifier().print(bind) << std::endl;
     }
-    return iface::sql::exe::plan(std::move(bind));
+    return exec::plan(std::move(bind));
 }
 
 std::string escapeForJSON(const std::string& input) {

@@ -1,10 +1,8 @@
 #pragma once
 
-#include "iface/sql/ast/Expr.h"
-
 #include <variant>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::ir {
 
 struct FieldExpr;
 struct ValueExpr;
@@ -32,4 +30,4 @@ using Expr = std::variant< //
     BinaryExpr //
 >;
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::ir

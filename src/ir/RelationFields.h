@@ -6,7 +6,7 @@
 
 #include <unordered_map>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::ir {
 
 class RelationFields {
  public:

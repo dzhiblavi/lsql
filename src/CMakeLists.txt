@@ -1,6 +1,7 @@
 add_subdirectory(util)
 add_subdirectory(core)
 add_subdirectory(data)
+add_subdirectory(ir)
 add_subdirectory(exec)
 add_subdirectory(logs)
 add_subdirectory(iface)

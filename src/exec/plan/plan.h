@@ -3,11 +3,11 @@
 #include "exec/op/Operation.h"
 #include "exec/op/Source.h"
 
-#include "iface/sql/bind/bind.h"
+#include "ir/Statement.h"
 
 #include <vector>
 
-namespace lsql::iface::sql::exe {
+namespace lsql::exec {
 
 struct Plan {
     std::vector<exec::SourcePtr> sources;
@@ -15,6 +15,6 @@ struct Plan {
     ConstFieldBindingPtr field_binding;
 };
 
-Plan plan(bind::BoundProgram program);
+Plan plan(ir::Program program);
 
 }  // namespace lsql::iface::sql::exe

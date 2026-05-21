@@ -1,12 +1,14 @@
 #pragma once
 
+#include "ir/Relation.h"
+
+#include "core/Fields.h"
 #include "core/types.h"
-#include "iface/sql/bind/Relation.h"
 
 #include <variant>
 #include <vector>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::ir {
 
 struct NamedRelationStatement;
 struct QueryStatement;
@@ -15,8 +17,6 @@ using Statement = std::variant<  //
     NamedRelationStatement, //
     QueryStatement //
 >;
-
-using Program = std::vector<Statement>;
 
 struct NamedRelationStatement {
     std::string name;
@@ -27,4 +27,9 @@ struct QueryStatement {
     Box<Relation> relation;
 };
 
-}  // namespace lsql::iface::sql::bind
+struct Program {
+    std::vector<Statement> statements;
+    ConstFieldBindingPtr field_binding;
+};
+
+}  // namespace lsql::ir

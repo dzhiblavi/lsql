@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::ir {
 
 enum class ExprKindLevel {
     Const,
@@ -26,4 +26,4 @@ inline ExprKindLevel composed(ExprKindLevel a, ExprKindLevel b) {
     return a == ExprKindLevel::Const ? b : a;
 }
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::ir

@@ -1,6 +1,6 @@
-#include "iface/sql/exec/plan.h"
+#include "exec/plan/plan.h"
 
-#include "iface/sql/exec/GetFileSourceFunc.h"
+#include "exec/plan/GetFileSourceFunc.h"
 
 #include "exec/expr/BinaryExpression.h"
 #include "exec/expr/Coalesce.h"
@@ -22,59 +22,59 @@
 #include "exec/op/UnionAll.h"
 #include "exec/op/Values.h"
 
-#include "iface/sql/bind/Expressions.h"
-#include "iface/sql/bind/Relations.h"
-#include "iface/sql/bind/Statement.h"
+#include "ir/Expressions.h"
+#include "ir/Relations.h"
+#include "ir/Statement.h"
 
-namespace lsql::iface::sql::exe {
+namespace lsql::exec {
 
 namespace {
 
 class Planner {
  public:
-    Plan plan(bind::BoundProgram program) && {
+    Plan plan(ir::Program program) && {
         binding_ = program.field_binding;
         plan_.field_binding = binding_;
-        for (auto&& statement : program.program) {
+        for (auto&& statement : program.statements) {
             planStatement(std::move(statement));
         }
         return std::move(plan_);
     }
 
  private:
-    void planStatement(bind::Statement s) {
+    void planStatement(ir::Statement s) {
         util::match(std::move(s), [this](auto s) { planStatement(std::move(s)); });
     }
 
-    void planRelation(bind::Relation s) {
+    void planRelation(ir::Relation s) {
         util::match(std::move(s), [this](auto s) { planRelation(std::move(s)); });
     }
 
-    void planExpr(bind::Expr s) {
+    void planExpr(ir::Expr s) {
         util::match(std::move(s), [this](auto s) { planExpr(std::move(s)); });
     }
 
-    void planProjector(bind::Projector s) {
+    void planProjector(ir::Projector s) {
         util::match(std::move(s), [this](auto s) { planProjector(std::move(s)); });
     }
 
-    void planStatement(bind::NamedRelationStatement s) {
+    void planStatement(ir::NamedRelationStatement s) {
         planRelation(std::move(*s.relation));
         named_ops[s.name] = popOperation();
     }
 
-    void planStatement(bind::QueryStatement s) {
+    void planStatement(ir::QueryStatement s) {
         planRelation(std::move(*s.relation));
         plan_.top_operations.push_back(popOperation());
     }
 
-    void planRelation(bind::AdhocRelation r) {
+    void planRelation(ir::AdhocRelation r) {
         auto src = exec::values(std::move(r.values), binding_);
         operations.push(src);
         plan_.sources.push_back(src);
     }
 
-    void planRelation(bind::SelectRelation r) {
+    void planRelation(ir::SelectRelation r) {
         auto projectors = projectorsList(std::move(r.projectors));
         planRelation(std::move(*r.source));
 
@@ -115,7 +115,7 @@ class Planner {
         }
     }
 
-    void planRelation(bind::UnionAllRelation r) {
+    void planRelation(ir::UnionAllRelation r) {
         planRelation(std::move(*r.left));
         auto left = popOperation();
         planRelation(std::move(*r.right));
@@ -123,7 +123,7 @@ class Planner {
         operations.push(exec::unionAll(left, right, binding_));
     }
 
-    void planRelation(bind::UnionAllSortedByRelation r) {
+    void planRelation(ir::UnionAllSortedByRelation r) {
         planRelation(std::move(*r.left));
         auto left = popOperation();
         planRelation(std::move(*r.right));
@@ -133,13 +133,13 @@ class Planner {
             exec::mergeSorted(left, right, std::move(order_list), r.order_by.desc, binding_));
     }
 
-    void planRelation(bind::FileRelation r) {
+    void planRelation(ir::FileRelation r) {
         auto op = file_source_func_(r.path, binding_, std::nullopt);
         plan_.sources.push_back(op);
         operations.push(op);
     }
 
-    void planRelation(bind::FileIntervalRelation r) {
+    void planRelation(ir::FileIntervalRelation r) {
         auto op = file_source_func_(
             r.path,
             binding_,
@@ -152,7 +152,7 @@ class Planner {
         operations.push(op);
     }
 
-    void planRelation(bind::NamedRelationReferenceRelation r) {
+    void planRelation(ir::NamedRelationReferenceRelation r) {
         if (!named_ops.contains(r.name)) {
             throw std::runtime_error(std::format("no such named relation {}", r.name));
         }
@@ -160,22 +160,22 @@ class Planner {
         operations.push(named_ops[r.name]);
     }
 
-    void planRelation(bind::MaterializeRelation r) {
+    void planRelation(ir::MaterializeRelation r) {
         planRelation(std::move(*r.relation));
         auto op = exec::materialize(popOperation(), binding_);
         plan_.sources.push_back(op);
         operations.push(op);
     }
 
-    void planExpr(bind::FieldExpr e) {
+    void planExpr(ir::FieldExpr e) {
         exprs.push_back(std::make_shared<exec::IdentifierExpression>(e.field_id));
     }
 
-    void planExpr(bind::ValueExpr e) {
+    void planExpr(ir::ValueExpr e) {
         exprs.push_back(std::make_shared<exec::ValueExpression>(e.value));
     }
 
-    void planExpr(bind::InExpr e) {
+    void planExpr(ir::InExpr e) {
         auto source = popOperation();
         planExpr(std::move(*e.expr));
         auto expr = popExpression();
@@ -184,11 +184,11 @@ class Planner {
         operations.push(exec::in(source, match, expr, binding_));
     }
 
-    void planExpr(bind::CoalesceExpr e) {
+    void planExpr(ir::CoalesceExpr e) {
         exprs.push_back(std::make_shared<exec::Coalesce>(expressionList(std::move(e.args))));
     }
 
-    void planExpr(bind::CastExpr e) {
+    void planExpr(ir::CastExpr e) {
         planExpr(std::move(*e.expr));
         auto arg = popExpression();
         exprs.push_back(
@@ -196,7 +196,7 @@ class Planner {
                 arg, arg->valueType(), e.cast_to));
     }
 
-    void planExpr(bind::PercentileExpr e) {
+    void planExpr(ir::PercentileExpr e) {
         planExpr(std::move(*e.expr));
         auto arg = popExpression();
         exprs.push_back(
@@ -204,44 +204,44 @@ class Planner {
                 arg, std::move(e.percentiles), arg->valueType()));
     }
 
-    void planExpr(bind::LikeExpr e) {
+    void planExpr(ir::LikeExpr e) {
         planExpr(std::move(*e.expr));
         auto arg = popExpression();
         exprs.push_back(std::make_shared<exec::UnaryExpression<exec::LikeOp>>(arg, e.regex));
     }
 
-    void planExpr(bind::RSubstrExpr e) {
+    void planExpr(ir::RSubstrExpr e) {
         planExpr(std::move(*e.expr));
         auto arg = popExpression();
         exprs.push_back(std::make_shared<exec::UnaryExpression<exec::RSubstrOp>>(arg, e.regex));
     }
 
-    void planExpr(bind::UnaryExpr e) {
+    void planExpr(ir::UnaryExpr e) {
         planExpr(std::move(*e.expr));
 
         switch (e.type) {
-            case bind::UnaryExprType::BooleanNegate:
+            case ir::UnaryExprType::BooleanNegate:
                 exprs.push_back(
                     std::make_shared<exec::UnaryExpression<exec::BooleanNegationOp>>(
                         popExpression()));
         }
     }
 
-    void planExpr(bind::UnaryAggregateExpr e) {
+    void planExpr(ir::UnaryAggregateExpr e) {
         planExpr(std::move(*e.expr));
         auto arg = popExpression();
 
         auto expr = [&] -> exec::ExpressionPtr {
             switch (e.type) {
-                case bind::UnaryAggregateExprType::Count:
+                case ir::UnaryAggregateExprType::Count:
                     return std::make_shared<exec::UnaryAggregateExpression<exec::CountOp>>(arg);
-                case bind::UnaryAggregateExprType::Min:
+                case ir::UnaryAggregateExprType::Min:
                     return std::make_shared<exec::UnaryAggregateExpression<exec::MinOp>>(
                         arg, e.valueType());
-                case bind::UnaryAggregateExprType::Max:
+                case ir::UnaryAggregateExprType::Max:
                     return std::make_shared<exec::UnaryAggregateExpression<exec::MaxOp>>(
                         arg, e.valueType());
-                case bind::UnaryAggregateExprType::Sum:
+                case ir::UnaryAggregateExprType::Sum:
                     return std::make_shared<exec::UnaryAggregateExpression<exec::SumOp>>(
                         arg, e.valueType());
             }
@@ -250,7 +250,7 @@ class Planner {
         exprs.push_back(expr);
     }
 
-    void planExpr(bind::BinaryExpr e) {
+    void planExpr(ir::BinaryExpr e) {
         planExpr(std::move(*e.left));
         auto l = popExpression();
         planExpr(std::move(*e.right));
@@ -258,17 +258,17 @@ class Planner {
 
         auto expr = [&] -> exec::ExpressionPtr {
             switch (e.type) {
-                case bind::BinaryExprType::Equal:
+                case ir::BinaryExprType::Equal:
                     return std::make_shared<exec::BinaryExpression<exec::EqualOp>>(
                         l, r, l->valueType(), r->valueType());
-                case bind::BinaryExprType::NotEqual:
+                case ir::BinaryExprType::NotEqual:
                     return std::make_shared<exec::BinaryExpression<exec::NotEqualOp>>(
                         l, r, l->valueType(), r->valueType());
-                case bind::BinaryExprType::And:
+                case ir::BinaryExprType::And:
                     return std::make_shared<exec::BinaryExpression<exec::AndOp>>(l, r);
-                case bind::BinaryExprType::Or:
+                case ir::BinaryExprType::Or:
                     return std::make_shared<exec::BinaryExpression<exec::OrOp>>(l, r);
-                case bind::BinaryExprType::Divide:
+                case ir::BinaryExprType::Divide:
                     return std::make_shared<exec::BinaryExpression<exec::DivideOp>>(
                         l, r, e.valueType());
             }
@@ -277,11 +277,11 @@ class Planner {
         exprs.push_back(expr);
     }
 
-    void planProjector(bind::StarProjector) {
+    void planProjector(ir::StarProjector) {
         projectors.push_back(std::make_unique<exec::Projector>(0, nullptr));
     }
 
-    void planProjector(bind::ExprProjector p) {
+    void planProjector(ir::ExprProjector p) {
         planExpr(std::move(*p.expr));
         projectors.push_back(std::make_unique<exec::Projector>(p.alias_field_id, popExpression()));
     }
@@ -300,7 +300,7 @@ class Planner {
         return top;
     }
 
-    std::vector<exec::ExpressionPtr> expressionList(std::vector<bind::Expr> list) {
+    std::vector<exec::ExpressionPtr> expressionList(std::vector<ir::Expr> list) {
         verify(exprs.empty());
         for (auto&& item : list) {
             planExpr(std::move(item));
@@ -309,7 +309,7 @@ class Planner {
         return std::move(exprs);
     }
 
-    exec::ProjectionList projectorsList(std::vector<bind::Projector> list) {
+    exec::ProjectionList projectorsList(std::vector<ir::Projector> list) {
         verify(projectors.empty());
         for (auto&& item : list) {
             planProjector(std::move(item));
@@ -332,8 +332,8 @@ class Planner {
 
 }  // namespace
 
-Plan plan(bind::BoundProgram program) {
+Plan plan(ir::Program program) {
     return Planner().plan(std::move(program));
 }
 
-}  // namespace lsql::iface::sql::exe
+}  // namespace lsql::exec
