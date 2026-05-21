@@ -4,8 +4,13 @@
 
 namespace lsql::ir {
 
-struct AdhocRelation;
-struct SelectRelation;
+struct ValuesRelation;
+struct ProjectionRelation;
+struct AggregateRelation;
+struct GroupRelation;
+struct LimitRelation;
+struct FilterRelation;
+struct SortRelation;
 struct UnionAllRelation;
 struct UnionAllSortedByRelation;
 struct FileRelation;
@@ -14,8 +19,13 @@ struct NamedRelationReferenceRelation;
 struct MaterializeRelation;
 
 using Relation = std::variant< //
-    AdhocRelation, //
-    SelectRelation, //
+    ValuesRelation, //
+    ProjectionRelation, //
+    AggregateRelation, //
+    GroupRelation, //
+    LimitRelation, //
+    FilterRelation, //
+    SortRelation, //
     UnionAllRelation, //
     UnionAllSortedByRelation, //
     FileRelation, //
@@ -24,4 +34,4 @@ using Relation = std::variant< //
     MaterializeRelation //
 >;
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::ir

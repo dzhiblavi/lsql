@@ -68,51 +68,50 @@ class Planner {
         plan_.top_operations.push_back(popOperation());
     }
 
-    void planRelation(ir::AdhocRelation r) {
+    void planRelation(ir::ValuesRelation r) {
         auto src = exec::values(std::move(r.values), binding_);
         operations.push(src);
         plan_.sources.push_back(src);
     }
 
-    void planRelation(ir::SelectRelation r) {
+    void planRelation(ir::ProjectionRelation r) {
         auto projectors = projectorsList(std::move(r.projectors));
         planRelation(std::move(*r.source));
+        operations.push(exec::projection(popOperation(), std::move(projectors), binding_));
+    }
 
-        if (r.where) {
-            planExpr(std::move(*r.where->condition));
+    void planRelation(ir::AggregateRelation r) {
+        auto projectors = projectorsList(std::move(r.projectors));
+        planRelation(std::move(*r.source));
+        operations.push(exec::aggregate(popOperation(), std::move(projectors), binding_));
+    }
 
-            if (!exprs.empty()) {
-                operations.push(exec::filter(popOperation(), popExpression(), binding_));
-            }
+    void planRelation(ir::GroupRelation r) {
+        auto projectors = projectorsList(std::move(r.projectors));
+        auto group_list = projectorsList(std::move(r.group_list));
+        planRelation(std::move(*r.source));
+        operations.push(
+            exec::group(popOperation(), std::move(group_list), std::move(projectors), binding_));
+    }
+
+    void planRelation(ir::LimitRelation r) {
+        planRelation(std::move(*r.source));
+        operations.push(exec::limit(popOperation(), r.limit, binding_));
+    }
+
+    void planRelation(ir::FilterRelation r) {
+        planRelation(std::move(*r.source));
+        planExpr(std::move(*r.condition));
+
+        if (!exprs.empty()) {
+            operations.push(exec::filter(popOperation(), popExpression(), binding_));
         }
+    }
 
-        if (r.group_by) {
-            auto group_list = projectorsList(std::move(r.group_by->group_list));
-            operations.push(
-                exec::group(
-                    popOperation(), std::move(group_list), std::move(projectors), binding_));
-        } else {
-            if (r.aggregate) {
-                auto src = exec::aggregate(popOperation(), std::move(projectors), binding_);
-                plan_.sources.push_back(src);
-                operations.push(src);
-            } else {
-                operations.push(exec::projection(popOperation(), std::move(projectors), binding_));
-            }
-        }
-
-        if (r.order_by) {
-            operations.push(
-                exec::sort(
-                    popOperation(),
-                    expressionList(std::move(r.order_by->order_list)),
-                    r.order_by->desc,
-                    binding_));
-        }
-
-        if (r.limit) {
-            operations.push(exec::limit(popOperation(), r.limit->limit, binding_));
-        }
+    void planRelation(ir::SortRelation r) {
+        planRelation(std::move(*r.source));
+        operations.push(
+            exec::sort(popOperation(), expressionList(std::move(r.order_list)), r.desc, binding_));
     }
 
     void planRelation(ir::UnionAllRelation r) {
@@ -128,9 +127,8 @@ class Planner {
         auto left = popOperation();
         planRelation(std::move(*r.right));
         auto right = popOperation();
-        auto order_list = expressionList(std::move(r.order_by.order_list));
-        operations.push(
-            exec::mergeSorted(left, right, std::move(order_list), r.order_by.desc, binding_));
+        auto order_list = expressionList(std::move(r.order_list));
+        operations.push(exec::mergeSorted(left, right, std::move(order_list), r.desc, binding_));
     }
 
     void planRelation(ir::FileRelation r) {

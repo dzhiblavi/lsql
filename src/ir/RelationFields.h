@@ -79,4 +79,4 @@ class RelationFields {
     std::unordered_map<FieldId, ValueType> fields_;
 };
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::ir

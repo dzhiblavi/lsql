@@ -2,23 +2,14 @@
 
 #include "ir/Expr.h"
 #include "ir/Relation.h"
-#include "ir/RelationFields.h"
 
-#include "util/overloaded.h"
-
+#include "core/Fields.h"
 #include "core/Value.h"
 #include "core/types.h"
 
 #include <vector>
 
 namespace lsql::ir {
-
-RelationFields fieldsOf(const Relation& r);
-
-struct AdhocRelation {
-    std::vector<Value> values;
-    RelationFields fields;
-};
 
 struct StarProjector {};
 
@@ -29,72 +20,70 @@ struct ExprProjector {
 
 using Projector = std::variant<StarProjector, ExprProjector>;
 
-struct Limit {
-    int limit;
+struct ValuesRelation {
+    std::vector<Value> values;
 };
 
-struct Where {
-    Box<Expr> condition;
+struct ProjectionRelation {
+    Box<Relation> source;
+    std::vector<Projector> projectors;
 };
 
-struct OrderBy {
-    std::vector<Expr> order_list;
-    bool desc;
+struct AggregateRelation {
+    Box<Relation> source;
+    std::vector<Projector> projectors;
 };
 
-struct GroupBy {
+struct GroupRelation {
+    Box<Relation> source;
+    std::vector<Projector> projectors;
     std::vector<Projector> group_list;
 };
 
-struct SelectRelation {
-    std::vector<Projector> projectors;
+struct LimitRelation {
     Box<Relation> source;
-    RelationFields fields;
-    bool aggregate;
+    int limit;
+};
 
-    std::optional<Limit> limit;
-    std::optional<Where> where;
-    std::optional<OrderBy> order_by;
-    std::optional<GroupBy> group_by;
+struct FilterRelation {
+    Box<Relation> source;
+    Box<Expr> condition;
+};
+
+struct SortRelation {
+    Box<Relation> source;
+    std::vector<Expr> order_list;
+    bool desc;
 };
 
 struct UnionAllRelation {
     Box<Relation> left;
     Box<Relation> right;
-    RelationFields fields;
 };
 
 struct UnionAllSortedByRelation {
     Box<Relation> left;
     Box<Relation> right;
-    OrderBy order_by;
-    RelationFields fields;
+    std::vector<Expr> order_list;
+    bool desc;
 };
 
 struct FileRelation {
     std::string path;
-    RelationFields fields;
 };
 
 struct FileIntervalRelation {
     std::string path;
     timestamp_t ts_from;
     timestamp_t ts_to;
-    RelationFields fields;
 };
 
 struct NamedRelationReferenceRelation {
     std::string name;
-    RelationFields fields;
 };
 
 struct MaterializeRelation {
     Box<Relation> relation;
-    RelationFields fields;
 };
 
-inline RelationFields fieldsOf(const Relation& r) {
-    return util::match(r, [](auto&& r) { return r.fields; });
-}
-
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::ir

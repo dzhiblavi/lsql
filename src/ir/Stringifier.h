@@ -18,7 +18,7 @@ class Stringifier {
 
     std::string print(const Program& program) {
         binding_ = program.field_binding;
-        StrBuilder b("BoundProgram");
+        StrBuilder b("Program IR");
 
         for (auto&& s : program.statements) {
             b.child(print(s));
@@ -41,46 +41,50 @@ class Stringifier {
     }
 
     StrBuilder print(const Relation& r) {
-        return std::visit(
-            [this, &r](auto&& arg) {
-                return this->print(arg).child(
-                    StrBuilder("out-fields").child(toString(fieldsOf(r))));
-            },
-            r);
+        return std::visit([this](auto&& arg) { return this->print(arg); }, r);
     }
-    StrBuilder print(const AdhocRelation& r) {
+    StrBuilder print(const ValuesRelation& r) {
         return StrBuilder()
             .line(
-                "AdhocRelation count={}, type={}",
+                "ValuesRelation count={}, type={}",
                 r.values.size(),
                 magic_enum::enum_name(r.values.empty() ? ValueType::Null : r.values.front().type()))
             .child(StrBuilder("values").child(toString(r.values)));
     }
 
-    StrBuilder print(const SelectRelation& r) {
-        auto p = StrBuilder("projectors");
-        for (auto&& proj : r.projectors) {
-            p.child(print(proj));
-        }
+    StrBuilder print(const ProjectionRelation& r) {
+        return StrBuilder("ProjectionRelation")
+            .child(StrBuilder("source").child(print(*r.source)))
+            .child(StrBuilder("projectors").child(print(r.projectors)));
+    }
 
-        auto b = StrBuilder("SelectRelation")
-                     .child(StrBuilder("source").child(print(*r.source)))
-                     .child(p);
+    StrBuilder print(const AggregateRelation& r) {
+        return StrBuilder("AggregateRelation")
+            .child(StrBuilder("source").child(print(*r.source)))
+            .child(StrBuilder("projectors").child(print(r.projectors)));
+    }
 
-        if (r.where) {
-            b.child(print(*r.where));
-        }
-        if (r.limit) {
-            b.child(print(*r.limit));
-        }
-        if (r.order_by) {
-            b.child(print(*r.order_by));
-        }
-        if (r.group_by) {
-            b.child(print(*r.group_by));
-        }
+    StrBuilder print(const GroupRelation& r) {
+        return StrBuilder("GroupRelation")
+            .child(StrBuilder("source").child(print(*r.source)))
+            .child(StrBuilder("projectors").child(print(r.projectors)))
+            .child(StrBuilder("group keys").child(print(r.group_list)));
+    }
 
-        return b;
+    StrBuilder print(const LimitRelation& r) {
+        return StrBuilder("LimitRelation count={}", r.limit).child(print(*r.source));
+    }
+
+    StrBuilder print(const FilterRelation& r) {
+        return StrBuilder("FilterRelation")
+            .child(StrBuilder("source").child(print(*r.source)))
+            .child(StrBuilder("condition").child(print(*r.condition)));
+    }
+
+    StrBuilder print(const SortRelation& r) {
+        return StrBuilder("SortRelation")
+            .child(StrBuilder("source").child(print(*r.source)))
+            .child(StrBuilder("order list").child(print(r.order_list)));
     }
 
     StrBuilder print(const Projector& p) {
@@ -97,26 +101,6 @@ class Stringifier {
             .child(print(*p.expr));
     }
 
-    StrBuilder print(const Where& w) { return StrBuilder("Where").child(print(*w.condition)); }
-
-    StrBuilder print(const Limit& l) { return StrBuilder("Limit={}", l.limit); }
-
-    StrBuilder print(const OrderBy& o) {
-        auto b = StrBuilder("OrderBy desc={}", o.desc);
-        for (auto&& e : o.order_list) {
-            b.child(StrBuilder("- child").child(print(e)));
-        }
-        return b;
-    }
-
-    StrBuilder print(const GroupBy& g) {
-        auto b = StrBuilder("GroupBy");
-        for (auto&& p : g.group_list) {
-            b.child(print(p));
-        }
-        return b;
-    }
-
     StrBuilder print(const UnionAllRelation& r) {
         return StrBuilder("UnionAll")
             .child(StrBuilder("- left").child(print(*r.left)))
@@ -124,15 +108,26 @@ class Stringifier {
     }
 
     StrBuilder print(const UnionAllSortedByRelation& r) {
-        auto order = StrBuilder("order list");
-        for (auto&& item : r.order_by.order_list) {
-            order.child(print(item));
-        }
-
         return StrBuilder("UnionAll")
             .child(StrBuilder("- left").child(print(*r.left)))
             .child(StrBuilder("- right").child(print(*r.right)))
-            .child(order);
+            .child(StrBuilder("order list").child(print(r.order_list)));
+    }
+
+    StrBuilder print(const std::vector<Projector>& ps) {
+        auto b = StrBuilder();
+        for (auto&& p : ps) {
+            b.block(print(p));
+        }
+        return b;
+    }
+
+    StrBuilder print(const std::vector<Expr>& es) {
+        auto b = StrBuilder();
+        for (auto&& e : es) {
+            b.block(print(e));
+        }
+        return b;
     }
 
     StrBuilder print(const FileRelation& r) { return StrBuilder("FileRelation path={}", r.path); }
@@ -176,11 +171,8 @@ class Stringifier {
     }
 
     StrBuilder print(const CoalesceExpr& e) {
-        auto b = StrBuilder("CoalesceExpr type={}", magic_enum::enum_name(e.valueType()));
-        for (auto&& a : e.args) {
-            b.child(StrBuilder("- child").child(print(a)));
-        }
-        return b;
+        return StrBuilder("CoalesceExpr type={}", magic_enum::enum_name(e.valueType()))
+            .child(StrBuilder("expressions").child(print(e.args)));
     }
 
     StrBuilder print(const CastExpr& e) {
@@ -216,20 +208,6 @@ class Stringifier {
     StrBuilder print(const UnaryAggregateExpr& e) {
         return StrBuilder("UnaryAggregateExpr type={}", magic_enum::enum_name(e.type))
             .child(print(*e.expr));
-    }
-
-    std::string toString(const RelationFields& f) {
-        std::stringstream ss;
-        ss << std::format("unknown={}, [", f.hasUnknown());
-        for (auto&& [id, type] : f.fields()) {
-            ss << std::format(
-                "{} (id={},type={}),", binding_->name(id), id, magic_enum::enum_name(type));
-        }
-        if (!f.fields().empty()) {
-            ss.seekp(-1, std::ios_base::end);
-        }
-        ss << ']';
-        return ss.str();
     }
 
     template <typename T>

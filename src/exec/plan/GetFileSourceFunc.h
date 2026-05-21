@@ -20,4 +20,4 @@ using GetFileSourceFuncType =
 
 GetFileSourceFuncType defaultFileSourceFunc();
 
-}  // namespace lsql::iface::sql::exe
+}  // namespace lsql::exec

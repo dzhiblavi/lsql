@@ -17,4 +17,4 @@ struct Plan {
 
 Plan plan(ir::Program program);
 
-}  // namespace lsql::iface::sql::exe
+}  // namespace lsql::exec
