@@ -354,6 +354,10 @@ expression(E) ::= value(V). {
     delete V;
 }
 
+expression(E) ::= TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+    E = X;
+}
+
 expression(E) ::= TOKEN_IDENTIFIER(Id). {
     E = new ast::Expr(ast::IdentifierExpr{
         .identifier = Id.text,
