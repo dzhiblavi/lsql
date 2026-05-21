@@ -77,3 +77,10 @@ check-format:
 apply-format:
 	find src/ -type f -name '*.h' -o -name '*.cpp' \
 		| xargs clang-format -i
+
+sync-dev-vm:
+	rsync -av \
+		--exclude=target \
+		--exclude output \
+		--exclude _logs  \
+		../logsql/ dev-vm:/home/dzhiblavi/logsql

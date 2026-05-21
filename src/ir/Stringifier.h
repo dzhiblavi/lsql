@@ -21,7 +21,7 @@ class Stringifier {
         StrBuilder b("Program IR");
 
         for (auto&& s : program.statements) {
-            b.child(print(s));
+            b.item(print(s));
         }
 
         return b.render();
@@ -55,20 +55,20 @@ class Stringifier {
     StrBuilder print(const ProjectionRelation& r) {
         return StrBuilder("ProjectionRelation")
             .child(StrBuilder("source").child(print(*r.source)))
-            .child(StrBuilder("projectors").child(print(r.projectors)));
+            .child(StrBuilder("projectors").block(print(r.projectors)));
     }
 
     StrBuilder print(const AggregateRelation& r) {
         return StrBuilder("AggregateRelation")
             .child(StrBuilder("source").child(print(*r.source)))
-            .child(StrBuilder("projectors").child(print(r.projectors)));
+            .child(StrBuilder("projectors").block(print(r.projectors)));
     }
 
     StrBuilder print(const GroupRelation& r) {
         return StrBuilder("GroupRelation")
             .child(StrBuilder("source").child(print(*r.source)))
-            .child(StrBuilder("projectors").child(print(r.projectors)))
-            .child(StrBuilder("group keys").child(print(r.group_list)));
+            .child(StrBuilder("projectors").block(print(r.projectors)))
+            .child(StrBuilder("group keys").block(print(r.group_list)));
     }
 
     StrBuilder print(const LimitRelation& r) {
@@ -84,7 +84,7 @@ class Stringifier {
     StrBuilder print(const SortRelation& r) {
         return StrBuilder("SortRelation")
             .child(StrBuilder("source").child(print(*r.source)))
-            .child(StrBuilder("order list").child(print(r.order_list)));
+            .child(StrBuilder("order list").block(print(r.order_list)));
     }
 
     StrBuilder print(const SemiJoinRelation& r) {
@@ -100,9 +100,10 @@ class Stringifier {
             .child(StrBuilder("match set").child(print(*r.match)))
             .child(StrBuilder("source").child(print(*r.source)))
             .child(StrBuilder(
-                "output field id={} name={}",
+                "match field id={} name={} type={}",
                 r.output_field_id,
-                binding_->name(r.output_field_id)));
+                binding_->name(r.output_field_id),
+                magic_enum::enum_name(binding_->type(r.output_field_id))));
     }
 
     StrBuilder print(const Projector& p) {
@@ -121,21 +122,21 @@ class Stringifier {
 
     StrBuilder print(const UnionAllRelation& r) {
         return StrBuilder("UnionAll")
-            .child(StrBuilder("- left").child(print(*r.left)))
-            .child(StrBuilder("- right").child(print(*r.right)));
+            .item(StrBuilder("left").child(print(*r.left)))
+            .item(StrBuilder("right").child(print(*r.right)));
     }
 
     StrBuilder print(const UnionAllSortedByRelation& r) {
         return StrBuilder("UnionAll")
-            .child(StrBuilder("- left").child(print(*r.left)))
-            .child(StrBuilder("- right").child(print(*r.right)))
-            .child(StrBuilder("order list").child(print(r.order_list)));
+            .item(StrBuilder("left").child(print(*r.left)))
+            .item(StrBuilder("right").child(print(*r.right)))
+            .child(StrBuilder("order list").block(print(r.order_list)));
     }
 
     StrBuilder print(const std::vector<Projector>& ps) {
         auto b = StrBuilder();
         for (auto&& p : ps) {
-            b.block(print(p));
+            b.item(print(p));
         }
         return b;
     }
@@ -143,7 +144,7 @@ class Stringifier {
     StrBuilder print(const std::vector<Expr>& es) {
         auto b = StrBuilder();
         for (auto&& e : es) {
-            b.block(print(e));
+            b.item(print(e));
         }
         return b;
     }
@@ -184,7 +185,7 @@ class Stringifier {
 
     StrBuilder print(const CoalesceExpr& e) {
         return StrBuilder("CoalesceExpr type={}", magic_enum::enum_name(e.valueType()))
-            .child(StrBuilder("expressions").child(print(e.args)));
+            .child(StrBuilder("expressions").block(print(e.args)));
     }
 
     StrBuilder print(const CastExpr& e) {
@@ -208,8 +209,8 @@ class Stringifier {
 
     StrBuilder print(const BinaryExpr& e) {
         return StrBuilder("BinaryExpr type: {}", magic_enum::enum_name(e.type))
-            .child(StrBuilder("left").child(print(*e.left)))
-            .child(StrBuilder("right").child(print(*e.right)));
+            .item(StrBuilder("left").child(print(*e.left)))
+            .item(StrBuilder("right").child(print(*e.right)));
     }
 
     StrBuilder print(const UnaryExpr& e) {

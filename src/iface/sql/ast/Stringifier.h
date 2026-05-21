@@ -14,7 +14,7 @@
 namespace lsql::iface::sql::ast {
 
 inline std::string to_string(const ast::Literal& v) {
-    return std::format("str={},type={}", v.value_str, magic_enum::enum_name(v.type));
+    return std::format("{}({})", magic_enum::enum_name(v.type), v.value_str);
 }
 
 class Stringifier {
@@ -26,7 +26,7 @@ class Stringifier {
     std::string print(const Program& program) {
         auto b = StrBuilder("Program AST");
         for (auto&& s : program) {
-            b.child(print(s));
+            b.item(print(s));
         }
         return b.render();
     }
@@ -72,7 +72,7 @@ class Stringifier {
     StrBuilder print(const SelectRelation& r) {
         auto p = StrBuilder("projectors");
         for (auto&& proj : r.projectors) {
-            p.child(print(proj));
+            p.item(print(proj));
         }
 
         auto b = StrBuilder("SelectRelation")
@@ -116,7 +116,7 @@ class Stringifier {
     StrBuilder print(const OrderBy& o) {
         auto b = StrBuilder("OrderBy desc={}", o.desc);
         for (auto&& e : o.order_list) {
-            b.child(StrBuilder("- child").child(print(e)));
+            b.item(print(e));
         }
         return b;
     }
@@ -124,26 +124,26 @@ class Stringifier {
     StrBuilder print(const GroupBy& g) {
         auto b = StrBuilder("GroupBy");
         for (auto&& p : g.group_list) {
-            b.child(print(p));
+            b.item(print(p));
         }
         return b;
     }
 
     StrBuilder print(const UnionAllRelation& r) {
         return StrBuilder("UnionAll")
-            .child(StrBuilder("- left").child(print(*r.left)))
-            .child(StrBuilder("- right").child(print(*r.right)));
+            .item(StrBuilder("left").child(print(*r.left)))
+            .item(StrBuilder("right").child(print(*r.right)));
     }
 
     StrBuilder print(const UnionAllSortedByRelation& r) {
         auto order = StrBuilder("order list");
         for (auto&& item : r.order_by.order_list) {
-            order.child(print(item));
+            order.item(print(item));
         }
 
         return StrBuilder("UnionAll")
-            .child(StrBuilder("- left").child(print(*r.left)))
-            .child(StrBuilder("- right").child(print(*r.right)))
+            .item(StrBuilder("left").child(print(*r.left)))
+            .item(StrBuilder("right").child(print(*r.right)))
             .child(order);
     }
 
@@ -195,15 +195,15 @@ class Stringifier {
     StrBuilder print(const FnCallExpr& e) {
         auto a = StrBuilder("args");
         for (auto&& arg : e.args) {
-            a.child(print(arg));
+            a.item(print(arg));
         }
         return StrBuilder("FnCallExpr name={}", e.func).child(a);
     }
 
     StrBuilder print(const BinaryExpr& e) {
         return StrBuilder("BinaryExpr type: {}", magic_enum::enum_name(e.type))
-            .child(StrBuilder("left").child(print(*e.left)))
-            .child(StrBuilder("right").child(print(*e.right)));
+            .item(StrBuilder("left").child(print(*e.left)))
+            .item(StrBuilder("right").child(print(*e.right)));
     }
 
     StrBuilder print(const UnaryExpr& e) {

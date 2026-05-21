@@ -26,9 +26,21 @@ class StrBuilder {
         return ss.str();
     }
 
+    StrBuilder& item(StrBuilder builder) {
+        if (builder.lines_.empty()) {
+            return *this;
+        }
+
+        lines_.push_back(std::format("-  {}", builder.lines_.front()));
+        for (size_t i = 1; i < builder.lines_.size(); ++i) {
+            lines_.push_back(std::format("|  {}", builder.lines_[i]));
+        }
+        return *this;
+    }
+
     StrBuilder& child(StrBuilder builder) {
         for (auto&& line : builder.lines_) {
-            lines_.push_back(std::format("  {}", line));
+            lines_.push_back(std::format("|  {}", line));
         }
         return *this;
     }
