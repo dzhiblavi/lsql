@@ -35,6 +35,10 @@ class Values : public Source,
         , values_(std::move(values)) {}
 
     void push(int phase) override {
+        if (!active(phase)) {
+            return;
+        }
+
         if (requiredFields(phase).empty()) {
             auto* record = EmptyRecord::instance().get();
 

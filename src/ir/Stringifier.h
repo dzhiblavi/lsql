@@ -94,6 +94,17 @@ class Stringifier {
             .child(StrBuilder("source").child(print(*r.source)));
     }
 
+    StrBuilder print(const MarkJoinRelation& r) {
+        return StrBuilder("MarkJoinRelation")
+            .child(StrBuilder("key").child(print(*r.expr)))
+            .child(StrBuilder("match set").child(print(*r.match)))
+            .child(StrBuilder("source").child(print(*r.source)))
+            .child(StrBuilder(
+                "output field id={} name={}",
+                r.output_field_id,
+                binding_->name(r.output_field_id)));
+    }
+
     StrBuilder print(const Projector& p) {
         return std::visit([this](auto&& p) { return print(p); }, p);
     }

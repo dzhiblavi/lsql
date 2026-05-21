@@ -8,11 +8,11 @@ namespace lsql::exec {
 
 class IdentifierExpression : public Expression {
  public:
-    explicit IdentifierExpression(FieldId id) : id_(id) {}
+    IdentifierExpression(FieldId id, ValueType type) : id_(id), type_(type) {}
 
     RequiredFields requiredFields() const override { return RequiredFields::withFields({id_}); }
 
-    ValueType valueType() const override { return ValueType::String; }
+    ValueType valueType() const override { return type_; }
 
     Value eval(const exec::Record& record) const override { return record.value(id_); }
 
@@ -43,6 +43,7 @@ class IdentifierExpression : public Expression {
 
  private:
     FieldId id_;
+    ValueType type_;
 };
 
 }  // namespace lsql::exec

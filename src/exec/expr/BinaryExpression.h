@@ -38,6 +38,7 @@ class BinaryExpression : public Expression {
         , r_(std::move(r))
         , op_(std::forward<Args>(args)...) {
         if (l_->valueType() != op_.argTypeL() || r_->valueType() != op_.argTypeR()) {
+            verify(false);
             throw std::runtime_error("argument type mismatch");
         }
     }

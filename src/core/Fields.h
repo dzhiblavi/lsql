@@ -17,6 +17,8 @@ class FieldBinding {
  public:
     FieldBinding() = default;
 
+    FieldId addAnonymous() { return add(std::format("$anon_{}", next_id_)); }
+
     FieldId add(std::string_view name) {
         std::string sname(name);
         verify(!hasField(sname));

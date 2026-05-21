@@ -14,6 +14,7 @@
 #include "exec/op/Filter.h"
 #include "exec/op/Group.h"
 #include "exec/op/Limit.h"
+#include "exec/op/MarkJoin.h"
 #include "exec/op/Materialize.h"
 #include "exec/op/MergeSorted.h"
 #include "exec/op/Projection.h"
@@ -118,6 +119,15 @@ class Planner {
             binding_);
     }
 
+    OperationPtr planRelation(ir::MarkJoinRelation r) {
+        return markJoin(
+            planRelation(std::move(*r.source)),
+            planRelation(std::move(*r.match)),
+            planExpr(std::move(*r.expr)),
+            r.output_field_id,
+            binding_);
+    }
+
     OperationPtr planRelation(ir::UnionAllRelation r) {
         return unionAll(
             planRelation(std::move(*r.left)), planRelation(std::move(*r.right)), binding_);
@@ -163,7 +173,7 @@ class Planner {
     }
 
     ExpressionPtr planExpr(ir::FieldExpr e) {
-        return std::make_shared<IdentifierExpression>(e.field_id);
+        return std::make_shared<IdentifierExpression>(e.field_id, e.type);
     }
 
     ExpressionPtr planExpr(ir::ValueExpr e) { return std::make_shared<ValueExpression>(e.value); }

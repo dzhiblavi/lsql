@@ -14,8 +14,9 @@ ExprKindLevel exprKindLevelOf(const Expr& e);
 
 struct FieldExpr {
     FieldId field_id;
+    ValueType type;
 
-    ValueType valueType() const { return ValueType::String; }
+    ValueType valueType() const { return type; }
     ExprKindLevel level() const { return ExprKindLevel::Row; }
 };
 

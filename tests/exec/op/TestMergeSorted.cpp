@@ -11,7 +11,11 @@ namespace lsql::exec {
 struct MergeSortedTest : OperationTest {
     MergeSortedTest() {
         setOperation(mergeSorted(
-            left, right, SortList{std::make_shared<IdentifierExpression>(0)}, false, binding));
+            left,
+            right,
+            SortList{std::make_shared<IdentifierExpression>(0, ValueType::Integer)},
+            false,
+            binding));
     }
 
     std::shared_ptr<MockOperation> left = std::make_shared<MockOperation>(binding);

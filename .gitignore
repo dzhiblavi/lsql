@@ -1,7 +1,7 @@
 /target
 /CMakeUserPresets.json
 /_logs
-/prog.sql
+/examples.sql
 /ref.out
 /output
 /.venv

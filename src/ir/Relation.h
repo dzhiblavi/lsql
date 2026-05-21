@@ -12,6 +12,7 @@ struct LimitRelation;
 struct FilterRelation;
 struct SortRelation;
 struct SemiJoinRelation;
+struct MarkJoinRelation;
 struct UnionAllRelation;
 struct UnionAllSortedByRelation;
 struct FileRelation;
@@ -28,6 +29,7 @@ using Relation = std::variant< //
     FilterRelation, //
     SortRelation, //
     SemiJoinRelation, //
+    MarkJoinRelation, //
     UnionAllRelation, //
     UnionAllSortedByRelation, //
     FileRelation, //

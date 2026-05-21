@@ -62,6 +62,13 @@ struct SemiJoinRelation {
     Box<Expr> expr;
 };
 
+struct MarkJoinRelation {
+    Box<Relation> source;
+    Box<Relation> match;
+    Box<Expr> expr;
+    FieldId output_field_id;
+};
+
 struct UnionAllRelation {
     Box<Relation> left;
     Box<Relation> right;

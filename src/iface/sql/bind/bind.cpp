@@ -11,6 +11,7 @@
 #include "ir/Relations.h"    // IWYU pragma: keep
 
 #include "core/time_formats.h"
+#include "util/Pinned.h"
 
 #include <magic_enum/magic_enum.hpp>
 
@@ -179,6 +180,8 @@ class Binder {
     }
 
     ir::Relation bindRelation(ast::SelectRelation r) {
+        auto scope = scopeSource(bindRelation(std::move(*r.source)));
+
         auto projectors = bind(std::move(r.projectors));
         require(!projectors.empty(), "SELECT requires at least one projector");
 
@@ -195,22 +198,23 @@ class Binder {
                 });
         }
 
-        auto source = bindRelation(std::move(*r.source));
-
         if (r.where) {
             util::match(
                 std::move(*r.where->condition),
                 [&](ast::InExpr e) {
+                    // Kind of an optimization over MarkJoinRelation
                     auto key = bindExpr(std::move(*e.expr));
                     require(
                         exprKindLevelOf(key) != ir::ExprKindLevel::Group,
                         "IN key expression cannot be aggregate");
 
-                    source = ir::SemiJoinRelation{
-                        .source = std::make_unique<ir::Relation>(std::move(source)),
-                        .match = std::make_unique<ir::Relation>(bindRelation(std::move(*e.match))),
-                        .expr = std::make_unique<ir::Expr>(std::move(key)),
-                    };
+                    setSource(
+                        ir::SemiJoinRelation{
+                            .source = std::make_unique<ir::Relation>(pullSource()),
+                            .match =
+                                std::make_unique<ir::Relation>(bindRelation(std::move(*e.match))),
+                            .expr = std::make_unique<ir::Expr>(std::move(key)),
+                        });
                 },
                 [&](auto e) {
                     auto cond = bindExpr(std::move(e));
@@ -220,10 +224,11 @@ class Binder {
                         exprKindLevelOf(cond) != ir::ExprKindLevel::Group,
                         "WHERE condition cannot be aggregate");
 
-                    source = ir::FilterRelation{
-                        .source = std::make_unique<ir::Relation>(std::move(source)),
-                        .condition = std::make_unique<ir::Expr>(std::move(cond)),
-                    };
+                    setSource(
+                        ir::FilterRelation{
+                            .source = std::make_unique<ir::Relation>(pullSource()),
+                            .condition = std::make_unique<ir::Expr>(std::move(cond)),
+                        });
                 });
         }
 
@@ -234,7 +239,7 @@ class Binder {
                 util::match(
                     p,
                     [](const ir::StarProjector&) {
-                        throw std::runtime_error("* is not allowed in GROUP BY statement");
+                        throwError("* is not allowed in GROUP BY statement");
                     },
                     [&](const ir::ExprProjector& p) {
                         require(
@@ -243,41 +248,46 @@ class Binder {
                     });
             }
 
-            source = ir::GroupRelation{
-                .source = std::make_unique<ir::Relation>(std::move(source)),
-                .projectors = std::move(projectors),
-                .group_list = std::move(group_by_list),
-            };
+            setSource(
+                ir::GroupRelation{
+                    .source = std::make_unique<ir::Relation>(pullSource()),
+                    .projectors = std::move(projectors),
+                    .group_list = std::move(group_by_list),
+                });
         } else if (has_group_projector) {
             require(!has_row_projector, "cannot mix group and row projectors");
 
-            source = ir::AggregateRelation{
-                .source = std::make_unique<ir::Relation>(std::move(source)),
-                .projectors = std::move(projectors),
-            };
+            setSource(
+                ir::AggregateRelation{
+                    .source = std::make_unique<ir::Relation>(pullSource()),
+                    .projectors = std::move(projectors),
+                });
         } else {
-            source = ir::ProjectionRelation{
-                .source = std::make_unique<ir::Relation>(std::move(source)),
-                .projectors = std::move(projectors),
-            };
+            setSource(
+                ir::ProjectionRelation{
+                    .source = std::make_unique<ir::Relation>(pullSource()),
+                    .projectors = std::move(projectors),
+                });
         }
 
         if (r.order_by) {
-            source = ir::SortRelation{
-                .source = std::make_unique<ir::Relation>(std::move(source)),
-                .order_list = bind(std::move(r.order_by->order_list)),
-                .desc = r.order_by->desc,
-            };
+            setSource(
+                ir::SortRelation{
+                    .source = std::make_unique<ir::Relation>(pullSource()),
+                    .order_list = bind(std::move(r.order_by->order_list)),
+                    .desc = r.order_by->desc,
+                });
         }
 
         if (r.limit) {
-            source = ir::LimitRelation{
-                .source = std::make_unique<ir::Relation>(std::move(source)),
-                .limit = r.limit->limit,
-            };
+            setSource(
+                ir::LimitRelation{
+                    .source = std::make_unique<ir::Relation>(pullSource()),
+                    .limit = r.limit->limit,
+                });
         }
 
-        return source;
+        return pullSource();
     }
 
     ir::Relation bindRelation(ast::UnionAllRelation r) {
@@ -346,6 +356,7 @@ class Binder {
     ir::Expr bindExpr(ast::IdentifierExpr e) {
         return ir::FieldExpr{
             .field_id = binding_->getOrAdd(e.identifier),
+            .type = ValueType::String,
         };
     }
 
@@ -362,8 +373,29 @@ class Binder {
         };
     }
 
-    ir::Expr bindExpr(ast::InExpr /*e*/) {
-        throwError("InExpr only allowed as the top-level WHERE condition");
+    ir::Expr bindExpr(ast::InExpr e) {
+        auto expr = bindExpr(std::move(*e.expr));
+        require(
+            exprKindLevelOf(expr) != ir::ExprKindLevel::Group,
+            "IN key expression cannot be aggregate");
+
+        auto output_id = binding_->addAnonymous();
+        auto match = bindRelation(std::move(*e.match));
+
+        // same source relation but only has false/true depending on
+        // whether a row matches `match`
+        setSource(
+            ir::MarkJoinRelation{
+                .source = std::make_unique<ir::Relation>(pullSource()),
+                .match = std::make_unique<ir::Relation>(std::move(match)),
+                .expr = std::make_unique<ir::Expr>(std::move(expr)),
+                .output_field_id = output_id,
+            });
+
+        return ir::FieldExpr{
+            .field_id = output_id,
+            .type = ValueType::Boolean,
+        };
     }
 
     ir::Expr bindExpr(ast::LikeExpr e) {
@@ -444,8 +476,7 @@ class Binder {
                             return p;
                         },
                         [](auto&&) -> float {
-                            throw std::runtime_error(
-                                "PERCENTILE's arguments in positions >=1 must be literals");
+                            throwError("PERCENTILE's arguments in positions >=1 must be literals");
                         }));
             }
 
@@ -471,7 +502,7 @@ class Binder {
                     return e.value.get<std::string>();
                 },
                 [](auto&&) -> std::string {
-                    throw std::runtime_error("RSUBSTR's second argument should be a literal");
+                    throwError("RSUBSTR's second argument should be a literal");
                 });
 
             return ir::RSubstrExpr{
@@ -480,7 +511,7 @@ class Binder {
             };
         }
 
-        throw std::runtime_error(std::format("unknown function name {}", e.func));
+        throwError("unknown function name {}", e.func);
     }
 
     ir::Expr bindExpr(ast::BinaryExpr e) {
@@ -524,6 +555,7 @@ class Binder {
                     .alias_field_id = id,
                     .expr = std::make_unique<ir::Expr>(ir::FieldExpr{
                         .field_id = id,
+                        .type = ValueType::String,
                     }),
                 };
             },
@@ -553,9 +585,33 @@ class Binder {
         return result;
     }
 
+    struct ScopedCurrentSource : util::Pinned {
+        std::optional<ir::Relation>* slot;
+        std::optional<ir::Relation> old;
+
+        ~ScopedCurrentSource() { *slot = std::move(old); }
+    };
+
+    ScopedCurrentSource scopeSource(ir::Relation current) {
+        return ScopedCurrentSource{
+            .slot = &current_source_slot_,
+            .old = std::exchange(current_source_slot_, std::move(current)),
+        };
+    }
+
+    void setSource(ir::Relation current) { current_source_slot_ = std::move(current); }
+
+    ir::Relation pullSource() {
+        verify(current_source_slot_.has_value());
+        auto rel = std::move(*current_source_slot_);
+        current_source_slot_ = std::nullopt;
+        return rel;
+    }
+
     ir::Program program_;
     FieldBindingPtr binding_;
     std::unordered_map<std::string, const ir::Relation*> named_relations_;
+    std::optional<ir::Relation> current_source_slot_;
 };
 
 }  // namespace
