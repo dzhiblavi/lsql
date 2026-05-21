@@ -44,6 +44,7 @@ MIN              { return TOKEN_MIN; }
 MAX              { return TOKEN_MAX; }
 SUM              { return TOKEN_SUM; }
 IN               { return TOKEN_IN; }
+NOT              { return TOKEN_NOT; }
 PERCENTILE       { return TOKEN_PERCENTILE; }
 COALESCE         { return TOKEN_COALESCE; }
 RSUBSTR          { return TOKEN_RSUBSTR; }

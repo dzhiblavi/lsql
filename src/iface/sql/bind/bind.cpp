@@ -418,8 +418,7 @@ class Binder {
         if (isUnaryGroupFunc(e.func)) {
             require(args.size() == 1, "function expects 1 argument");
             require(
-                std::ranges::all_of(
-                    args, [](auto&& a) { return exprKindLevelOf(a) != ir::ExprKindLevel::Group; }),
+                exprKindLevelOf(args[0]) != ir::ExprKindLevel::Group,
                 "grouping operations do not accept aggregates");
 
             auto type = unaryAggregateType(e.func);

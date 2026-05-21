@@ -399,6 +399,13 @@ expression(E) ::= TOKEN_EXCLAMATION expression(S). {
     });
 }
 
+expression(E) ::= TOKEN_NOT expression(S). {
+    E = new ast::Expr(ast::UnaryExpr{
+        .type = ast::UnaryExprType::Not,
+        .expr = Box<ast::Expr>(S),
+    });
+}
+
 expression(E) ::= TOKEN_COUNT TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
     auto args = std::vector<ast::Expr>();
     args.push_back(std::move(*X));
