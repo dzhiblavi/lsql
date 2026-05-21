@@ -14,7 +14,7 @@ struct OperationTest : Subscriber {
 
     OperationTest() {
         binding = std::make_shared<FieldBinding>();
-        binding->add("test-value");
+        binding->add("test-value", ValueType::Integer);
     }
 
     ~OperationTest() {

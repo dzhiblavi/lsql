@@ -71,7 +71,7 @@ class Planner {
     }
 
     OperationPtr planRelation(ir::ValuesRelation r) {
-        auto src = values(std::move(r.values), binding_);
+        auto src = values(std::move(r.values), r.output_id, binding_);
         plan_.sources.push_back(src);
         return src;
     }

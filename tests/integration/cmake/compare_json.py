@@ -47,6 +47,15 @@ def sort_key(block):
     return ":".join(sorted_block_strings)
 
 
+def dump(blocks, path):
+    with open(path, "w") as file:
+        for i, block in enumerate(blocks):
+            for line in block:
+                file.write(json.dumps(line))
+                file.write('\n')
+            file.write('\n')
+
+
 actual_blocks = sorted(actual_blocks, key=sort_key)
 expected_blocks = sorted(expected_blocks, key=sort_key)
 
@@ -55,6 +64,8 @@ for b, (ab, eb) in enumerate(zip(actual_blocks, expected_blocks)):
     for a, e in zip(ab, eb):
         if a != e:
             print(f"Lines differ block #{b}:\n\t{a}\n\t{e}")
+            dump(actual_blocks, "/tmp/actual.json")
+            dump(expected_blocks, "/tmp/expected.json")
             sys.exit(1)
 
 

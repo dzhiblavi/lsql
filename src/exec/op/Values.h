@@ -29,9 +29,9 @@ class Values : public Source,
                public OperationBase<Values>,
                public std::enable_shared_from_this<Values> {
  public:
-    Values(std::vector<Value> values, ConstFieldBindingPtr binding)
+    Values(std::vector<Value> values, FieldId id, ConstFieldBindingPtr binding)
         : OperationBase(0, std::move(binding))
-        , id_(binding_->id("anon1"))
+        , id_(id)
         , values_(std::move(values)) {}
 
     void push(int phase) override {
@@ -79,8 +79,8 @@ class Values : public Source,
     std::vector<Value> values_;
 };
 
-SourcePtr values(std::vector<Value> values, ConstFieldBindingPtr binding) {
-    return std::make_shared<Values>(std::move(values), std::move(binding));
+SourcePtr values(std::vector<Value> values, FieldId id, ConstFieldBindingPtr binding) {
+    return std::make_shared<Values>(std::move(values), id, std::move(binding));
 }
 
 }  // namespace lsql::exec

@@ -1,18 +1,18 @@
-{"anon1":"b"}
-{"anon1":"c"}
+{"anon":"b"}
+{"anon":"c"}
 
-{"anon1":"a"}
-{"anon1":"b"}
+{"anon":"a"}
+{"anon":"b"}
 
-{"anon1":"a"}
-{"anon1":"c"}
+{"anon":"a"}
+{"anon":"c"}
 
-{"anon1":"a","hit":false}
-{"anon1":"b","hit":true}
-{"hit":true,"anon1":"c"}
+{"anon":"a","hit":false}
+{"anon":"b","hit":true}
+{"hit":true,"anon":"c"}
 
-{"hit":false,"anon1":"a"}
-{"anon1":"b","hit":true}
+{"hit":false,"anon":"a"}
+{"anon":"b","hit":true}
 
-{"anon1":"a","hit":false}
-{"hit":true,"anon1":"b"}
+{"anon":"a","hit":false}
+{"hit":true,"anon":"b"}

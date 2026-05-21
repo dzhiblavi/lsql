@@ -60,7 +60,7 @@ class Log : public Source, public OperationBase<Log> {
             absl::flat_hash_map<FieldId, std::string_view> values;
 
             auto parser = [&](std::string_view name, std::string_view value) {
-                auto id = binding_->id(name);
+                auto id = binding_->id(name, ValueType::String);
                 if (id != UnknownFieldId) {
                     values.emplace(id, value);
                 }
@@ -81,7 +81,7 @@ class Log : public Source, public OperationBase<Log> {
             absl::flat_hash_map<FieldId, std::string_view> values;
 
             auto parser = [&](std::string_view name, std::string_view value) {
-                auto id = binding_->id(name);
+                auto id = binding_->id(name, ValueType::String);
                 if (id == UnknownFieldId || !required_fields.requiresField(id)) {
                     return;
                 }

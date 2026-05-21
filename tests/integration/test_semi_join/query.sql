@@ -1,20 +1,20 @@
-SELECT anon1
+SELECT anon
 FROM ('a', 'b', 'c')
-WHERE anon1 IN ('b', 'c')
+WHERE anon IN ('b', 'c')
 
-SELECT anon1
+SELECT anon
 FROM ('a', 'b', 'c')
-WHERE String(anon1) IN ('b') OR String(anon1) = 'a'
+WHERE String(anon) IN ('b') OR String(anon) = 'a'
 
-SELECT anon1
+SELECT anon
 FROM ('a', 'b', 'c')
-WHERE ! anon1 IN ('b')
+WHERE ! anon IN ('b')
 
-SELECT anon1, anon1 IN ('b', 'c') AS hit
+SELECT anon, anon IN ('b', 'c') AS hit
 FROM ('a', 'b', 'c')
 
-SELECT anon1, COALESCE(anon1 IN ('b'), false) AS hit
+SELECT anon, COALESCE(anon IN ('b'), false) AS hit
 FROM ('a', 'b')
 
-SELECT anon1, anon1 IN ('b') AS hit
+SELECT anon, anon IN ('b') AS hit
 FROM ('a', 'b')

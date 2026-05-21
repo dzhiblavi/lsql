@@ -174,8 +174,13 @@ class Binder {
                 "Ad hoc relation should contain entries of the same type");
         }
 
+        auto type = values.empty() ? ValueType::Null : values.front().type();
+        auto id = binding_->getOrAdd("anon", type);
+
         return ir::ValuesRelation{
             .values = std::move(values),
+            .output_id = id,
+            .fields_out = ir::RelationFields::withField(id),
         };
     }
 
@@ -192,16 +197,23 @@ class Binder {
                         exprKindLevelOf(key) != ir::ExprKindLevel::Group,
                         "IN key expression cannot be aggregate");
 
+                    auto match = bindRelation(std::move(*e.match));
+                    auto source = pullSource();
+                    auto fields = fieldsOutOf(source);
+
                     setSource(
                         ir::SemiJoinRelation{
-                            .source = std::make_unique<ir::Relation>(pullSource()),
-                            .match =
-                                std::make_unique<ir::Relation>(bindRelation(std::move(*e.match))),
+                            .source = std::make_unique<ir::Relation>(std::move(source)),
+                            .match = std::make_unique<ir::Relation>(std::move(match)),
                             .expr = std::make_unique<ir::Expr>(std::move(key)),
+                            .fields_out = std::move(fields),
                         });
                 },
                 [&](auto e) {
                     auto cond = bindExpr(std::move(e));
+                    auto source = pullSource();
+                    auto fields = fieldsOutOf(source);
+
                     require(
                         valueTypeOf(cond) == ValueType::Boolean, "WHERE condition must be boolean");
                     require(
@@ -210,13 +222,14 @@ class Binder {
 
                     setSource(
                         ir::FilterRelation{
-                            .source = std::make_unique<ir::Relation>(pullSource()),
+                            .source = std::make_unique<ir::Relation>(std::move(source)),
                             .condition = std::make_unique<ir::Expr>(std::move(cond)),
+                            .fields_out = std::move(fields),
                         });
                 });
         }
 
-        auto projectors = bind(std::move(r.projectors));
+        auto projectors = bindProjectors(std::move(r.projectors));
         require(!projectors.empty(), "SELECT requires at least one projector");
 
         bool has_group_projector = false;
@@ -233,10 +246,9 @@ class Binder {
         }
 
         if (has_group_by) {
-            auto group_by_list = bind(std::move(r.group_by->group_list));
-
+            auto group_by_list = bindProjectors(std::move(r.group_by->group_list));
             for (auto&& p : group_by_list) {
-                util::match(
+                util::matchPartial(
                     p,
                     [](const ir::StarProjector&) {
                         throwError("* is not allowed in GROUP BY statement");
@@ -248,42 +260,62 @@ class Binder {
                     });
             }
 
+            auto fields = ir::RelationFields::merge(fieldsOf(group_by_list), fieldsOf(projectors));
+            auto source = pullSource();
+
             setSource(
                 ir::GroupRelation{
-                    .source = std::make_unique<ir::Relation>(pullSource()),
+                    .source = std::make_unique<ir::Relation>(std::move(source)),
                     .projectors = std::move(projectors),
                     .group_list = std::move(group_by_list),
+                    .fields_out = std::move(fields),
                 });
         } else if (has_group_projector) {
             require(!has_row_projector, "cannot mix group and row projectors");
+            auto source = pullSource();
+            auto fields = fieldsOf(projectors);
 
             setSource(
                 ir::AggregateRelation{
-                    .source = std::make_unique<ir::Relation>(pullSource()),
+                    .source = std::make_unique<ir::Relation>(std::move(source)),
                     .projectors = std::move(projectors),
+                    .fields_out = std::move(fields),
                 });
         } else {
+            auto source = pullSource();
+            auto fields = fieldsOf(projectors);
+
             setSource(
                 ir::ProjectionRelation{
-                    .source = std::make_unique<ir::Relation>(pullSource()),
+                    .source = std::make_unique<ir::Relation>(std::move(source)),
                     .projectors = std::move(projectors),
+                    .fields_out = std::move(fields),
                 });
         }
 
         if (r.order_by) {
+            auto order_list = bindExprs(std::move(r.order_by->order_list));
+            auto source = pullSource();
+            auto fields = fieldsOutOf(source);
+
             setSource(
                 ir::SortRelation{
-                    .source = std::make_unique<ir::Relation>(pullSource()),
-                    .order_list = bind(std::move(r.order_by->order_list)),
+                    .source = std::make_unique<ir::Relation>(std::move(source)),
+                    .order_list = std::move(order_list),
                     .desc = r.order_by->desc,
+                    .fields_out = std::move(fields),
                 });
         }
 
         if (r.limit) {
+            auto source = pullSource();
+            auto fields = fieldsOutOf(source);
+
             setSource(
                 ir::LimitRelation{
-                    .source = std::make_unique<ir::Relation>(pullSource()),
+                    .source = std::make_unique<ir::Relation>(std::move(source)),
                     .limit = r.limit->limit,
+                    .fields_out = std::move(fields),
                 });
         }
 
@@ -293,46 +325,59 @@ class Binder {
     ir::Relation bindRelation(ast::UnionAllRelation r) {
         auto left = bindRelation(std::move(*r.left));
         auto right = bindRelation(std::move(*r.right));
+        auto fields = ir::RelationFields::merge(fieldsOutOf(left), fieldsOutOf(right));
 
         return ir::UnionAllRelation{
             .left = std::make_unique<ir::Relation>(std::move(left)),
             .right = std::make_unique<ir::Relation>(std::move(right)),
+            .fields_out = std::move(fields),
         };
     }
 
     ir::Relation bindRelation(ast::UnionAllSortedByRelation r) {
         auto left = bindRelation(std::move(*r.left));
         auto right = bindRelation(std::move(*r.right));
+        auto fields = ir::RelationFields::merge(fieldsOutOf(left), fieldsOutOf(right));
 
-        std::vector<ir::Expr> order_list;
-        order_list.reserve(r.order_by.order_list.size());
+        setSource(
+            ir::UnionAllSortedByRelation{
+                .left = std::make_unique<ir::Relation>(std::move(left)),
+                .right = std::make_unique<ir::Relation>(std::move(right)),
+                .order_list = {},
+                .desc = r.order_by.desc,
+                .fields_out = std::move(fields),
+            });
+
+        auto* order_list = util::match(
+            currSource(),
+            [](ir::UnionAllSortedByRelation& r) -> std::vector<ir::Expr>* { return &r.order_list; },
+            [](auto&&) -> std::vector<ir::Expr>* { panic(); });
+
+        order_list->reserve(r.order_by.order_list.size());
         for (auto&& expr : r.order_by.order_list) {
-            order_list.push_back(bindExpr(std::move(expr)));
+            order_list->push_back(bindExpr(std::move(expr)));
         }
-        require(!order_list.empty(), "order list cannot be empty");
+        require(!order_list->empty(), "order list cannot be empty");
 
-        return ir::UnionAllSortedByRelation{
-            .left = std::make_unique<ir::Relation>(std::move(left)),
-            .right = std::make_unique<ir::Relation>(std::move(right)),
-            .order_list = std::move(order_list),
-            .desc = r.order_by.desc,
-        };
+        return pullSource();
     }
 
     ir::Relation bindRelation(ast::FileRelation r) {
         return ir::FileRelation{
             .path = std::move(r.path),
+            .fields_out = ir::RelationFields::emptySet(),
         };
     }
 
     ir::Relation bindRelation(ast::FileIntervalRelation r) {
-        constexpr auto TimeFormat = TimeFormat::ISO8601;
-        auto ts_from = timestampFromString(r.ts_from, TimeFormat);
+        constexpr auto format = TimeFormat::ISO8601;
+        auto ts_from = timestampFromString(r.ts_from, format);
 
         return ir::FileIntervalRelation{
             .path = std::move(r.path),
             .ts_from = ts_from,
             .ts_to = ts_from + r.interval_s,
+            .fields_out = ir::RelationFields::emptySet(),
         };
     }
 
@@ -342,6 +387,7 @@ class Binder {
 
         return ir::NamedRelationReferenceRelation{
             .name = std::move(r.name),
+            .fields_out = fieldsOutOf(*it->second),
         };
     }
 
@@ -350,13 +396,17 @@ class Binder {
 
         return ir::MaterializeRelation{
             .relation = std::make_unique<ir::Relation>(std::move(arg)),
+            .fields_out = fieldsOutOf(arg),
         };
     }
 
     ir::Expr bindExpr(ast::IdentifierExpr e) {
+        auto type = typeOfSourceField(e.identifier);
+        auto id = binding_->getOrAdd(e.identifier, type);
+
         return ir::FieldExpr{
-            .field_id = binding_->getOrAdd(e.identifier),
-            .type = ValueType::String,
+            .field_id = id,
+            .type = type,
         };
     }
 
@@ -374,13 +424,16 @@ class Binder {
     }
 
     ir::Expr bindExpr(ast::InExpr e) {
+        auto output_id = binding_->addAnonymous(ValueType::Boolean);
+
         auto expr = bindExpr(std::move(*e.expr));
         require(
             exprKindLevelOf(expr) != ir::ExprKindLevel::Group,
             "IN key expression cannot be aggregate");
 
-        auto output_id = binding_->addAnonymous();
         auto match = bindRelation(std::move(*e.match));
+        auto fields = fieldsOutOf(currSource());
+        fields.add(output_id);
 
         // same source relation enriched with a boolean field indicating
         // whether the row's key matches `match`
@@ -390,6 +443,7 @@ class Binder {
                 .match = std::make_unique<ir::Relation>(std::move(match)),
                 .expr = std::make_unique<ir::Expr>(std::move(expr)),
                 .output_field_id = output_id,
+                .fields_out = std::move(fields),
             });
 
         return ir::FieldExpr{
@@ -543,39 +597,44 @@ class Binder {
         };
     }
 
-    ir::Projector bind(ast::Projector p) {
-        return util::match(
+    void bind(ast::Projector p, std::vector<ir::Projector>& out) {
+        util::match(
             std::move(p),
-            [](ast::StarProjector) -> ir::Projector { return ir::StarProjector{}; },
-            [this](ast::IdentifierProjector p) -> ir::Projector {
-                auto id = binding_->getOrAdd(p.identifier);
+            [&](ast::StarProjector) { out.emplace_back(ir::StarProjector{}); },
+            [&](ast::IdentifierProjector p) {
+                auto type = typeOfSourceField(p.identifier);
+                auto id = binding_->getOrAdd(p.identifier, type);
 
-                return ir::ExprProjector{
-                    .alias_field_id = id,
-                    .expr = std::make_unique<ir::Expr>(ir::FieldExpr{
-                        .field_id = id,
-                        .type = ValueType::String,
-                    }),
-                };
+                out.emplace_back(
+                    ir::ExprProjector{
+                        .alias_field_id = id,
+                        .expr = std::make_unique<ir::Expr>(ir::FieldExpr{
+                            .field_id = id,
+                            .type = type,
+                        }),
+                    });
             },
-            [this](ast::ExprProjector p) -> ir::Projector {
-                return ir::ExprProjector{
-                    .alias_field_id = binding_->getOrAdd(p.alias),
-                    .expr = std::make_unique<ir::Expr>(bindExpr(std::move(*p.expr))),
-                };
+            [&](ast::ExprProjector p) {
+                auto expr = bindExpr(std::move(*p.expr));
+
+                out.emplace_back(
+                    ir::ExprProjector{
+                        .alias_field_id = binding_->getOrAdd(p.alias, valueTypeOf(expr)),
+                        .expr = std::make_unique<ir::Expr>(std::move(expr)),
+                    });
             });
     }
 
-    std::vector<ir::Projector> bind(std::vector<ast::Projector> projectors) {
+    std::vector<ir::Projector> bindProjectors(std::vector<ast::Projector> projectors) {
         std::vector<ir::Projector> result;
         result.reserve(projectors.size());
         for (auto&& p : projectors) {
-            result.push_back(bind(std::move(p)));
+            bind(std::move(p), result);
         }
         return result;
     }
 
-    std::vector<ir::Expr> bind(std::vector<ast::Expr> exprs) {
+    std::vector<ir::Expr> bindExprs(std::vector<ast::Expr> exprs) {
         std::vector<ir::Expr> result;
         result.reserve(exprs.size());
         for (auto&& p : exprs) {
@@ -600,6 +659,11 @@ class Binder {
 
     void setSource(ir::Relation current) { current_source_slot_ = std::move(current); }
 
+    ir::Relation& currSource() {
+        verify(current_source_slot_.has_value());
+        return *current_source_slot_;
+    }
+
     ir::Relation pullSource() {
         verify(current_source_slot_.has_value());
         auto rel = std::move(*current_source_slot_);
@@ -607,9 +671,38 @@ class Binder {
         return rel;
     }
 
+    ir::RelationFields fieldsOf(const ir::Projector& p) {
+        return util::match(
+            p,
+            [](const ir::StarProjector&) { return ir::RelationFields::emptySet(); },
+            [](const ir::ExprProjector& p) {
+                return ir::RelationFields::withField(p.alias_field_id);
+            });
+    }
+
+    ir::RelationFields fieldsOf(const std::vector<ir::Projector>& ps) {
+        auto fields = ir::RelationFields::emptySet();
+        for (auto&& p : ps) {
+            fields.merge(fieldsOf(p));
+        }
+        return fields;
+    }
+
+    ValueType typeOfSourceField(std::string_view name) {
+        auto&& fields = fieldsOutOf(currSource());
+
+        for (auto id : fields.fieldIds()) {
+            if (binding_->name(id) == name) {
+                return binding_->type(id);
+            }
+        }
+
+        return ValueType::String;
+    }
+
     ir::Program program_;
     FieldBindingPtr binding_;
-    std::unordered_map<std::string, const ir::Relation*> named_relations_;
+    std::unordered_map<std::string, ir::Relation*> named_relations_;
     std::optional<ir::Relation> current_source_slot_;
 };
 

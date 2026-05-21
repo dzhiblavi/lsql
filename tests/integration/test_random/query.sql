@@ -140,7 +140,7 @@ SELECT
 FROM $access
 
 SELECT
-    Int(status_code) AS status_code,
+    status_code AS status_code,
     tvm_src AS tvm_source,
     COUNT(true) AS count
 FROM $access

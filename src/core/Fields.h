@@ -1,7 +1,10 @@
 #pragma once
 
+#include "core/ValueType.h"
 #include "core/verify.h"
+
 #include <absl/container/flat_hash_map.h>
+#include <magic_enum/magic_enum.hpp>
 
 #include <cstdint>
 #include <memory>
@@ -17,18 +20,21 @@ class FieldBinding {
  public:
     FieldBinding() = default;
 
-    FieldId addAnonymous() { return add(std::format("$anon_{}", next_id_)); }
+    FieldId addAnonymous(ValueType type) { return add(std::format("$anon_{}", next_id_), type); }
 
-    FieldId add(std::string_view name) {
-        std::string sname(name);
-        verify(!hasField(sname));
-        FieldId id = next_id_++;
-        names_.emplace(id, sname);
-        ids_.emplace(std::move(sname), id);
+    FieldId add(std::string_view name, ValueType type) {
+        verify(!hasField(name, type));
+
+        auto id = next_id_++;
+        names_.emplace(id, name);
+        types_.emplace(id, type);
+        ids_[magic_enum::enum_underlying(type)].emplace(name, id);
         return id;
     }
 
-    FieldId getOrAdd(std::string_view name) { return hasField(name) ? id(name) : add(name); }
+    FieldId getOrAdd(std::string_view name, ValueType type) {
+        return hasField(name, type) ? id(name, type) : add(name, type);
+    }
 
     std::string_view name(FieldId id) const {
         auto it = names_.find(id);
@@ -36,20 +42,30 @@ class FieldBinding {
         return it->second;
     }
 
-    bool hasField(std::string_view name) const { return ids_.contains(name); }
+    ValueType type(FieldId id) const {
+        auto it = types_.find(id);
+        verify(it != types_.end());
+        return it->second;
+    }
 
-    FieldId id(std::string_view name) const {
-        auto it = ids_.find(name);
-        if (it != ids_.end()) {
+    bool hasField(std::string_view name, ValueType type) const {
+        return ids_[magic_enum::enum_underlying(type)].contains(name);
+    }
+
+    FieldId id(std::string_view name, ValueType type) const {
+        auto&& ids = ids_[magic_enum::enum_underlying(type)];
+        auto it = ids.find(name);
+        if (it != ids.end()) {
             return it->second;
         }
         return UnknownFieldId;
     }
 
  private:
-    FieldId next_id_ = 1;
+    FieldId next_id_ = UnknownFieldId + 1;
     absl::flat_hash_map<FieldId, std::string> names_;
-    absl::flat_hash_map<std::string, FieldId> ids_;
+    absl::flat_hash_map<FieldId, ValueType> types_;
+    std::array<absl::flat_hash_map<std::string, FieldId>, magic_enum::enum_count<ValueType>()> ids_;
 };
 
 using FieldBindingPtr = std::shared_ptr<FieldBinding>;
