@@ -182,22 +182,6 @@ class Binder {
     ir::Relation bindRelation(ast::SelectRelation r) {
         auto scope = scopeSource(bindRelation(std::move(*r.source)));
 
-        auto projectors = bind(std::move(r.projectors));
-        require(!projectors.empty(), "SELECT requires at least one projector");
-
-        bool has_group_projector = false;
-        bool has_row_projector = false;
-        bool has_group_by = r.group_by.has_value();
-        for (auto&& p : projectors) {
-            util::match(
-                p,
-                [&](const ir::StarProjector&) { has_row_projector = true; },
-                [&](const ir::ExprProjector& p) {
-                    has_group_projector |= exprKindLevelOf(*p.expr) == ir::ExprKindLevel::Group;
-                    has_row_projector |= exprKindLevelOf(*p.expr) == ir::ExprKindLevel::Row;
-                });
-        }
-
         if (r.where) {
             util::match(
                 std::move(*r.where->condition),
@@ -229,6 +213,22 @@ class Binder {
                             .source = std::make_unique<ir::Relation>(pullSource()),
                             .condition = std::make_unique<ir::Expr>(std::move(cond)),
                         });
+                });
+        }
+
+        auto projectors = bind(std::move(r.projectors));
+        require(!projectors.empty(), "SELECT requires at least one projector");
+
+        bool has_group_projector = false;
+        bool has_row_projector = false;
+        bool has_group_by = r.group_by.has_value();
+        for (auto&& p : projectors) {
+            util::match(
+                p,
+                [&](const ir::StarProjector&) { has_row_projector = true; },
+                [&](const ir::ExprProjector& p) {
+                    has_group_projector |= exprKindLevelOf(*p.expr) == ir::ExprKindLevel::Group;
+                    has_row_projector |= exprKindLevelOf(*p.expr) == ir::ExprKindLevel::Row;
                 });
         }
 
@@ -382,8 +382,8 @@ class Binder {
         auto output_id = binding_->addAnonymous();
         auto match = bindRelation(std::move(*e.match));
 
-        // same source relation but only has false/true depending on
-        // whether a row matches `match`
+        // same source relation enriched with a boolean field indicating
+        // whether the row's key matches `match`
         setSource(
             ir::MarkJoinRelation{
                 .source = std::make_unique<ir::Relation>(pullSource()),
