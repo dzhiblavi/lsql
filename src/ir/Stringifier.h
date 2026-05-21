@@ -87,6 +87,13 @@ class Stringifier {
             .child(StrBuilder("order list").child(print(r.order_list)));
     }
 
+    StrBuilder print(const SemiJoinRelation& r) {
+        return StrBuilder("SemiJoinRelation")
+            .child(StrBuilder("key").child(print(*r.expr)))
+            .child(StrBuilder("match set").child(print(*r.match)))
+            .child(StrBuilder("source").child(print(*r.source)));
+    }
+
     StrBuilder print(const Projector& p) {
         return std::visit([this](auto&& p) { return print(p); }, p);
     }
@@ -162,12 +169,6 @@ class Stringifier {
     StrBuilder print(const ValueExpr& e) {
         return StrBuilder(
             "ValueExpr {} (type {})", to_string(e.value), magic_enum::enum_name(e.value.type()));
-    }
-
-    StrBuilder print(const InExpr& e) {
-        return StrBuilder("InExpr")
-            .child(StrBuilder("expression").child(print(*e.expr)))
-            .child(StrBuilder("match source").child(print(*e.source)));
     }
 
     StrBuilder print(const CoalesceExpr& e) {

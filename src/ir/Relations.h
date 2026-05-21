@@ -56,6 +56,12 @@ struct SortRelation {
     bool desc;
 };
 
+struct SemiJoinRelation {
+    Box<Relation> source;
+    Box<Relation> match;
+    Box<Expr> expr;
+};
+
 struct UnionAllRelation {
     Box<Relation> left;
     Box<Relation> right;

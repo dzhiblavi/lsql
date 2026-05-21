@@ -542,7 +542,7 @@ expression(E) ::= TOKEN_RSUBSTR TOKEN_LPAREN expression(A) TOKEN_COMMA TOKEN_STR
 expression(E) ::= expression(L) TOKEN_IN select_source(S). {
     E = new ast::Expr(ast::InExpr{
         .expr = Box<ast::Expr>(L),
-        .source = Box<ast::Relation>(S),
+        .match = Box<ast::Relation>(S),
     });
 }
 

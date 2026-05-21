@@ -27,7 +27,7 @@ struct CastExpr {
 
 struct InExpr {
     Box<Expr> expr;
-    Box<Relation> source;
+    Box<Relation> match;
 };
 
 struct LikeExpr {

@@ -5,12 +5,17 @@
 namespace lsql::iface::sql::bind {
 
 template <typename... Args>
+[[noreturn]] void throwError(std::format_string<const Args&...> fmt, const Args&... args) {
+    throw std::runtime_error(std::format(fmt, args...));
+}
+
+template <typename... Args>
 void require(bool value, std::format_string<const Args&...> fmt, const Args&... args) {
     if (value) [[likely]] {
         return;
     }
 
-    throw std::runtime_error(std::format(fmt, args...));
+    throwError(fmt, args...);
 }
 
 }  // namespace lsql::iface::sql::bind

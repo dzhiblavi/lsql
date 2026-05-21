@@ -11,6 +11,7 @@ struct GroupRelation;
 struct LimitRelation;
 struct FilterRelation;
 struct SortRelation;
+struct SemiJoinRelation;
 struct UnionAllRelation;
 struct UnionAllSortedByRelation;
 struct FileRelation;
@@ -26,6 +27,7 @@ using Relation = std::variant< //
     LimitRelation, //
     FilterRelation, //
     SortRelation, //
+    SemiJoinRelation, //
     UnionAllRelation, //
     UnionAllSortedByRelation, //
     FileRelation, //

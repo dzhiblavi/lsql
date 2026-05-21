@@ -2,7 +2,6 @@
 
 #include "ir/Expr.h"
 #include "ir/ExprKindLevel.h"
-#include "ir/Relation.h"
 
 #include "core/Fields.h"
 #include "core/Value.h"
@@ -25,14 +24,6 @@ struct ValueExpr {
 
     ValueType valueType() const { return value.type(); }
     ExprKindLevel level() const { return ExprKindLevel::Const; }
-};
-
-struct InExpr {
-    Box<Expr> expr;
-    Box<Relation> source;
-
-    ValueType valueType() const { return ValueType::Boolean; }
-    ExprKindLevel level() const { return ExprKindLevel::Row; }
 };
 
 struct CoalesceExpr {

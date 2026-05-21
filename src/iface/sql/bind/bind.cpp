@@ -198,16 +198,33 @@ class Binder {
         auto source = bindRelation(std::move(*r.source));
 
         if (r.where) {
-            auto cond = bindExpr(std::move(*r.where->condition));
-            require(valueTypeOf(cond) == ValueType::Boolean, "WHERE condition must be boolean");
-            require(
-                exprKindLevelOf(cond) != ir::ExprKindLevel::Group,
-                "WHERE condition cannot be aggregate");
+            util::match(
+                std::move(*r.where->condition),
+                [&](ast::InExpr e) {
+                    auto key = bindExpr(std::move(*e.expr));
+                    require(
+                        exprKindLevelOf(key) != ir::ExprKindLevel::Group,
+                        "IN key expression cannot be aggregate");
 
-            source = ir::FilterRelation{
-                .source = std::make_unique<ir::Relation>(std::move(source)),
-                .condition = std::make_unique<ir::Expr>(std::move(cond)),
-            };
+                    source = ir::SemiJoinRelation{
+                        .source = std::make_unique<ir::Relation>(std::move(source)),
+                        .match = std::make_unique<ir::Relation>(bindRelation(std::move(*e.match))),
+                        .expr = std::make_unique<ir::Expr>(std::move(key)),
+                    };
+                },
+                [&](auto e) {
+                    auto cond = bindExpr(std::move(e));
+                    require(
+                        valueTypeOf(cond) == ValueType::Boolean, "WHERE condition must be boolean");
+                    require(
+                        exprKindLevelOf(cond) != ir::ExprKindLevel::Group,
+                        "WHERE condition cannot be aggregate");
+
+                    source = ir::FilterRelation{
+                        .source = std::make_unique<ir::Relation>(std::move(source)),
+                        .condition = std::make_unique<ir::Expr>(std::move(cond)),
+                    };
+                });
         }
 
         if (has_group_by) {
@@ -345,11 +362,8 @@ class Binder {
         };
     }
 
-    ir::Expr bindExpr(ast::InExpr e) {
-        return ir::InExpr{
-            .expr = std::make_unique<ir::Expr>(bindExpr(std::move(*e.expr))),
-            .source = std::make_unique<ir::Relation>(bindRelation(std::move(*e.source))),
-        };
+    ir::Expr bindExpr(ast::InExpr /*e*/) {
+        throwError("InExpr only allowed as the top-level WHERE condition");
     }
 
     ir::Expr bindExpr(ast::LikeExpr e) {

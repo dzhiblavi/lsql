@@ -6,7 +6,6 @@ namespace lsql::ir {
 
 struct FieldExpr;
 struct ValueExpr;
-struct InExpr;
 struct CoalesceExpr;
 struct CastExpr;
 struct PercentileExpr;
@@ -19,7 +18,6 @@ struct BinaryExpr;
 using Expr = std::variant< //
     FieldExpr,
     ValueExpr, //
-    InExpr, //
     CoalesceExpr, //
     CastExpr, //
     PercentileExpr, //

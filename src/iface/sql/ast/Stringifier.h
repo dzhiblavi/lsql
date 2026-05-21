@@ -185,7 +185,7 @@ class Stringifier {
     StrBuilder print(const InExpr& e) {
         return StrBuilder("InExpr")
             .child(StrBuilder("expression").child(print(*e.expr)))
-            .child(StrBuilder("match source").child(print(*e.source)));
+            .child(StrBuilder("match set").child(print(*e.match)));
     }
 
     StrBuilder print(const LikeExpr& e) {

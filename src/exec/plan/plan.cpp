@@ -114,6 +114,19 @@ class Planner {
             exec::sort(popOperation(), expressionList(std::move(r.order_list)), r.desc, binding_));
     }
 
+    void planRelation(ir::SemiJoinRelation r) {
+        planRelation(std::move(*r.source));
+        auto source = popOperation();
+
+        planRelation(std::move(*r.match));
+        auto match = popOperation();
+
+        planExpr(std::move(*r.expr));
+        auto expr = popExpression();
+
+        operations.push(exec::in(source, match, expr, binding_));
+    }
+
     void planRelation(ir::UnionAllRelation r) {
         planRelation(std::move(*r.left));
         auto left = popOperation();
@@ -171,15 +184,6 @@ class Planner {
 
     void planExpr(ir::ValueExpr e) {
         exprs.push_back(std::make_shared<exec::ValueExpression>(e.value));
-    }
-
-    void planExpr(ir::InExpr e) {
-        auto source = popOperation();
-        planExpr(std::move(*e.expr));
-        auto expr = popExpression();
-        planRelation(std::move(*e.source));
-        auto match = popOperation();
-        operations.push(exec::in(source, match, expr, binding_));
     }
 
     void planExpr(ir::CoalesceExpr e) {
