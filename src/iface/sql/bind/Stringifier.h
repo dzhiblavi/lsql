@@ -1,8 +1,8 @@
 #pragma once
 
-#include "iface/sql/ast/Expressions.h"  // IWYU pragma: keep
-#include "iface/sql/ast/Relations.h"    // IWYU pragma: keep
-#include "iface/sql/ast/Statement.h"    // IWYU pragma: keep
+#include "iface/sql/bind/Expressions.h"  // IWYU pragma: keep
+#include "iface/sql/bind/Relations.h"    // IWYU pragma: keep
+#include "iface/sql/bind/Statement.h"    // IWYU pragma: keep
 
 #include "util/StrBuilder.h"
 #include "util/string.h"
@@ -11,11 +11,7 @@
 
 #include <format>
 
-namespace lsql::iface::sql::ast {
-
-inline std::string to_string(const ast::Literal& v) {
-    return std::format("{}({})", magic_enum::enum_name(v.type), v.value_str);
-}
+namespace lsql::iface::sql::bind {
 
 class Stringifier {
     using StrBuilder = util::StrBuilder;
@@ -24,8 +20,9 @@ class Stringifier {
     Stringifier() = default;
 
     std::string print(const Program& program) {
-        auto b = StrBuilder("Program AST");
-        for (auto&& s : program) {
+        auto b = StrBuilder("Bound AST");
+        binding_ = program.binding;
+        for (auto&& s : program.statements) {
             b.item(print(s));
         }
         return b.render();
@@ -45,12 +42,22 @@ class Stringifier {
     }
 
     StrBuilder print(const Relation& r) {
-        return std::visit([this](auto&& arg) { return this->print(arg); }, r);
+        return std::visit(
+            [&](auto&& arg) {
+                return this->print(arg).child(
+                    StrBuilder("fields out")
+                        .item(StrBuilder(
+                            "relation: {}", to_string(r.fields_out->fieldSet(), *binding_)))
+                        .item(StrBuilder(
+                            "subtree: {}", to_string(r.fields_out->subtreeFieldSet(), *binding_))));
+            },
+            r.node);
     }
 
     StrBuilder print(const AdhocRelation& r) {
-        return StrBuilder("AdhocRelation count={}", r.literals.size())
-            .child(StrBuilder("literals").child(util::toString(r.literals)));
+        return StrBuilder("AdhocRelation count={}", r.values.size())
+            .child(StrBuilder("values").child(util::toString(r.values)))
+            .child(StrBuilder("output_field: {}", to_string(r.output_field_id, *binding_)));
     }
 
     StrBuilder print(const SelectRelation& r) {
@@ -59,7 +66,7 @@ class Stringifier {
             p.item(print(proj));
         }
 
-        auto b = StrBuilder("SelectRelation")
+        auto b = StrBuilder("SelectRelation aggregate={}", r.aggregate)
                      .child(StrBuilder("source").child(print(*r.source)))
                      .child(p);
 
@@ -86,11 +93,12 @@ class Stringifier {
     StrBuilder print(const StarProjector&) { return StrBuilder("*-projector"); }
 
     StrBuilder print(const IdentifierProjector& p) {
-        return StrBuilder("IdentifierProjector '{}'", p.identifier);
+        return StrBuilder("IdentifierProjector {}", to_string(p.field_id, *binding_));
     }
 
     StrBuilder print(const ExprProjector& p) {
-        return StrBuilder("ExprProjector alias={}", p.alias).child(print(*p.expr));
+        return StrBuilder("ExprProjector {}", to_string(p.alias_field_id, *binding_))
+            .child(print(*p.expr));
     }
 
     StrBuilder print(const Where& w) { return StrBuilder("Where").child(print(*w.condition)); }
@@ -114,7 +122,7 @@ class Stringifier {
     }
 
     StrBuilder print(const UnionAllRelation& r) {
-        return StrBuilder("UnionAll")
+        return StrBuilder("UnionAllRelation")
             .item(StrBuilder("left").child(print(*r.left)))
             .item(StrBuilder("right").child(print(*r.right)));
     }
@@ -125,7 +133,7 @@ class Stringifier {
             order.item(print(item));
         }
 
-        return StrBuilder("UnionAll")
+        return StrBuilder("UnionAllSortedByRelation desc={}", r.order_by.desc)
             .item(StrBuilder("left").child(print(*r.left)))
             .item(StrBuilder("right").child(print(*r.right)))
             .child(order);
@@ -134,11 +142,7 @@ class Stringifier {
     StrBuilder print(const FileRelation& r) { return StrBuilder("FileRelation path={}", r.path); }
 
     StrBuilder print(const FileIntervalRelation& r) {
-        return StrBuilder(
-            "FileIntervalRelation path={} ts_from={}, interval={}",
-            r.path,
-            r.ts_from,
-            r.interval_s);
+        return StrBuilder("FileIntervalRelation path={} range=[{},{}]", r.path, r.ts_from, r.ts_to);
     }
 
     StrBuilder print(const NamedRelationReferenceRelation& r) {
@@ -150,15 +154,22 @@ class Stringifier {
     }
 
     StrBuilder print(const Expr& e) {
-        return std::visit([this](auto&& arg) { return this->print(arg); }, e);
+        return std::visit(
+            [&](auto&& arg) {
+                return this->print(arg)
+                    .child(StrBuilder("value_type: {}", magic_enum::enum_name(e.value_type)))
+                    .child(StrBuilder("level: {}", magic_enum::enum_name(e.level)))
+                    .child(StrBuilder("req_fields: {}", to_string(e.required_fields, *binding_)));
+            },
+            e.node);
     }
 
     StrBuilder print(const IdentifierExpr& e) {
-        return StrBuilder("IdentifierExpr id={}", e.identifier);
+        return StrBuilder("IdentifierExpr {}", to_string(e.field_id, *binding_));
     }
 
     StrBuilder print(const LiteralExpr& e) {
-        return StrBuilder("LiteralExpr literal={}", to_string(e.literal));
+        return StrBuilder("LiteralExpr {}", to_string(e.value));
     }
 
     StrBuilder print(const CastExpr& e) {
@@ -169,11 +180,12 @@ class Stringifier {
     StrBuilder print(const InExpr& e) {
         return StrBuilder("InExpr")
             .child(StrBuilder("expression").child(print(*e.expr)))
-            .child(StrBuilder("match set").child(print(*e.match)));
+            .child(StrBuilder("match set").child(print(*e.match)))
+            .child(StrBuilder("match field id: {}", to_string(e.match_field_id, *binding_)));
     }
 
     StrBuilder print(const LikeExpr& e) {
-        return StrBuilder("LikeExpr '{}'", e.regex).child(print(*e.expr));
+        return StrBuilder("LikeExpr regex='{}'", e.regex).child(print(*e.expr));
     }
 
     StrBuilder print(const FnCallExpr& e) {
@@ -181,7 +193,7 @@ class Stringifier {
         for (auto&& arg : e.args) {
             a.item(print(arg));
         }
-        return StrBuilder("FnCallExpr name={}", e.func).child(a);
+        return StrBuilder("FnCallExpr type={}", magic_enum::enum_name(e.type)).child(a);
     }
 
     StrBuilder print(const BinaryExpr& e) {
@@ -194,6 +206,9 @@ class Stringifier {
         return StrBuilder("UnaryExpr type: {}", magic_enum::enum_name(e.type))
             .child(print(*e.expr));
     }
+
+ private:
+    ConstFieldBindingPtr binding_;
 };
 
-}  // namespace lsql::iface::sql::ast
+}  // namespace lsql::iface::sql::bind

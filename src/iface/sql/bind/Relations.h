@@ -116,7 +116,6 @@ struct StarProjector {};
 
 struct IdentifierProjector {
     FieldId field_id;
-    ValueType type;
 };
 
 struct ExprProjector {

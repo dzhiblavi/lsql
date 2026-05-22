@@ -98,16 +98,22 @@ class FieldSet {
     std::unordered_set<FieldId> fields_;
 };
 
+inline std::string to_string(FieldId id, const FieldBinding& binding) {
+    return std::format("{}({},{})", binding.name(id), id, magic_enum::enum_name(binding.type(id)));
+}
+
 inline std::string to_string(const FieldSet& fields, const FieldBinding& binding) {
     if (fields.fieldIds().empty()) {
-        return "none";
+        return "[]";
     }
 
     std::stringstream ss;
+    ss << '[';
     for (auto&& id : fields.fieldIds()) {
-        ss << std::format("{}({}),", binding.name(id), id);
+        ss << to_string(id, binding) << ',';
     }
     ss.seekp(-1, std::ios_base::end);  // remove last ','
+    ss << ']';
     return ss.str();
 }
 

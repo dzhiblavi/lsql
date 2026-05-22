@@ -638,12 +638,7 @@ class Binder {
             [&](ast::IdentifierProjector p) {
                 auto type = currFieldSet().typeOfSourceField(p.identifier, binding_);
                 auto id = binding_->getOrAdd(p.identifier, type);
-
-                out.emplace_back(
-                    IdentifierProjector{
-                        .field_id = id,
-                        .type = type,
-                    });
+                out.emplace_back(IdentifierProjector{.field_id = id});
             },
             [&](ast::ExprProjector p) {
                 auto expr = bindExpr(std::move(*p.expr));

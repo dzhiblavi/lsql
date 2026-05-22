@@ -5,6 +5,7 @@
 #include "ir/Statement.h"    // IWYU pragma: keep
 
 #include "util/StrBuilder.h"
+#include "util/string.h"
 
 #include <magic_enum/magic_enum.hpp>
 
@@ -49,7 +50,7 @@ class Stringifier {
                 "ValuesRelation count={}, type={}",
                 r.values.size(),
                 magic_enum::enum_name(r.values.empty() ? ValueType::Null : r.values.front().type()))
-            .child(StrBuilder("values").child(toString(r.values)));
+            .child(StrBuilder("values").child(util::toString(r.values)));
     }
 
     StrBuilder print(const ProjectionRelation& r) {
@@ -187,7 +188,7 @@ class Stringifier {
 
     StrBuilder print(const PercentileExpr& e) {
         return StrBuilder("PercentileExpr count={}", e.percentiles.size())
-            .child(StrBuilder("percentiles").child(toString(e.percentiles)))
+            .child(StrBuilder("percentiles").child(util::toString(e.percentiles)))
             .child(StrBuilder("expression").child(print(*e.expr)));
     }
 
@@ -213,22 +214,6 @@ class Stringifier {
     StrBuilder print(const UnaryAggregateExpr& e) {
         return StrBuilder("UnaryAggregateExpr type={}", magic_enum::enum_name(e.type))
             .child(print(*e.expr));
-    }
-
-    template <typename T>
-    std::string toString(const std::vector<T>& values) {
-        using std::to_string;
-
-        std::stringstream ss;
-        ss << '[';
-        for (auto&& v : values) {
-            ss << to_string(v) << ',';
-        }
-        if (!values.empty()) {
-            ss.seekp(-1, std::ios_base::end);
-        }
-        ss << ']';
-        return ss.str();
     }
 
     ConstFieldBindingPtr binding_;

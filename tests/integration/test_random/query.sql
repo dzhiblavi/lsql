@@ -37,20 +37,32 @@ ordered = (
     ORDER BY timestamp
 )
 
+uids = (
+    SELECT uid
+    FROM $typed
+    WHERE uid LIKE 'aaa.*'
+)
+
+timestamps = (
+    SELECT timestamp
+    FROM $typed
+    WHERE uid IN $uids
+)
+
 ---------------------
 
-SELECT 'all' AS log_type, *
+SELECT 'all' AS log_type, *, 1 AS test_index
 FROM $all
 LIMIT 2
 
-SELECT COUNT(true) AS count
+SELECT COUNT(true) AS count, 2 AS test_index
 FROM $ordered
 
-SELECT timestamp, ctx
+SELECT timestamp, ctx, 3 AS test_index
 FROM $ordered
 LIMIT 10
 
-SELECT COUNT(true) AS count
+SELECT COUNT(true) AS count, 4 AS test_index
 FROM $all
 WHERE context IN (
     '40i4qb1D7a61',
@@ -65,68 +77,58 @@ WHERE context IN (
     'b0iYqb1D7mI1'
 )
 
-SELECT COUNT(true) AS count
+SELECT COUNT(true) AS count, 5 AS test_index
 FROM (
     SELECT timestamp
     FROM $all
 )
 
-SELECT timestamp
+SELECT timestamp, 6 AS test_index
 FROM $all
 LIMIT 10
 
-uids = (
-    SELECT uid
-    FROM $typed
-    WHERE uid LIKE 'aaa.*'
-)
-
-SELECT *
+SELECT *, 7 AS test_index
 FROM $typed
 ORDER BY timestamp DESC
 LIMIT 10
 
-timestamps = (
-    SELECT timestamp
-    FROM $typed
-    WHERE uid IN $uids
-)
-
-SELECT *
+SELECT *, 8 AS test_index
 FROM $uids
 WHERE uid IN $uids
 
-SELECT *
+SELECT *, 9 AS test_index
 FROM $timestamps
 WHERE timestamp IN $timestamps
 
-SELECT payload_sz, timestamp, uid
+SELECT payload_sz, timestamp, uid, 10 AS test_index
 FROM $typed
 WHERE timestamp IN $timestamps
 
-SELECT MIN(timestamp) AS min_ts
+SELECT MIN(timestamp) AS min_ts, 11 AS test_index
 FROM $access
 
-SELECT MAX(timestamp) AS max_ts
+SELECT MAX(timestamp) AS max_ts, 12 AS test_index
 FROM $access
 
-SELECT COUNT(true) AS access_count
+SELECT COUNT(true) AS access_count, 13 AS test_index
 FROM $access
 
-SELECT COUNT(true) AS typed_count
+SELECT COUNT(true) AS typed_count, 14 AS test_index
 FROM $typed
 
-SELECT COUNT(true) AS app_count
+SELECT COUNT(true) AS app_count, 15 AS test_index
 FROM $app
 
 SELECT
     MIN(timestamp) AS min_ts,
-    MAX(timestamp) AS max_ts
+    MAX(timestamp) AS max_ts,
+    16 AS test_index
 FROM $app
 
 SELECT
     anon1 AS module,
-    COUNT(true) AS count
+    COUNT(true) AS count,
+    17 AS test_index
 FROM $app
 GROUP BY anon1
 
@@ -136,30 +138,33 @@ SELECT
     MAX(Float(profiler_exec)) AS max_exec,
     MIN(Float(profiler_exec)) AS min_exec,
     MIN(timestamp) AS min_ts,
-    MAX(timestamp) AS max_ts
+    MAX(timestamp) AS max_ts,
+    18 AS test_index
 FROM $access
 
 SELECT
     status_code AS status_code,
     tvm_src AS tvm_source,
-    COUNT(true) AS count
+    COUNT(true) AS count,
+    19 AS test_index
 FROM $access
 GROUP BY status_code, tvm_src
 ORDER BY count DESC
 
-SELECT request
+SELECT request, 20 AS test_index
 FROM $access
 WHERE Int(status_code) = 1001
 LIMIT 5
 
-SELECT request, uid
+SELECT request, uid, 21 AS test_index
 FROM $access
 WHERE String(request) LIKE '.*uid=1.*'
 LIMIT 5
 
 SELECT
     uid,
-    COUNT(true) AS count
+    COUNT(true) AS count,
+    22 AS test_index
 FROM (
     SELECT RSUBSTR(request, 'user=[\d]+') AS uid
     FROM $access

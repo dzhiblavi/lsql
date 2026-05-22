@@ -3,6 +3,7 @@
 #include "util/ThreadPool.h"
 
 #include "iface/sql/ast/Stringifier.h"
+#include "iface/sql/bind/Stringifier.h"
 #include "ir/Stringifier.h"
 
 #include "exec/plan/plan.h"
@@ -92,6 +93,12 @@ TCLAP::SwitchArg debug_ast_arg{
     "show AST",
 };
 
+TCLAP::SwitchArg debug_bind_arg{
+    "",
+    "debug-bind",
+    "show bound AST",
+};
+
 TCLAP::SwitchArg debug_ir_arg{
     "",
     "debug-ir",
@@ -118,6 +125,7 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&force_run_arg);
     cmd.add(&explain_arg);
     cmd.add(&debug_ast_arg);
+    cmd.add(&debug_bind_arg);
     cmd.add(&debug_ir_arg);
     cmd.add(&threads_arg);
     cmd.add(&profile_arg);
@@ -131,7 +139,7 @@ bool parseArgs(std::span<const char*> argv) {
         return false;
     }
 
-    if ((explain_arg || debug_ast_arg || debug_ir_arg) && !force_run_arg) {
+    if ((explain_arg || debug_ast_arg || debug_bind_arg || debug_ir_arg) && !force_run_arg) {
         run_query = false;
     }
 
@@ -150,13 +158,17 @@ exec::Plan makePlan(std::string maybe_path) {
         }
     }();
 
-    auto program = iface::sql::parse::parse(*is);
+    auto ast = iface::sql::parse::parse(*is);
     if (debug_ast_arg) {
         std::cout << "AST dump:" << std::endl;
-        std::cout << iface::sql::ast::Stringifier().print(program) << std::endl;
+        std::cout << iface::sql::ast::Stringifier().print(ast) << std::endl;
     }
-    auto bind = iface::sql::bind::bind(std::move(program));
-    auto ir = iface::sql::lower::lowerToIR(std::move(bind));
+    auto bound_ast = iface::sql::bind::bind(std::move(ast));
+    if (debug_bind_arg) {
+        std::cout << "Bound AST dump:" << std::endl;
+        std::cout << iface::sql::bind::Stringifier().print(bound_ast) << std::endl;
+    }
+    auto ir = iface::sql::lower::lowerToIR(std::move(bound_ast));
     if (debug_ir_arg) {
         std::cout << "IR dump:" << std::endl;
         std::cout << ir::Stringifier().print(ir) << std::endl;

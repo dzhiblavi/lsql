@@ -81,7 +81,7 @@ class Lowerer {
     }
 
     ir::Statement bindStatement(bind::QueryStatement s) {
-        auto fields = s.relation->fields_out->subtreeFieldSet();  // aka SELECT *
+        auto fields = s.relation->fields_out->subtreeFieldSet();  // "SELECT *"
         auto r = bindRelation(std::move(*s.relation));
 
         return ir::QueryStatement{
@@ -219,8 +219,8 @@ class Lowerer {
     }
 
     ir::Relation bindRelation(bind::UnionAllSortedByRelation r, auto& /*info*/) {
-        auto field_set =
-            FieldSet::merge(r.left->fields_out->fieldSet(), r.right->fields_out->fieldSet());
+        auto field_set = FieldSet::merge(
+            r.left->fields_out->subtreeFieldSet(), r.right->fields_out->subtreeFieldSet());
         auto left = bindRelation(std::move(*r.left));
         auto right = bindRelation(std::move(*r.right));
 
@@ -579,4 +579,4 @@ ir::Program lowerToIR(bind::Program program) {
     return Lowerer().lowerToIR(std::move(program));
 }
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::iface::sql::lower

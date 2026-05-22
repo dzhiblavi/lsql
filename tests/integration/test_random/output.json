@@ -1,131 +1,130 @@
-{"uid":null,"context":null,"payload_sz":null,"timestamp":"2026-05-06 14:10:05.584894","status_code":"200","ctx":null,"request":"\/notify\/crm?subscription_id=7ac2e4cf9419cd300ce1b4d330dc8124a0e810fd","log_type":"all","profiler_exec":"0.000","tvm_src":null}
-{"request":"\/notify\/crm?subscription_id=9502fd22c35a14498d3404df2941289dc5f31d3f","timestamp":"2026-05-06 14:10:05.585276","payload_sz":null,"tvm_src":null,"status_code":"200","log_type":"all","uid":null,"context":null,"profiler_exec":"0.000","ctx":null}
+{"access_count": 20591, "test_index": 13}
 
-{"timestamp":"2026-05-06 14:10:05.584894"}
-{"timestamp":"2026-05-06 14:10:05.585276"}
-{"timestamp":"2026-05-06 14:10:05.586490"}
-{"timestamp":"2026-05-06 14:10:05.587450"}
-{"timestamp":"2026-05-06 14:10:05.589263"}
-{"timestamp":"2026-05-06 14:10:05.606914"}
-{"timestamp":"2026-05-06 14:10:05.610153"}
-{"timestamp":"2026-05-06 14:10:05.615705"}
-{"timestamp":"2026-05-06 14:10:05.617679"}
-{"timestamp":"2026-05-06 14:10:05.617683"}
+{"app_count": 1290, "test_index": 15}
 
-{"uid":null,"request":"\/v2\/subscribe\/websocket?client=browser&service=omnichat-v3%2Cchatterbox&session=tUPnYuXMRd&uid=1120000001347627"}
-{"uid":null,"request":"\/v2\/subscribe\/websocket?client=browser&service=omnichat-v3%2Cchatterbox&session=hXlL2Tyhpf&uid=1120000000712483"}
-{"uid":null,"request":"\/v2\/subscribe\/websocket?client=browser&service=omnichat-v3%2Cchatterbox&session=aePvBqqko8&uid=1120000001216884"}
-{"request":"\/v2\/subscribe\/websocket?client=browser&service=omnichat-v3%2Cchatterbox&session=Y0AunItSQe&uid=1120000000529114","uid":null}
-{"uid":null,"request":"\/v2\/subscribe\/websocket?client=browser&service=omnichat-v3%2Cchatterbox&session=GZ6yZfSVAI&uid=1120000001122251"}
+{"context": "iWcqA12D6mI1", "ctx": null, "payload_sz": "209", "test_index": 7, "timestamp": "2026-04-30 17:32:44.379388", "uid": "c53705072805293435328c586c08c46f8184fe830377e617dc0ec50cf55449df"}
+{"context": "gWcmA12D6Cg1", "ctx": null, "payload_sz": "209", "test_index": 7, "timestamp": "2026-04-30 17:32:44.324195", "uid": "198f7a03e7a9ea4d2ddf0a61aa6eb6bcd178f3a2b1dbc0eca11591e625cef8b6"}
+{"context": "gWcnA12D6mI1", "ctx": null, "payload_sz": null, "test_index": 7, "timestamp": "2026-04-30 17:32:43.810795", "uid": "9ae03073410c5e9c27c91181b7e15cc497bb6101e2574f0bd3863c52e9e80d54"}
+{"context": "dWckA12D6Os1", "ctx": null, "payload_sz": null, "test_index": 7, "timestamp": "2026-04-30 17:32:43.004806", "uid": "4d273dc3358899b308479be0f3e28c36bea775e8b868422c9f1c2eb202094ec0"}
+{"context": "cWcjA12D6mI1", "ctx": null, "payload_sz": "76", "test_index": 7, "timestamp": "2026-04-30 17:32:42.954117", "uid": "750f58c6a0a9e62de1561ea8b5829b82da78108477c512e7e8479732652cc26b"}
+{"context": "aWcYA12D6a61", "ctx": null, "payload_sz": null, "test_index": 7, "timestamp": "2026-04-30 17:32:39.653685", "uid": "e506ecb013e1640389369a82baf3927162222cd0e9e0e0e82fe3b8d815d706f8"}
+{"context": "bWceA12D6a61", "ctx": null, "payload_sz": null, "test_index": 7, "timestamp": "2026-04-30 17:32:38.845467", "uid": "9ae03073410c5e9c27c91181b7e15cc497bb6101e2574f0bd3863c52e9e80d54"}
+{"context": "cWcgA12D80U1", "ctx": null, "payload_sz": "337", "test_index": 7, "timestamp": "2026-04-30 17:32:38.363001", "uid": "1e9ee1e02e8c894d92c9eb92f530db3029dc8916bcc1c635214d012abdcc2d67"}
+{"context": "bWccA12D6Cg1", "ctx": null, "payload_sz": "285", "test_index": 7, "timestamp": "2026-04-30 17:32:37.540694", "uid": "581acc581e98865ce9d61b2ef3f859904edda377249ac5d81308bad0b0276a6f"}
+{"context": "aWcaA12D6Cg1", "ctx": null, "payload_sz": "362", "test_index": 7, "timestamp": "2026-04-30 17:32:37.530705", "uid": "74f28af86064a6e16ede728336441d4a1e03d0a97541b0208b0d2eeb02e453bf"}
 
-{"request":"\/v2\/subscribe\/websocket?service=yacloud-yt&client=web&session=2c73e6fb220847d786bdfbe089614a00&user=1120000001184806&sign=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&ts=1778094546"}
-{"request":"\/v2\/subscribe\/websocket?service=yacloud-yt&client=web&session=30be9b19dd3c4cb9acd6c7f362114e66&user=1120000000131336&sign=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&ts=1778086052"}
-{"request":"\/v2\/subscribe\/websocket?service=femida&topic=notification-1120000000534258&client=femida_web&user=1120000000534258&session=1120000000534258_1778059510186"}
-{"request":"\/v2\/subscribe\/websocket?user=1120000000351110&service=yandex-team-app&session=1120000000351110_1778065747699&client=yteam-ws_updater_production"}
-{"request":"\/v2\/subscribe\/websocket?service=yacloud-yt&client=web&session=a14a4736297948adb48d71057a73f4ac&user=1120000000756035&sign=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&ts=1778094553"}
+{"context": null, "ctx": null, "log_type": "all", "payload_sz": null, "profiler_exec": "0.000", "request": "/notify/crm?subscription_id=7ac2e4cf9419cd300ce1b4d330dc8124a0e810fd", "status_code": "200", "test_index": 1, "timestamp": "2026-05-06 14:10:05.584894", "tvm_src": null, "uid": null}
+{"context": null, "ctx": null, "log_type": "all", "payload_sz": null, "profiler_exec": "0.000", "request": "/notify/crm?subscription_id=9502fd22c35a14498d3404df2941289dc5f31d3f", "status_code": "200", "test_index": 1, "timestamp": "2026-05-06 14:10:05.585276", "tvm_src": null, "uid": null}
 
-{"count":302,"uid":"user=1120000000167484"}
-{"count":31,"uid":"user=1120000000049113"}
-{"uid":"user=1120000001376942","count":26}
-{"count":26,"uid":"user=1120000000681213"}
-{"count":25,"uid":"user=1120000001399576"}
-{"count":24,"uid":"user=1120000001125584"}
-{"uid":"user=1120000000034730","count":22}
-{"count":18,"uid":"user=1120000000784620"}
-{"count":16,"uid":"user=1120000000724315"}
-{"uid":"user=1120000001190879","count":11}
-{"uid":"user=1120000000041533","count":11}
-{"count":11,"uid":"user=1120000001126861"}
-{"count":11,"uid":"user=1120000000769375"}
-{"uid":"user=1120000000650553","count":9}
-{"uid":"user=1120000000316394","count":9}
-{"count":8,"uid":"user=1120000001038375"}
-{"count":7,"uid":"user=1120000001196839"}
-{"uid":"user=1120000001132914","count":6}
-{"uid":"user=1120000001220947","count":6}
-{"count":6,"uid":"user=1120000000895574"}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f"}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaa905a9008bea7077a90e695f0889cac1b13909a2a237bda01b14a9a5249b17"}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32"}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32"}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f"}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaa75a60cf0e00117fbf359312329be0e325f2c1ddee4c876fd00c9e767d274c"}
 
-{"status_code":"200","tvm_source":null,"count":10342}
-{"count":4000,"tvm_source":"2018912","status_code":"200"}
-{"count":1795,"tvm_source":null,"status_code":"4401"}
-{"count":1063,"tvm_source":"2021614","status_code":"200"}
-{"status_code":"200","tvm_source":"2064140","count":784}
-{"count":600,"tvm_source":"2036485","status_code":"200"}
-{"count":590,"tvm_source":"2012200","status_code":"200"}
-{"count":500,"tvm_source":null,"status_code":"1000"}
-{"status_code":"200","tvm_source":"2000683","count":481}
-{"count":199,"tvm_source":null,"status_code":"1001"}
-{"count":159,"tvm_source":null,"status_code":"1002"}
-{"count":35,"tvm_source":"2057539","status_code":"200"}
-{"status_code":"200","tvm_source":"2011348","count":21}
-{"status_code":"200","tvm_source":"2033333","count":16}
-{"count":5,"tvm_source":null,"status_code":"205"}
-{"count":1,"tvm_source":"2011902","status_code":"200"}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 09:27:42.535418", "uid": null}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 09:50:31.437740", "uid": null}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 12:06:13.419283", "uid": null}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 12:06:26.716981", "uid": null}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 12:12:14.692457", "uid": null}
+{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 15:38:45.066887", "uid": null}
 
-{"max_ts":"2026-05-06 14:15:00.908948"}
+{"count": 1, "module": null, "test_index": 17}
+{"count": 6, "module": "tvm", "test_index": 17}
+{"count": 1283, "module": "web_server", "test_index": 17}
 
-{"min_ts":"2026-05-06 14:10:05.584894"}
+{"count": 10342, "status_code": "200", "test_index": 19, "tvm_source": null}
+{"count": 4000, "status_code": "200", "test_index": 19, "tvm_source": "2018912"}
+{"count": 1795, "status_code": "4401", "test_index": 19, "tvm_source": null}
+{"count": 1063, "status_code": "200", "test_index": 19, "tvm_source": "2021614"}
+{"count": 784, "status_code": "200", "test_index": 19, "tvm_source": "2064140"}
+{"count": 600, "status_code": "200", "test_index": 19, "tvm_source": "2036485"}
+{"count": 590, "status_code": "200", "test_index": 19, "tvm_source": "2012200"}
+{"count": 500, "status_code": "1000", "test_index": 19, "tvm_source": null}
+{"count": 481, "status_code": "200", "test_index": 19, "tvm_source": "2000683"}
+{"count": 199, "status_code": "1001", "test_index": 19, "tvm_source": null}
+{"count": 159, "status_code": "1002", "test_index": 19, "tvm_source": null}
+{"count": 35, "status_code": "200", "test_index": 19, "tvm_source": "2057539"}
+{"count": 21, "status_code": "200", "test_index": 19, "tvm_source": "2011348"}
+{"count": 16, "status_code": "200", "test_index": 19, "tvm_source": "2033333"}
+{"count": 5, "status_code": "205", "test_index": 19, "tvm_source": null}
+{"count": 1, "status_code": "200", "test_index": 19, "tvm_source": "2011902"}
 
-{"p_exec":"[0, 0, 0.005, 0.012, 0.015, 690.776, 10385.3, 18848.3, 51673.2] ","max_exec":51673.210938,"min_ts":"2026-05-06 14:10:05.584894","min_exec":0.000000,"max_ts":"2026-05-06 14:15:00.908948","count":20591}
+{"count": 10, "test_index": 4}
 
-{"access_count":20591}
+{"count": 302, "test_index": 22, "uid": "user=1120000000167484"}
+{"count": 31, "test_index": 22, "uid": "user=1120000000049113"}
+{"count": 26, "test_index": 22, "uid": "user=1120000001376942"}
+{"count": 26, "test_index": 22, "uid": "user=1120000000681213"}
+{"count": 25, "test_index": 22, "uid": "user=1120000001399576"}
+{"count": 24, "test_index": 22, "uid": "user=1120000001125584"}
+{"count": 22, "test_index": 22, "uid": "user=1120000000034730"}
+{"count": 18, "test_index": 22, "uid": "user=1120000000784620"}
+{"count": 16, "test_index": 22, "uid": "user=1120000000724315"}
+{"count": 11, "test_index": 22, "uid": "user=1120000001190879"}
+{"count": 11, "test_index": 22, "uid": "user=1120000000041533"}
+{"count": 11, "test_index": 22, "uid": "user=1120000001126861"}
+{"count": 11, "test_index": 22, "uid": "user=1120000000769375"}
+{"count": 9, "test_index": 22, "uid": "user=1120000000650553"}
+{"count": 9, "test_index": 22, "uid": "user=1120000000316394"}
+{"count": 8, "test_index": 22, "uid": "user=1120000001038375"}
+{"count": 7, "test_index": 22, "uid": "user=1120000001196839"}
+{"count": 6, "test_index": 22, "uid": "user=1120000001132914"}
+{"count": 6, "test_index": 22, "uid": "user=1120000001220947"}
+{"count": 6, "test_index": 22, "uid": "user=1120000000895574"}
 
-{"module":null,"count":1}
-{"count":6,"module":"tvm"}
-{"count":1283,"module":"web_server"}
+{"count": 121568, "test_index": 2}
 
-{"min_ts":"2026-May-07 06:00:01","max_ts":"2026-May-07 06:49:56"}
+{"count": 20591, "max_exec": 51673.210938, "max_ts": "2026-05-06 14:15:00.908948", "min_exec": 0.0, "min_ts": "2026-05-06 14:10:05.584894", "p_exec": "[0, 0, 0.005, 0.012, 0.015, 690.776, 10385.3, 18848.3, 51673.2] ", "test_index": 18}
 
-{"app_count":1290}
+{"count": 60784, "test_index": 5}
 
-{"typed_count":40193}
+{"ctx": null, "test_index": 3, "timestamp": "2026-04-30 00:00:05.016804"}
+{"ctx": null, "test_index": 3, "timestamp": "2026-04-30 00:00:05.016804"}
+{"ctx": null, "test_index": 3, "timestamp": "2026-04-30 00:00:09.793938"}
+{"ctx": null, "test_index": 3, "timestamp": "2026-04-30 00:00:09.793938"}
+{"ctx": null, "test_index": 3, "timestamp": "2026-04-30 00:00:10.996695"}
+{"ctx": null, "test_index": 3, "timestamp": "2026-04-30 00:00:10.996695"}
+{"ctx": null, "test_index": 3, "timestamp": "2026-04-30 00:00:11.028277"}
+{"ctx": null, "test_index": 3, "timestamp": "2026-04-30 00:00:11.028277"}
+{"ctx": null, "test_index": 3, "timestamp": "2026-04-30 00:00:14.875484"}
+{"ctx": null, "test_index": 3, "timestamp": "2026-04-30 00:00:14.875484"}
 
-{"uid":"c53705072805293435328c586c08c46f8184fe830377e617dc0ec50cf55449df","timestamp":"2026-04-30 17:32:44.379388","context":"iWcqA12D6mI1","payload_sz":"209","ctx":null}
-{"ctx":null,"context":"gWcmA12D6Cg1","timestamp":"2026-04-30 17:32:44.324195","uid":"198f7a03e7a9ea4d2ddf0a61aa6eb6bcd178f3a2b1dbc0eca11591e625cef8b6","payload_sz":"209"}
-{"context":"gWcnA12D6mI1","timestamp":"2026-04-30 17:32:43.810795","uid":"9ae03073410c5e9c27c91181b7e15cc497bb6101e2574f0bd3863c52e9e80d54","payload_sz":null,"ctx":null}
-{"ctx":null,"context":"dWckA12D6Os1","timestamp":"2026-04-30 17:32:43.004806","uid":"4d273dc3358899b308479be0f3e28c36bea775e8b868422c9f1c2eb202094ec0","payload_sz":null}
-{"uid":"750f58c6a0a9e62de1561ea8b5829b82da78108477c512e7e8479732652cc26b","timestamp":"2026-04-30 17:32:42.954117","context":"cWcjA12D6mI1","payload_sz":"76","ctx":null}
-{"ctx":null,"context":"aWcYA12D6a61","timestamp":"2026-04-30 17:32:39.653685","uid":"e506ecb013e1640389369a82baf3927162222cd0e9e0e0e82fe3b8d815d706f8","payload_sz":null}
-{"context":"bWceA12D6a61","timestamp":"2026-04-30 17:32:38.845467","uid":"9ae03073410c5e9c27c91181b7e15cc497bb6101e2574f0bd3863c52e9e80d54","payload_sz":null,"ctx":null}
-{"ctx":null,"context":"cWcgA12D80U1","timestamp":"2026-04-30 17:32:38.363001","uid":"1e9ee1e02e8c894d92c9eb92f530db3029dc8916bcc1c635214d012abdcc2d67","payload_sz":"337"}
-{"ctx":null,"uid":"581acc581e98865ce9d61b2ef3f859904edda377249ac5d81308bad0b0276a6f","timestamp":"2026-04-30 17:32:37.540694","context":"bWccA12D6Cg1","payload_sz":"285"}
-{"ctx":null,"context":"aWcaA12D6Cg1","timestamp":"2026-04-30 17:32:37.530705","uid":"74f28af86064a6e16ede728336441d4a1e03d0a97541b0208b0d2eeb02e453bf","payload_sz":"362"}
+{"max_ts": "2026-05-06 14:15:00.908948", "test_index": 12}
 
-{"count":60784}
+{"max_ts": "2026-May-07 06:49:56", "min_ts": "2026-May-07 06:00:01", "test_index": 16}
 
-{"ctx":null,"timestamp":"2026-04-30 00:00:05.016804"}
-{"timestamp":"2026-04-30 00:00:05.016804","ctx":null}
-{"ctx":null,"timestamp":"2026-04-30 00:00:09.793938"}
-{"ctx":null,"timestamp":"2026-04-30 00:00:09.793938"}
-{"ctx":null,"timestamp":"2026-04-30 00:00:10.996695"}
-{"timestamp":"2026-04-30 00:00:10.996695","ctx":null}
-{"timestamp":"2026-04-30 00:00:11.028277","ctx":null}
-{"ctx":null,"timestamp":"2026-04-30 00:00:11.028277"}
-{"ctx":null,"timestamp":"2026-04-30 00:00:14.875484"}
-{"ctx":null,"timestamp":"2026-04-30 00:00:14.875484"}
+{"min_ts": "2026-05-06 14:10:05.584894", "test_index": 11}
 
-{"count":121568}
+{"payload_sz": null, "test_index": 10, "timestamp": "2026-04-30 09:27:42.535418", "uid": "aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f"}
+{"payload_sz": null, "test_index": 10, "timestamp": "2026-04-30 09:50:31.437740", "uid": "aaa905a9008bea7077a90e695f0889cac1b13909a2a237bda01b14a9a5249b17"}
+{"payload_sz": "209", "test_index": 10, "timestamp": "2026-04-30 12:06:13.419283", "uid": "aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32"}
+{"payload_sz": "245", "test_index": 10, "timestamp": "2026-04-30 12:06:26.716981", "uid": "aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32"}
+{"payload_sz": null, "test_index": 10, "timestamp": "2026-04-30 12:12:14.692457", "uid": "aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f"}
+{"payload_sz": "76", "test_index": 10, "timestamp": "2026-04-30 15:38:45.066887", "uid": "aaa75a60cf0e00117fbf359312329be0e325f2c1ddee4c876fd00c9e767d274c"}
 
-{"context":null,"uid":"aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f","timestamp":null,"payload_sz":null,"ctx":null}
-{"ctx":null,"context":null,"uid":"aaa905a9008bea7077a90e695f0889cac1b13909a2a237bda01b14a9a5249b17","timestamp":null,"payload_sz":null}
-{"ctx":null,"context":null,"uid":"aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32","timestamp":null,"payload_sz":null}
-{"timestamp":null,"uid":"aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32","context":null,"payload_sz":null,"ctx":null}
-{"timestamp":null,"uid":"aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f","context":null,"payload_sz":null,"ctx":null}
-{"ctx":null,"context":null,"uid":"aaa75a60cf0e00117fbf359312329be0e325f2c1ddee4c876fd00c9e767d274c","timestamp":null,"payload_sz":null}
+{"request": "/v2/subscribe/websocket?client=browser&service=omnichat-v3%2Cchatterbox&session=tUPnYuXMRd&uid=1120000001347627", "test_index": 21, "uid": null}
+{"request": "/v2/subscribe/websocket?client=browser&service=omnichat-v3%2Cchatterbox&session=hXlL2Tyhpf&uid=1120000000712483", "test_index": 21, "uid": null}
+{"request": "/v2/subscribe/websocket?client=browser&service=omnichat-v3%2Cchatterbox&session=aePvBqqko8&uid=1120000001216884", "test_index": 21, "uid": null}
+{"request": "/v2/subscribe/websocket?client=browser&service=omnichat-v3%2Cchatterbox&session=Y0AunItSQe&uid=1120000000529114", "test_index": 21, "uid": null}
+{"request": "/v2/subscribe/websocket?client=browser&service=omnichat-v3%2Cchatterbox&session=GZ6yZfSVAI&uid=1120000001122251", "test_index": 21, "uid": null}
 
-{"count":10}
+{"request": "/v2/subscribe/websocket?service=yacloud-yt&client=web&session=2c73e6fb220847d786bdfbe089614a00&user=1120000001184806&sign=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&ts=1778094546", "test_index": 20}
+{"request": "/v2/subscribe/websocket?service=yacloud-yt&client=web&session=30be9b19dd3c4cb9acd6c7f362114e66&user=1120000000131336&sign=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&ts=1778086052", "test_index": 20}
+{"request": "/v2/subscribe/websocket?service=femida&topic=notification-1120000000534258&client=femida_web&user=1120000000534258&session=1120000000534258_1778059510186", "test_index": 20}
+{"request": "/v2/subscribe/websocket?user=1120000000351110&service=yandex-team-app&session=1120000000351110_1778065747699&client=yteam-ws_updater_production", "test_index": 20}
+{"request": "/v2/subscribe/websocket?service=yacloud-yt&client=web&session=a14a4736297948adb48d71057a73f4ac&user=1120000000756035&sign=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&ts=1778094553", "test_index": 20}
 
-{"payload_sz":null,"timestamp":"2026-04-30 09:27:42.535418","uid":"aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f"}
-{"uid":"aaa905a9008bea7077a90e695f0889cac1b13909a2a237bda01b14a9a5249b17","timestamp":"2026-04-30 09:50:31.437740","payload_sz":null}
-{"uid":"aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32","timestamp":"2026-04-30 12:06:13.419283","payload_sz":"209"}
-{"payload_sz":"245","timestamp":"2026-04-30 12:06:26.716981","uid":"aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32"}
-{"uid":"aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f","timestamp":"2026-04-30 12:12:14.692457","payload_sz":null}
-{"payload_sz":"76","timestamp":"2026-04-30 15:38:45.066887","uid":"aaa75a60cf0e00117fbf359312329be0e325f2c1ddee4c876fd00c9e767d274c"}
+{"test_index": 14, "typed_count": 40193}
 
-{"ctx":null,"uid":null,"timestamp":"2026-04-30 09:27:42.535418","context":null,"payload_sz":null}
-{"payload_sz":null,"uid":null,"timestamp":"2026-04-30 09:50:31.437740","context":null,"ctx":null}
-{"context":null,"timestamp":"2026-04-30 12:06:13.419283","uid":null,"payload_sz":null,"ctx":null}
-{"ctx":null,"context":null,"timestamp":"2026-04-30 12:06:26.716981","uid":null,"payload_sz":null}
-{"payload_sz":null,"context":null,"timestamp":"2026-04-30 12:12:14.692457","uid":null,"ctx":null}
-{"uid":null,"timestamp":"2026-04-30 15:38:45.066887","context":null,"payload_sz":null,"ctx":null}
-
+{"test_index": 6, "timestamp": "2026-05-06 14:10:05.584894"}
+{"test_index": 6, "timestamp": "2026-05-06 14:10:05.585276"}
+{"test_index": 6, "timestamp": "2026-05-06 14:10:05.586490"}
+{"test_index": 6, "timestamp": "2026-05-06 14:10:05.587450"}
+{"test_index": 6, "timestamp": "2026-05-06 14:10:05.589263"}
+{"test_index": 6, "timestamp": "2026-05-06 14:10:05.606914"}
+{"test_index": 6, "timestamp": "2026-05-06 14:10:05.610153"}
+{"test_index": 6, "timestamp": "2026-05-06 14:10:05.615705"}
+{"test_index": 6, "timestamp": "2026-05-06 14:10:05.617679"}
+{"test_index": 6, "timestamp": "2026-05-06 14:10:05.617683"}
