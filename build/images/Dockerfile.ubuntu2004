@@ -3,7 +3,16 @@ FROM ubuntu:20.04
 ARG LLVM_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update && apt install -y git wget lsb-release gpg software-properties-common python3-pip libssl-dev
+RUN apt update && apt install -y \
+    git \
+    wget \
+    lsb-release \
+    gpg \
+    software-properties-common \
+    python3-pip \
+    libssl-dev \
+    autoconf
+
 RUN pip3 install conan
 
 WORKDIR /build
@@ -15,10 +24,10 @@ COPY ./build/scripts/install_llvm.sh .
 RUN chmod +x ./install_llvm.sh && ./install_llvm.sh "${LLVM_VERSION}"
 
 COPY ./build/scripts/install_lemon.sh .
-RUN chmod +x ./install_lemon.sh && ./install_lemon.sh "${LLVM_VERSION}"
+RUN chmod +x ./install_lemon.sh && ./install_lemon.sh
 
-COPY ./build/scripts/install_flex.sh .
-RUN chmod +x ./install_flex.sh && ./install_flex.sh "${LLVM_VERSION}"
+COPY ./build/scripts/install_reflex.sh .
+RUN chmod +x ./install_reflex.sh && ./install_reflex.sh
 
 COPY ./build/scripts/build_linux.sh .
 RUN chmod +x /build/build_linux.sh
