@@ -30,14 +30,13 @@ class SQLFlexLexer : public yyFlexLexer {
                 continue;
             }
 
-            //char* text = strdup(YYText());
+            tokens.emplace_back(YYText());
             Token t{
                 .code = token,
-                .text = strdup(YYText()),
+                .text = tokens.back().c_str(),
             };
 
             Parse(m_parser, token, t, m_parse_context);
-            //free(text);
 
             if (token == TOKEN_EOF) {
                 break;
@@ -50,6 +49,7 @@ class SQLFlexLexer : public yyFlexLexer {
  private:
     void* m_parser = nullptr;
     Context* m_parse_context = nullptr;
+    std::deque<std::string> tokens;
 };
 
 }  // namespace

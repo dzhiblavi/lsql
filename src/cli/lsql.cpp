@@ -19,6 +19,8 @@
 #include "iface/sql/bind/Relations.h"    // IWYU pragma: keep
 #include "iface/sql/bind/Statement.h"    // IWYU pragma: keep
 
+#include "core/require.h"
+
 #include <llog/load.h>
 #include <llog/log.h>
 
@@ -143,6 +145,7 @@ exec::Plan makePlan(std::string maybe_path) {
             return &std::cin;
         } else {
             ifs.open(maybe_path.c_str());
+            require(ifs.is_open(), "cannot open query file '{}'", maybe_path);
             return &ifs;
         }
     }();
