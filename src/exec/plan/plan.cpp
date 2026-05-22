@@ -54,11 +54,8 @@ class Planner {
     }
 
     ExpressionPtr planExpr(ir::Expr s) {
-        return util::match(std::move(s), [this](auto s) { return planExpr(std::move(s)); });
-    }
-
-    ProjectorPtr planProjector(ir::Projector s) {
-        return util::match(std::move(s), [this](auto s) { return planProjector(std::move(s)); });
+        return util::match(
+            std::move(s.node), [&](auto node) { return planExpr(std::move(node), s); });
     }
 
     void planStatement(ir::NamedRelationStatement s) {
@@ -67,7 +64,8 @@ class Planner {
     }
 
     void planStatement(ir::QueryStatement s) {
-        plan_.top_operations.push_back(planRelation(std::move(*s.relation)));
+        auto fields = s.fields_out;
+        plan_.top_operations.emplace_back(planRelation(std::move(*s.relation)), fields);
     }
 
     OperationPtr planRelation(ir::ValuesRelation r) {
@@ -116,6 +114,7 @@ class Planner {
             planRelation(std::move(*r.source)),
             planRelation(std::move(*r.match)),
             planExpr(std::move(*r.expr)),
+            r.match_field_id,
             binding_);
     }
 
@@ -125,6 +124,7 @@ class Planner {
             planRelation(std::move(*r.match)),
             planExpr(std::move(*r.expr)),
             r.output_field_id,
+            r.match_field_id,
             binding_);
     }
 
@@ -172,86 +172,84 @@ class Planner {
         return src;
     }
 
-    ExpressionPtr planExpr(ir::FieldExpr e) {
-        return std::make_shared<IdentifierExpression>(e.field_id, e.type);
+    ExpressionPtr planExpr(ir::FieldExpr e, auto& info) {
+        return std::make_shared<IdentifierExpression>(e.field_id, info.value_type);
     }
 
-    ExpressionPtr planExpr(ir::ValueExpr e) { return std::make_shared<ValueExpression>(e.value); }
+    ExpressionPtr planExpr(ir::ValueExpr e, auto& /*info*/) {
+        return std::make_shared<ValueExpression>(e.value);
+    }
 
-    ExpressionPtr planExpr(ir::CoalesceExpr e) {
+    ExpressionPtr planExpr(ir::CoalesceExpr e, auto& /*info*/) {
         return std::make_shared<Coalesce>(expressionList(std::move(e.args)));
     }
 
-    ExpressionPtr planExpr(ir::CastExpr e) {
+    ExpressionPtr planExpr(ir::CastExpr e, auto& /*info*/) {
         auto arg = planExpr(std::move(*e.expr));
         return std::make_shared<UnaryExpression<CastOp>>(arg, arg->valueType(), e.cast_to);
     }
 
-    ExpressionPtr planExpr(ir::PercentileExpr e) {
+    ExpressionPtr planExpr(ir::PercentileExpr e, auto& /*info*/) {
         auto arg = planExpr(std::move(*e.expr));
         return std::make_shared<UnaryAggregateExpression<PercentileOp>>(
             arg, std::move(e.percentiles), arg->valueType());
     }
 
-    ExpressionPtr planExpr(ir::LikeExpr e) {
+    ExpressionPtr planExpr(ir::LikeExpr e, auto& /*info*/) {
         auto arg = planExpr(std::move(*e.expr));
         return std::make_shared<UnaryExpression<LikeOp>>(arg, e.regex);
     }
 
-    ExpressionPtr planExpr(ir::RSubstrExpr e) {
+    ExpressionPtr planExpr(ir::RSubstrExpr e, auto& /*info*/) {
         auto arg = planExpr(std::move(*e.expr));
         return std::make_shared<UnaryExpression<RSubstrOp>>(arg, e.regex);
     }
 
-    ExpressionPtr planExpr(ir::UnaryExpr e) {
+    ExpressionPtr planExpr(ir::UnaryExpr e, auto& /*info*/) {
         auto arg = planExpr(std::move(*e.expr));
 
         switch (e.type) {
-            case ir::UnaryExprType::BooleanNegate:
+            case UnaryExprType::BooleanNegate:
                 return std::make_shared<UnaryExpression<BooleanNegationOp>>(arg);
         }
     }
 
-    ExpressionPtr planExpr(ir::UnaryAggregateExpr e) {
+    ExpressionPtr planExpr(ir::UnaryAggregateExpr e, auto& info) {
         auto arg = planExpr(std::move(*e.expr));
 
         switch (e.type) {
-            case ir::UnaryAggregateExprType::Count:
+            case UnaryAggregateExprType::Count:
                 return std::make_shared<UnaryAggregateExpression<CountOp>>(arg);
-            case ir::UnaryAggregateExprType::Min:
-                return std::make_shared<UnaryAggregateExpression<MinOp>>(arg, e.valueType());
-            case ir::UnaryAggregateExprType::Max:
-                return std::make_shared<UnaryAggregateExpression<MaxOp>>(arg, e.valueType());
-            case ir::UnaryAggregateExprType::Sum:
-                return std::make_shared<UnaryAggregateExpression<SumOp>>(arg, e.valueType());
+            case UnaryAggregateExprType::Min:
+                return std::make_shared<UnaryAggregateExpression<MinOp>>(arg, info.value_type);
+            case UnaryAggregateExprType::Max:
+                return std::make_shared<UnaryAggregateExpression<MaxOp>>(arg, info.value_type);
+            case UnaryAggregateExprType::Sum:
+                return std::make_shared<UnaryAggregateExpression<SumOp>>(arg, info.value_type);
         }
     }
 
-    ExpressionPtr planExpr(ir::BinaryExpr e) {
+    ExpressionPtr planExpr(ir::BinaryExpr e, auto& info) {
         auto l = planExpr(std::move(*e.left));
         auto r = planExpr(std::move(*e.right));
 
         switch (e.type) {
-            case ir::BinaryExprType::Equal:
+            case BinaryExprType::Equal:
                 return std::make_shared<BinaryExpression<EqualOp>>(
                     l, r, l->valueType(), r->valueType());
-            case ir::BinaryExprType::NotEqual:
+            case BinaryExprType::NotEqual:
                 return std::make_shared<BinaryExpression<NotEqualOp>>(
                     l, r, l->valueType(), r->valueType());
-            case ir::BinaryExprType::And:
+            case BinaryExprType::And:
                 return std::make_shared<BinaryExpression<AndOp>>(l, r);
-            case ir::BinaryExprType::Or:
+            case BinaryExprType::Or:
                 return std::make_shared<BinaryExpression<OrOp>>(l, r);
-            case ir::BinaryExprType::Divide:
-                return std::make_shared<BinaryExpression<DivideOp>>(l, r, e.valueType());
+            case BinaryExprType::Divide:
+                return std::make_shared<BinaryExpression<DivideOp>>(l, r, info.value_type);
         }
     }
 
-    ProjectorPtr planProjector(ir::StarProjector) {
-        return std::make_unique<Projector>(0, nullptr);
-    }
-
-    ProjectorPtr planProjector(ir::ExprProjector p) {
+    ProjectorPtr planProjector(ir::Projector p) {
         return std::make_unique<Projector>(p.alias_field_id, planExpr(std::move(*p.expr)));
     }
 

@@ -1,11 +1,10 @@
-add_library(lsql-ir STATIC)
+add_library(lsql-ir INTERFACE)
 
 target_sources(
-    lsql-ir PRIVATE
-    Expressions.cpp
+    lsql-ir INTERFACE
 )
 
 target_link_libraries(
-    lsql-ir PUBLIC
+    lsql-ir INTERFACE
     lsql-core
 )

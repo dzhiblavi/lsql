@@ -34,7 +34,7 @@ class UnaryExpression : public Expression {
         }
     }
 
-    RequiredFields requiredFields() const override { return arg_->requiredFields(); }
+    FieldSet requiredFields() const override { return arg_->requiredFields(); }
 
     ValueType valueType() const override { return op_.valueType(); }
 

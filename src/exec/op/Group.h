@@ -142,7 +142,7 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
             {
                 // pass required group by fields
                 for (auto&& [id, value] : group_kv) {
-                    if (required_fields.requiresField(id)) {
+                    if (required_fields.contains(id)) {
                         values.emplace(id, std::move(value));
                     }
                 }
@@ -151,7 +151,7 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
             {
                 // pass required slist fields
                 for (auto&& [id, _] : slist_) {
-                    if (required_fields.requiresField(id)) {
+                    if (required_fields.contains(id)) {
                         values.emplace(id, aggregators[id]->get());
                     }
                 }
@@ -168,34 +168,26 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     }
 
     // Operation
-    void init(int phase, const RequiredFields& downstream) override {
-        source_->subscribe(phase, &sub_, getRequiredFields(downstream));
+    void init(int phase, const FieldSet& downstream) override {
+        source_->subscribe(phase, &sub_, getFieldSet(downstream));
     }
 
-    RequiredFields getRequiredFields(const RequiredFields& downstream) const {
-        RequiredFields upstream = RequiredFields::withNone();
+    FieldSet getFieldSet(const FieldSet& downstream) const {
+        FieldSet upstream = FieldSet::emptySet();
 
         // all group projections are always needed
         for (auto&& [_, proj] : glist_) {
             upstream.merge(proj->expr->requiredFields());
         }
 
-        if (downstream.all()) {
-            // additionally request everything that comes from slist_ and not glist_
-            for (auto&& [id, proj] : slist_) {
-                verify(!glist_.contains(id));
-                upstream.merge(proj->expr->requiredFields());
+        for (auto&& id : downstream.fieldIds()) {
+            if (glist_.contains(id)) {
+                // already requested
+                continue;
             }
-        } else {
-            for (auto&& id : downstream.ids()) {
-                if (glist_.contains(id)) {
-                    // already requested
-                    continue;
-                }
 
-                if (auto it = slist_.find(id); it != slist_.end()) {
-                    upstream.merge(it->second->expr->requiredFields());
-                }
+            if (auto it = slist_.find(id); it != slist_.end()) {
+                upstream.merge(it->second->expr->requiredFields());
             }
         }
 
@@ -205,23 +197,15 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     void prepareAggregators(int phase, auto& aggregators) {
         auto&& required_fields = requiredFields(phase);
 
-        if (required_fields.all()) {
-            // aggregate all fields from select list
-            for (auto&& [id, proj] : slist_) {
-                verify(!glist_.contains(id));
-                aggregators.emplace(id, proj->expr->aggregator());
+        // aggregate only required fields
+        for (auto&& id : required_fields.fieldIds()) {
+            if (glist_.contains(id)) {
+                // comes from group list, no need to calculate additionally
+                continue;
             }
-        } else {
-            // aggregate only required fields
-            for (auto&& id : required_fields.ids()) {
-                if (glist_.contains(id)) {
-                    // comes from group list, no need to calculate additionally
-                    continue;
-                }
 
-                if (auto it = slist_.find(id); it != slist_.end()) {
-                    aggregators.emplace(id, it->second->expr->aggregator());
-                }
+            if (auto it = slist_.find(id); it != slist_.end()) {
+                aggregators.emplace(id, it->second->expr->aggregator());
             }
         }
     }

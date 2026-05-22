@@ -10,7 +10,7 @@ class IdentifierExpression : public Expression {
  public:
     IdentifierExpression(FieldId id, ValueType type) : id_(id), type_(type) {}
 
-    RequiredFields requiredFields() const override { return RequiredFields::withFields({id_}); }
+    FieldSet requiredFields() const override { return FieldSet::withField(id_); }
 
     ValueType valueType() const override { return type_; }
 

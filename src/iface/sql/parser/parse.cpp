@@ -30,12 +30,14 @@ class SQLFlexLexer : public yyFlexLexer {
                 continue;
             }
 
+            //char* text = strdup(YYText());
             Token t{
                 .code = token,
                 .text = strdup(YYText()),
             };
 
             Parse(m_parser, token, t, m_parse_context);
+            //free(text);
 
             if (token == TOKEN_EOF) {
                 break;

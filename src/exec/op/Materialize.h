@@ -60,7 +60,7 @@ class Materialize : public Source, public OperationBase<Materialize> {
     }
 
     // Operation
-    void init(int out_phase, const RequiredFields& downstream) override {
+    void init(int out_phase, const FieldSet& downstream) override {
         if (first_phase_ == -1) {
             first_phase_ = out_phase;
         } else {

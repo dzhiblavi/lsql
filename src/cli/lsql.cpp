@@ -8,11 +8,16 @@
 #include "exec/plan/plan.h"
 
 #include "iface/sql/bind/bind.h"
+#include "iface/sql/bind/lower.h"
 #include "iface/sql/parser/parse.h"
 
 #include "ir/Expressions.h"  // IWYU pragma: keep
 #include "ir/Relations.h"    // IWYU pragma: keep
 #include "ir/Statement.h"    // IWYU pragma: keep
+
+#include "iface/sql/bind/Expressions.h"  // IWYU pragma: keep
+#include "iface/sql/bind/Relations.h"    // IWYU pragma: keep
+#include "iface/sql/bind/Statement.h"    // IWYU pragma: keep
 
 #include <llog/load.h>
 #include <llog/log.h>
@@ -148,11 +153,12 @@ exec::Plan makePlan(std::string maybe_path) {
         std::cout << iface::sql::ast::Stringifier().print(program) << std::endl;
     }
     auto bind = iface::sql::bind::bind(std::move(program));
+    auto ir = iface::sql::bind::lowerToIR(std::move(bind));
     if (debug_ir_arg) {
         std::cout << "IR dump:" << std::endl;
-        std::cout << ir::Stringifier().print(bind) << std::endl;
+        std::cout << ir::Stringifier().print(ir) << std::endl;
     }
-    return exec::plan(std::move(bind));
+    return exec::plan(std::move(ir));
 }
 
 std::string escapeForJSON(const std::string& input) {
@@ -215,11 +221,11 @@ std::string toJSONStr(const Value& v) {
 
 class Print : public exec::Subscriber {
  public:
-    Print(exec::OperationPtr source, Format format, ConstFieldBindingPtr binding)
+    Print(exec::OperationPtr source, FieldSet fields, Format format, ConstFieldBindingPtr binding)
         : source_(std::move(source))
         , format_(format)
         , binding_(std::move(binding)) {
-        source_->subscribe(source_->minPhase(), this, exec::RequiredFields::withAll());
+        source_->subscribe(source_->minPhase(), this, fields);
     }
 
     exec::ExplanationItem explain(exec::ExplanationCtx ctx) const {
@@ -270,7 +276,7 @@ class Print : public exec::Subscriber {
 
     void printRecordJSON(const exec::Record& record) {
         if (record.ids().empty()) {
-            ss_ << "{}";
+            ss_ << "{}\n";
             return;
         }
 
@@ -378,8 +384,8 @@ void main(std::span<const char*> argv) {
 
     llog::info("collecting print operations");
     std::vector<std::shared_ptr<Print>> ops;
-    for (auto&& op : top_operations) {
-        ops.push_back(std::make_shared<Print>(op, *format, binding));
+    for (auto&& [op, fields] : top_operations) {
+        ops.push_back(std::make_shared<Print>(op, fields, *format, binding));
     }
 
     llog::info("determining phase count");

@@ -107,14 +107,8 @@ class Stringifier {
     }
 
     StrBuilder print(const Projector& p) {
-        return std::visit([this](auto&& p) { return print(p); }, p);
-    }
-
-    StrBuilder print(const StarProjector&) { return StrBuilder("*-projector"); }
-
-    StrBuilder print(const ExprProjector& p) {
         return StrBuilder(
-                   "ExprProjector alias_field_id={} alias_name={}",
+                   "Projector alias_field_id={} alias_name={}",
                    p.alias_field_id,
                    binding_->name(p.alias_field_id))
             .child(print(*p.expr));
@@ -167,11 +161,10 @@ class Stringifier {
         return std::visit(
             [this, &e](auto&& arg) {
                 return this->print(arg)
-                    .child(StrBuilder("value_type: {}", magic_enum::enum_name(valueTypeOf(e))))
-                    .child(StrBuilder(
-                        "expr_kind_level: {}", magic_enum::enum_name(exprKindLevelOf(e))));
+                    .child(StrBuilder("value_type: {}", magic_enum::enum_name(e.value_type)))
+                    .child(StrBuilder("expr_kind_level: {}", magic_enum::enum_name(e.level)));
             },
-            e);
+            e.node);
     }
 
     StrBuilder print(const FieldExpr& e) {
@@ -184,8 +177,7 @@ class Stringifier {
     }
 
     StrBuilder print(const CoalesceExpr& e) {
-        return StrBuilder("CoalesceExpr type={}", magic_enum::enum_name(e.valueType()))
-            .child(StrBuilder("expressions").block(print(e.args)));
+        return StrBuilder("CoalesceExpr").child(StrBuilder("expressions").block(print(e.args)));
     }
 
     StrBuilder print(const CastExpr& e) {

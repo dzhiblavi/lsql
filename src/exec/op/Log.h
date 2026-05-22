@@ -46,7 +46,7 @@ class Log : public Source, public OperationBase<Log> {
             return;
         }
 
-        auto&& required_fields = requiredFields(phase);
+        auto&& required_fields = requiredFields(phase).fieldIds();
 
         if (required_fields.empty()) {
             auto* record = EmptyRecord::instance().get();
@@ -56,33 +56,12 @@ class Log : public Source, public OperationBase<Log> {
                     return;
                 }
             }
-        } else if (required_fields.all()) {
-            absl::flat_hash_map<FieldId, std::string_view> values;
-
-            auto parser = [&](std::string_view name, std::string_view value) {
-                auto id = binding_->id(name, ValueType::String);
-                if (id != UnknownFieldId) {
-                    values.emplace(id, value);
-                }
-            };
-            auto parse_func = logs::parseKeyValueFunc<decltype(parser)&>(type_);
-
-            for (auto line : log_->lines()) {
-                values.reserve(logs::ExpectedKeysCountTunable);
-                parse_func(line.view(), parser);
-                LineRecord record(line, std::move(values));
-                values = {};
-
-                if (!emit(phase, &record)) {
-                    return;
-                }
-            }
         } else {
             absl::flat_hash_map<FieldId, std::string_view> values;
 
             auto parser = [&](std::string_view name, std::string_view value) {
                 auto id = binding_->id(name, ValueType::String);
-                if (id == UnknownFieldId || !required_fields.requiresField(id)) {
+                if (id == UnknownFieldId || !required_fields.contains(id)) {
                     return;
                 }
                 values.emplace(id, value);
@@ -91,7 +70,7 @@ class Log : public Source, public OperationBase<Log> {
             auto parse_func = logs::parseKeyValueFunc<decltype(parser)&>(type_);
 
             for (auto line : log_->lines()) {
-                values.reserve(required_fields.ids().size());
+                values.reserve(required_fields.size());
                 parse_func(line.view(), parser);
                 LineRecord record(line, std::move(values));
                 values = {};
@@ -107,7 +86,7 @@ class Log : public Source, public OperationBase<Log> {
 
  private:
     // Operation
-    void init(int, const RequiredFields&) override {}
+    void init(int, const FieldSet&) override {}
 
     // Operation
     ExplanationItem explain(ExplanationCtx ctx) const override {

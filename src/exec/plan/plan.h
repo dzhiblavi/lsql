@@ -11,7 +11,7 @@ namespace lsql::exec {
 
 struct Plan {
     std::vector<exec::SourcePtr> sources;
-    std::vector<exec::OperationPtr> top_operations;
+    std::vector<std::pair<exec::OperationPtr, FieldSet>> top_operations;
     ConstFieldBindingPtr field_binding;
 };
 

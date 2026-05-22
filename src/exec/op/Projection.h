@@ -22,16 +22,12 @@ using ProjectionMap = std::unordered_map<FieldId, std::unique_ptr<Projector>>;
 
 class ProjectionRecord : public Record {
  public:
-    ProjectionRecord(RecordRef child, std::shared_ptr<const ProjectionMap> projectors, bool has_all)
+    ProjectionRecord(RecordRef child, std::shared_ptr<const ProjectionMap> projectors)
         : child_(std::move(child))
-        , projectors_(std::move(projectors))
-        , has_all_(has_all) {}
+        , projectors_(std::move(projectors)) {}
 
     ids_t ids() const override {
         ids_t ids;
-        if (has_all_) {
-            ids = get(child_)->ids();
-        }
         for (auto&& [id, _] : *projectors_) {
             ids.insert(id);
         }
@@ -42,20 +38,16 @@ class ProjectionRecord : public Record {
         if (auto it = projectors_->find(id); it != projectors_->end()) {
             return it->second->expr->eval(*get(child_));
         }
-        if (has_all_) {
-            return get(child_)->value(id);
-        }
         return null;
     }
 
     ConstRecordPtr cloneImpl() const override {
-        return std::make_shared<ProjectionRecord>(pin(child_), projectors_, has_all_);
+        return std::make_shared<ProjectionRecord>(pin(child_), projectors_);
     }
 
  private:
     RecordRef child_;
     std::shared_ptr<const ProjectionMap> projectors_;
-    const bool has_all_ = false;
 };
 
 class Projection : public OperationBase<Projection>,
@@ -72,34 +64,20 @@ class Projection : public OperationBase<Projection>,
             return emit(phase, nullptr);
         }
 
-        ProjectionRecord rec(record, {shared_from_this(), &projectors_}, has_all_);
+        ProjectionRecord rec(record, {shared_from_this(), &projectors_});
         return emit(phase, &rec);
     }
 
-    void init(int phase, const RequiredFields& downstream) override {
-        source_->subscribe(phase, &sub_, getRequiredFields(downstream));
+    void init(int phase, const FieldSet& downstream) override {
+        source_->subscribe(phase, &sub_, getFieldSet(downstream));
     }
 
-    RequiredFields getRequiredFields(const RequiredFields& downstream) const {
-        RequiredFields result = RequiredFields::withNone();
+    FieldSet getFieldSet(const FieldSet& downstream) const {
+        FieldSet result = FieldSet::emptySet();
 
-        if (downstream.all()) {
-            if (has_all_) {
-                return RequiredFields::withAll();
-            }
-
-            for (auto&& [_, proj] : projectors_) {
-                result.merge(proj->expr->requiredFields());
-            }
-
-            return result;
-        }
-
-        for (auto&& id : downstream.ids()) {
+        for (auto&& id : downstream.fieldIds()) {
             if (auto it = projectors_.find(id); it != projectors_.end()) {
                 result.merge(it->second->expr->requiredFields());
-            } else if (has_all_) {
-                result.require(id);
             }
         }
 
@@ -115,12 +93,11 @@ class Projection : public OperationBase<Projection>,
         }
 
         return ExplanationItem()
-            .line("{} (*: {}, non-*: {})", description(ctx.phase), has_all_, projectors_.size())
+            .line("{} (projectors: {})", description(ctx.phase), projectors_.size())
             .child(source);
     }
 
     ProjectionMap buildProjectionMap(ProjectionList proj) {
-        has_all_ = std::erase_if(proj, [](auto& p) { return p->all(); }) > 0;
         ProjectionMap res;
         res.reserve(proj.size());
 
@@ -133,7 +110,6 @@ class Projection : public OperationBase<Projection>,
     }
 
     OperationPtr source_;
-    bool has_all_ = false;
     ProjectionMap projectors_;
     MemberSubscriber<Projection> sub_{
         this,

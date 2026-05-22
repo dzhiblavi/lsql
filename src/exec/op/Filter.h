@@ -28,8 +28,8 @@ class Filter : public OperationBase<Filter> {
     }
 
     // Operation
-    void init(int out_phase, const RequiredFields& downstream) override {
-        RequiredFields upstream = RequiredFields::merge(condition_->requiredFields(), downstream);
+    void init(int out_phase, const FieldSet& downstream) override {
+        FieldSet upstream = FieldSet::merge(condition_->requiredFields(), downstream);
         source_->subscribe(out_phase, &sub_, upstream);
     }
 

@@ -3,6 +3,7 @@ add_library(lsql-iface-sql-bind STATIC)
 target_sources(
     lsql-iface-sql-bind PRIVATE
     bind.cpp
+    lower.cpp
 )
 
 target_link_libraries(

@@ -71,4 +71,44 @@ class FieldBinding {
 using FieldBindingPtr = std::shared_ptr<FieldBinding>;
 using ConstFieldBindingPtr = std::shared_ptr<const FieldBinding>;
 
+class FieldSet {
+ public:
+    bool contains(FieldId id) const { return fields_.contains(id); }
+    bool empty() const { return fields_.empty(); }
+
+    const std::unordered_set<FieldId>& fieldIds() const { return fields_; };
+
+    void add(FieldId id) { fields_.insert(id); }
+
+    void merge(const FieldSet& other) {
+        fields_.insert(other.fields_.begin(), other.fields_.end());
+    }
+
+    static FieldSet withField(FieldId id) { return FieldSet({id}); }
+    static FieldSet emptySet() { return FieldSet{{}}; }
+
+    static FieldSet merge(FieldSet a, const FieldSet& b) {
+        a.merge(b);
+        return a;
+    }
+
+ private:
+    explicit FieldSet(std::unordered_set<FieldId> fields) : fields_(std::move(fields)) {}
+
+    std::unordered_set<FieldId> fields_;
+};
+
+inline std::string to_string(const FieldSet& fields, const FieldBinding& binding) {
+    if (fields.fieldIds().empty()) {
+        return "none";
+    }
+
+    std::stringstream ss;
+    for (auto&& id : fields.fieldIds()) {
+        ss << std::format("{}({}),", binding.name(id), id);
+    }
+    ss.seekp(-1, std::ios_base::end);  // remove last ','
+    return ss.str();
+}
+
 }  // namespace lsql

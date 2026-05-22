@@ -1,8 +1,9 @@
 #pragma once
 
-#include "exec/RequiredFields.h"
 #include "exec/op/Explanation.h"
 #include "exec/op/Subscriber.h"
+
+#include "core/Fields.h"
 
 #include <absl/container/flat_hash_set.h>
 
@@ -23,7 +24,7 @@ class Operation {
     //
     // pre:  out_phase >= minPhase()
     // post: out_phase <= maxPhase()
-    virtual void subscribe(int out_phase, Subscriber* sub, const RequiredFields& fields) = 0;
+    virtual void subscribe(int out_phase, Subscriber* sub, const FieldSet& fields) = 0;
 
     // Min phase on which this operation can produce results
     virtual int minPhase() const = 0;

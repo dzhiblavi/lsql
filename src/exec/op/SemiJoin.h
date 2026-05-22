@@ -13,12 +13,14 @@ class SemiJoin : public OperationBase<SemiJoin> {
         OperationPtr source,
         OperationPtr match_source,
         ExpressionPtr proj,
+        FieldId match_field_id,
         ConstFieldBindingPtr binding)
         : OperationBase(
               std::max(source->minPhase(), match_source->minPhase() + 1), std::move(binding))
         , source_(std::move(source))
         , match_source_(std::move(match_source))
-        , proj_(std::move(proj)) {}
+        , proj_(std::move(proj))
+        , match_field_id_(match_field_id) {}
 
  private:
     bool consumeMatch(int phase, const Record* record) {
@@ -29,12 +31,7 @@ class SemiJoin : public OperationBase<SemiJoin> {
             return false;
         }
 
-        auto ids = record->ids();
-        if (ids.size() != 1) {
-            throw std::runtime_error("expected exactly 1 column in IN rhs");
-        }
-
-        values_.insert(record->value(*ids.begin()));
+        values_.insert(record->value(match_field_id_));
         return active(phase + 1);
     }
 
@@ -56,19 +53,20 @@ class SemiJoin : public OperationBase<SemiJoin> {
         return false;
     }
 
-    void init(int out_phase, const RequiredFields& downstream) override {
+    void init(int out_phase, const FieldSet& downstream) override {
         verify(out_phase >= minPhase());
 
         if (match_phase_ == -1) {
             match_phase_ = out_phase - 1;
-            match_source_->subscribe(out_phase - 1, &sub_match_, RequiredFields::withAll());
+            match_source_->subscribe(
+                out_phase - 1, &sub_match_, FieldSet::withField(match_field_id_));
         }
 
         // this may be an incorrect expectation
         verify(out_phase > match_phase_);
 
         source_->subscribe(
-            out_phase, &sub_source_, RequiredFields::merge(proj_->requiredFields(), downstream));
+            out_phase, &sub_source_, FieldSet::merge(proj_->requiredFields(), downstream));
     }
 
     void cleanIfDone(int phase) {
@@ -115,6 +113,7 @@ class SemiJoin : public OperationBase<SemiJoin> {
     OperationPtr source_;
     OperationPtr match_source_;
     ExpressionPtr proj_;
+    FieldId match_field_id_;
 
     MemberSubscriber<SemiJoin> sub_source_{
         this,
@@ -133,9 +132,13 @@ class SemiJoin : public OperationBase<SemiJoin> {
 };
 
 OperationPtr semiJoin(
-    OperationPtr source, OperationPtr match, ExpressionPtr proj, ConstFieldBindingPtr binding) {
+    OperationPtr source,
+    OperationPtr match,
+    ExpressionPtr proj,
+    FieldId match_field_id,
+    ConstFieldBindingPtr binding) {
     return std::make_shared<SemiJoin>(
-        std::move(source), std::move(match), std::move(proj), std::move(binding));
+        std::move(source), std::move(match), std::move(proj), match_field_id, std::move(binding));
 }
 
 }  // namespace lsql::exec

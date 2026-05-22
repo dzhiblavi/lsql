@@ -7,7 +7,7 @@ namespace lsql::exec {
 struct MockOperation : OperationBase<MockOperation> {
     explicit MockOperation(ConstFieldBindingPtr binding) : OperationBase(0, binding) {}
 
-    void init(int out_phase, const RequiredFields& /*fields*/) override {
+    void init(int out_phase, const FieldSet& /*fields*/) override {
         init_calls.push_back(out_phase);
     }
 

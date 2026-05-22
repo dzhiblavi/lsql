@@ -90,14 +90,14 @@ class MergeSorted : public OperationBase<MergeSorted> {
     }
 
     // Operation
-    void init(int phase, const RequiredFields& downstream) override {
-        auto upstream = getRequiredFields(downstream);
+    void init(int phase, const FieldSet& downstream) override {
+        auto upstream = getFieldSet(downstream);
         l_->subscribe(phase, &sub_l_, upstream);
         r_->subscribe(phase, &sub_r_, upstream);
     }
 
-    RequiredFields getRequiredFields(const RequiredFields& downstream) const {
-        RequiredFields upstream = downstream;
+    FieldSet getFieldSet(const FieldSet& downstream) const {
+        FieldSet upstream = downstream;
 
         for (auto&& proj : slist_) {
             upstream.merge(proj->requiredFields());

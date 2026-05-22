@@ -51,7 +51,7 @@ def dump(blocks, path):
     with open(path, "w") as file:
         for i, block in enumerate(blocks):
             for line in block:
-                file.write(json.dumps(line))
+                file.write(json.dumps(line, sort_keys=True))
                 file.write('\n')
             file.write('\n')
 

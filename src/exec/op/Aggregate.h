@@ -73,7 +73,7 @@ class Aggregate : public Source, public OperationBase<Aggregate>, public Record 
     }
 
     // Operation
-    void init(int out_phase, const RequiredFields& downstream) override {
+    void init(int out_phase, const FieldSet& downstream) override {
         if (first_phase_ == -1) {
             first_phase_ = out_phase;
         } else {
@@ -83,14 +83,14 @@ class Aggregate : public Source, public OperationBase<Aggregate>, public Record 
 
         // resubscribe even if already subscribed
         // idempotent but will update required fields if needed
-        source_->subscribe(first_phase_, &sub_, getRequiredFields(downstream));
+        source_->subscribe(first_phase_, &sub_, getFieldSet(downstream));
     }
 
-    RequiredFields getRequiredFields(const RequiredFields& downstream) const {
-        RequiredFields result = RequiredFields::withNone();
+    FieldSet getFieldSet(const FieldSet& downstream) const {
+        FieldSet result = FieldSet::emptySet();
 
         for (auto&& proj : projectors_) {
-            if (!downstream.requiresField(proj->field_id)) {
+            if (!downstream.contains(proj->field_id)) {
                 continue;
             }
 

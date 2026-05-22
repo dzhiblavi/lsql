@@ -36,7 +36,7 @@ class Limit : public OperationBase<Limit> {
     }
 
     // Operation
-    void init(int phase, const RequiredFields& downstream) override {
+    void init(int phase, const FieldSet& downstream) override {
         source_->subscribe(phase, &sub_, downstream);
     }
 

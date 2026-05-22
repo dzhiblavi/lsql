@@ -2,7 +2,26 @@
 
 #include <stdexcept>
 
-namespace lsql::ir {
+namespace lsql {
+
+enum class UnaryExprType {
+    BooleanNegate,
+};
+
+enum class UnaryAggregateExprType {
+    Count,
+    Min,
+    Max,
+    Sum,
+};
+
+enum class BinaryExprType {
+    Equal,
+    NotEqual,
+    And,
+    Or,
+    Divide,
+};
 
 enum class ExprKindLevel {
     Const,
@@ -26,4 +45,4 @@ inline ExprKindLevel composed(ExprKindLevel a, ExprKindLevel b) {
     return a == ExprKindLevel::Const ? b : a;
 }
 
-}  // namespace lsql::ir
+}  // namespace lsql

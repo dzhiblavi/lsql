@@ -76,12 +76,12 @@ class Sort : public OperationBase<Sort>, public std::enable_shared_from_this<Sor
         return emit(phase, nullptr);
     }
 
-    void init(int phase, const RequiredFields& fields) override {
-        source_->subscribe(phase, &sub_, getRequiredFields(fields));
+    void init(int phase, const FieldSet& fields) override {
+        source_->subscribe(phase, &sub_, getFieldSet(fields));
     }
 
-    RequiredFields getRequiredFields(const RequiredFields& downstream) const {
-        RequiredFields result = downstream;
+    FieldSet getFieldSet(const FieldSet& downstream) const {
+        FieldSet result = downstream;
 
         for (auto&& proj : sort_list_) {
             result.merge(proj->requiredFields());

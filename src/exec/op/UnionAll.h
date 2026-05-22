@@ -55,7 +55,7 @@ class UnionAll : public OperationBase<UnionAll> {
     void reset() { done_[0] = done_[1] = false; }
 
     // Operation
-    void init(int phase, const RequiredFields& downstream) override {
+    void init(int phase, const FieldSet& downstream) override {
         l_->subscribe(phase, &sub_l_, downstream);
         r_->subscribe(phase, &sub_r_, downstream);
     }

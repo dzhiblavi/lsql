@@ -43,8 +43,8 @@ class BinaryExpression : public Expression {
         }
     }
 
-    RequiredFields requiredFields() const override {
-        return RequiredFields::merge(l_->requiredFields(), r_->requiredFields());
+    FieldSet requiredFields() const override {
+        return FieldSet::merge(l_->requiredFields(), r_->requiredFields());
     }
 
     ValueType valueType() const override { return op_.valueType(); }

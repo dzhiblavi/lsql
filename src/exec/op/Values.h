@@ -62,8 +62,8 @@ class Values : public Source,
 
  private:
     // Operation
-    void init(int phase, const RequiredFields& fields) override {
-        updateRequiredFields(phase, fields);
+    void init(int phase, const FieldSet& fields) override {
+        updateFieldSet(phase, fields);
     }
 
     // Operation

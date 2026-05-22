@@ -15,7 +15,7 @@ struct UnaryExpr;
 struct UnaryAggregateExpr;
 struct BinaryExpr;
 
-using Expr = std::variant< //
+using ExprNode = std::variant< //
     FieldExpr,
     ValueExpr, //
     CoalesceExpr, //
@@ -27,5 +27,7 @@ using Expr = std::variant< //
     UnaryAggregateExpr, //
     BinaryExpr //
 >;
+
+struct Expr;
 
 }  // namespace lsql::ir
