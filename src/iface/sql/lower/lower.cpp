@@ -1,4 +1,4 @@
-#include "iface/sql/bind/lower.h"
+#include "iface/sql/lower/lower.h"
 
 #include "iface/sql/bind/Expr.h"
 #include "iface/sql/bind/Expressions.h"  // IWYU pragma: keep
@@ -15,36 +15,36 @@
 
 #include <algorithm>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::iface::sql::lower {
 
 namespace {
 
-UnaryAggregateExprType unaryAggregateType(FnCallExpr::Type type) {
+UnaryAggregateExprType unaryAggregateType(bind::FnCallExpr::Type type) {
     switch (type) {
-        case FnCallExpr::Type::Count:
+        case bind::FnCallExpr::Type::Count:
             return UnaryAggregateExprType::Count;
-        case FnCallExpr::Type::Min:
+        case bind::FnCallExpr::Type::Min:
             return UnaryAggregateExprType::Min;
-        case FnCallExpr::Type::Max:
+        case bind::FnCallExpr::Type::Max:
             return UnaryAggregateExprType::Max;
-        case FnCallExpr::Type::Sum:
+        case bind::FnCallExpr::Type::Sum:
             return UnaryAggregateExprType::Sum;
         default:
             panic();
     }
 }
 
-bool isUnaryAggregateFunc(FnCallExpr::Type type) {
+bool isUnaryAggregateFunc(bind::FnCallExpr::Type type) {
     switch (type) {
-        case FnCallExpr::Type::Count:
-        case FnCallExpr::Type::Min:
-        case FnCallExpr::Type::Max:
-        case FnCallExpr::Type::Sum:
+        case bind::FnCallExpr::Type::Count:
+        case bind::FnCallExpr::Type::Min:
+        case bind::FnCallExpr::Type::Max:
+        case bind::FnCallExpr::Type::Sum:
             return true;
 
-        case FnCallExpr::Type::Percentile:
-        case FnCallExpr::Type::Coalesce:
-        case FnCallExpr::Type::RSubstr:
+        case bind::FnCallExpr::Type::Percentile:
+        case bind::FnCallExpr::Type::Coalesce:
+        case bind::FnCallExpr::Type::RSubstr:
             return false;
     }
 }
@@ -53,7 +53,7 @@ class Lowerer {
  public:
     Lowerer() = default;
 
-    ir::Program lowerToIR(Program program) && {
+    ir::Program lowerToIR(bind::Program program) && {
         binding_ = program.binding;
         program_.field_binding = binding_;
         program_.statements.reserve(program.statements.size());
@@ -66,21 +66,21 @@ class Lowerer {
     }
 
  private:
-    ir::Statement bindStatement(Statement r) {
+    ir::Statement bindStatement(bind::Statement r) {
         return util::match(std::move(r), [this](auto r) { return bindStatement(std::move(r)); });
     }
 
-    ir::Relation bindRelation(Relation r) {
+    ir::Relation bindRelation(bind::Relation r) {
         return util::match(
             std::move(r.node), [&](auto node) { return bindRelation(std::move(node), r); });
     }
 
-    ir::Expr bindExpr(Expr r) {
+    ir::Expr bindExpr(bind::Expr r) {
         return util::match(
             std::move(r.node), [&](auto node) { return bindExpr(std::move(node), r); });
     }
 
-    ir::Statement bindStatement(QueryStatement s) {
+    ir::Statement bindStatement(bind::QueryStatement s) {
         auto fields = s.relation->fields_out->subtreeFieldSet();  // aka SELECT *
         auto r = bindRelation(std::move(*s.relation));
 
@@ -90,7 +90,7 @@ class Lowerer {
         };
     }
 
-    ir::Statement bindStatement(NamedRelationStatement s) {
+    ir::Statement bindStatement(bind::NamedRelationStatement s) {
         require(!named_relations_.contains(s.name), "duplicate named relation '{}'", s.name);
 
         auto relation = std::make_unique<ir::Relation>(bindRelation(std::move(*s.relation)));
@@ -102,14 +102,14 @@ class Lowerer {
         };
     }
 
-    ir::Relation bindRelation(AdhocRelation r, auto& /*info*/) {
+    ir::Relation bindRelation(bind::AdhocRelation r, auto& /*info*/) {
         return ir::ValuesRelation{
             .values = std::move(r.values),
             .output_id = r.output_field_id,
         };
     }
 
-    ir::Relation bindRelation(SelectRelation r, auto& /*info*/) {
+    ir::Relation bindRelation(bind::SelectRelation r, auto& /*info*/) {
         auto visible_fields = r.source->fields_out->subtreeFieldSet();
         auto scope = scopedRelation(bindRelation(std::move(*r.source)));
 
@@ -119,7 +119,7 @@ class Lowerer {
         if (r.where) {
             util::match(
                 std::move(r.where->condition->node),
-                [&](InExpr e) {
+                [&](bind::InExpr e) {
                     // Kind of an optimization over MarkJoinRelation
                     auto key = [&] {
                         auto set = e.match->fields_out->fieldSet();
@@ -208,7 +208,7 @@ class Lowerer {
         return pullRelation();
     }
 
-    ir::Relation bindRelation(UnionAllRelation r, auto& /*info*/) {
+    ir::Relation bindRelation(bind::UnionAllRelation r, auto& /*info*/) {
         auto left = bindRelation(std::move(*r.left));
         auto right = bindRelation(std::move(*r.right));
 
@@ -218,7 +218,7 @@ class Lowerer {
         };
     }
 
-    ir::Relation bindRelation(UnionAllSortedByRelation r, auto& /*info*/) {
+    ir::Relation bindRelation(bind::UnionAllSortedByRelation r, auto& /*info*/) {
         auto field_set =
             FieldSet::merge(r.left->fields_out->fieldSet(), r.right->fields_out->fieldSet());
         auto left = bindRelation(std::move(*r.left));
@@ -235,7 +235,7 @@ class Lowerer {
         };
     }
 
-    ir::Relation bindRelation(FileRelation r, auto& info) {
+    ir::Relation bindRelation(bind::FileRelation r, auto& info) {
         auto fields = info.fields_out->fieldSet();
         llog::info("path={}, requested fields: {}", r.path, to_string(fields, *binding_));
 
@@ -245,7 +245,7 @@ class Lowerer {
         };
     }
 
-    ir::Relation bindRelation(FileIntervalRelation r, auto& info) {
+    ir::Relation bindRelation(bind::FileIntervalRelation r, auto& info) {
         auto fields = info.fields_out->fieldSet();
         llog::info(
             "(interval) path={}, requested fields: {}", r.path, to_string(fields, *binding_));
@@ -258,20 +258,20 @@ class Lowerer {
         };
     }
 
-    ir::Relation bindRelation(NamedRelationReferenceRelation r, auto& /*info*/) {
+    ir::Relation bindRelation(bind::NamedRelationReferenceRelation r, auto& /*info*/) {
         return ir::NamedRelationReferenceRelation{
             .name = std::move(r.name),
         };
     }
 
-    ir::Relation bindRelation(MaterializeRelation r, auto& /*info*/) {
+    ir::Relation bindRelation(bind::MaterializeRelation r, auto& /*info*/) {
         auto arg = bindRelation(std::move(*r.relation));
         return ir::MaterializeRelation{
             .relation = std::make_unique<ir::Relation>(std::move(arg)),
         };
     }
 
-    ir::Expr bindExpr(IdentifierExpr e, auto& info) {
+    ir::Expr bindExpr(bind::IdentifierExpr e, auto& info) {
         return {
             .node =
                 ir::FieldExpr{
@@ -282,7 +282,7 @@ class Lowerer {
         };
     }
 
-    ir::Expr bindExpr(LiteralExpr e, auto& info) {
+    ir::Expr bindExpr(bind::LiteralExpr e, auto& info) {
         return {
             .node =
                 ir::ValueExpr{
@@ -293,7 +293,7 @@ class Lowerer {
         };
     }
 
-    ir::Expr bindExpr(CastExpr e, auto& info) {
+    ir::Expr bindExpr(bind::CastExpr e, auto& info) {
         return {
             .node =
                 ir::CastExpr{
@@ -305,7 +305,7 @@ class Lowerer {
         };
     }
 
-    ir::Expr bindExpr(InExpr e, auto& /*info*/) {
+    ir::Expr bindExpr(bind::InExpr e, auto& /*info*/) {
         auto output_id = binding_->addAnonymous(ValueType::Boolean);
         auto expr = bindExpr(std::move(*e.expr));
         auto match = bindRelation(std::move(*e.match));
@@ -331,7 +331,7 @@ class Lowerer {
         };
     }
 
-    ir::Expr bindExpr(LikeExpr e, auto& info) {
+    ir::Expr bindExpr(bind::LikeExpr e, auto& info) {
         auto arg = bindExpr(std::move(*e.expr));
 
         return {
@@ -345,7 +345,7 @@ class Lowerer {
         };
     }
 
-    ir::Expr bindExpr(FnCallExpr e, auto& info) {
+    ir::Expr bindExpr(bind::FnCallExpr e, auto& info) {
         std::vector<ir::Expr> args;
         args.reserve(e.args.size());
         for (auto&& arg : e.args) {
@@ -364,7 +364,7 @@ class Lowerer {
             };
         }
 
-        if (e.type == FnCallExpr::Type::Coalesce) {
+        if (e.type == bind::FnCallExpr::Type::Coalesce) {
             return {
                 .node =
                     ir::CoalesceExpr{
@@ -375,7 +375,7 @@ class Lowerer {
             };
         }
 
-        if (e.type == FnCallExpr::Type::Percentile) {
+        if (e.type == bind::FnCallExpr::Type::Percentile) {
             std::vector<float> percentiles;
             percentiles.reserve(args.size() - 1);
             for (size_t i = 1; i < args.size(); ++i) {
@@ -401,7 +401,7 @@ class Lowerer {
             };
         }
 
-        if (e.type == FnCallExpr::Type::RSubstr) {
+        if (e.type == bind::FnCallExpr::Type::RSubstr) {
             std::string regex = util::match(
                 args[1].node,
                 [](ir::ValueExpr e) { return e.value.get<std::string>(); },
@@ -421,7 +421,7 @@ class Lowerer {
         panic();
     }
 
-    ir::Expr bindExpr(BinaryExpr e, auto& info) {
+    ir::Expr bindExpr(bind::BinaryExpr e, auto& info) {
         auto left = bindExpr(std::move(*e.left));
         auto right = bindExpr(std::move(*e.right));
 
@@ -437,7 +437,7 @@ class Lowerer {
         };
     }
 
-    ir::Expr bindExpr(UnaryExpr e, auto& info) {
+    ir::Expr bindExpr(bind::UnaryExpr e, auto& info) {
         auto arg = bindExpr(std::move(*e.expr));
 
         return {
@@ -451,10 +451,10 @@ class Lowerer {
         };
     }
 
-    void bind(Projector p, std::vector<ir::Projector>& out) {
+    void bind(bind::Projector p, std::vector<ir::Projector>& out) {
         util::match(
             std::move(p),
-            [&](StarProjector) {
+            [&](bind::StarProjector) {
                 for (auto id : currFieldSet().fieldIds()) {
                     out.push_back(
                         ir::Projector{
@@ -470,7 +470,7 @@ class Lowerer {
                         });
                 }
             },
-            [&](IdentifierProjector p) {
+            [&](bind::IdentifierProjector p) {
                 out.push_back(
                     ir::Projector{
                         .alias_field_id = p.field_id,
@@ -484,7 +484,7 @@ class Lowerer {
                         }),
                     });
             },
-            [&](ExprProjector p) {
+            [&](bind::ExprProjector p) {
                 out.push_back(
                     ir::Projector{
                         .alias_field_id = p.alias_field_id,
@@ -493,7 +493,7 @@ class Lowerer {
             });
     }
 
-    std::vector<ir::Projector> bindProjectors(std::vector<Projector> projectors) {
+    std::vector<ir::Projector> bindProjectors(std::vector<bind::Projector> projectors) {
         std::vector<ir::Projector> result;
         result.reserve(projectors.size());
         for (auto&& p : projectors) {
@@ -502,7 +502,7 @@ class Lowerer {
         return result;
     }
 
-    std::vector<ir::Expr> bindExprs(std::vector<Expr> exprs) {
+    std::vector<ir::Expr> bindExprs(std::vector<bind::Expr> exprs) {
         std::vector<ir::Expr> result;
         result.reserve(exprs.size());
         for (auto&& p : exprs) {
@@ -575,7 +575,7 @@ class Lowerer {
 
 }  // namespace
 
-ir::Program lowerToIR(Program program) {
+ir::Program lowerToIR(bind::Program program) {
     return Lowerer().lowerToIR(std::move(program));
 }
 

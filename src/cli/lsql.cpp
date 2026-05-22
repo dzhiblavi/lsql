@@ -8,7 +8,7 @@
 #include "exec/plan/plan.h"
 
 #include "iface/sql/bind/bind.h"
-#include "iface/sql/bind/lower.h"
+#include "iface/sql/lower/lower.h"
 #include "iface/sql/parser/parse.h"
 
 #include "ir/Expressions.h"  // IWYU pragma: keep
@@ -156,7 +156,7 @@ exec::Plan makePlan(std::string maybe_path) {
         std::cout << iface::sql::ast::Stringifier().print(program) << std::endl;
     }
     auto bind = iface::sql::bind::bind(std::move(program));
-    auto ir = iface::sql::bind::lowerToIR(std::move(bind));
+    auto ir = iface::sql::lower::lowerToIR(std::move(bind));
     if (debug_ir_arg) {
         std::cout << "IR dump:" << std::endl;
         std::cout << ir::Stringifier().print(ir) << std::endl;
