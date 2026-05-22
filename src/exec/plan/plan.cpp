@@ -50,7 +50,8 @@ class Planner {
     }
 
     OperationPtr planRelation(ir::Relation s) {
-        return util::match(std::move(s), [this](auto s) { return planRelation(std::move(s)); });
+        return util::match(
+            std::move(s.node), [&](auto node) { return planRelation(std::move(node), s); });
     }
 
     ExpressionPtr planExpr(ir::Expr s) {
@@ -64,27 +65,28 @@ class Planner {
     }
 
     void planStatement(ir::QueryStatement s) {
-        auto fields = s.fields_out;
-        plan_.top_operations.emplace_back(planRelation(std::move(*s.relation)), fields);
+        auto fields = s.relation->fields_out;
+        auto r = planRelation(std::move(*s.relation));
+        plan_.top_operations.emplace_back(std::move(r), fields);
     }
 
-    OperationPtr planRelation(ir::ValuesRelation r) {
+    OperationPtr planRelation(ir::ValuesRelation r, auto& /*info*/) {
         auto src = values(std::move(r.values), r.output_id, binding_);
         plan_.sources.push_back(src);
         return src;
     }
 
-    OperationPtr planRelation(ir::ProjectionRelation r) {
+    OperationPtr planRelation(ir::ProjectionRelation r, auto& /*info*/) {
         return projection(
             planRelation(std::move(*r.source)), projectorsList(std::move(r.projectors)), binding_);
     }
 
-    OperationPtr planRelation(ir::AggregateRelation r) {
+    OperationPtr planRelation(ir::AggregateRelation r, auto& /*info*/) {
         return aggregate(
             planRelation(std::move(*r.source)), projectorsList(std::move(r.projectors)), binding_);
     }
 
-    OperationPtr planRelation(ir::GroupRelation r) {
+    OperationPtr planRelation(ir::GroupRelation r, auto& /*info*/) {
         return group(
             planRelation(std::move(*r.source)),
             projectorsList(std::move(r.group_list)),
@@ -92,16 +94,16 @@ class Planner {
             binding_);
     }
 
-    OperationPtr planRelation(ir::LimitRelation r) {
+    OperationPtr planRelation(ir::LimitRelation r, auto& /*info*/) {
         return limit(planRelation(std::move(*r.source)), r.limit, binding_);
     }
 
-    OperationPtr planRelation(ir::FilterRelation r) {
+    OperationPtr planRelation(ir::FilterRelation r, auto& /*info*/) {
         return filter(
             planRelation(std::move(*r.source)), planExpr(std::move(*r.condition)), binding_);
     }
 
-    OperationPtr planRelation(ir::SortRelation r) {
+    OperationPtr planRelation(ir::SortRelation r, auto& /*info*/) {
         return sort(
             planRelation(std::move(*r.source)),
             expressionList(std::move(r.order_list)),
@@ -109,7 +111,7 @@ class Planner {
             binding_);
     }
 
-    OperationPtr planRelation(ir::SemiJoinRelation r) {
+    OperationPtr planRelation(ir::SemiJoinRelation r, auto& /*info*/) {
         return semiJoin(
             planRelation(std::move(*r.source)),
             planRelation(std::move(*r.match)),
@@ -118,7 +120,7 @@ class Planner {
             binding_);
     }
 
-    OperationPtr planRelation(ir::MarkJoinRelation r) {
+    OperationPtr planRelation(ir::MarkJoinRelation r, auto& /*info*/) {
         return markJoin(
             planRelation(std::move(*r.source)),
             planRelation(std::move(*r.match)),
@@ -128,12 +130,12 @@ class Planner {
             binding_);
     }
 
-    OperationPtr planRelation(ir::UnionAllRelation r) {
+    OperationPtr planRelation(ir::UnionAllRelation r, auto& /*info*/) {
         return unionAll(
             planRelation(std::move(*r.left)), planRelation(std::move(*r.right)), binding_);
     }
 
-    OperationPtr planRelation(ir::UnionAllSortedByRelation r) {
+    OperationPtr planRelation(ir::UnionAllSortedByRelation r, auto& /*info*/) {
         return mergeSorted(
             planRelation(std::move(*r.left)),
             planRelation(std::move(*r.right)),
@@ -142,13 +144,13 @@ class Planner {
             binding_);
     }
 
-    OperationPtr planRelation(ir::FileRelation r) {
+    OperationPtr planRelation(ir::FileRelation r, auto& /*info*/) {
         auto src = file_source_func_(r.path, binding_, std::nullopt);
         plan_.sources.push_back(src);
         return src;
     }
 
-    OperationPtr planRelation(ir::FileIntervalRelation r) {
+    OperationPtr planRelation(ir::FileIntervalRelation r, auto& /*info*/) {
         auto src = file_source_func_(
             r.path,
             binding_,
@@ -161,12 +163,12 @@ class Planner {
         return src;
     }
 
-    OperationPtr planRelation(ir::NamedRelationReferenceRelation r) {
+    OperationPtr planRelation(ir::NamedRelationReferenceRelation r, auto& /*info*/) {
         require(named_ops.contains(r.name), "no such named relation {}", r.name);
         return named_ops[r.name];
     }
 
-    OperationPtr planRelation(ir::MaterializeRelation r) {
+    OperationPtr planRelation(ir::MaterializeRelation r, auto& /*info*/) {
         auto src = materialize(planRelation(std::move(*r.relation)), binding_);
         plan_.sources.push_back(src);
         return src;

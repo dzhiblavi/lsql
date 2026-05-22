@@ -81,13 +81,8 @@ class Lowerer {
     }
 
     ir::Statement bindStatement(bind::QueryStatement s) {
-        auto fields = s.relation->fields_out->subtreeFieldSet();  // "SELECT *"
         auto r = bindRelation(std::move(*s.relation));
-
-        return ir::QueryStatement{
-            .relation = box(std::move(r)),
-            .fields_out = fields,
-        };
+        return ir::QueryStatement{.relation = box(std::move(r))};
     }
 
     ir::Statement bindStatement(bind::NamedRelationStatement s) {
@@ -102,17 +97,21 @@ class Lowerer {
         };
     }
 
-    ir::Relation bindRelation(bind::AdhocRelation r, auto& /*info*/) {
-        return ir::ValuesRelation{
-            .values = std::move(r.values),
-            .output_id = r.output_field_id,
+    ir::Relation bindRelation(bind::AdhocRelation r, auto& info) {
+        return {
+            .node =
+                ir::ValuesRelation{
+                    .values = std::move(r.values),
+                    .output_id = r.output_field_id,
+                },
+            .fields_out = info.fields_out->fieldSet(),
         };
     }
 
     ir::Relation bindRelation(bind::SelectRelation r, auto& /*info*/) {
-        auto visible_fields = r.source->fields_out->subtreeFieldSet();
         auto scope = scopedRelation(bindRelation(std::move(*r.source)));
 
+        auto visible_fields = currRelation().fields_out;
         auto _ = scopedFieldSet(&visible_fields);
         auto projectors = bindProjectors(std::move(r.projectors));
 
@@ -120,65 +119,89 @@ class Lowerer {
             util::match(
                 std::move(r.where->condition->node),
                 [&](bind::InExpr e) {
+                    auto match = bindRelation(std::move(*e.match));
+
                     // Kind of an optimization over MarkJoinRelation
                     auto key = [&] {
-                        auto set = e.match->fields_out->fieldSet();
-                        auto _ = scopedFieldSet(&set);
-                        // expression only sees fields from `e.match`
+                        // expression only sees fields from `match`
+                        auto _ = scopedFieldSet(&match.fields_out);
                         return bindExpr(std::move(*e.expr));
                     }();
 
-                    auto match = bindRelation(std::move(*e.match));
                     auto source = pullRelation();
 
-                    setRelation(
-                        ir::SemiJoinRelation{
-                            .source = std::make_unique<ir::Relation>(std::move(source)),
-                            .match = std::make_unique<ir::Relation>(std::move(match)),
-                            .expr = std::make_unique<ir::Expr>(std::move(key)),
-                            .match_field_id = e.match_field_id,
-                        });
+                    // output fields are same as source
+                    auto fields_out = source.fields_out;
+
+                    setRelation({
+                        .node =
+                            ir::SemiJoinRelation{
+                                .source = std::make_unique<ir::Relation>(std::move(source)),
+                                .match = std::make_unique<ir::Relation>(std::move(match)),
+                                .expr = std::make_unique<ir::Expr>(std::move(key)),
+                                .match_field_id = e.match_field_id,
+                            },
+                        .fields_out = fields_out,
+                    });
                 },
                 [&](auto e) {
                     auto cond = bindExpr(std::move(e), *r.where->condition);
                     auto source = pullRelation();
+                    // output fields are same as source
+                    auto fields_out = source.fields_out;
 
-                    setRelation(
-                        ir::FilterRelation{
-                            .source = std::make_unique<ir::Relation>(std::move(source)),
-                            .condition = std::make_unique<ir::Expr>(std::move(cond)),
-                        });
+                    setRelation({
+                        .node =
+                            ir::FilterRelation{
+                                .source = std::make_unique<ir::Relation>(std::move(source)),
+                                .condition = std::make_unique<ir::Expr>(std::move(cond)),
+                            },
+                        .fields_out = fields_out,
+                    });
                 });
         }
 
         if (r.group_by.has_value()) {
             auto group_key = bindProjectors(std::move(r.group_by->group_list));
             auto source = pullRelation();
+            auto group_fields = outputFieldsOf(group_key);
+            auto fields = outputFieldsOf(projectors);
 
-            setRelation(
-                ir::GroupRelation{
-                    .source = std::make_unique<ir::Relation>(std::move(source)),
-                    .projectors = std::move(projectors),
-                    .group_list = std::move(group_key),
-                });
+            setRelation({
+                .node =
+                    ir::GroupRelation{
+                        .source = std::make_unique<ir::Relation>(std::move(source)),
+                        .projectors = std::move(projectors),
+                        .group_list = std::move(group_key),
+                    },
+                .fields_out = fields,
+            });
 
-            visible_fields.merge(outputFieldsOf(group_key));
+            visible_fields.merge(group_fields);
         } else if (r.aggregate) {
             auto source = pullRelation();
+            auto fields = outputFieldsOf(projectors);
 
-            setRelation(
-                ir::AggregateRelation{
-                    .source = std::make_unique<ir::Relation>(std::move(source)),
-                    .projectors = std::move(projectors),
-                });
+            setRelation({
+                .node =
+                    ir::AggregateRelation{
+                        .source = std::make_unique<ir::Relation>(std::move(source)),
+                        .projectors = std::move(projectors),
+                    },
+                .fields_out = fields,
+            });
         } else {
             auto source = pullRelation();
+            auto fields = outputFieldsOf(projectors);
 
-            setRelation(
-                ir::ProjectionRelation{
-                    .source = std::make_unique<ir::Relation>(std::move(source)),
-                    .projectors = std::move(projectors),
-                });
+            setRelation({
+                .node =
+                    ir::ProjectionRelation{
+                        .source = std::make_unique<ir::Relation>(std::move(source)),
+                        .projectors = std::move(projectors),
+                    },
+                .fields_out = fields,
+            });
         }
 
         visible_fields.merge(outputFieldsOf(projectors));
@@ -186,23 +209,31 @@ class Lowerer {
         if (r.order_by) {
             auto order_list = bindExprs(std::move(r.order_by->order_list));
             auto source = pullRelation();
+            auto fields = source.fields_out;
 
-            setRelation(
-                ir::SortRelation{
-                    .source = std::make_unique<ir::Relation>(std::move(source)),
-                    .order_list = std::move(order_list),
-                    .desc = r.order_by->desc,
-                });
+            setRelation({
+                .node =
+                    ir::SortRelation{
+                        .source = std::make_unique<ir::Relation>(std::move(source)),
+                        .order_list = std::move(order_list),
+                        .desc = r.order_by->desc,
+                    },
+                .fields_out = fields,
+            });
         }
 
         if (r.limit) {
             auto source = pullRelation();
+            auto fields = source.fields_out;
 
-            setRelation(
-                ir::LimitRelation{
-                    .source = std::make_unique<ir::Relation>(std::move(source)),
-                    .limit = r.limit->limit,
-                });
+            setRelation({
+                .node =
+                    ir::LimitRelation{
+                        .source = std::make_unique<ir::Relation>(std::move(source)),
+                        .limit = r.limit->limit,
+                    },
+                .fields_out = fields,
+            });
         }
 
         return pullRelation();
@@ -211,27 +242,35 @@ class Lowerer {
     ir::Relation bindRelation(bind::UnionAllRelation r, auto& /*info*/) {
         auto left = bindRelation(std::move(*r.left));
         auto right = bindRelation(std::move(*r.right));
+        auto fields = FieldSet::merge(left.fields_out, right.fields_out);
 
-        return ir::UnionAllRelation{
-            .left = std::make_unique<ir::Relation>(std::move(left)),
-            .right = std::make_unique<ir::Relation>(std::move(right)),
+        return {
+            .node =
+                ir::UnionAllRelation{
+                    .left = std::make_unique<ir::Relation>(std::move(left)),
+                    .right = std::make_unique<ir::Relation>(std::move(right)),
+                },
+            .fields_out = fields,
         };
     }
 
     ir::Relation bindRelation(bind::UnionAllSortedByRelation r, auto& /*info*/) {
-        auto field_set = FieldSet::merge(
-            r.left->fields_out->subtreeFieldSet(), r.right->fields_out->subtreeFieldSet());
         auto left = bindRelation(std::move(*r.left));
         auto right = bindRelation(std::move(*r.right));
+        auto fields = FieldSet::merge(left.fields_out, right.fields_out);
 
-        auto _ = scopedFieldSet(&field_set);
+        auto _ = scopedFieldSet(&fields);
         auto order_list = bindExprs(std::move(r.order_by.order_list));
 
-        return ir::UnionAllSortedByRelation{
-            .left = std::make_unique<ir::Relation>(std::move(left)),
-            .right = std::make_unique<ir::Relation>(std::move(right)),
-            .order_list = std::move(order_list),
-            .desc = r.order_by.desc,
+        return {
+            .node =
+                ir::UnionAllSortedByRelation{
+                    .left = std::make_unique<ir::Relation>(std::move(left)),
+                    .right = std::make_unique<ir::Relation>(std::move(right)),
+                    .order_list = std::move(order_list),
+                    .desc = r.order_by.desc,
+                },
+            .fields_out = fields,
         };
     }
 
@@ -239,9 +278,9 @@ class Lowerer {
         auto fields = info.fields_out->fieldSet();
         llog::info("path={}, requested fields: {}", r.path, to_string(fields, *binding_));
 
-        return ir::FileRelation{
-            .path = std::move(r.path),
-            .requested_fields = fields,
+        return {
+            .node = ir::FileRelation{.path = std::move(r.path)},
+            .fields_out = fields,
         };
     }
 
@@ -250,24 +289,41 @@ class Lowerer {
         llog::info(
             "(interval) path={}, requested fields: {}", r.path, to_string(fields, *binding_));
 
-        return ir::FileIntervalRelation{
-            .path = std::move(r.path),
-            .ts_from = r.ts_from,
-            .ts_to = r.ts_to,
-            .requested_fields = fields,
+        return {
+            .node =
+                ir::FileIntervalRelation{
+                    .path = std::move(r.path),
+                    .ts_from = r.ts_from,
+                    .ts_to = r.ts_to,
+                },
+            .fields_out = fields,
         };
     }
 
     ir::Relation bindRelation(bind::NamedRelationReferenceRelation r, auto& /*info*/) {
-        return ir::NamedRelationReferenceRelation{
-            .name = std::move(r.name),
+        auto it = named_relations_.find(r.name);
+        verify(it != named_relations_.end());
+        auto fields = it->second->fields_out;
+
+        return {
+            .node =
+                ir::NamedRelationReferenceRelation{
+                    .name = std::move(r.name),
+                },
+            .fields_out = fields,
         };
     }
 
     ir::Relation bindRelation(bind::MaterializeRelation r, auto& /*info*/) {
         auto arg = bindRelation(std::move(*r.relation));
-        return ir::MaterializeRelation{
-            .relation = std::make_unique<ir::Relation>(std::move(arg)),
+        auto fields = arg.fields_out;
+
+        return {
+            .node =
+                ir::MaterializeRelation{
+                    .relation = std::make_unique<ir::Relation>(std::move(arg)),
+                },
+            .fields_out = fields,
         };
     }
 
@@ -310,22 +366,26 @@ class Lowerer {
         auto expr = bindExpr(std::move(*e.expr));
         auto match = bindRelation(std::move(*e.match));
 
+        auto source = pullRelation();
+        auto fields = source.fields_out;
+        fields.add(output_id);
+
         // same source relation enriched with a boolean field indicating
         // whether the row's key matches `match`
-        setRelation(
-            ir::MarkJoinRelation{
-                .source = std::make_unique<ir::Relation>(pullRelation()),
-                .match = std::make_unique<ir::Relation>(std::move(match)),
-                .expr = std::make_unique<ir::Expr>(std::move(expr)),
-                .output_field_id = output_id,
-                .match_field_id = e.match_field_id,
-            });
+        setRelation({
+            .node =
+                ir::MarkJoinRelation{
+                    .source = std::make_unique<ir::Relation>(std::move(source)),
+                    .match = std::make_unique<ir::Relation>(std::move(match)),
+                    .expr = std::make_unique<ir::Expr>(std::move(expr)),
+                    .output_field_id = output_id,
+                    .match_field_id = e.match_field_id,
+                },
+            .fields_out = fields,
+        });
 
         return {
-            .node =
-                ir::FieldExpr{
-                    .field_id = output_id,
-                },
+            .node = ir::FieldExpr{.field_id = output_id},
             .value_type = ValueType::Boolean,
             .level = ExprKindLevel::Row,
         };

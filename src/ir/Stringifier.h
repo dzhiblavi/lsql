@@ -42,7 +42,12 @@ class Stringifier {
     }
 
     StrBuilder print(const Relation& r) {
-        return std::visit([this](auto&& arg) { return this->print(arg); }, r);
+        return std::visit(
+            [&](auto&& arg) {
+                return print(arg).child(
+                    StrBuilder("fields_out: {}", to_string(r.fields_out, *binding_)));
+            },
+            r.node);
     }
     StrBuilder print(const ValuesRelation& r) {
         return StrBuilder()

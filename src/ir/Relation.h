@@ -20,7 +20,7 @@ struct FileIntervalRelation;
 struct NamedRelationReferenceRelation;
 struct MaterializeRelation;
 
-using Relation = std::variant< //
+using RelationNode = std::variant< //
     ValuesRelation, //
     ProjectionRelation, //
     AggregateRelation, //
@@ -37,5 +37,7 @@ using Relation = std::variant< //
     NamedRelationReferenceRelation, //
     MaterializeRelation //
 >;
+
+struct Relation;
 
 }  // namespace lsql::ir

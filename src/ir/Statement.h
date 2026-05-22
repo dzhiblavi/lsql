@@ -25,7 +25,6 @@ struct NamedRelationStatement {
 
 struct QueryStatement {
     Box<Relation> relation;
-    FieldSet fields_out;
 };
 
 struct Program {

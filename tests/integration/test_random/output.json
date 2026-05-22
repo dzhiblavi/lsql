@@ -16,20 +16,6 @@
 {"context": null, "ctx": null, "log_type": "all", "payload_sz": null, "profiler_exec": "0.000", "request": "/notify/crm?subscription_id=7ac2e4cf9419cd300ce1b4d330dc8124a0e810fd", "status_code": "200", "test_index": 1, "timestamp": "2026-05-06 14:10:05.584894", "tvm_src": null, "uid": null}
 {"context": null, "ctx": null, "log_type": "all", "payload_sz": null, "profiler_exec": "0.000", "request": "/notify/crm?subscription_id=9502fd22c35a14498d3404df2941289dc5f31d3f", "status_code": "200", "test_index": 1, "timestamp": "2026-05-06 14:10:05.585276", "tvm_src": null, "uid": null}
 
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f"}
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaa905a9008bea7077a90e695f0889cac1b13909a2a237bda01b14a9a5249b17"}
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32"}
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32"}
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f"}
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 8, "timestamp": null, "uid": "aaa75a60cf0e00117fbf359312329be0e325f2c1ddee4c876fd00c9e767d274c"}
-
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 09:27:42.535418", "uid": null}
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 09:50:31.437740", "uid": null}
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 12:06:13.419283", "uid": null}
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 12:06:26.716981", "uid": null}
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 12:12:14.692457", "uid": null}
-{"context": null, "ctx": null, "payload_sz": null, "test_index": 9, "timestamp": "2026-04-30 15:38:45.066887", "uid": null}
-
 {"count": 1, "module": null, "test_index": 17}
 {"count": 6, "module": "tvm", "test_index": 17}
 {"count": 1283, "module": "web_server", "test_index": 17}
@@ -128,3 +114,17 @@
 {"test_index": 6, "timestamp": "2026-05-06 14:10:05.615705"}
 {"test_index": 6, "timestamp": "2026-05-06 14:10:05.617679"}
 {"test_index": 6, "timestamp": "2026-05-06 14:10:05.617683"}
+
+{"test_index": 8, "uid": "aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f"}
+{"test_index": 8, "uid": "aaa905a9008bea7077a90e695f0889cac1b13909a2a237bda01b14a9a5249b17"}
+{"test_index": 8, "uid": "aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32"}
+{"test_index": 8, "uid": "aaa3d8e4596f6a51e614f28d046888db0744ee690fe58d736a1e6e3f6c957a32"}
+{"test_index": 8, "uid": "aaadb8b6982c87a9022298b787efd4fe86d593d7c06b8e0cdd769f18f620be4f"}
+{"test_index": 8, "uid": "aaa75a60cf0e00117fbf359312329be0e325f2c1ddee4c876fd00c9e767d274c"}
+
+{"test_index": 9, "timestamp": "2026-04-30 09:27:42.535418"}
+{"test_index": 9, "timestamp": "2026-04-30 09:50:31.437740"}
+{"test_index": 9, "timestamp": "2026-04-30 12:06:13.419283"}
+{"test_index": 9, "timestamp": "2026-04-30 12:06:26.716981"}
+{"test_index": 9, "timestamp": "2026-04-30 12:12:14.692457"}
+{"test_index": 9, "timestamp": "2026-04-30 15:38:45.066887"}

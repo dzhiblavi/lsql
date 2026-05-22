@@ -82,14 +82,12 @@ struct UnionAllSortedByRelation {
 
 struct FileRelation {
     std::string path;
-    FieldSet requested_fields;
 };
 
 struct FileIntervalRelation {
     std::string path;
     timestamp_t ts_from;
     timestamp_t ts_to;
-    FieldSet requested_fields;
 };
 
 struct NamedRelationReferenceRelation {
@@ -98,6 +96,11 @@ struct NamedRelationReferenceRelation {
 
 struct MaterializeRelation {
     Box<Relation> relation;
+};
+
+struct Relation {
+    RelationNode node;
+    FieldSet fields_out;
 };
 
 }  // namespace lsql::ir
