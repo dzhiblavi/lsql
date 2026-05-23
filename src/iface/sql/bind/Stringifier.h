@@ -168,9 +168,7 @@ class Stringifier {
         return StrBuilder("IdentifierExpr {}", to_string(e.field_id, *binding_));
     }
 
-    StrBuilder print(const LiteralExpr& e) {
-        return StrBuilder("LiteralExpr {}", to_string(e.value));
-    }
+    StrBuilder print(const ValueExpr& e) { return StrBuilder("ValueExpr {}", to_string(e.value)); }
 
     StrBuilder print(const CastExpr& e) {
         return StrBuilder("CastExpr to type {}", magic_enum::enum_name(e.cast_to))
@@ -188,12 +186,22 @@ class Stringifier {
         return StrBuilder("LikeExpr regex='{}'", e.regex).child(print(*e.expr));
     }
 
-    StrBuilder print(const FnCallExpr& e) {
-        auto a = StrBuilder("args");
-        for (auto&& arg : e.args) {
-            a.item(print(arg));
+    StrBuilder print(const CoalesceExpr& e) {
+        auto b = StrBuilder("args");
+        for (auto&& a : e.args) {
+            b.item(print(a));
         }
-        return StrBuilder("FnCallExpr type={}", magic_enum::enum_name(e.type)).child(a);
+        return StrBuilder("CoalesceExpr").child(b);
+    }
+
+    StrBuilder print(const PercentileExpr& e) {
+        return StrBuilder("PercentileExpr count={}", e.percentiles.size())
+            .child(StrBuilder("percentiles").child(util::toString(e.percentiles)))
+            .child(StrBuilder("expression").child(print(*e.expr)));
+    }
+
+    StrBuilder print(const RSubstrExpr& e) {
+        return StrBuilder("RSubstrExpr regex='{}'", e.regex).child(print(*e.expr));
     }
 
     StrBuilder print(const BinaryExpr& e) {
@@ -203,6 +211,11 @@ class Stringifier {
     }
 
     StrBuilder print(const UnaryExpr& e) {
+        return StrBuilder("UnaryExpr type: {}", magic_enum::enum_name(e.type))
+            .child(print(*e.expr));
+    }
+
+    StrBuilder print(const UnaryAggregateExpr& e) {
         return StrBuilder("UnaryExpr type: {}", magic_enum::enum_name(e.type))
             .child(print(*e.expr));
     }

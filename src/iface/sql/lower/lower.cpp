@@ -19,36 +19,6 @@ namespace lsql::iface::sql::lower {
 
 namespace {
 
-UnaryAggregateExprType unaryAggregateType(bind::FnCallExpr::Type type) {
-    switch (type) {
-        case bind::FnCallExpr::Type::Count:
-            return UnaryAggregateExprType::Count;
-        case bind::FnCallExpr::Type::Min:
-            return UnaryAggregateExprType::Min;
-        case bind::FnCallExpr::Type::Max:
-            return UnaryAggregateExprType::Max;
-        case bind::FnCallExpr::Type::Sum:
-            return UnaryAggregateExprType::Sum;
-        default:
-            panic();
-    }
-}
-
-bool isUnaryAggregateFunc(bind::FnCallExpr::Type type) {
-    switch (type) {
-        case bind::FnCallExpr::Type::Count:
-        case bind::FnCallExpr::Type::Min:
-        case bind::FnCallExpr::Type::Max:
-        case bind::FnCallExpr::Type::Sum:
-            return true;
-
-        case bind::FnCallExpr::Type::Percentile:
-        case bind::FnCallExpr::Type::Coalesce:
-        case bind::FnCallExpr::Type::RSubstr:
-            return false;
-    }
-}
-
 class Lowerer {
  public:
     Lowerer() = default;
@@ -338,7 +308,7 @@ class Lowerer {
         };
     }
 
-    ir::Expr bindExpr(bind::LiteralExpr e, auto& info) {
+    ir::Expr bindExpr(bind::ValueExpr e, auto& info) {
         return {
             .node =
                 ir::ValueExpr{
@@ -405,80 +375,48 @@ class Lowerer {
         };
     }
 
-    ir::Expr bindExpr(bind::FnCallExpr e, auto& info) {
-        std::vector<ir::Expr> args;
-        args.reserve(e.args.size());
-        for (auto&& arg : e.args) {
-            args.push_back(bindExpr(std::move(arg)));
-        }
+    ir::Expr bindExpr(bind::UnaryAggregateExpr e, auto& info) {
+        return {
+            .node =
+                ir::UnaryAggregateExpr{
+                    .type = e.type,
+                    .expr = box(bindExpr(std::move(*e.expr))),
+                },
+            .value_type = info.value_type,
+            .level = info.level,
+        };
+    }
 
-        if (isUnaryAggregateFunc(e.type)) {
-            return {
-                .node =
-                    ir::UnaryAggregateExpr{
-                        .type = unaryAggregateType(e.type),
-                        .expr = std::make_unique<ir::Expr>(std::move(args[0])),
-                    },
-                .value_type = info.value_type,
-                .level = info.level,
-            };
-        }
+    ir::Expr bindExpr(bind::RSubstrExpr e, auto& info) {
+        return {
+            .node =
+                ir::RSubstrExpr{
+                    .expr = box(bindExpr(std::move(*e.expr))),
+                    .regex = std::move(e.regex),
+                },
+            .value_type = info.value_type,
+            .level = info.level,
+        };
+    }
 
-        if (e.type == bind::FnCallExpr::Type::Coalesce) {
-            return {
-                .node =
-                    ir::CoalesceExpr{
-                        .args = std::move(args),
-                    },
-                .value_type = info.value_type,
-                .level = info.level,
-            };
-        }
+    ir::Expr bindExpr(bind::CoalesceExpr e, auto& info) {
+        return {
+            .node = ir::CoalesceExpr{.args = bindExprs(std::move(e.args))},
+            .value_type = info.value_type,
+            .level = info.level,
+        };
+    }
 
-        if (e.type == bind::FnCallExpr::Type::Percentile) {
-            std::vector<float> percentiles;
-            percentiles.reserve(args.size() - 1);
-            for (size_t i = 1; i < args.size(); ++i) {
-                percentiles.push_back(
-                    util::match(
-                        std::move(args[i].node),
-                        [](ir::ValueExpr e) -> float {
-                            float p = e.value.get<float>();
-                            require(0.f <= p && p <= 1.f, "percentiles must be in [0.0, 1.0]");
-                            return p;
-                        },
-                        [](auto) -> float { panic(); }));
-            }
-
-            return {
-                .node =
-                    ir::PercentileExpr{
-                        .expr = std::make_unique<ir::Expr>(std::move(args[0])),
-                        .percentiles = std::move(percentiles),
-                    },
-                .value_type = info.value_type,
-                .level = info.level,
-            };
-        }
-
-        if (e.type == bind::FnCallExpr::Type::RSubstr) {
-            std::string regex = util::match(
-                args[1].node,
-                [](ir::ValueExpr e) { return e.value.get<std::string>(); },
-                [](auto&&) -> std::string { panic(); });
-
-            return {
-                .node =
-                    ir::RSubstrExpr{
-                        .expr = std::make_unique<ir::Expr>(std::move(args[0])),
-                        .regex = std::move(regex),
-                    },
-                .value_type = info.value_type,
-                .level = info.level,
-            };
-        }
-
-        panic();
+    ir::Expr bindExpr(bind::PercentileExpr e, auto& info) {
+        return {
+            .node =
+                ir::PercentileExpr{
+                    .expr = box(bindExpr(std::move(*e.expr))),
+                    .percentiles = std::move(e.percentiles),
+                },
+            .value_type = info.value_type,
+            .level = info.level,
+        };
     }
 
     ir::Expr bindExpr(bind::BinaryExpr e, auto& info) {

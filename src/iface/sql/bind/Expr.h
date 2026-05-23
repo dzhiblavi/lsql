@@ -5,23 +5,29 @@
 namespace lsql::iface::sql::bind {
 
 struct IdentifierExpr;
-struct LiteralExpr;
+struct ValueExpr;
 struct CastExpr;
 struct InExpr;
 struct LikeExpr;
-struct FnCallExpr;
+struct CoalesceExpr;
+struct PercentileExpr;
+struct RSubstrExpr;
 struct BinaryExpr;
 struct UnaryExpr;
+struct UnaryAggregateExpr;
 
 using ExprNode = std::variant< //
     IdentifierExpr, //
-    LiteralExpr, //
+    ValueExpr, //
     CastExpr, //
     InExpr, //
-    FnCallExpr, //
     LikeExpr, //
+    CoalesceExpr, //
+    PercentileExpr, //
+    RSubstrExpr, //
     BinaryExpr, //
-    UnaryExpr //
+    UnaryExpr, //
+    UnaryAggregateExpr //
 >;
 
 struct Expr;

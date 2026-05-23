@@ -18,7 +18,7 @@ struct IdentifierExpr {
     FieldId field_id;
 };
 
-struct LiteralExpr {
+struct ValueExpr {
     Value value;
 };
 
@@ -38,25 +38,29 @@ struct LikeExpr {
     std::string regex;
 };
 
-struct FnCallExpr {
-    enum class Type {
-        Count,
-        Min,
-        Max,
-        Sum,
-        Percentile,
-        Coalesce,
-        RSubstr,
-    };
-
-    Type type;
+struct CoalesceExpr {
     std::vector<Expr> args;
+};
+
+struct PercentileExpr {
+    Box<Expr> expr;
+    std::vector<float> percentiles;
+};
+
+struct RSubstrExpr {
+    Box<Expr> expr;
+    std::string regex;
 };
 
 struct BinaryExpr {
     BinaryExprType type;
     Box<Expr> left;
     Box<Expr> right;
+};
+
+struct UnaryAggregateExpr {
+    UnaryAggregateExprType type;
+    Box<Expr> expr;
 };
 
 struct UnaryExpr {

@@ -79,47 +79,28 @@ ValueType valueType(ValueType l, ValueType r, BinaryExprType type) {
     }
 }
 
-FnCallExpr::Type fnCallType(std::string_view func_name) {
-    static constexpr std::array<std::pair<std::string_view, FnCallExpr::Type>, 7> Types{
-        std::make_pair("builtin_count", FnCallExpr::Type::Count),
-        std::make_pair("builtin_min", FnCallExpr::Type::Min),
-        std::make_pair("builtin_max", FnCallExpr::Type::Max),
-        std::make_pair("builtin_sum", FnCallExpr::Type::Sum),
-        std::make_pair("builtin_percentile", FnCallExpr::Type::Percentile),
-        std::make_pair("builtin_coalesce", FnCallExpr::Type::Coalesce),
-        std::make_pair("builtin_rsubstr", FnCallExpr::Type::RSubstr),
+std::optional<UnaryAggregateExprType> unaryAggregateExprType(std::string_view fn_name) {
+    static constexpr std::array<std::pair<std::string_view, UnaryAggregateExprType>, 4> Types{
+        std::make_pair("builtin_count", UnaryAggregateExprType::Count),
+        std::make_pair("builtin_min", UnaryAggregateExprType::Min),
+        std::make_pair("builtin_max", UnaryAggregateExprType::Max),
+        std::make_pair("builtin_sum", UnaryAggregateExprType::Sum),
     };
 
-    auto it = std::ranges::find(Types, func_name, [](auto&& p) { return p.first; });
-    verify(it != Types.end());
-    return it->second;
+    auto it = std::ranges::find(Types, fn_name, [](auto&& p) { return p.first; });
+    return it == Types.end() ? std::nullopt : std::optional(it->second);
 }
 
-bool isUnaryAggregateFunc(FnCallExpr::Type type) {
+ValueType unaryAggregateValueType(UnaryAggregateExprType type, ValueType arg) {
     switch (type) {
-        case FnCallExpr::Type::Count:
-        case FnCallExpr::Type::Min:
-        case FnCallExpr::Type::Max:
-        case FnCallExpr::Type::Sum:
-            return true;
-
-        case FnCallExpr::Type::Percentile:
-        case FnCallExpr::Type::Coalesce:
-        case FnCallExpr::Type::RSubstr:
-            return false;
-    }
-}
-
-ValueType unaryAggregateValueType(FnCallExpr::Type type, ValueType arg) {
-    switch (type) {
-        case FnCallExpr::Type::Count:
+        case UnaryAggregateExprType::Count:
             require(arg == ValueType::Boolean, "COUNT argument should be boolean");
             return ValueType::Integer;
-        case FnCallExpr::Type::Min:
+        case UnaryAggregateExprType::Min:
+        case UnaryAggregateExprType::Max:
             return arg;
-        case FnCallExpr::Type::Max:
             return arg;
-        case FnCallExpr::Type::Sum:
+        case UnaryAggregateExprType::Sum:
             require(arithmetic(arg), "SUM argument should be arithmetic");
             return arg;
         default:
@@ -431,7 +412,7 @@ class Binder {
         auto value = parseLiteral(e.literal);
 
         return {
-            .node = LiteralExpr{.value = value},
+            .node = ValueExpr{.value = value},
             .value_type = value.type(),
             .level = ExprKindLevel::Const,
             .required_fields = FieldSet::emptySet(),
@@ -506,9 +487,7 @@ class Binder {
             args.push_back(bindExpr(std::move(arg)));
         }
 
-        auto fn_type = fnCallType(e.func);
         auto fields = requiredFieldsOf(args);
-        auto value_type = ValueType::Null;
         auto level = ExprKindLevel::Const;
         for (auto&& arg : args) {
             require(
@@ -517,17 +496,26 @@ class Binder {
             level = composed(level, arg.level);
         }
 
-        if (isUnaryAggregateFunc(fn_type)) {
+        if (auto un_aggr_type = unaryAggregateExprType(e.func)) {
             require(args.size() == 1, "function expects 1 argument");
             require(
                 args[0].level != ExprKindLevel::Group,
                 "grouping operations do not accept aggregates");
+            auto value_type = unaryAggregateValueType(*un_aggr_type, args[0].value_type);
 
-            value_type = unaryAggregateValueType(fn_type, args[0].value_type);
-            level = ExprKindLevel::Group;
+            return {
+                .node =
+                    UnaryAggregateExpr{
+                        .type = *un_aggr_type,
+                        .expr = box(std::move(args[0])),
+                    },
+                .value_type = value_type,
+                .level = ExprKindLevel::Group,
+                .required_fields = fields,
+            };
         }
 
-        if (fn_type == FnCallExpr::Type::Coalesce) {
+        if (e.func == "builtin_coalesce") {
             std::unordered_set<ValueType> types;
             for (auto&& arg : args) {
                 types.insert(arg.value_type);
@@ -535,30 +523,48 @@ class Binder {
             require(args.size() >= 1, "at least one argument required for COALESCE");
             require(types.size() == 1, "COALESCE arguments must have the same type");
 
-            value_type = args[0].value_type;
-            // level remains as is
+            return {
+                .node = CoalesceExpr{.args = std::move(args)},
+                .value_type = args[0].value_type,
+                .level = level,
+                .required_fields = fields,
+            };
         }
 
-        if (fn_type == FnCallExpr::Type::Percentile) {
+        if (e.func == "builtin_percentile") {
             require(args.size() > 1, "PERCENTILE must be given at least one percentile");
             require(arithmetic(args[0].value_type), "PERCENTILE first argument must be arithmetic");
             require(args[0].level != ExprKindLevel::Group, "PERCENTILE does not accept aggregates");
 
+            std::vector<float> percentiles;
+            percentiles.reserve(args.size() - 1);
             for (size_t i = 1; i < args.size(); ++i) {
-                auto&& arg = args[i];
                 require(
-                    arg.level == ExprKindLevel::Const,
-                    "PERCENTILE's arguments in positions >=1 must be constant");
-                require(
-                    arg.value_type == ValueType::Floating,
+                    args[i].value_type == ValueType::Floating,
                     "PERCENTILE's arguments in positions >=1 must be floating");
+
+                percentiles.push_back(
+                    util::match(
+                        std::move(args[i].node),
+                        [](ValueExpr e) -> float { return e.value.get<float>(); },
+                        [](auto) -> float {
+                            throwError("PERCENTILE's arguments in positions >=1 must be literals");
+                        }));
             }
 
-            value_type = ValueType::String;
-            level = ExprKindLevel::Group;
+            return {
+                .node =
+                    PercentileExpr{
+                        .expr = box(std::move(args[0])),
+                        .percentiles = std::move(percentiles),
+                    },
+                .value_type = ValueType::String,
+                .level = ExprKindLevel::Group,
+                .required_fields = fields,
+            };
         }
 
-        if (fn_type == FnCallExpr::Type::RSubstr) {
+        if (e.func == "builtin_rsubstr") {
             require(args.size() == 2, "RSUBSTR expects exactly 2 arguments");
             require(
                 args[0].value_type == ValueType::String,
@@ -570,20 +576,25 @@ class Binder {
                 args[1].value_type == ValueType::String,
                 "RSUBSTR's second argument should be floating");
 
-            value_type = ValueType::String;
-            // level remains as is
+            std::string regex = util::match(
+                args[1].node,
+                [](ValueExpr e) { return e.value.get<std::string>(); },
+                [](auto&&) -> std::string {
+                    throwError("RSUBSTR's second argument should be literal");
+                });
+
+            return {
+                .node = RSubstrExpr{
+                    .expr = box(std::move(args[0])),
+                    .regex = std::move(regex),
+                },
+                .value_type = ValueType::String,
+                .level = level,
+                .required_fields = fields,
+            };
         }
 
-        return {
-            .node =
-                FnCallExpr{
-                    .type = fn_type,
-                    .args = std::move(args),
-                },
-            .value_type = value_type,
-            .level = level,
-            .required_fields = fields,
-        };
+        throwError("unknown function name: {}", e.func);
     }
 
     Expr bindExpr(ast::BinaryExpr e) {
