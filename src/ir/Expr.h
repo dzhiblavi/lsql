@@ -8,11 +8,9 @@ struct FieldExpr;
 struct ValueExpr;
 struct CoalesceExpr;
 struct CastExpr;
-struct PercentileExpr;
 struct LikeExpr;
 struct RSubstrExpr;
 struct UnaryExpr;
-struct UnaryAggregateExpr;
 struct BinaryExpr;
 
 using ExprNode = std::variant< //
@@ -20,11 +18,9 @@ using ExprNode = std::variant< //
     ValueExpr, //
     CoalesceExpr, //
     CastExpr, //
-    PercentileExpr, //
     LikeExpr, //
     RSubstrExpr, //
     UnaryExpr, //
-    UnaryAggregateExpr, //
     BinaryExpr //
 >;
 

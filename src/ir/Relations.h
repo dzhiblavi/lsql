@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ir/Expr.h"
+#include "ir/Aggregate.h"
 #include "ir/Relation.h"
 
 #include "core/Fields.h"
@@ -28,12 +29,12 @@ struct ProjectionRelation {
 
 struct AggregateRelation {
     Box<Relation> source;
-    std::vector<Projector> projectors;
+    std::vector<Aggregate> aggregates;
 };
 
 struct GroupRelation {
     Box<Relation> source;
-    std::vector<Projector> projectors;
+    std::vector<Aggregate> aggregates;
     std::vector<Projector> group_list;
 };
 

@@ -15,15 +15,6 @@ concept UnaryOperation = requires(const Op& op, Value val) {
 
 template <UnaryOperation Op>
 class UnaryExpression : public Expression {
-    struct Aggr : Aggregator {
-        Aggr(AggregatorPtr arg, const Op* op) : arg(arg), op(op) {}
-        void feed(const exec::Record& rec) override { arg->feed(rec); }
-        Value get() override { return op->apply(arg->get()); }
-
-        AggregatorPtr arg;
-        const Op* op;
-    };
-
  public:
     template <typename... Args>
     explicit UnaryExpression(ExpressionPtr arg, Args&&... args)
@@ -38,15 +29,7 @@ class UnaryExpression : public Expression {
 
     ValueType valueType() const override { return op_.valueType(); }
 
-    AggregatorPtr aggregator() const override {
-        return std::make_shared<Aggr>(arg_->aggregator(), &op_);
-    }
-
     Value eval(const exec::Record& record) const override { return op_.apply(arg_->eval(record)); }
-
-    Value eval(const std::vector<exec::ConstRecordPtr>& group) const override {
-        return op_.apply(arg_->eval(group));
-    }
 
  private:
     ExpressionPtr arg_;

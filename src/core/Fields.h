@@ -20,7 +20,9 @@ class FieldBinding {
  public:
     FieldBinding() = default;
 
-    FieldId addAnonymous(ValueType type) { return add(std::format("$anon_{}", next_id_), type); }
+    FieldId addAnonymous(std::string_view prefix, ValueType type) {
+        return add(std::format("${}_{}", prefix, next_id_), type);
+    }
 
     FieldId add(std::string_view name, ValueType type) {
         verify(!hasField(name, type));
@@ -75,6 +77,7 @@ class FieldSet {
  public:
     bool contains(FieldId id) const { return fields_.contains(id); }
     bool empty() const { return fields_.empty(); }
+    size_t size() const { return fields_.size(); }
 
     const std::unordered_set<FieldId>& fieldIds() const { return fields_; };
 

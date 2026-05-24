@@ -1,5 +1,6 @@
 #pragma once
 
+#include "exec/expr/Aggregate.h"
 #include "exec/expr/Expression.h"
 #include "exec/prof/Metrics.h"
 #include "exec/prof/OperationHandle.h"
@@ -22,7 +23,7 @@ concept UnaryAggregateOperation = requires(Op op, Value val, Op::State* state) {
 };
 
 template <UnaryAggregateOperation Op>
-class UnaryAggregateExpression : public Expression {
+class UnaryAggregateExpression : public Aggregate {
     struct Aggr : Aggregator {
         Aggr(ExpressionPtr expr, const Op* op) : expr(expr), op(op) {}
         void feed(const exec::Record& record) override { op->update(&state, expr->eval(record)); }
@@ -48,18 +49,6 @@ class UnaryAggregateExpression : public Expression {
     ValueType valueType() const override { return op_.valueType(); }
 
     AggregatorPtr aggregator() const override { return std::make_shared<Aggr>(arg_, &op_); }
-
-    Value eval(const exec::Record& /*record*/) const override {
-        panic("aggregate expression should not be called on row basis");
-    }
-
-    Value eval(const std::vector<exec::ConstRecordPtr>& group) const override {
-        typename Op::State state;
-        for (auto&& record : group) {
-            op_.update(&state, arg_->eval(*record));
-        }
-        return op_.result(&state);
-    }
 
  private:
     ExpressionPtr arg_;

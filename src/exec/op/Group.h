@@ -1,47 +1,18 @@
 #pragma once
 
-#include "core/verify.h"
 #include "exec/Record.h"
+#include "exec/op/Aggregate.h"
 #include "exec/op/MemberSubscriber.h"
 #include "exec/op/Projection.h"
+
+#include "core/types.h"
+#include "core/verify.h"
 
 #include <vector>
 
 namespace lsql::exec {
 
-using GroupValues = std::unordered_map<FieldId, Value>;
-
-class GroupEnrichedRecord : public Record {
- public:
-    GroupEnrichedRecord(RecordRef child, std::shared_ptr<GroupValues> values)
-        : child_(std::move(child))
-        , values_(std::move(values)) {
-        assert(values_ != nullptr);
-    }
-
-    ids_t ids() const override {
-        auto ids = get(child_)->ids();
-        for (auto&& [k, _] : *values_) {
-            ids.insert(k);
-        }
-        return ids;
-    }
-
-    Value value(FieldId id) const override {
-        if (auto it = values_->find(id); it != values_->end()) {
-            return it->second;
-        }
-        return get(child_)->value(id);
-    }
-
-    std::shared_ptr<const Record> cloneImpl() const override {
-        return std::make_shared<GroupEnrichedRecord>(pin(child_), values_);
-    }
-
- private:
-    RecordRef child_;
-    std::shared_ptr<GroupValues> values_;
-};
+using GroupValues = absl::flat_hash_map<FieldId, Value>;
 
 class GroupRecord : public Record {
  public:
@@ -69,23 +40,16 @@ class GroupRecord : public Record {
 class Group : public OperationBase<Group>, public std::enable_shared_from_this<Group> {
     friend class GroupRecord;
 
-    using ProjectionMap = std::unordered_map<FieldId, std::unique_ptr<Projector>>;
-
  public:
     Group(
         OperationPtr source,
-        ProjectionList glist,
-        ProjectionList slist,
+        AggregateProjectionList aggregators,
+        ScalarProjectionList group_key,
         ConstFieldBindingPtr binding)
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
-        , glist_(toProjectionMap(std::move(glist)))
-        , slist_(toProjectionMap(std::move(slist))) {
-        // remove all glist_ columns from slist_
-        for (auto&& [name, _] : glist_) {
-            slist_.erase(name);
-        }
-    }
+        , aggregators_(toProjectionMap(std::move(aggregators)))
+        , group_key_(toProjectionMap(std::move(group_key))) {}
 
  private:
     bool consume(int phase, const Record* record) {
@@ -95,13 +59,10 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         }
 
         if (record != nullptr) {
-            auto group_kv = std::make_shared<GroupValues>();
             std::vector<Value> key;
-            key.reserve(glist_.size());
-            for (auto&& [name, proj] : glist_) {
-                auto value = proj->expr->eval(*record);
-                group_kv->emplace(name, value);
-                key.push_back(std::move(value));
+            key.reserve(group_key_.size());
+            for (auto&& [id, proj] : group_key_) {
+                key.push_back(proj->expr->eval(*record));
             }
 
             auto&& aggregators = groups_[key];
@@ -111,8 +72,7 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
             }
 
             for (auto&& [_, aggregator] : aggregators) {
-                GroupEnrichedRecord enriched_record(record, group_kv);
-                aggregator->feed(enriched_record);
+                aggregator->feed(*record);
             }
 
             if (!active(phase)) {
@@ -129,35 +89,29 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         while (!groups_.empty()) {
             auto node = groups_.extract(groups_.begin());
             auto group_values = std::move(node.key());
-            auto aggregators = std::move(node.mapped());
 
             GroupValues group_kv;
+            group_kv.reserve(group_key_.size());
             size_t group_by_column_index = 0;
-            for (auto&& [name, _] : glist_) {
-                group_kv.emplace(name, std::move(group_values[group_by_column_index++]));
+            for (auto&& [id, _] : group_key_) {
+                group_kv.emplace(id, std::move(group_values[group_by_column_index++]));
             }
 
             GroupValues values;
+            values.reserve(required_fields.size());
 
-            {
-                // pass required group by fields
-                for (auto&& [id, value] : group_kv) {
-                    if (required_fields.contains(id)) {
-                        values.emplace(id, std::move(value));
-                    }
+            for (auto&& [id, value] : group_kv) {
+                if (required_fields.contains(id)) {
+                    values.emplace(id, std::move(value));
                 }
             }
 
-            {
-                // pass required slist fields
-                for (auto&& [id, _] : slist_) {
-                    if (required_fields.contains(id)) {
-                        values.emplace(id, aggregators[id]->get());
-                    }
-                }
+            auto aggregators = std::move(node.mapped());
+            for (auto&& [id, _] : aggregators) {
+                values.emplace(id, aggregators[id]->get());
             }
 
-            auto record = std::make_shared<GroupRecord>(std::move(values));
+            auto record = arc<GroupRecord>(std::move(values));
             if (!emit(phase, record.get())) {
                 groups_.clear();
                 return false;
@@ -175,20 +129,20 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     FieldSet getFieldSet(const FieldSet& downstream) const {
         FieldSet upstream = FieldSet::emptySet();
 
-        // all group projections are always needed
-        for (auto&& [_, proj] : glist_) {
+        // all group key projections are always needed
+        for (auto&& [_, proj] : group_key_) {
             upstream.merge(proj->expr->requiredFields());
         }
 
         for (auto&& id : downstream.fieldIds()) {
-            if (glist_.contains(id)) {
+            if (group_key_.contains(id)) {
                 // already requested
                 continue;
             }
 
-            if (auto it = slist_.find(id); it != slist_.end()) {
-                upstream.merge(it->second->expr->requiredFields());
-            }
+            auto it = aggregators_.find(id);
+            verify(it != aggregators_.end());
+            upstream.merge(it->second->expr->requiredFields());
         }
 
         return upstream;
@@ -199,19 +153,29 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
 
         // aggregate only required fields
         for (auto&& id : required_fields.fieldIds()) {
-            if (glist_.contains(id)) {
-                // comes from group list, no need to calculate additionally
+            if (group_key_.contains(id)) {
+                // comes from group key, no need to calculate additionally
                 continue;
             }
 
-            if (auto it = slist_.find(id); it != slist_.end()) {
-                aggregators.emplace(id, it->second->expr->aggregator());
-            }
+            auto it = aggregators_.find(id);
+            verify(it != aggregators_.end());
+            aggregators.emplace(id, it->second->expr->aggregator());
         }
     }
 
-    static ProjectionMap toProjectionMap(ProjectionList list) {
-        ProjectionMap map;
+    static AggregateProjectionMap toProjectionMap(AggregateProjectionList list) {
+        AggregateProjectionMap map;
+        map.reserve(list.size());
+        for (auto&& proj : list) {
+            auto id = proj->field_id;
+            map.emplace(id, std::move(proj));
+        }
+        return map;
+    }
+
+    static ScalarProjectionMap toProjectionMap(ScalarProjectionList list) {
+        ScalarProjectionMap map;
         map.reserve(list.size());
         for (auto&& proj : list) {
             auto id = proj->field_id;
@@ -232,8 +196,8 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     }
 
     OperationPtr source_;
-    ProjectionMap glist_;
-    ProjectionMap slist_;
+    AggregateProjectionMap aggregators_;
+    ScalarProjectionMap group_key_;
     MemberSubscriber<Group> sub_{
         this,
         &Group::consume,
@@ -249,9 +213,12 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
 };
 
 OperationPtr group(
-    OperationPtr source, ProjectionList glist, ProjectionList slist, ConstFieldBindingPtr binding) {
+    OperationPtr source,
+    AggregateProjectionList aggregators,
+    ScalarProjectionList group_key,
+    ConstFieldBindingPtr binding) {
     return std::make_shared<Group>(
-        std::move(source), std::move(glist), std::move(slist), std::move(binding));
+        std::move(source), std::move(aggregators), std::move(group_key), std::move(binding));
 }
 
 }  // namespace lsql::exec

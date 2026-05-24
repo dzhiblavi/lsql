@@ -5,6 +5,7 @@
 #include "iface/sql/bind/Relations.h"    // IWYU pragma: keep
 #include "iface/sql/bind/Statement.h"    // IWYU pragma: keep
 
+#include "ir/Aggregates.h"   // IWYU pragma: keep
 #include "ir/Expressions.h"  // IWYU pragma: keep
 #include "ir/Relations.h"    // IWYU pragma: keep
 
@@ -18,6 +19,17 @@
 namespace lsql::iface::sql::lower {
 
 namespace {
+
+template <typename T>
+void append(std::vector<T>& a, std::vector<T> b) {
+    a.insert(a.end(), std::make_move_iterator(b.begin()), std::make_move_iterator(b.end()));
+}
+
+template <typename T>
+std::vector<T> concat(std::vector<T> a, std::vector<T> b) {
+    append(a, std::move(b));
+    return a;
+}
 
 class Lowerer {
  public:
@@ -36,6 +48,9 @@ class Lowerer {
     }
 
  private:
+    // Expression tree + all its aggregates (leaves with their own expression subtrees)
+    using BindExprResult = std::pair<ir::Expr, std::vector<ir::Aggregate>>;
+
     ir::Statement bindStatement(bind::Statement r) {
         return util::match(std::move(r), [this](auto r) { return bindStatement(std::move(r)); });
     }
@@ -45,7 +60,7 @@ class Lowerer {
             std::move(r.node), [&](auto node) { return bindRelation(std::move(node), r); });
     }
 
-    ir::Expr bindExpr(bind::Expr r) {
+    BindExprResult bindExpr(bind::Expr r) {
         return util::match(
             std::move(r.node), [&](auto node) { return bindExpr(std::move(node), r); });
     }
@@ -58,7 +73,7 @@ class Lowerer {
     ir::Statement bindStatement(bind::NamedRelationStatement s) {
         require(!named_relations_.contains(s.name), "duplicate named relation '{}'", s.name);
 
-        auto relation = std::make_unique<ir::Relation>(bindRelation(std::move(*s.relation)));
+        auto relation = box(bindRelation(std::move(*s.relation)));
         named_relations_[s.name] = relation.get();
 
         return ir::NamedRelationStatement{
@@ -83,7 +98,10 @@ class Lowerer {
 
         auto visible_fields = currRelation().fields_out;
         auto _ = scopedFieldSet(&visible_fields);
-        auto projectors = bindProjectors(std::move(r.projectors));
+
+        auto [projectors, proj_aggregates] = bindProjectors(std::move(r.projectors));
+        auto projectors_output_fields = outputFieldsOf(projectors);
+        auto proj_aggregates_output_fields = outputFieldsOf(proj_aggregates);
 
         if (r.where) {
             util::match(
@@ -91,118 +109,125 @@ class Lowerer {
                 [&](bind::InExpr e) {
                     auto match = bindRelation(std::move(*e.match));
 
-                    // Kind of an optimization over MarkJoinRelation
-                    auto key = [&] {
-                        // expression only sees fields from `match`
+                    auto [key, key_aggregates] = [&] {
                         auto _ = scopedFieldSet(&match.fields_out);
                         return bindExpr(std::move(*e.expr));
                     }();
-
-                    auto source = pullRelation();
-
-                    // output fields are same as source
-                    auto fields_out = source.fields_out;
+                    verify(key_aggregates.empty());
 
                     setRelation({
                         .node =
                             ir::SemiJoinRelation{
-                                .source = std::make_unique<ir::Relation>(std::move(source)),
-                                .match = std::make_unique<ir::Relation>(std::move(match)),
-                                .expr = std::make_unique<ir::Expr>(std::move(key)),
+                                .source = box(pullRelation()),
+                                .match = box(std::move(match)),
+                                .expr = box(std::move(key)),
                                 .match_field_id = e.match_field_id,
                             },
-                        .fields_out = fields_out,
+                        .fields_out = visible_fields,
                     });
                 },
                 [&](auto e) {
-                    auto cond = bindExpr(std::move(e), *r.where->condition);
-                    auto source = pullRelation();
-                    // output fields are same as source
-                    auto fields_out = source.fields_out;
+                    auto [cond, cond_aggregates] = bindExpr(std::move(e), *r.where->condition);
+                    verify(cond_aggregates.empty());
 
                     setRelation({
                         .node =
                             ir::FilterRelation{
-                                .source = std::make_unique<ir::Relation>(std::move(source)),
-                                .condition = std::make_unique<ir::Expr>(std::move(cond)),
+                                .source = box(pullRelation()),
+                                .condition = box(std::move(cond)),
                             },
-                        .fields_out = fields_out,
+                        .fields_out = visible_fields,
                     });
                 });
         }
 
         if (r.group_by.has_value()) {
-            auto group_key = bindProjectors(std::move(r.group_by->group_list));
-            auto source = pullRelation();
-            auto group_fields = outputFieldsOf(group_key);
-            auto fields = outputFieldsOf(projectors);
+            auto [group_key, group_key_aggregates] =
+                bindProjectors(std::move(r.group_by->group_list));
+            verify(group_key_aggregates.empty());
 
-            setRelation({
+            auto group_key_output_fields = outputFieldsOf(group_key);
+
+            auto group_rel = ir::Relation{
                 .node =
                     ir::GroupRelation{
-                        .source = std::make_unique<ir::Relation>(std::move(source)),
-                        .projectors = std::move(projectors),
+                        .source = box(pullRelation()),
+                        .aggregates = std::move(proj_aggregates),
                         .group_list = std::move(group_key),
                     },
-                .fields_out = fields,
-            });
-
-            visible_fields.merge(group_fields);
-        } else if (r.aggregate) {
-            auto source = pullRelation();
-            auto fields = outputFieldsOf(projectors);
-
-            setRelation({
-                .node =
-                    ir::AggregateRelation{
-                        .source = std::make_unique<ir::Relation>(std::move(source)),
-                        .projectors = std::move(projectors),
-                    },
-                .fields_out = fields,
-            });
-        } else {
-            auto source = pullRelation();
-            auto fields = outputFieldsOf(projectors);
+                .fields_out =
+                    FieldSet::merge(proj_aggregates_output_fields, group_key_output_fields),
+            };
 
             setRelation({
                 .node =
                     ir::ProjectionRelation{
-                        .source = std::make_unique<ir::Relation>(std::move(source)),
+                        .source = box(std::move(group_rel)),
                         .projectors = std::move(projectors),
                     },
-                .fields_out = fields,
+                .fields_out = projectors_output_fields,
             });
+
+            visible_fields = FieldSet::merge(projectors_output_fields, group_key_output_fields);
+        } else if (r.aggregate) {
+            verify(!proj_aggregates.empty());
+            auto aggregate = ir::Relation{
+                .node =
+                    ir::AggregateRelation{
+                        .source = box(pullRelation()),
+                        .aggregates = std::move(proj_aggregates),
+                    },
+                .fields_out = proj_aggregates_output_fields,
+            };
+
+            setRelation({
+                .node =
+                    ir::ProjectionRelation{
+                        .source = box(std::move(aggregate)),
+                        .projectors = std::move(projectors),
+                    },
+                .fields_out = projectors_output_fields,
+            });
+
+            visible_fields = projectors_output_fields;
+        } else {
+            verify(proj_aggregates.empty());
+
+            setRelation({
+                .node =
+                    ir::ProjectionRelation{
+                        .source = box(pullRelation()),
+                        .projectors = std::move(projectors),
+                    },
+                .fields_out = projectors_output_fields,
+            });
+
+            visible_fields = projectors_output_fields;
         }
 
-        visible_fields.merge(outputFieldsOf(projectors));
-
         if (r.order_by) {
-            auto order_list = bindExprs(std::move(r.order_by->order_list));
-            auto source = pullRelation();
-            auto fields = source.fields_out;
+            auto [order_list, order_aggregates] = bindExprs(std::move(r.order_by->order_list));
+            verify(order_aggregates.empty());
 
             setRelation({
                 .node =
                     ir::SortRelation{
-                        .source = std::make_unique<ir::Relation>(std::move(source)),
+                        .source = box(pullRelation()),
                         .order_list = std::move(order_list),
                         .desc = r.order_by->desc,
                     },
-                .fields_out = fields,
+                .fields_out = projectors_output_fields,
             });
         }
 
         if (r.limit) {
-            auto source = pullRelation();
-            auto fields = source.fields_out;
-
             setRelation({
                 .node =
                     ir::LimitRelation{
-                        .source = std::make_unique<ir::Relation>(std::move(source)),
+                        .source = box(pullRelation()),
                         .limit = r.limit->limit,
                     },
-                .fields_out = fields,
+                .fields_out = projectors_output_fields,
             });
         }
 
@@ -217,8 +242,8 @@ class Lowerer {
         return {
             .node =
                 ir::UnionAllRelation{
-                    .left = std::make_unique<ir::Relation>(std::move(left)),
-                    .right = std::make_unique<ir::Relation>(std::move(right)),
+                    .left = box(std::move(left)),
+                    .right = box(std::move(right)),
                 },
             .fields_out = fields,
         };
@@ -230,13 +255,14 @@ class Lowerer {
         auto fields = FieldSet::merge(left.fields_out, right.fields_out);
 
         auto _ = scopedFieldSet(&fields);
-        auto order_list = bindExprs(std::move(r.order_by.order_list));
+        auto [order_list, aggregates] = bindExprs(std::move(r.order_by.order_list));
+        verify(aggregates.empty());
 
         return {
             .node =
                 ir::UnionAllSortedByRelation{
-                    .left = std::make_unique<ir::Relation>(std::move(left)),
-                    .right = std::make_unique<ir::Relation>(std::move(right)),
+                    .left = box(std::move(left)),
+                    .right = box(std::move(right)),
                     .order_list = std::move(order_list),
                     .desc = r.order_by.desc,
                 },
@@ -276,10 +302,7 @@ class Lowerer {
         auto fields = it->second->fields_out;
 
         return {
-            .node =
-                ir::NamedRelationReferenceRelation{
-                    .name = std::move(r.name),
-                },
+            .node = ir::NamedRelationReferenceRelation{.name = std::move(r.name)},
             .fields_out = fields,
         };
     }
@@ -289,51 +312,48 @@ class Lowerer {
         auto fields = arg.fields_out;
 
         return {
-            .node =
-                ir::MaterializeRelation{
-                    .relation = std::make_unique<ir::Relation>(std::move(arg)),
-                },
+            .node = ir::MaterializeRelation{.relation = box(std::move(arg))},
             .fields_out = fields,
         };
     }
 
-    ir::Expr bindExpr(bind::IdentifierExpr e, auto& info) {
-        return {
-            .node =
-                ir::FieldExpr{
-                    .field_id = e.field_id,
-                },
-            .value_type = info.value_type,
-            .level = info.level,
-        };
+    BindExprResult bindExpr(bind::IdentifierExpr e, auto& info) {
+        return BindExprResult(
+            {
+                .node = ir::FieldExpr{.field_id = e.field_id},
+                .value_type = info.value_type,
+            },
+            {});
     }
 
-    ir::Expr bindExpr(bind::ValueExpr e, auto& info) {
-        return {
-            .node =
-                ir::ValueExpr{
-                    .value = e.value,
-                },
-            .value_type = info.value_type,
-            .level = info.level,
-        };
+    BindExprResult bindExpr(bind::ValueExpr e, auto& info) {
+        return BindExprResult(
+            {
+                .node = ir::ValueExpr{.value = std::move(e.value)},
+                .value_type = info.value_type,
+            },
+            {});
     }
 
-    ir::Expr bindExpr(bind::CastExpr e, auto& info) {
-        return {
-            .node =
-                ir::CastExpr{
-                    .cast_to = e.cast_to,
-                    .expr = box<ir::Expr>(bindExpr(std::move(*e.expr))),
-                },
-            .value_type = info.value_type,
-            .level = info.level,
-        };
+    BindExprResult bindExpr(bind::CastExpr e, auto& info) {
+        auto [arg, aggregates] = bindExpr(std::move(*e.expr));
+
+        return BindExprResult(
+            {
+                .node =
+                    ir::CastExpr{
+                        .cast_to = e.cast_to,
+                        .expr = box(std::move(arg)),
+                    },
+                .value_type = info.value_type,
+            },
+            std::move(aggregates));
     }
 
-    ir::Expr bindExpr(bind::InExpr e, auto& /*info*/) {
-        auto output_id = binding_->addAnonymous(ValueType::Boolean);
-        auto expr = bindExpr(std::move(*e.expr));
+    BindExprResult bindExpr(bind::InExpr e, auto& /*info*/) {
+        auto output_id = binding_->addAnonymous("mark_join", ValueType::Boolean);
+        auto [expr, aggregates] = bindExpr(std::move(*e.expr));
+        verify(aggregates.empty());
         auto match = bindRelation(std::move(*e.match));
 
         auto source = pullRelation();
@@ -345,174 +365,223 @@ class Lowerer {
         setRelation({
             .node =
                 ir::MarkJoinRelation{
-                    .source = std::make_unique<ir::Relation>(std::move(source)),
-                    .match = std::make_unique<ir::Relation>(std::move(match)),
-                    .expr = std::make_unique<ir::Expr>(std::move(expr)),
+                    .source = box(std::move(source)),
+                    .match = box(std::move(match)),
+                    .expr = box(std::move(expr)),
                     .output_field_id = output_id,
                     .match_field_id = e.match_field_id,
                 },
             .fields_out = fields,
         });
 
-        return {
-            .node = ir::FieldExpr{.field_id = output_id},
-            .value_type = ValueType::Boolean,
-            .level = ExprKindLevel::Row,
-        };
+        return BindExprResult(
+            {
+                .node = ir::FieldExpr{.field_id = output_id},
+                .value_type = ValueType::Boolean,
+            },
+            {});
     }
 
-    ir::Expr bindExpr(bind::LikeExpr e, auto& info) {
-        auto arg = bindExpr(std::move(*e.expr));
+    BindExprResult bindExpr(bind::LikeExpr e, auto& info) {
+        auto [arg, aggregates] = bindExpr(std::move(*e.expr));
 
-        return {
-            .node =
-                ir::LikeExpr{
-                    .expr = std::make_unique<ir::Expr>(std::move(arg)),
-                    .regex = std::move(e.regex),
-                },
-            .value_type = info.value_type,
-            .level = info.level,
-        };
+        return BindExprResult(
+            {
+                .node =
+                    ir::LikeExpr{
+                        .expr = box(std::move(arg)),
+                        .regex = std::move(e.regex),
+                    },
+                .value_type = info.value_type,
+            },
+            std::move(aggregates));
     }
 
-    ir::Expr bindExpr(bind::UnaryAggregateExpr e, auto& info) {
-        return {
+    BindExprResult bindExpr(bind::UnaryAggregateExpr e, auto& info) {
+        auto output_field_id = binding_->addAnonymous("un_agr", info.value_type);
+        auto [expr, aggregates] = bindExpr(std::move(*e.expr));
+        verify(aggregates.empty());
+
+        std::vector<ir::Aggregate> aggrs;
+        aggrs.push_back({
             .node =
-                ir::UnaryAggregateExpr{
+                ir::ScalarAggregate{
                     .type = e.type,
-                    .expr = box(bindExpr(std::move(*e.expr))),
+                    .expr = box(std::move(expr)),
                 },
+            .output_field_id = output_field_id,
             .value_type = info.value_type,
-            .level = info.level,
-        };
+        });
+
+        return BindExprResult(
+            {
+                .node = ir::FieldExpr{.field_id = output_field_id},
+                .value_type = info.value_type,
+            },
+            std::move(aggrs));
     }
 
-    ir::Expr bindExpr(bind::RSubstrExpr e, auto& info) {
-        return {
+    BindExprResult bindExpr(bind::RSubstrExpr e, auto& info) {
+        auto [expr, aggregates] = bindExpr(std::move(*e.expr));
+
+        return BindExprResult(
+            {
+                .node =
+                    ir::RSubstrExpr{
+                        .expr = box(std::move(expr)),
+                        .regex = std::move(e.regex),
+                    },
+                .value_type = info.value_type,
+            },
+            std::move(aggregates));
+    }
+
+    BindExprResult bindExpr(bind::CoalesceExpr e, auto& info) {
+        auto [exprs, aggregates] = bindExprs(std::move(e.args));
+
+        return BindExprResult(
+            {
+                .node = ir::CoalesceExpr{.args = std::move(exprs)},
+                .value_type = info.value_type,
+            },
+            std::move(aggregates));
+    }
+
+    BindExprResult bindExpr(bind::PercentileExpr e, auto& info) {
+        auto output_field_id = binding_->addAnonymous("perc", ValueType::String);
+        auto [expr, aggregates] = bindExpr(std::move(*e.expr));
+        verify(aggregates.empty());
+
+        std::vector<ir::Aggregate> aggrs;
+        aggrs.push_back({
             .node =
-                ir::RSubstrExpr{
-                    .expr = box(bindExpr(std::move(*e.expr))),
-                    .regex = std::move(e.regex),
-                },
-            .value_type = info.value_type,
-            .level = info.level,
-        };
-    }
-
-    ir::Expr bindExpr(bind::CoalesceExpr e, auto& info) {
-        return {
-            .node = ir::CoalesceExpr{.args = bindExprs(std::move(e.args))},
-            .value_type = info.value_type,
-            .level = info.level,
-        };
-    }
-
-    ir::Expr bindExpr(bind::PercentileExpr e, auto& info) {
-        return {
-            .node =
-                ir::PercentileExpr{
-                    .expr = box(bindExpr(std::move(*e.expr))),
+                ir::PercentileAggregate{
+                    .expr = box(std::move(expr)),
                     .percentiles = std::move(e.percentiles),
                 },
+            .output_field_id = output_field_id,
             .value_type = info.value_type,
-            .level = info.level,
-        };
+        });
+
+        return BindExprResult(
+            ir::Expr{
+                .node = ir::FieldExpr{.field_id = output_field_id},
+                .value_type = ValueType::String,
+            },
+            std::move(aggrs));
     }
 
-    ir::Expr bindExpr(bind::BinaryExpr e, auto& info) {
-        auto left = bindExpr(std::move(*e.left));
-        auto right = bindExpr(std::move(*e.right));
+    BindExprResult bindExpr(bind::BinaryExpr e, auto& info) {
+        auto [left, al] = bindExpr(std::move(*e.left));
+        auto [right, ar] = bindExpr(std::move(*e.right));
 
-        return {
-            .node =
-                ir::BinaryExpr{
-                    .type = e.type,
-                    .left = std::make_unique<ir::Expr>(std::move(left)),
-                    .right = std::make_unique<ir::Expr>(std::move(right)),
-                },
-            .value_type = info.value_type,
-            .level = info.level,
-        };
+        return BindExprResult(
+            {
+                .node =
+                    ir::BinaryExpr{
+                        .type = e.type,
+                        .left = box(std::move(left)),
+                        .right = box(std::move(right)),
+                    },
+                .value_type = info.value_type,
+            },
+            concat(std::move(al), std::move(ar)));
     }
 
-    ir::Expr bindExpr(bind::UnaryExpr e, auto& info) {
-        auto arg = bindExpr(std::move(*e.expr));
+    BindExprResult bindExpr(bind::UnaryExpr e, auto& info) {
+        auto [arg, aggregates] = bindExpr(std::move(*e.expr));
 
-        return {
-            .node =
-                ir::UnaryExpr{
-                    .type = e.type,
-                    .expr = std::make_unique<ir::Expr>(std::move(arg)),
-                },
-            .value_type = info.value_type,
-            .level = info.level,
-        };
+        return BindExprResult(
+            {
+                .node =
+                    ir::UnaryExpr{
+                        .type = e.type,
+                        .expr = box(std::move(arg)),
+                    },
+                .value_type = info.value_type,
+            },
+            std::move(aggregates));
     }
 
-    void bind(bind::Projector p, std::vector<ir::Projector>& out) {
+    void bind(
+        bind::Projector p, std::vector<ir::Projector>& exprs, std::vector<ir::Aggregate>& aggrs) {
         util::match(
             std::move(p),
             [&](bind::StarProjector) {
                 for (auto id : currFieldSet().fieldIds()) {
-                    out.push_back(
+                    exprs.push_back(
                         ir::Projector{
                             .alias_field_id = id,
-                            .expr = box<ir::Expr>(ir::Expr{
-                                .node =
-                                    ir::FieldExpr{
-                                        .field_id = id,
-                                    },
-                                .value_type = binding_->type(id),
-                                .level = ExprKindLevel::Row,
-                            }),
+                            .expr =
+                                box(ir::Expr{
+                                    .node = ir::FieldExpr{.field_id = id},
+                                    .value_type = binding_->type(id),
+                                }),
                         });
                 }
             },
             [&](bind::IdentifierProjector p) {
-                out.push_back(
+                exprs.push_back(
                     ir::Projector{
                         .alias_field_id = p.field_id,
-                        .expr = box<ir::Expr>(ir::Expr{
-                            .node =
-                                ir::FieldExpr{
-                                    .field_id = p.field_id,
-                                },
-                            .value_type = binding_->type(p.field_id),
-                            .level = ExprKindLevel::Row,
-                        }),
+                        .expr =
+                            box(ir::Expr{
+                                .node = ir::FieldExpr{.field_id = p.field_id},
+                                .value_type = binding_->type(p.field_id),
+                            }),
                     });
             },
             [&](bind::ExprProjector p) {
-                out.push_back(
+                auto [expr, aggregates] = bindExpr(std::move(*p.expr));
+
+                exprs.push_back(
                     ir::Projector{
                         .alias_field_id = p.alias_field_id,
-                        .expr = box<ir::Expr>(bindExpr(std::move(*p.expr))),
+                        .expr = box(std::move(expr)),
                     });
+
+                append(aggrs, std::move(aggregates));
             });
     }
 
-    std::vector<ir::Projector> bindProjectors(std::vector<bind::Projector> projectors) {
-        std::vector<ir::Projector> result;
-        result.reserve(projectors.size());
+    std::pair<std::vector<ir::Projector>, std::vector<ir::Aggregate>> bindProjectors(
+        std::vector<bind::Projector> projectors) {
+        std::vector<ir::Projector> exprs;
+        std::vector<ir::Aggregate> aggrs;
+        exprs.reserve(projectors.size());
         for (auto&& p : projectors) {
-            bind(std::move(p), result);
+            bind(std::move(p), exprs, aggrs);
         }
-        return result;
+        return std::make_pair(std::move(exprs), std::move(aggrs));
     }
 
-    std::vector<ir::Expr> bindExprs(std::vector<bind::Expr> exprs) {
-        std::vector<ir::Expr> result;
-        result.reserve(exprs.size());
-        for (auto&& p : exprs) {
-            result.push_back(bindExpr(std::move(p)));
+    std::pair<std::vector<ir::Expr>, std::vector<ir::Aggregate>> bindExprs(
+        std::vector<bind::Expr> es) {
+        std::vector<ir::Expr> exprs;
+        exprs.reserve(es.size());
+        std::vector<ir::Aggregate> aggrs;
+
+        for (auto&& p : es) {
+            auto [expr, aggregates] = bindExpr(std::move(p));
+            exprs.push_back(std::move(expr));
+            append(aggrs, std::move(aggregates));
         }
-        return result;
+
+        return std::make_pair(std::move(exprs), std::move(aggrs));
     }
 
     FieldSet outputFieldsOf(const std::vector<ir::Projector>& ps) {
         auto fields = FieldSet::emptySet();
         for (auto&& p : ps) {
             fields.add(p.alias_field_id);
+        }
+        return fields;
+    }
+
+    FieldSet outputFieldsOf(const std::vector<ir::Aggregate>& ps) {
+        auto fields = FieldSet::emptySet();
+        for (auto&& p : ps) {
+            fields.add(p.output_field_id);
         }
         return fields;
     }

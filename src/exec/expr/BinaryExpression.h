@@ -16,21 +16,6 @@ concept BinaryOperation =
 
 template <BinaryOperation Op>
 class BinaryExpression : public Expression {
-    struct Aggr : Aggregator {
-        Aggr(AggregatorPtr al, AggregatorPtr ar, const Op* op) : al(al), ar(ar), op(op) {}
-
-        void feed(const exec::Record& rec) override {
-            al->feed(rec);
-            ar->feed(rec);
-        }
-
-        Value get() override { return op->apply(al->get(), ar->get()); }
-
-        AggregatorPtr al;
-        AggregatorPtr ar;
-        const Op* op;
-    };
-
  public:
     template <typename... Args>
     BinaryExpression(ExpressionPtr l, ExpressionPtr r, Args&&... args)
@@ -49,16 +34,8 @@ class BinaryExpression : public Expression {
 
     ValueType valueType() const override { return op_.valueType(); }
 
-    AggregatorPtr aggregator() const override {
-        return std::make_shared<Aggr>(l_->aggregator(), r_->aggregator(), &op_);
-    }
-
     Value eval(const exec::Record& record) const override {
         return op_.apply(l_->eval(record), r_->eval(record));
-    }
-
-    Value eval(const std::vector<exec::ConstRecordPtr>& group) const override {
-        return op_.apply(l_->eval(group), r_->eval(group));
     }
 
  private:

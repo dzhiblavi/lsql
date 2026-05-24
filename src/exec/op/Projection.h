@@ -8,21 +8,18 @@
 
 namespace lsql::exec {
 
-struct Projector {
+struct ScalarProjector {
     FieldId field_id;
     std::shared_ptr<Expression> expr;
-
-    bool all() const { return expr == nullptr; }
 };
 
-using ProjectorPtr = std::unique_ptr<Projector>;
+using ScalarProjectorPtr = std::unique_ptr<ScalarProjector>;
+using ScalarProjectionList = std::vector<std::unique_ptr<ScalarProjector>>;
+using ScalarProjectionMap = std::unordered_map<FieldId, std::unique_ptr<ScalarProjector>>;
 
-using ProjectionList = std::vector<std::unique_ptr<Projector>>;
-using ProjectionMap = std::unordered_map<FieldId, std::unique_ptr<Projector>>;
-
-class ProjectionRecord : public Record {
+class ScalarProjectionRecord : public Record {
  public:
-    ProjectionRecord(RecordRef child, std::shared_ptr<const ProjectionMap> projectors)
+    ScalarProjectionRecord(RecordRef child, std::shared_ptr<const ScalarProjectionMap> projectors)
         : child_(std::move(child))
         , projectors_(std::move(projectors)) {}
 
@@ -42,18 +39,18 @@ class ProjectionRecord : public Record {
     }
 
     ConstRecordPtr cloneImpl() const override {
-        return std::make_shared<ProjectionRecord>(pin(child_), projectors_);
+        return std::make_shared<ScalarProjectionRecord>(pin(child_), projectors_);
     }
 
  private:
     RecordRef child_;
-    std::shared_ptr<const ProjectionMap> projectors_;
+    std::shared_ptr<const ScalarProjectionMap> projectors_;
 };
 
 class Projection : public OperationBase<Projection>,
                    public std::enable_shared_from_this<Projection> {
  public:
-    Projection(OperationPtr source, ProjectionList projectors, ConstFieldBindingPtr binding)
+    Projection(OperationPtr source, ScalarProjectionList projectors, ConstFieldBindingPtr binding)
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , projectors_(buildProjectionMap(std::move(projectors))) {}
@@ -64,7 +61,7 @@ class Projection : public OperationBase<Projection>,
             return emit(phase, nullptr);
         }
 
-        ProjectionRecord rec(record, {shared_from_this(), &projectors_});
+        ScalarProjectionRecord rec(record, {shared_from_this(), &projectors_});
         return emit(phase, &rec);
     }
 
@@ -97,8 +94,8 @@ class Projection : public OperationBase<Projection>,
             .child(source);
     }
 
-    ProjectionMap buildProjectionMap(ProjectionList proj) {
-        ProjectionMap res;
+    ScalarProjectionMap buildProjectionMap(ScalarProjectionList proj) {
+        ScalarProjectionMap res;
         res.reserve(proj.size());
 
         for (auto&& p : proj) {
@@ -110,7 +107,7 @@ class Projection : public OperationBase<Projection>,
     }
 
     OperationPtr source_;
-    ProjectionMap projectors_;
+    ScalarProjectionMap projectors_;
     MemberSubscriber<Projection> sub_{
         this,
         &Projection::consume,
@@ -118,7 +115,7 @@ class Projection : public OperationBase<Projection>,
     };
 };
 
-OperationPtr projection(OperationPtr source, ProjectionList slist, ConstFieldBindingPtr binding) {
+OperationPtr projection(OperationPtr source, ScalarProjectionList slist, ConstFieldBindingPtr binding) {
     return std::make_shared<Projection>(std::move(source), std::move(slist), std::move(binding));
 }
 

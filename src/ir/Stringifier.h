@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ir/Aggregates.h"   // IWYU pragma: keep
 #include "ir/Expressions.h"  // IWYU pragma: keep
 #include "ir/Relations.h"    // IWYU pragma: keep
 #include "ir/Statement.h"    // IWYU pragma: keep
@@ -67,13 +68,13 @@ class Stringifier {
     StrBuilder print(const AggregateRelation& r) {
         return StrBuilder("AggregateRelation")
             .child(StrBuilder("source").child(print(*r.source)))
-            .child(StrBuilder("projectors").block(print(r.projectors)));
+            .child(StrBuilder("projectors").block(print(r.aggregates)));
     }
 
     StrBuilder print(const GroupRelation& r) {
         return StrBuilder("GroupRelation")
             .child(StrBuilder("source").child(print(*r.source)))
-            .child(StrBuilder("projectors").block(print(r.projectors)))
+            .child(StrBuilder("aggregates").block(print(r.aggregates)))
             .child(StrBuilder("group keys").block(print(r.group_list)));
     }
 
@@ -149,6 +150,14 @@ class Stringifier {
         return b;
     }
 
+    StrBuilder print(const std::vector<Aggregate>& es) {
+        auto b = StrBuilder();
+        for (auto&& e : es) {
+            b.item(print(e));
+        }
+        return b;
+    }
+
     StrBuilder print(const FileRelation& r) { return StrBuilder("FileRelation path={}", r.path); }
 
     StrBuilder print(const FileIntervalRelation& r) {
@@ -166,9 +175,18 @@ class Stringifier {
     StrBuilder print(const Expr& e) {
         return std::visit(
             [this, &e](auto&& arg) {
-                return this->print(arg)
+                return print(arg).child(
+                    StrBuilder("value_type: {}", magic_enum::enum_name(e.value_type)));
+            },
+            e.node);
+    }
+
+    StrBuilder print(const Aggregate& e) {
+        return std::visit(
+            [this, &e](auto&& arg) {
+                return print(arg)
                     .child(StrBuilder("value_type: {}", magic_enum::enum_name(e.value_type)))
-                    .child(StrBuilder("expr_kind_level: {}", magic_enum::enum_name(e.level)));
+                    .child(StrBuilder("output_field_id: {}", e.output_field_id));
             },
             e.node);
     }
@@ -191,12 +209,6 @@ class Stringifier {
             .child(print(*e.expr));
     }
 
-    StrBuilder print(const PercentileExpr& e) {
-        return StrBuilder("PercentileExpr count={}", e.percentiles.size())
-            .child(StrBuilder("percentiles").child(util::toString(e.percentiles)))
-            .child(StrBuilder("expression").child(print(*e.expr)));
-    }
-
     StrBuilder print(const LikeExpr& e) {
         return StrBuilder("LikeExpr '{}'", e.regex).child(print(*e.expr));
     }
@@ -216,9 +228,15 @@ class Stringifier {
             .child(print(*e.expr));
     }
 
-    StrBuilder print(const UnaryAggregateExpr& e) {
-        return StrBuilder("UnaryAggregateExpr type={}", magic_enum::enum_name(e.type))
+    StrBuilder print(const ScalarAggregate& e) {
+        return StrBuilder("ScalarAggregate type={}", magic_enum::enum_name(e.type))
             .child(print(*e.expr));
+    }
+
+    StrBuilder print(const PercentileAggregate& e) {
+        return StrBuilder("PercentileAggregate count={}", e.percentiles.size())
+            .child(StrBuilder("percentiles").child(util::toString(e.percentiles)))
+            .child(StrBuilder("expression").child(print(*e.expr)));
     }
 
     ConstFieldBindingPtr binding_;

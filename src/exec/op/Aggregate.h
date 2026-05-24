@@ -1,17 +1,33 @@
 #pragma once
 
-#include "core/verify.h"
-#include "exec/expr/Expression.h"
-#include "exec/op/Projection.h"
+#include "exec/op/MemberSubscriber.h"
+#include "exec/op/OperationBase.h"
 #include "exec/op/Source.h"
+
+#include "exec/expr/Aggregate.h"
+
+#include "core/verify.h"
 
 #include <vector>
 
 namespace lsql::exec {
 
-class Aggregate : public Source, public OperationBase<Aggregate>, public Record {
+struct AggregateProjector {
+    FieldId field_id;
+    AggregatePtr expr;
+};
+
+using AggregateProjectorPtr = std::unique_ptr<AggregateProjector>;
+using AggregateProjectionList = std::vector<std::unique_ptr<AggregateProjector>>;
+using AggregateProjectionMap = std::unordered_map<FieldId, std::unique_ptr<AggregateProjector>>;
+
+class AggregateProjection
+    : public Source,
+      public OperationBase<AggregateProjection>,
+      public Record {
  public:
-    Aggregate(OperationPtr source, ProjectionList projectors, ConstFieldBindingPtr binding)
+    AggregateProjection(
+        OperationPtr source, AggregateProjectionList projectors, ConstFieldBindingPtr binding)
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , projectors_(std::move(projectors)) {}
@@ -151,11 +167,11 @@ class Aggregate : public Source, public OperationBase<Aggregate>, public Record 
     }
 
     OperationPtr source_;
-    ProjectionList projectors_;
+    AggregateProjectionList projectors_;
 
-    MemberSubscriber<Aggregate> sub_{
+    MemberSubscriber<AggregateProjection> sub_{
         this,
-        &Aggregate::consume,
+        &AggregateProjection::consume,
         prof_.inputHandle(&sub_),
     };
 
@@ -165,8 +181,10 @@ class Aggregate : public Source, public OperationBase<Aggregate>, public Record 
     std::unordered_map<FieldId, Value> values_;
 };
 
-SourcePtr aggregate(OperationPtr source, ProjectionList slist, ConstFieldBindingPtr binding) {
-    return std::make_shared<Aggregate>(std::move(source), std::move(slist), std::move(binding));
+SourcePtr aggregate(
+    OperationPtr source, AggregateProjectionList slist, ConstFieldBindingPtr binding) {
+    return std::make_shared<AggregateProjection>(
+        std::move(source), std::move(slist), std::move(binding));
 }
 
 }  // namespace lsql::exec

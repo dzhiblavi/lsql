@@ -23,6 +23,7 @@
 #include "exec/op/UnionAll.h"
 #include "exec/op/Values.h"
 
+#include "ir/Aggregates.h"
 #include "ir/Expressions.h"
 #include "ir/Relations.h"
 #include "ir/Statement.h"
@@ -59,6 +60,11 @@ class Planner {
             std::move(s.node), [&](auto node) { return planExpr(std::move(node), s); });
     }
 
+    AggregateProjectorPtr planAggregate(ir::Aggregate s) {
+        return util::match(
+            std::move(s.node), [&](auto node) { return planAggregate(std::move(node), s); });
+    }
+
     void planStatement(ir::NamedRelationStatement s) {
         auto op = planRelation(std::move(*s.relation));
         named_ops[s.name] = op;
@@ -83,14 +89,14 @@ class Planner {
 
     OperationPtr planRelation(ir::AggregateRelation r, auto& /*info*/) {
         return aggregate(
-            planRelation(std::move(*r.source)), projectorsList(std::move(r.projectors)), binding_);
+            planRelation(std::move(*r.source)), aggregatesList(std::move(r.aggregates)), binding_);
     }
 
     OperationPtr planRelation(ir::GroupRelation r, auto& /*info*/) {
         return group(
             planRelation(std::move(*r.source)),
+            aggregatesList(std::move(r.aggregates)),
             projectorsList(std::move(r.group_list)),
-            projectorsList(std::move(r.projectors)),
             binding_);
     }
 
@@ -191,12 +197,6 @@ class Planner {
         return std::make_shared<UnaryExpression<CastOp>>(arg, arg->valueType(), e.cast_to);
     }
 
-    ExpressionPtr planExpr(ir::PercentileExpr e, auto& /*info*/) {
-        auto arg = planExpr(std::move(*e.expr));
-        return std::make_shared<UnaryAggregateExpression<PercentileOp>>(
-            arg, std::move(e.percentiles), arg->valueType());
-    }
-
     ExpressionPtr planExpr(ir::LikeExpr e, auto& /*info*/) {
         auto arg = planExpr(std::move(*e.expr));
         return std::make_shared<UnaryExpression<LikeOp>>(arg, e.regex);
@@ -213,21 +213,6 @@ class Planner {
         switch (e.type) {
             case UnaryExprType::BooleanNegate:
                 return std::make_shared<UnaryExpression<BooleanNegationOp>>(arg);
-        }
-    }
-
-    ExpressionPtr planExpr(ir::UnaryAggregateExpr e, auto& info) {
-        auto arg = planExpr(std::move(*e.expr));
-
-        switch (e.type) {
-            case UnaryAggregateExprType::Count:
-                return std::make_shared<UnaryAggregateExpression<CountOp>>(arg);
-            case UnaryAggregateExprType::Min:
-                return std::make_shared<UnaryAggregateExpression<MinOp>>(arg, info.value_type);
-            case UnaryAggregateExprType::Max:
-                return std::make_shared<UnaryAggregateExpression<MaxOp>>(arg, info.value_type);
-            case UnaryAggregateExprType::Sum:
-                return std::make_shared<UnaryAggregateExpression<SumOp>>(arg, info.value_type);
         }
     }
 
@@ -251,8 +236,42 @@ class Planner {
         }
     }
 
-    ProjectorPtr planProjector(ir::Projector p) {
-        return std::make_unique<Projector>(p.alias_field_id, planExpr(std::move(*p.expr)));
+    AggregateProjectorPtr planAggregate(ir::ScalarAggregate a, auto&& info) {
+        auto arg = planExpr(std::move(*a.expr));
+        auto aggregate = [&] -> AggregatePtr {
+            switch (a.type) {
+                case UnaryAggregateExprType::Count:
+                    return std::make_shared<UnaryAggregateExpression<CountOp>>(arg);
+                case UnaryAggregateExprType::Min:
+                    return std::make_shared<UnaryAggregateExpression<MinOp>>(arg, info.value_type);
+                case UnaryAggregateExprType::Max:
+                    return std::make_shared<UnaryAggregateExpression<MaxOp>>(arg, info.value_type);
+                case UnaryAggregateExprType::Sum:
+                    return std::make_shared<UnaryAggregateExpression<SumOp>>(arg, info.value_type);
+            }
+        }();
+
+        return box(
+            AggregateProjector{
+                .field_id = info.output_field_id,
+                .expr = aggregate,
+            });
+    }
+
+    AggregateProjectorPtr planAggregate(ir::PercentileAggregate a, auto&& info) {
+        auto arg = planExpr(std::move(*a.expr));
+        auto aggregate = arc<UnaryAggregateExpression<PercentileOp>>(
+            arg, std::move(a.percentiles), arg->valueType());
+
+        return box(
+            AggregateProjector{
+                .field_id = info.output_field_id,
+                .expr = std::move(aggregate),
+            });
+    }
+
+    ScalarProjectorPtr planProjector(ir::Projector p) {
+        return std::make_unique<ScalarProjector>(p.alias_field_id, planExpr(std::move(*p.expr)));
     }
 
     std::vector<ExpressionPtr> expressionList(std::vector<ir::Expr> list) {
@@ -264,11 +283,20 @@ class Planner {
         return exprs;
     }
 
-    ProjectionList projectorsList(std::vector<ir::Projector> list) {
-        ProjectionList proj;
+    ScalarProjectionList projectorsList(std::vector<ir::Projector> list) {
+        ScalarProjectionList proj;
         proj.reserve(list.size());
         for (auto&& item : list) {
             proj.push_back(planProjector(std::move(item)));
+        }
+        return proj;
+    }
+
+    AggregateProjectionList aggregatesList(std::vector<ir::Aggregate> list) {
+        AggregateProjectionList proj;
+        proj.reserve(list.size());
+        for (auto&& item : list) {
+            proj.push_back(planAggregate(std::move(item)));
         }
         return proj;
     }

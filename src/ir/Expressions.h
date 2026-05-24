@@ -26,11 +26,6 @@ struct CastExpr {
     Box<Expr> expr;
 };
 
-struct PercentileExpr {
-    Box<Expr> expr;
-    std::vector<float> percentiles;
-};
-
 struct LikeExpr {
     Box<Expr> expr;
     std::string regex;
@@ -46,11 +41,6 @@ struct UnaryExpr {
     Box<Expr> expr;
 };
 
-struct UnaryAggregateExpr {
-    UnaryAggregateExprType type;
-    Box<Expr> expr;
-};
-
 struct BinaryExpr {
     BinaryExprType type;
     Box<Expr> left;
@@ -60,7 +50,6 @@ struct BinaryExpr {
 struct Expr {
     ExprNode node;
     ValueType value_type;
-    ExprKindLevel level;
 };
 
 }  // namespace lsql::ir
