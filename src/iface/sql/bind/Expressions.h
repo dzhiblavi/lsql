@@ -4,10 +4,13 @@
 #include "iface/sql/bind/ExprKindLevel.h"
 #include "iface/sql/bind/Relation.h"
 
+#include "core/exprs/BinaryExpr.h"
+#include "core/exprs/UnaryAggregate.h"
+#include "core/exprs/UnaryExpr.h"
+
 #include "core/Fields.h"
 #include "core/Value.h"
 #include "core/ValueType.h"
-#include "core/expressions.h"
 #include "core/types.h"
 
 #include <string>

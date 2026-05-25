@@ -9,10 +9,11 @@
 #include "iface/sql/bind/Relations.h"
 #include "iface/sql/bind/helpers.h"
 
-#include "core/expressions.h"
+#include "core/exprs/Percentile.h"
 #include "core/time_formats.h"
 
 #include "util/Pinned.h"
+#include "util/enum.h"
 
 #include <magic_enum/magic_enum.hpp>
 
@@ -22,17 +23,63 @@ namespace lsql::iface::sql::bind {
 
 namespace {
 
-bool arithmetic(ValueType type) {
-    switch (type) {
-        case ValueType::String:
-        case ValueType::Boolean:
-        case ValueType::Null:
-            return false;
+template <UnaryExprType Type>
+ValueType unaryExprResultType(ValueType value_type) {
+    using Traits = UnaryExprTraits<Type>;
 
-        case ValueType::Integer:
-        case ValueType::Floating:
-            return true;
-    }
+    return dispatch<ValueType>(
+        [&]<typename T>(std::type_identity<T>) {
+            if constexpr (!Traits::template allowed<T>()) {
+                throwError(
+                    "unsupported operand type {} for unary operation {}",
+                    magic_enum::enum_name(value_type),
+                    magic_enum::enum_name(Type));
+            }
+
+            using ValueType = Traits::template ValueType<T>;
+            return valueType<ValueType>();
+        },
+        value_type);
+}
+
+template <BinaryExprType Type>
+ValueType binaryExprResultType(ValueType left, ValueType right) {
+    using Traits = BinaryExprTraits<Type>;
+
+    return dispatch<ValueType>(
+        [&]<typename L, typename R>(std::type_identity<L>, std::type_identity<R>) {
+            if constexpr (!Traits::template allowed<L, R>()) {
+                throwError(
+                    "unsupported operand types {}, {} for binary operation {}",
+                    magic_enum::enum_name(left),
+                    magic_enum::enum_name(right),
+                    magic_enum::enum_name(Type));
+            }
+
+            using ValueType = Traits::template ValueType<L, R>;
+            return valueType<ValueType>();
+        },
+        left,
+        right);
+}
+
+template <UnaryAggregateType Type>
+ValueType unaryAggregateResultType(ValueType value_type) {
+    using Traits = UnaryAggregateTraits<Type>;
+
+    return dispatch<ValueType>(
+        [&]<typename T>(std::type_identity<T>) {
+            if constexpr (!Traits::template allowed<T>()) {
+                throwError(
+                    "unsupported operand type {} for unary aggregate {}",
+                    magic_enum::enum_name(value_type),
+                    magic_enum::enum_name(Type));
+            }
+
+            using ValueType = Traits::template ValueType<T>;
+            return valueType<ValueType>();
+        },
+        value_type);
 }
 
 UnaryExprType exprType(ast::UnaryExprType ast) {
@@ -61,47 +108,7 @@ BinaryExprType exprType(ast::BinaryExprType ast) {
     }
 }
 
-ValueType valueType(ValueType arg, UnaryExprType type) {
-    switch (type) {
-        case UnaryExprType::BooleanNegate:
-            require(arg == ValueType::Boolean, "! argument should be boolean");
-            return ValueType::Boolean;
-    }
-}
-
-ValueType valueType(ValueType l, ValueType r, BinaryExprType type) {
-    switch (type) {
-        case BinaryExprType::Equal:
-            require(
-                l == r || l == ValueType::Null || r == ValueType::Null,
-                "== arguments should have same type");
-            return ValueType::Boolean;
-        case BinaryExprType::NotEqual:
-            require(
-                l == r || l == ValueType::Null || r == ValueType::Null,
-                "!= arguments should have same type");
-            return ValueType::Boolean;
-        case BinaryExprType::And:
-            require(l == ValueType::Boolean, "AND arguments should be boolean");
-            require(r == ValueType::Boolean, "AND arguments should be boolean");
-            return ValueType::Boolean;
-        case BinaryExprType::Or:
-            require(l == ValueType::Boolean, "OR arguments should be boolean");
-            require(r == ValueType::Boolean, "OR arguments should be boolean");
-            return ValueType::Boolean;
-        case BinaryExprType::Divide:
-            require(l == r, "/ arguments should have same type");
-            require(arithmetic(l), "/ arguments should be arithmetic");
-            return l;
-        case BinaryExprType::Add:
-        case BinaryExprType::Subtract:
-            require(l == r, "+/- arguments should have same type");
-            // TODO
-            return l;
-    }
-}
-
-std::optional<UnaryAggregateType> unaryAggregateExprType(std::string_view fn_name) {
+std::optional<UnaryAggregateType> unaryAggregateType(std::string_view fn_name) {
     static constexpr std::array<std::pair<std::string_view, UnaryAggregateType>, 4> Types{
         std::make_pair("builtin_count", UnaryAggregateType::Count),
         std::make_pair("builtin_min", UnaryAggregateType::Min),
@@ -113,21 +120,17 @@ std::optional<UnaryAggregateType> unaryAggregateExprType(std::string_view fn_nam
     return it == Types.end() ? std::nullopt : std::optional(it->second);
 }
 
+ValueType valueType(ValueType arg, UnaryExprType type) {
+    return util::enum_dispatch([&]<auto Type>() { return unaryExprResultType<Type>(arg); }, type);
+}
+
+ValueType valueType(ValueType l, ValueType r, BinaryExprType type) {
+    return util::enum_dispatch([&]<auto Type>() { return binaryExprResultType<Type>(l, r); }, type);
+}
+
 ValueType unaryAggregateValueType(UnaryAggregateType type, ValueType arg) {
-    switch (type) {
-        case UnaryAggregateType::Count:
-            require(arg == ValueType::Boolean, "COUNT argument should be boolean");
-            return ValueType::Integer;
-        case UnaryAggregateType::Min:
-        case UnaryAggregateType::Max:
-            return arg;
-            return arg;
-        case UnaryAggregateType::Sum:
-            require(arithmetic(arg), "SUM argument should be arithmetic");
-            return arg;
-        default:
-            throwError("not an aggregate");
-    }
+    return util::enum_dispatch(
+        [&]<auto Type>() { return unaryAggregateResultType<Type>(arg); }, type);
 }
 
 class Binder {
@@ -518,7 +521,7 @@ class Binder {
             level = composed(level, arg.level);
         }
 
-        if (auto un_aggr_type = unaryAggregateExprType(e.func)) {
+        if (auto un_aggr_type = unaryAggregateType(e.func)) {
             require(args.size() == 1, "function expects 1 argument");
             require(
                 args[0].level != ExprKindLevel::Group,
@@ -555,8 +558,14 @@ class Binder {
 
         if (e.func == "builtin_percentile") {
             require(args.size() > 1, "PERCENTILE must be given at least one percentile");
-            require(arithmetic(args[0].value_type), "PERCENTILE first argument must be arithmetic");
             require(args[0].level != ExprKindLevel::Group, "PERCENTILE does not accept aggregates");
+            require(
+                dispatch<bool>(
+                    []<typename T>(std::type_identity<T>) {
+                        return PercentileTraits::template allowed<T>();
+                    },
+                    args[0].value_type),
+                "unsupported argument type for PERCENTILE");
 
             std::vector<float> percentiles;
             percentiles.reserve(args.size() - 1);

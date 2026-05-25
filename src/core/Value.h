@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/ValueType.h"
+#include "core/null_t.h"
 #include "core/require.h"
 #include "util/overloaded.h"
 
@@ -10,12 +11,6 @@
 #include <vector>
 
 namespace lsql {
-
-struct null_t {
-    auto operator<=>(const null_t&) const = default;
-};
-
-[[maybe_unused]] static constexpr null_t null{};
 
 class Value {
  public:
@@ -40,15 +35,7 @@ class Value {
     }
 
     ValueType type() const {
-        return std::visit(
-            util::Overloaded{
-                [](null_t) -> ValueType { return ValueType::Null; },
-                [](bool) -> ValueType { return ValueType::Boolean; },
-                [](int64_t) -> ValueType { return ValueType::Integer; },
-                [](float) -> ValueType { return ValueType::Floating; },
-                [](const std::string&) -> ValueType { return ValueType::String; },
-            },
-            val_);
+        return std::visit([]<typename T>(T&&) { return valueType<std::decay_t<T>>(); }, val_);
     }
 
     auto operator<=>(const Value& rhs) const = default;

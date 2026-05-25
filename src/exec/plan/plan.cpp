@@ -227,11 +227,23 @@ class Planner {
             case BinaryExprType::Or:
                 return arc<BinaryScalar<OrOp>>(l, r);
             case BinaryExprType::Divide:
-                return arc<BinaryScalar<DivideOp>>(l, r, info.value_type);
+                return dispatch<ScalarPtr>(
+                    [&]<Dividable T>(std::type_identity<T>) -> ScalarPtr {
+                        return arc<BinaryScalar<DivideOp<T>>>(l, r, info.value_type);
+                    },
+                    info.value_type);
             case BinaryExprType::Add:
-                return arc<BinaryScalar<AddOp>>(l, r, info.value_type);
+                return dispatch<ScalarPtr>(
+                    [&]<Addable T>(std::type_identity<T>) -> ScalarPtr {
+                        return arc<BinaryScalar<AddOp<T>>>(l, r, info.value_type);
+                    },
+                    info.value_type);
             case BinaryExprType::Subtract:
-                return arc<BinaryScalar<SubtractOp>>(l, r, info.value_type);
+                return dispatch<ScalarPtr>(
+                    [&]<Subtractable T>(std::type_identity<T>) -> ScalarPtr {
+                        return arc<BinaryScalar<SubtractOp<T>>>(l, r, info.value_type);
+                    },
+                    info.value_type);
         }
     }
 
@@ -242,11 +254,23 @@ class Planner {
                 case UnaryAggregateType::Count:
                     return arc<UnaryAggregate<CountOp>>(arg);
                 case UnaryAggregateType::Min:
-                    return arc<UnaryAggregate<MinOp>>(arg, info.value_type);
+                    return dispatch<AggregatePtr>(
+                        [&]<Comparable T>(std::type_identity<T>) -> AggregatePtr {
+                            return arc<UnaryAggregate<MinOp<T>>>(arg, info.value_type);
+                        },
+                        info.value_type);
                 case UnaryAggregateType::Max:
-                    return arc<UnaryAggregate<MaxOp>>(arg, info.value_type);
+                    return dispatch<AggregatePtr>(
+                        [&]<Comparable T>(std::type_identity<T>) -> AggregatePtr {
+                            return arc<UnaryAggregate<MaxOp<T>>>(arg, info.value_type);
+                        },
+                        info.value_type);
                 case UnaryAggregateType::Sum:
-                    return arc<UnaryAggregate<SumOp>>(arg, info.value_type);
+                    return dispatch<AggregatePtr>(
+                        [&]<Addable T>(std::type_identity<T>) -> AggregatePtr {
+                            return arc<UnaryAggregate<SumOp<T>>>(arg, info.value_type);
+                        },
+                        info.value_type);
             }
         }();
 
@@ -259,8 +283,13 @@ class Planner {
 
     AggregateProjectorPtr planAggregate(ir::PercentileAggregate a, auto&& info) {
         auto arg = planScalar(std::move(*a.expr));
-        auto aggregate =
-            arc<UnaryAggregate<PercentileOp>>(arg, std::move(a.percentiles), arg->valueType());
+
+        auto aggregate = dispatch<AggregatePtr>(
+            [&]<Comparable T>(std::type_identity<T>) -> AggregatePtr {
+                return arc<UnaryAggregate<PercentileOp<T>>>(
+                    arg, std::move(a.percentiles), arg->valueType());
+            },
+            arg->valueType());
 
         return box(
             AggregateProjector{

@@ -2,9 +2,11 @@
 
 #include "ir/Scalar.h"
 
+#include "core/exprs/BinaryExpr.h"
+#include "core/exprs/UnaryExpr.h"
+
 #include "core/Fields.h"
 #include "core/Value.h"
-#include "core/expressions.h"
 #include "core/types.h"
 
 namespace lsql::ir {

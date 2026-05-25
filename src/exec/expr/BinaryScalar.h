@@ -2,6 +2,8 @@
 
 #include "exec/expr/Scalar.h"
 
+#include "core/exprs/concepts.h"
+
 namespace lsql::exec {
 
 template <typename Op>
@@ -70,21 +72,9 @@ struct OrOp {
     ValueType valueType() const { return ValueType::Boolean; }
 };
 
+template <Dividable T>
 struct DivideOp {
-    Value apply(const Value& l, const Value& r) const {
-        return visit(
-            util::Overloaded{
-                [](int64_t a, int64_t b) -> Value { return a / b; },
-                [](float a, float b) -> Value { return a / b; },
-                [](auto...) -> Value {
-                    assert(false);
-                    throw std::runtime_error("invalid argument types");
-                },
-            },
-            l,
-            r);
-    }
-
+    Value apply(const Value& l, const Value& r) const { return l.get<T>() / r.get<T>(); }
     ValueType argTypeL() const { return type; }
     ValueType argTypeR() const { return type; }
     ValueType valueType() const { return type; }
@@ -92,19 +82,9 @@ struct DivideOp {
     ValueType type;
 };
 
+template <Addable T>
 struct AddOp {
-    Value apply(const Value& l, const Value& r) const {
-        return visit(
-            util::Overloaded{
-                [](int64_t a, int64_t b) -> Value { return a + b; },
-                [](float a, float b) -> Value { return a + b; },
-                [](const std::string& a, const std::string& b) -> Value { return a + b; },
-                [](auto...) -> Value { panic("invalid argument types"); },
-            },
-            l,
-            r);
-    }
-
+    Value apply(const Value& l, const Value& r) const { return l.get<T>() + r.get<T>(); }
     ValueType argTypeL() const { return type; }
     ValueType argTypeR() const { return type; }
     ValueType valueType() const { return type; }
@@ -112,18 +92,9 @@ struct AddOp {
     ValueType type;
 };
 
+template <Subtractable T>
 struct SubtractOp {
-    Value apply(const Value& l, const Value& r) const {
-        return visit(
-            util::Overloaded{
-                [](int64_t a, int64_t b) -> Value { return a - b; },
-                [](float a, float b) -> Value { return a - b; },
-                [](auto...) -> Value { panic("invalid argument types"); },
-            },
-            l,
-            r);
-    }
-
+    Value apply(const Value& l, const Value& r) const { return l.get<T>() - r.get<T>(); }
     ValueType argTypeL() const { return type; }
     ValueType argTypeR() const { return type; }
     ValueType valueType() const { return type; }

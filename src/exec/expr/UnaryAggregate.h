@@ -4,6 +4,8 @@
 #include "exec/expr/Scalar.h"
 #include "exec/prof/Metrics.h"
 #include "exec/prof/OperationHandle.h"
+
+#include "core/exprs/concepts.h"
 #include "util/instrument/Timer.h"
 
 #include <llog/log.h>
@@ -31,7 +33,7 @@ class UnaryAggregate : public Aggregate {
 
         ScalarPtr expr;
         const Op* op;
-        typename Op::State state;
+        typename Op::State state{};
     };
 
  public:
@@ -67,63 +69,65 @@ struct CountOp {
     ValueType valueType() const { return ValueType::Integer; }
 };
 
+template <Comparable T>
 struct MinOp {
-    using State = Value;
+    using State = std::optional<T>;
 
     void update(State* curr, const Value& value) const {
-        if (*curr == null) {
-            *curr = value;
+        auto&& next = value.get<T>();
+        if (curr->has_value()) {
+            *curr = std::min(**curr, next);
         } else {
-            *curr = std::min(*curr, value);
+            *curr = next;
         }
     }
 
-    Value result(const State* state) const { return *state; }
+    Value result(const State* state) const {
+        if (state->has_value()) {
+            return std::move(**state);
+        }
+
+        return null;
+    }
+
     ValueType argType() const { return type; }
     ValueType valueType() const { return type; }
 
     ValueType type;
 };
 
+template <Comparable T>
 struct MaxOp {
-    using State = Value;
+    using State = std::optional<T>;
 
     void update(State* curr, const Value& value) const {
-        if (*curr == null) {
-            *curr = value;
+        auto&& next = value.get<T>();
+        if (curr->has_value()) {
+            *curr = std::max(**curr, next);
         } else {
-            *curr = std::max(*curr, value);
+            *curr = next;
         }
     }
 
-    Value result(const State* state) const { return *state; }
+    Value result(const State* state) const {
+        if (state->has_value()) {
+            return std::move(**state);
+        }
+
+        return null;
+    }
+
     ValueType argType() const { return type; }
     ValueType valueType() const { return type; }
 
     ValueType type;
 };
 
+template <Addable T>
 struct SumOp {
-    using State = Value;
+    using State = T;
 
-    void update(State* curr, const Value& value) const {
-        if (*curr == null) {
-            *curr = value;
-            return;
-        }
-
-        *curr = visit(
-            util::Overloaded{
-                [](int64_t a, int64_t b) -> Value { return a + b; },
-                [](float a, float b) -> Value { return a + b; },
-                [](auto...) -> Value {
-                    assert(false);
-                    throw std::runtime_error("invalid argument types");
-                }},
-            *curr,
-            value);
-    }
-
+    void update(State* curr, const Value& value) const { *curr += value.get<T>(); }
     Value result(const State* state) const { return *state; }
     ValueType argType() const { return type; }
     ValueType valueType() const { return type; }
@@ -131,11 +135,12 @@ struct SumOp {
     ValueType type;
 };
 
+template <Comparable T>
 struct PercentileOp {
     struct State {
         State() : info(prof::currentOperation().addTransientMetric<prof::Message>()) {}
 
-        std::vector<Value> values;
+        std::vector<T> values;
         prof::Message* info;
     };
 
@@ -146,27 +151,14 @@ struct PercentileOp {
         }(std::move(perc)))
         , type(type) {}
 
-    void update(State* curr, const Value& value) const { curr->values.push_back(value); }
+    void update(State* curr, const Value& value) const { curr->values.push_back(value.get<T>()); }
 
     Value result(State* state) const {
-        std::vector<float> result;
+        std::vector<T> result;
         result.reserve(percentiles.size());
 
         std::ptrdiff_t size = static_cast<std::ptrdiff_t>(state->values.size());
         auto left = state->values.begin();
-
-        auto get = [](auto&& v) {
-            return visit(
-                util::Overloaded{
-                    [](float x) -> float { return x; },
-                    [](int64_t x) -> float { return float(x); },
-                    [](auto&&) -> float {
-                        assert(false);
-                        throw std::runtime_error("invalid types");
-                    },
-                },
-                v);
-        };
 
         constexpr float threshold = 1e-6;
 
@@ -187,21 +179,8 @@ struct PercentileOp {
             auto it = std::next(state->values.begin(), pos);
             assert(left <= it);
 
-            std::nth_element(left, it, state->values.end(), [](auto&& l, auto&& r) {
-                return visit(
-                    util::Overloaded{
-                        [](float x, float y) { return x < y; },
-                        [](int64_t x, int64_t y) { return x < y; },
-                        [](auto&&...) -> bool {
-                            assert(false);
-                            throw std::runtime_error("invalid types");
-                        },
-                    },
-                    l,
-                    r);
-            });
-
-            result.push_back(get(*it));
+            std::nth_element(left, it, state->values.end());
+            result.push_back(*it);
         }
 
         if (result.empty()) {
@@ -218,7 +197,7 @@ struct PercentileOp {
 
         std::stringstream ss;
         ss << '[';
-        for (float p : result) {
+        for (auto&& p : result) {
             ss << p << ',';
         }
         ss.seekp(-1, std::ios_base::end);  // remove last ','
