@@ -49,13 +49,16 @@ class MarkJoin : public OperationBase<MarkJoin> {
         , match_source_(std::move(match_source))
         , proj_(std::move(proj))
         , output_field_id_(output_field_id)
-        , match_field_id_(match_field_id) {}
+        , match_field_id_(match_field_id) {
+        prof_.registerMetric(&match_set_size_);
+    }
 
  private:
     bool consumeMatch(int phase, const Record* record) {
         verify(phase == match_phase_);
 
         if (record == nullptr) {
+            match_set_size_.counter.set(values_.size());
             // not emitting because it's not the last phase
             return false;
         }
@@ -66,6 +69,7 @@ class MarkJoin : public OperationBase<MarkJoin> {
 
     bool consumeSource(int phase, const Record* record) {
         if (record == nullptr) {
+            match_set_size_.counter.set(values_.size());
             cleanIfDone(phase);
             return emit(phase, nullptr);
         }
@@ -140,6 +144,7 @@ class MarkJoin : public OperationBase<MarkJoin> {
     ScalarPtr proj_;
     FieldId output_field_id_;
     FieldId match_field_id_;
+    prof::NamedCounter<size_t> match_set_size_{"match set size", size_t(0)};
 
     MemberSubscriber<MarkJoin> sub_source_{
         this,

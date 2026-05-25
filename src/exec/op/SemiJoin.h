@@ -20,13 +20,16 @@ class SemiJoin : public OperationBase<SemiJoin> {
         , source_(std::move(source))
         , match_source_(std::move(match_source))
         , proj_(std::move(proj))
-        , match_field_id_(match_field_id) {}
+        , match_field_id_(match_field_id) {
+        prof_.registerMetric(&match_set_size_);
+    }
 
  private:
     bool consumeMatch(int phase, const Record* record) {
         verify(phase == match_phase_);
 
         if (record == nullptr) {
+            match_set_size_.counter.set(values_.size());
             // not emitting because it's not the last phase
             return false;
         }
@@ -37,6 +40,7 @@ class SemiJoin : public OperationBase<SemiJoin> {
 
     bool consumeSource(int phase, const Record* record) {
         if (record == nullptr) {
+            match_set_size_.counter.set(values_.size());
             cleanIfDone(phase);
             return emit(phase, nullptr);
         }
@@ -114,6 +118,7 @@ class SemiJoin : public OperationBase<SemiJoin> {
     OperationPtr match_source_;
     ScalarPtr proj_;
     FieldId match_field_id_;
+    prof::NamedCounter<size_t> match_set_size_{"match set size", size_t(0)};
 
     MemberSubscriber<SemiJoin> sub_source_{
         this,

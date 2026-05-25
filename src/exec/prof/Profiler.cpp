@@ -1,11 +1,15 @@
 #include "exec/prof/Profiler.h"
 #include "exec/op/Operation.h"
 
+#include "util/StrBuilder.h"
+
 #include <format>
 #include <sstream>
 #include <unordered_map>
 
 namespace lsql::exec::prof {
+
+using util::StrBuilder;
 
 namespace {
 
@@ -53,43 +57,27 @@ OperationHandle Profiler::registerOperationImpl(const Operation* self) {
 }
 
 std::string Profiler::reportImpl() {
-    std::stringstream ss;
+    auto ops_b = StrBuilder();
 
     for (auto&& [op, stats] : stats_) {
-        std::stringstream oss;
+        auto out_b = StrBuilder();
 
+        bool any_stats = false;
         for (size_t t = 0; t < num_threads_; ++t) {
             auto* tstats = stats.thread(t);
             if (tstats->empty()) {
                 continue;
             }
 
-            oss << std::format("    [thread={}]\n", t);
-            oss << std::format("      records_out: {}\n", tstats->records_out);
-            oss << std::format("      emit profile: {}\n", tstats->emit_profile.format());
+            any_stats = true;
+            out_b.item(StrBuilder("[thread={}]", t)
+                           .block(StrBuilder("records_out: {}", tstats->records_out))
+                           .block(StrBuilder("emit_profile: {}", tstats->emit_profile.format())));
         }
 
-        if (!oss.str().empty() && (!stats.metrics().empty() || !stats.transientMetrics().empty())) {
-            if (!stats.metrics().empty()) {
-                oss << std::format("  - metrics:\n");
-
-                for (auto&& metric : stats.metrics()) {
-                    oss << std::format("      {}\n", metric->format());
-                }
-            }
-            if (!stats.transientMetrics().empty()) {
-                oss << std::format("  - transient:\n");
-
-                for (auto&& metric : stats.transientMetrics()) {
-                    oss << std::format("      {}\n", metric->format());
-                }
-            }
-        }
-
-        std::stringstream ass;
-
+        auto inp_b = StrBuilder();
         for (auto&& [_, istats] : stats.inputs()) {
-            std::stringstream iss;
+            auto in_b = StrBuilder();
 
             for (size_t t = 0; t < num_threads_; ++t) {
                 auto* istat = istats.thread(t);
@@ -97,28 +85,47 @@ std::string Profiler::reportImpl() {
                     continue;
                 }
 
-                iss << std::format("    [thread={}]\n", t);
-                iss << std::format("      records_in: {}\n", istat->records_in);
-                iss << std::format("      consume profile: {}\n", istat->consume_profile.format());
+                any_stats = true;
+                in_b.item(
+                    StrBuilder("[thread={}]", t)
+                        .child(StrBuilder("records_in: {}", istat->records_in))
+                        .child(StrBuilder("consume_profile: {}", istat->consume_profile.format())));
             }
 
-            if (!iss.str().empty()) {
-                ass << "  - input\n" << iss.str();
+            if (!in_b.empty()) {
+                inp_b.item(StrBuilder("input").block(in_b));
             }
         }
 
-        if (!oss.str().empty() || !ass.str().empty()) {
-            ss << std::format("Operation {}\n", op->name());
+        auto metr_b = StrBuilder();
+        if (any_stats && (!stats.metrics().empty() || !stats.transientMetrics().empty())) {
+            for (auto&& metric : stats.metrics()) {
+                metr_b.child(metric->format());
+            }
+            for (auto&& metric : stats.transientMetrics()) {
+                metr_b.child(metric->format());
+            }
         }
-        if (!oss.str().empty()) {
-            ss << "  - output\n" << oss.str();
+
+        if (out_b.empty() && inp_b.empty() && metr_b.empty()) {
+            continue;
         }
-        if (!ass.str().empty()) {
-            ss << ass.str();
+
+        auto b = StrBuilder("operation {}", op->name());
+        if (!inp_b.empty()) {
+            b.child(StrBuilder("inputs").block(inp_b));
         }
+        if (!metr_b.empty()) {
+            b.child(StrBuilder("metrics").block(metr_b));
+        }
+        if (!out_b.empty()) {
+            b.child(StrBuilder("outputs").block(out_b));
+        }
+
+        ops_b.item(b);
     }
 
-    return ss.str();
+    return ops_b.render();
 }
 
 void Profiler::resetImpl() {
