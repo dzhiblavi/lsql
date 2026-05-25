@@ -12,9 +12,9 @@
 #include "iface/sql/lower/lower.h"
 #include "iface/sql/parser/parse.h"
 
-#include "ir/Expressions.h"  // IWYU pragma: keep
-#include "ir/Relations.h"    // IWYU pragma: keep
-#include "ir/Statement.h"    // IWYU pragma: keep
+#include "ir/Relations.h"  // IWYU pragma: keep
+#include "ir/Scalars.h"    // IWYU pragma: keep
+#include "ir/Statement.h"  // IWYU pragma: keep
 
 #include "iface/sql/bind/Expressions.h"  // IWYU pragma: keep
 #include "iface/sql/bind/Relations.h"    // IWYU pragma: keep

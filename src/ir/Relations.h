@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ir/Expr.h"
 #include "ir/Aggregate.h"
 #include "ir/Relation.h"
+#include "ir/Scalar.h"
 
 #include "core/Fields.h"
 #include "core/Value.h"
@@ -14,7 +14,7 @@ namespace lsql::ir {
 
 struct Projector {
     FieldId alias_field_id;
-    Box<Expr> expr;
+    Box<Scalar> expr;
 };
 
 struct ValuesRelation {
@@ -45,26 +45,26 @@ struct LimitRelation {
 
 struct FilterRelation {
     Box<Relation> source;
-    Box<Expr> condition;
+    Box<Scalar> condition;
 };
 
 struct SortRelation {
     Box<Relation> source;
-    std::vector<Expr> order_list;
+    std::vector<Scalar> order_list;
     bool desc;
 };
 
 struct SemiJoinRelation {
     Box<Relation> source;
     Box<Relation> match;
-    Box<Expr> expr;
+    Box<Scalar> expr;
     FieldId match_field_id;
 };
 
 struct MarkJoinRelation {
     Box<Relation> source;
     Box<Relation> match;
-    Box<Expr> expr;
+    Box<Scalar> expr;
     FieldId output_field_id;
     FieldId match_field_id;
 };
@@ -77,7 +77,7 @@ struct UnionAllRelation {
 struct UnionAllSortedByRelation {
     Box<Relation> left;
     Box<Relation> right;
-    std::vector<Expr> order_list;
+    std::vector<Scalar> order_list;
     bool desc;
 };
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ir/Aggregate.h"
-#include "ir/Expr.h"
+#include "ir/Scalar.h"
 
 #include "core/expressions.h"
 #include "core/Fields.h"
@@ -9,13 +9,13 @@
 
 namespace lsql::ir {
 
-struct ScalarAggregate {
+struct UnaryAggregate {
     UnaryAggregateExprType type;
-    Box<Expr> expr;
+    Box<Scalar> expr;
 };
 
 struct PercentileAggregate {
-    Box<Expr> expr;
+    Box<Scalar> expr;
     std::vector<float> percentiles;
 };
 

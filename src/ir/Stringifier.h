@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ir/Aggregates.h"   // IWYU pragma: keep
-#include "ir/Expressions.h"  // IWYU pragma: keep
-#include "ir/Relations.h"    // IWYU pragma: keep
-#include "ir/Statement.h"    // IWYU pragma: keep
+#include "ir/Aggregates.h"  // IWYU pragma: keep
+#include "ir/Relations.h"   // IWYU pragma: keep
+#include "ir/Scalars.h"     // IWYU pragma: keep
+#include "ir/Statement.h"   // IWYU pragma: keep
 
 #include "util/StrBuilder.h"
 #include "util/string.h"
@@ -142,7 +142,7 @@ class Stringifier {
         return b;
     }
 
-    StrBuilder print(const std::vector<Expr>& es) {
+    StrBuilder print(const std::vector<Scalar>& es) {
         auto b = StrBuilder();
         for (auto&& e : es) {
             b.item(print(e));
@@ -172,7 +172,7 @@ class Stringifier {
         return StrBuilder("MaterializeRelation").child(print(*r.relation));
     }
 
-    StrBuilder print(const Expr& e) {
+    StrBuilder print(const Scalar& e) {
         return std::visit(
             [this, &e](auto&& arg) {
                 return print(arg).child(
@@ -191,45 +191,45 @@ class Stringifier {
             e.node);
     }
 
-    StrBuilder print(const FieldExpr& e) {
-        return StrBuilder("FieldExpr id={} name={}", e.field_id, binding_->name(e.field_id));
+    StrBuilder print(const FieldScalar& e) {
+        return StrBuilder("FieldScalar id={} name={}", e.field_id, binding_->name(e.field_id));
     }
 
-    StrBuilder print(const ValueExpr& e) {
+    StrBuilder print(const ValueScalar& e) {
         return StrBuilder(
-            "ValueExpr {} (type {})", to_string(e.value), magic_enum::enum_name(e.value.type()));
+            "ValueScalar {} (type {})", to_string(e.value), magic_enum::enum_name(e.value.type()));
     }
 
-    StrBuilder print(const CoalesceExpr& e) {
-        return StrBuilder("CoalesceExpr").child(StrBuilder("expressions").block(print(e.args)));
+    StrBuilder print(const CoalesceScalar& e) {
+        return StrBuilder("CoalesceScalar").child(StrBuilder("expressions").block(print(e.args)));
     }
 
-    StrBuilder print(const CastExpr& e) {
-        return StrBuilder("CastExpr to type {}", magic_enum::enum_name(e.cast_to))
+    StrBuilder print(const CastScalar& e) {
+        return StrBuilder("CastScalar to type {}", magic_enum::enum_name(e.cast_to))
             .child(print(*e.expr));
     }
 
-    StrBuilder print(const LikeExpr& e) {
-        return StrBuilder("LikeExpr '{}'", e.regex).child(print(*e.expr));
+    StrBuilder print(const LikeScalar& e) {
+        return StrBuilder("LikeScalar '{}'", e.regex).child(print(*e.expr));
     }
 
-    StrBuilder print(const RSubstrExpr& e) {
-        return StrBuilder("RSubstrExpr regex='{}'", e.regex).child(print(*e.expr));
+    StrBuilder print(const RSubstrScalar& e) {
+        return StrBuilder("RSubstrScalar regex='{}'", e.regex).child(print(*e.expr));
     }
 
-    StrBuilder print(const BinaryExpr& e) {
-        return StrBuilder("BinaryExpr type: {}", magic_enum::enum_name(e.type))
+    StrBuilder print(const BinaryScalar& e) {
+        return StrBuilder("BinaryScalar type: {}", magic_enum::enum_name(e.type))
             .item(StrBuilder("left").child(print(*e.left)))
             .item(StrBuilder("right").child(print(*e.right)));
     }
 
-    StrBuilder print(const UnaryExpr& e) {
-        return StrBuilder("UnaryExpr type: {}", magic_enum::enum_name(e.type))
+    StrBuilder print(const UnaryScalar& e) {
+        return StrBuilder("UnaryScalar type: {}", magic_enum::enum_name(e.type))
             .child(print(*e.expr));
     }
 
-    StrBuilder print(const ScalarAggregate& e) {
-        return StrBuilder("ScalarAggregate type={}", magic_enum::enum_name(e.type))
+    StrBuilder print(const UnaryAggregate& e) {
+        return StrBuilder("UnaryAggregate type={}", magic_enum::enum_name(e.type))
             .child(print(*e.expr));
     }
 

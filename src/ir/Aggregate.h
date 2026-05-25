@@ -4,11 +4,11 @@
 
 namespace lsql::ir {
 
-struct ScalarAggregate;
+struct UnaryAggregate;
 struct PercentileAggregate;
 
 using AggregateNode = std::variant< //
-    ScalarAggregate, //
+    UnaryAggregate, //
     PercentileAggregate //
 >;
 

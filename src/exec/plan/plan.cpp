@@ -23,8 +23,8 @@
 #include "exec/op/Values.h"
 
 #include "ir/Aggregates.h"
-#include "ir/Expressions.h"
 #include "ir/Relations.h"
+#include "ir/Scalars.h"
 #include "ir/Statement.h"
 
 #include "core/require.h"
@@ -54,9 +54,9 @@ class Planner {
             std::move(s.node), [&](auto node) { return planRelation(std::move(node), s); });
     }
 
-    ScalarPtr planExpr(ir::Expr s) {
+    ScalarPtr planScalar(ir::Scalar s) {
         return util::match(
-            std::move(s.node), [&](auto node) { return planExpr(std::move(node), s); });
+            std::move(s.node), [&](auto node) { return planScalar(std::move(node), s); });
     }
 
     AggregateProjectorPtr planAggregate(ir::Aggregate s) {
@@ -105,7 +105,7 @@ class Planner {
 
     OperationPtr planRelation(ir::FilterRelation r, auto& /*info*/) {
         return filter(
-            planRelation(std::move(*r.source)), planExpr(std::move(*r.condition)), binding_);
+            planRelation(std::move(*r.source)), planScalar(std::move(*r.condition)), binding_);
     }
 
     OperationPtr planRelation(ir::SortRelation r, auto& /*info*/) {
@@ -120,7 +120,7 @@ class Planner {
         return semiJoin(
             planRelation(std::move(*r.source)),
             planRelation(std::move(*r.match)),
-            planExpr(std::move(*r.expr)),
+            planScalar(std::move(*r.expr)),
             r.match_field_id,
             binding_);
     }
@@ -129,7 +129,7 @@ class Planner {
         return markJoin(
             planRelation(std::move(*r.source)),
             planRelation(std::move(*r.match)),
-            planExpr(std::move(*r.expr)),
+            planScalar(std::move(*r.expr)),
             r.output_field_id,
             r.match_field_id,
             binding_);
@@ -179,33 +179,33 @@ class Planner {
         return src;
     }
 
-    ScalarPtr planExpr(ir::FieldExpr e, auto& info) {
+    ScalarPtr planScalar(ir::FieldScalar e, auto& info) {
         return arc<IdentifierScalar>(e.field_id, info.value_type);
     }
 
-    ScalarPtr planExpr(ir::ValueExpr e, auto& /*info*/) { return arc<ValueScalar>(e.value); }
+    ScalarPtr planScalar(ir::ValueScalar e, auto& /*info*/) { return arc<ValueScalar>(e.value); }
 
-    ScalarPtr planExpr(ir::CoalesceExpr e, auto& /*info*/) {
+    ScalarPtr planScalar(ir::CoalesceScalar e, auto& /*info*/) {
         return arc<CoalesceScalar>(expressionList(std::move(e.args)));
     }
 
-    ScalarPtr planExpr(ir::CastExpr e, auto& /*info*/) {
-        auto arg = planExpr(std::move(*e.expr));
+    ScalarPtr planScalar(ir::CastScalar e, auto& /*info*/) {
+        auto arg = planScalar(std::move(*e.expr));
         return arc<UnaryScalar<CastOp>>(arg, arg->valueType(), e.cast_to);
     }
 
-    ScalarPtr planExpr(ir::LikeExpr e, auto& /*info*/) {
-        auto arg = planExpr(std::move(*e.expr));
+    ScalarPtr planScalar(ir::LikeScalar e, auto& /*info*/) {
+        auto arg = planScalar(std::move(*e.expr));
         return arc<UnaryScalar<LikeOp>>(arg, e.regex);
     }
 
-    ScalarPtr planExpr(ir::RSubstrExpr e, auto& /*info*/) {
-        auto arg = planExpr(std::move(*e.expr));
+    ScalarPtr planScalar(ir::RSubstrScalar e, auto& /*info*/) {
+        auto arg = planScalar(std::move(*e.expr));
         return arc<UnaryScalar<RSubstrOp>>(arg, e.regex);
     }
 
-    ScalarPtr planExpr(ir::UnaryExpr e, auto& /*info*/) {
-        auto arg = planExpr(std::move(*e.expr));
+    ScalarPtr planScalar(ir::UnaryScalar e, auto& /*info*/) {
+        auto arg = planScalar(std::move(*e.expr));
 
         switch (e.type) {
             case UnaryExprType::BooleanNegate:
@@ -213,9 +213,9 @@ class Planner {
         }
     }
 
-    ScalarPtr planExpr(ir::BinaryExpr e, auto& info) {
-        auto l = planExpr(std::move(*e.left));
-        auto r = planExpr(std::move(*e.right));
+    ScalarPtr planScalar(ir::BinaryScalar e, auto& info) {
+        auto l = planScalar(std::move(*e.left));
+        auto r = planScalar(std::move(*e.right));
 
         switch (e.type) {
             case BinaryExprType::Equal:
@@ -235,8 +235,8 @@ class Planner {
         }
     }
 
-    AggregateProjectorPtr planAggregate(ir::ScalarAggregate a, auto&& info) {
-        auto arg = planExpr(std::move(*a.expr));
+    AggregateProjectorPtr planAggregate(ir::UnaryAggregate a, auto&& info) {
+        auto arg = planScalar(std::move(*a.expr));
         auto aggregate = [&] -> AggregatePtr {
             switch (a.type) {
                 case UnaryAggregateExprType::Count:
@@ -258,7 +258,7 @@ class Planner {
     }
 
     AggregateProjectorPtr planAggregate(ir::PercentileAggregate a, auto&& info) {
-        auto arg = planExpr(std::move(*a.expr));
+        auto arg = planScalar(std::move(*a.expr));
         auto aggregate =
             arc<UnaryAggregate<PercentileOp>>(arg, std::move(a.percentiles), arg->valueType());
 
@@ -270,14 +270,14 @@ class Planner {
     }
 
     ScalarProjectorPtr planProjector(ir::Projector p) {
-        return box<ScalarProjector>(p.alias_field_id, planExpr(std::move(*p.expr)));
+        return box<ScalarProjector>(p.alias_field_id, planScalar(std::move(*p.expr)));
     }
 
-    std::vector<ScalarPtr> expressionList(std::vector<ir::Expr> list) {
+    std::vector<ScalarPtr> expressionList(std::vector<ir::Scalar> list) {
         std::vector<ScalarPtr> exprs;
         exprs.reserve(list.size());
         for (auto&& item : list) {
-            exprs.push_back(planExpr(std::move(item)));
+            exprs.push_back(planScalar(std::move(item)));
         }
         return exprs;
     }

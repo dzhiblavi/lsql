@@ -5,9 +5,9 @@
 #include "iface/sql/bind/Relations.h"    // IWYU pragma: keep
 #include "iface/sql/bind/Statement.h"    // IWYU pragma: keep
 
-#include "ir/Aggregates.h"   // IWYU pragma: keep
-#include "ir/Expressions.h"  // IWYU pragma: keep
-#include "ir/Relations.h"    // IWYU pragma: keep
+#include "ir/Aggregates.h"  // IWYU pragma: keep
+#include "ir/Relations.h"   // IWYU pragma: keep
+#include "ir/Scalars.h"     // IWYU pragma: keep
 
 #include "core/require.h"
 #include "util/Pinned.h"
@@ -49,7 +49,7 @@ class Lowerer {
 
  private:
     // Expression tree + all its aggregates (leaves with their own expression subtrees)
-    using BindExprResult = std::pair<ir::Expr, std::vector<ir::Aggregate>>;
+    using BindExprResult = std::pair<ir::Scalar, std::vector<ir::Aggregate>>;
 
     ir::Statement bindStatement(bind::Statement r) {
         return util::match(std::move(r), [this](auto r) { return bindStatement(std::move(r)); });
@@ -320,7 +320,7 @@ class Lowerer {
     BindExprResult bindExpr(bind::IdentifierExpr e, auto& info) {
         return BindExprResult(
             {
-                .node = ir::FieldExpr{.field_id = e.field_id},
+                .node = ir::FieldScalar{.field_id = e.field_id},
                 .value_type = info.value_type,
             },
             {});
@@ -329,7 +329,7 @@ class Lowerer {
     BindExprResult bindExpr(bind::ValueExpr e, auto& info) {
         return BindExprResult(
             {
-                .node = ir::ValueExpr{.value = std::move(e.value)},
+                .node = ir::ValueScalar{.value = std::move(e.value)},
                 .value_type = info.value_type,
             },
             {});
@@ -341,7 +341,7 @@ class Lowerer {
         return BindExprResult(
             {
                 .node =
-                    ir::CastExpr{
+                    ir::CastScalar{
                         .cast_to = e.cast_to,
                         .expr = box(std::move(arg)),
                     },
@@ -376,7 +376,7 @@ class Lowerer {
 
         return BindExprResult(
             {
-                .node = ir::FieldExpr{.field_id = output_id},
+                .node = ir::FieldScalar{.field_id = output_id},
                 .value_type = ValueType::Boolean,
             },
             {});
@@ -388,7 +388,7 @@ class Lowerer {
         return BindExprResult(
             {
                 .node =
-                    ir::LikeExpr{
+                    ir::LikeScalar{
                         .expr = box(std::move(arg)),
                         .regex = std::move(e.regex),
                     },
@@ -405,7 +405,7 @@ class Lowerer {
         std::vector<ir::Aggregate> aggrs;
         aggrs.push_back({
             .node =
-                ir::ScalarAggregate{
+                ir::UnaryAggregate{
                     .type = e.type,
                     .expr = box(std::move(expr)),
                 },
@@ -415,7 +415,7 @@ class Lowerer {
 
         return BindExprResult(
             {
-                .node = ir::FieldExpr{.field_id = output_field_id},
+                .node = ir::FieldScalar{.field_id = output_field_id},
                 .value_type = info.value_type,
             },
             std::move(aggrs));
@@ -427,7 +427,7 @@ class Lowerer {
         return BindExprResult(
             {
                 .node =
-                    ir::RSubstrExpr{
+                    ir::RSubstrScalar{
                         .expr = box(std::move(expr)),
                         .regex = std::move(e.regex),
                     },
@@ -441,7 +441,7 @@ class Lowerer {
 
         return BindExprResult(
             {
-                .node = ir::CoalesceExpr{.args = std::move(exprs)},
+                .node = ir::CoalesceScalar{.args = std::move(exprs)},
                 .value_type = info.value_type,
             },
             std::move(aggregates));
@@ -464,8 +464,8 @@ class Lowerer {
         });
 
         return BindExprResult(
-            ir::Expr{
-                .node = ir::FieldExpr{.field_id = output_field_id},
+            ir::Scalar{
+                .node = ir::FieldScalar{.field_id = output_field_id},
                 .value_type = ValueType::String,
             },
             std::move(aggrs));
@@ -478,7 +478,7 @@ class Lowerer {
         return BindExprResult(
             {
                 .node =
-                    ir::BinaryExpr{
+                    ir::BinaryScalar{
                         .type = e.type,
                         .left = box(std::move(left)),
                         .right = box(std::move(right)),
@@ -494,7 +494,7 @@ class Lowerer {
         return BindExprResult(
             {
                 .node =
-                    ir::UnaryExpr{
+                    ir::UnaryScalar{
                         .type = e.type,
                         .expr = box(std::move(arg)),
                     },
@@ -513,8 +513,8 @@ class Lowerer {
                         ir::Projector{
                             .alias_field_id = id,
                             .expr =
-                                box(ir::Expr{
-                                    .node = ir::FieldExpr{.field_id = id},
+                                box(ir::Scalar{
+                                    .node = ir::FieldScalar{.field_id = id},
                                     .value_type = binding_->type(id),
                                 }),
                         });
@@ -525,8 +525,8 @@ class Lowerer {
                     ir::Projector{
                         .alias_field_id = p.field_id,
                         .expr =
-                            box(ir::Expr{
-                                .node = ir::FieldExpr{.field_id = p.field_id},
+                            box(ir::Scalar{
+                                .node = ir::FieldScalar{.field_id = p.field_id},
                                 .value_type = binding_->type(p.field_id),
                             }),
                     });
@@ -555,9 +555,9 @@ class Lowerer {
         return std::make_pair(std::move(exprs), std::move(aggrs));
     }
 
-    std::pair<std::vector<ir::Expr>, std::vector<ir::Aggregate>> bindExprs(
+    std::pair<std::vector<ir::Scalar>, std::vector<ir::Aggregate>> bindExprs(
         std::vector<bind::Expr> es) {
-        std::vector<ir::Expr> exprs;
+        std::vector<ir::Scalar> exprs;
         exprs.reserve(es.size());
         std::vector<ir::Aggregate> aggrs;
 
