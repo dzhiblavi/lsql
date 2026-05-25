@@ -44,6 +44,17 @@ class Filter : public OperationBase<Filter> {
         return ExplanationItem().line(description(ctx.phase)).child(source);
     }
 
+    static bool trueish(const Value& val) {
+        return val.visit(
+            util::Overloaded{
+                [](const std::string& s) { return !s.empty(); },
+                [](bool b) { return b; },
+                [](int64_t x) { return x != 0; },
+                [](float x) { return abs(x) > 1e-6f; },
+                [](null_t) { return false; },
+            });
+    }
+
     OperationPtr source_;
     ScalarPtr condition_;
     MemberSubscriber<Filter> sub_{

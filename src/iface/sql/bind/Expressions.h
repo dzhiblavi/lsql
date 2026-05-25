@@ -1,6 +1,7 @@
 #pragma once
 
 #include "iface/sql/bind/Expr.h"
+#include "iface/sql/bind/ExprKindLevel.h"
 #include "iface/sql/bind/Relation.h"
 
 #include "core/Fields.h"
@@ -59,7 +60,7 @@ struct BinaryExpr {
 };
 
 struct UnaryAggregateExpr {
-    UnaryAggregateExprType type;
+    UnaryAggregateType type;
     Box<Expr> expr;
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/ValueType.h"
+#include "core/require.h"
 #include "util/overloaded.h"
 
 #include <cassert>
@@ -33,10 +34,9 @@ class Value {
 
     template <typename T>
     const T& get() const {
-        if (const T* val = std::get_if<T>(&val_)) {
-            return *val;
-        }
-        throw std::runtime_error("type mismatch");
+        const T* val = std::get_if<T>(&val_);
+        require(val != nullptr, "type mismatch");
+        return *val;
     }
 
     ValueType type() const {
@@ -84,17 +84,6 @@ inline std::string to_string(const Value& val) {
             [](int64_t x) -> std::string { return std::to_string(x); },
             [](float x) -> std::string { return std::to_string(x); },
             [](const std::string& x) -> std::string { return x; },
-        });
-}
-
-inline bool trueish(const Value& val) {
-    return val.visit(
-        util::Overloaded{
-            [](const std::string& s) { return !s.empty(); },
-            [](bool b) { return b; },
-            [](int64_t x) { return x != 0; },
-            [](float x) { return abs(x) > 1e-6f; },
-            [](null_t) { return false; },
         });
 }
 

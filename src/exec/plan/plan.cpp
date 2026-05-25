@@ -239,13 +239,13 @@ class Planner {
         auto arg = planScalar(std::move(*a.expr));
         auto aggregate = [&] -> AggregatePtr {
             switch (a.type) {
-                case UnaryAggregateExprType::Count:
+                case UnaryAggregateType::Count:
                     return arc<UnaryAggregate<CountOp>>(arg);
-                case UnaryAggregateExprType::Min:
+                case UnaryAggregateType::Min:
                     return arc<UnaryAggregate<MinOp>>(arg, info.value_type);
-                case UnaryAggregateExprType::Max:
+                case UnaryAggregateType::Max:
                     return arc<UnaryAggregate<MaxOp>>(arg, info.value_type);
-                case UnaryAggregateExprType::Sum:
+                case UnaryAggregateType::Sum:
                     return arc<UnaryAggregate<SumOp>>(arg, info.value_type);
             }
         }();

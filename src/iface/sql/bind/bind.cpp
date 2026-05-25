@@ -22,6 +22,19 @@ namespace lsql::iface::sql::bind {
 
 namespace {
 
+bool arithmetic(ValueType type) {
+    switch (type) {
+        case ValueType::String:
+        case ValueType::Boolean:
+        case ValueType::Null:
+            return false;
+
+        case ValueType::Integer:
+        case ValueType::Floating:
+            return true;
+    }
+}
+
 UnaryExprType exprType(ast::UnaryExprType ast) {
     switch (ast) {
         case ast::UnaryExprType::Not:
@@ -88,28 +101,28 @@ ValueType valueType(ValueType l, ValueType r, BinaryExprType type) {
     }
 }
 
-std::optional<UnaryAggregateExprType> unaryAggregateExprType(std::string_view fn_name) {
-    static constexpr std::array<std::pair<std::string_view, UnaryAggregateExprType>, 4> Types{
-        std::make_pair("builtin_count", UnaryAggregateExprType::Count),
-        std::make_pair("builtin_min", UnaryAggregateExprType::Min),
-        std::make_pair("builtin_max", UnaryAggregateExprType::Max),
-        std::make_pair("builtin_sum", UnaryAggregateExprType::Sum),
+std::optional<UnaryAggregateType> unaryAggregateExprType(std::string_view fn_name) {
+    static constexpr std::array<std::pair<std::string_view, UnaryAggregateType>, 4> Types{
+        std::make_pair("builtin_count", UnaryAggregateType::Count),
+        std::make_pair("builtin_min", UnaryAggregateType::Min),
+        std::make_pair("builtin_max", UnaryAggregateType::Max),
+        std::make_pair("builtin_sum", UnaryAggregateType::Sum),
     };
 
     auto it = std::ranges::find(Types, fn_name, [](auto&& p) { return p.first; });
     return it == Types.end() ? std::nullopt : std::optional(it->second);
 }
 
-ValueType unaryAggregateValueType(UnaryAggregateExprType type, ValueType arg) {
+ValueType unaryAggregateValueType(UnaryAggregateType type, ValueType arg) {
     switch (type) {
-        case UnaryAggregateExprType::Count:
+        case UnaryAggregateType::Count:
             require(arg == ValueType::Boolean, "COUNT argument should be boolean");
             return ValueType::Integer;
-        case UnaryAggregateExprType::Min:
-        case UnaryAggregateExprType::Max:
+        case UnaryAggregateType::Min:
+        case UnaryAggregateType::Max:
             return arg;
             return arg;
-        case UnaryAggregateExprType::Sum:
+        case UnaryAggregateType::Sum:
             require(arithmetic(arg), "SUM argument should be arithmetic");
             return arg;
         default:

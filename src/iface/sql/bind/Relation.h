@@ -26,4 +26,4 @@ using RelationNode = std::variant< //
 
 struct Relation;
 
-}  // namespace lsql::iface::sql::ast
+}  // namespace lsql::iface::sql::bind

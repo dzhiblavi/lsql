@@ -3,14 +3,14 @@
 #include "ir/Aggregate.h"
 #include "ir/Scalar.h"
 
-#include "core/expressions.h"
 #include "core/Fields.h"
+#include "core/expressions.h"
 #include "core/types.h"
 
 namespace lsql::ir {
 
 struct UnaryAggregate {
-    UnaryAggregateExprType type;
+    UnaryAggregateType type;
     Box<Scalar> expr;
 };
 
