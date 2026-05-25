@@ -1,0 +1,7 @@
+{"count":4,"test_index":1}
+
+{"max_ts":"2026-May-06 12:00:04","min_ts":"2026-May-06 12:00:01","test_index":2}
+
+{"max_uid":"ddd","min_uid":"aaa","test_index":3}
+
+{"count":2,"max_ts":"2026-May-06 12:00:03","min_ts":"2026-May-06 12:00:02","test_index":4}

@@ -221,9 +221,9 @@ struct PercentileOp {
         std::stringstream ss;
         ss << '[';
         for (float p : result) {
-            ss << p << ", ";
+            ss << p << ',';
         }
-        ss.seekp(-2, std::ios_base::end);  // remove last ', '
+        ss.seekp(-1, std::ios_base::end);  // remove last ','
         ss << ']';
         return ss.str();
     }

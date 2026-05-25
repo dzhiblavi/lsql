@@ -1,0 +1,10 @@
+{"status":"ok","test_index":1,"uid":"aaa"}
+{"status":"fail","test_index":1,"uid":"bbb"}
+
+{"event":"login","test_index":2,"username":"alice"}
+{"event":"logout","test_index":2,"username":"bob"}
+
+{"answer":42,"kind":"literal","test_index":3}
+
+{"action":"login","status":"ok","test_index":4,"uid":"aaa","user":"alice"}
+{"action":"logout","status":"fail","test_index":4,"uid":"bbb","user":"bob"}

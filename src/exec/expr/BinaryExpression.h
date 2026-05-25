@@ -95,4 +95,49 @@ struct DivideOp {
     ValueType type;
 };
 
+struct AddOp {
+    Value apply(const Value& l, const Value& r) const {
+        return visit(
+            util::Overloaded{
+                [](int64_t a, int64_t b) -> Value { return a + b; },
+                [](float a, float b) -> Value { return a + b; },
+                [](const std::string& a, const std::string& b) -> Value { return a + b; },
+                [](auto...) -> Value {
+                    assert(false);
+                    throw std::runtime_error("invalid argument types");
+                },
+            },
+            l,
+            r);
+    }
+
+    ValueType argTypeL() const { return type; }
+    ValueType argTypeR() const { return type; }
+    ValueType valueType() const { return type; }
+
+    ValueType type;
+};
+
+struct SubtractOp {
+    Value apply(const Value& l, const Value& r) const {
+        return visit(
+            util::Overloaded{
+                [](int64_t a, int64_t b) -> Value { return a - b; },
+                [](float a, float b) -> Value { return a - b; },
+                [](auto...) -> Value {
+                    assert(false);
+                    throw std::runtime_error("invalid argument types");
+                },
+            },
+            l,
+            r);
+    }
+
+    ValueType argTypeL() const { return type; }
+    ValueType argTypeR() const { return type; }
+    ValueType valueType() const { return type; }
+
+    ValueType type;
+};
+
 }  // namespace lsql::exec

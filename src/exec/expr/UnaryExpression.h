@@ -83,20 +83,7 @@ struct CastOp {
     Value apply(Value val) const {
         return std::move(val).visit(
             util::Overloaded{
-                [this](null_t) -> Value {
-                    switch (to) {
-                        case ValueType::String:
-                            return std::string();
-                        case ValueType::Integer:
-                            return int64_t(0);
-                        case ValueType::Boolean:
-                            return false;
-                        case ValueType::Floating:
-                            return 0.f;
-                        case ValueType::Null:
-                            return null;
-                    };
-                },
+                [](null_t) -> Value { return null; },
                 [this](const std::string& s) -> Value {
                     switch (to) {
                         case ValueType::String:

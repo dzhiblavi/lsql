@@ -1,0 +1,11 @@
+{"test_index":1,"uid":"aaa","user_id":"user=123"}
+{"test_index":1,"uid":"bbb","user_id":null}
+{"test_index":1,"uid":"ccc","user_id":"user=456"}
+
+{"session_id":"session=alpha","test_index":2,"uid":"aaa"}
+{"session_id":"session=beta","test_index":2,"uid":"bbb"}
+{"session_id":"session=gamma","test_index":2,"uid":"ccc"}
+
+{"test_index":3,"uid":"aaa","user_id":"user=123"}
+{"test_index":3,"uid":"bbb","user_id":"missing"}
+{"test_index":3,"uid":"ccc","user_id":"user=456"}

@@ -46,6 +46,8 @@ enum class BinaryExprType {
     And,
     Or,
     Divide,
+    Plus,
+    Minus,
 };
 
 struct BinaryExpr {

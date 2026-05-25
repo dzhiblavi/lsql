@@ -1,0 +1,6 @@
+[2026-May-06 12:00:01.111111] uid=aaa kind=api latency=10
+[2026-May-06 12:00:02.222222] uid=bbb kind=api latency=20
+[2026-May-06 12:00:03.333333] uid=ccc kind=api latency=30
+[2026-May-06 12:00:04.444444] uid=ddd kind=worker latency=5
+[2026-May-06 12:00:05.555555] uid=eee kind=worker latency=15
+[2026-May-06 12:00:06.666666] uid=fff kind=worker latency=25

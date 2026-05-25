@@ -33,11 +33,11 @@ with open(sys.argv[1], "r") as f:
     expected_blocks = read_block_json_file(f)
 actual_blocks = read_block_json_file(sys.stdin)
 
-
 if len(actual_blocks) != len(expected_blocks):
     print(
         f"Different number of blocks: actual={len(actual_blocks)}, expected={len(expected_blocks)}"
     )
+    sys.exit(1)
 
 
 def sort_key(block):

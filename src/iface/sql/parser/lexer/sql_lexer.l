@@ -21,6 +21,20 @@ TIMESTAMP        [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}
 {WHITESPACE}     { /* ignore */ }
 "--".*           { /* ignore */  }
 
+";"              { return TOKEN_SEMICOLON; }
+","              { return TOKEN_COMMA; }
+"*"              { return TOKEN_STAR; }
+"="              { return TOKEN_EQ; }
+"!="             { return TOKEN_NEQ; }
+"("              { return TOKEN_LPAREN; }
+")"              { return TOKEN_RPAREN; }
+"!"              { return TOKEN_EXCLAMATION; }
+"+"              { return TOKEN_PLUS; }
+"-"              { return TOKEN_MINUS; }
+"/"              { return TOKEN_DIVIDE; }
+"@"              { return TOKEN_AT; }
+"$"              { return TOKEN_DOLLAR; }
+
 SELECT           { return TOKEN_SELECT; }
 FROM             { return TOKEN_FROM; }
 AS               { return TOKEN_AS; }
@@ -58,18 +72,6 @@ RSUBSTR          { return TOKEN_RSUBSTR; }
 {PATH}           { return TOKEN_PATH; }
 {QUOTED_STRING}  { return TOKEN_STR; }
 {TIMESTAMP}      { return TOKEN_TIMESTAMP; }
-";"              { return TOKEN_SEMICOLON; }
-","              { return TOKEN_COMMA; }
-"*"              { return TOKEN_STAR; }
-"="              { return TOKEN_EQ; }
-"!="             { return TOKEN_NEQ; }
-"("              { return TOKEN_LPAREN; }
-")"              { return TOKEN_RPAREN; }
-"!"              { return TOKEN_EXCLAMATION; }
-"+"              { return TOKEN_PLUS; }
-"/"              { return TOKEN_DIVIDE; }
-"@"              { return TOKEN_AT; }
-"$"              { return TOKEN_DOLLAR; }
 <<EOF>>          { return TOKEN_EOF; }
 .                {
                      fprintf(stderr, "lexer error: unknown character: '%s' (ASCII %d)\n", yytext, yytext[0]);

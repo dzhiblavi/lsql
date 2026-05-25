@@ -58,6 +58,7 @@
 %token TOKEN_SUM.
 %token TOKEN_PERCENTILE.
 %token TOKEN_PLUS.
+%token TOKEN_MINUS.
 %token TOKEN_LIKE.
 %token TOKEN_MATERIALIZE.
 %token TOKEN_STRING.
@@ -71,8 +72,10 @@
 %left TOKEN_UNION_ALL_SORTED_BY.
 %left TOKEN_OR.
 %left TOKEN_AND.
-%left TOKEN_EQ TOKEN_NEQ.
+%left TOKEN_PLUS.
+%left TOKEN_MINUS.
 %left TOKEN_DIVIDE.
+%left TOKEN_EQ TOKEN_NEQ.
 %right TOKEN_EXCLAMATION.
 
 %type value              {ast::Literal*}
@@ -494,6 +497,22 @@ expression(E) ::= expression(L) TOKEN_OR expression(R). {
 expression(E) ::= expression(L) TOKEN_DIVIDE expression(R). {
     E = new ast::Expr(ast::BinaryExpr{
         .type = ast::BinaryExprType::Divide,
+        .left = Box<ast::Expr>(L),
+        .right = Box<ast::Expr>(R),
+    });
+}
+
+expression(E) ::= expression(L) TOKEN_PLUS expression(R). {
+    E = new ast::Expr(ast::BinaryExpr{
+        .type = ast::BinaryExprType::Plus,
+        .left = Box<ast::Expr>(L),
+        .right = Box<ast::Expr>(R),
+    });
+}
+
+expression(E) ::= expression(L) TOKEN_MINUS expression(R). {
+    E = new ast::Expr(ast::BinaryExpr{
+        .type = ast::BinaryExprType::Minus,
         .left = Box<ast::Expr>(L),
         .right = Box<ast::Expr>(R),
     });

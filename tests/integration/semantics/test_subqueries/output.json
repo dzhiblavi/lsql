@@ -1,0 +1,12 @@
+{"status":"ok","test_index":1,"uid":"aaa"}
+{"status":"ok","test_index":1,"uid":"ccc"}
+
+{"test_index":2,"user_id":"aaa"}
+{"test_index":2,"user_id":"ccc"}
+
+{"test_index":3,"uid":"aaa"}
+{"test_index":3,"uid":"bbb"}
+{"test_index":3,"uid":"ddd"}
+
+{"status":"ok","test_index":4,"uid":"aaa"}
+{"status":"ok","test_index":4,"uid":"ccc"}

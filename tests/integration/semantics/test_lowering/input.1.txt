@@ -1,0 +1,3 @@
+[2026-May-06 12:00:01.111111] uid=aaa status=ok latency=10 tag=api
+[2026-May-06 12:00:02.222222] uid=bbb status=fail latency=3
+[2026-May-06 12:00:03.333333] uid=ccc status=warn latency=25 tag=worker

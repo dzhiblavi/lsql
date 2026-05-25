@@ -1,0 +1,4 @@
+[2026-May-06 12:00:01.111111] uid=aaa status=ok kind=api session=s1
+[2026-May-06 12:00:02.222222] uid=bbb status=fail kind=api session=s2
+[2026-May-06 12:00:03.333333] uid=ccc status=ok kind=worker session=s3
+[2026-May-06 12:00:04.444444] uid=ddd status=warn kind=batch session=s4

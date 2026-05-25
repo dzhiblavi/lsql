@@ -1,0 +1,8 @@
+{"p50":"[20]","test_index":1}
+
+{"percentiles":"[5,20,30]","test_index":2}
+
+{"edge_percentiles":"[5,30]","test_index":3}
+
+{"count":3,"kind":"api","p50":"[20]","test_index":4}
+{"count":3,"kind":"worker","p50":"[15]","test_index":4}

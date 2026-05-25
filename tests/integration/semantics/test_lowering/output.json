@@ -1,0 +1,15 @@
+{"span":28,"test_index":1}
+
+{"tag_value":"api","test_index":2}
+{"tag_value":"unknown","test_index":2}
+{"tag_value":"worker","test_index":2}
+
+{"bad":false,"test_index":3,"uid":"aaa"}
+{"bad":true,"test_index":3,"uid":"bbb"}
+{"bad":true,"test_index":3,"uid":"ccc"}
+
+{"acceptable":true,"test_index":4,"uid":"aaa"}
+{"acceptable":false,"test_index":4,"uid":"bbb"}
+{"acceptable":true,"test_index":4,"uid":"ccc"}
+
+{"delta":22,"max_latency":25,"min_latency":3,"test_index":5}

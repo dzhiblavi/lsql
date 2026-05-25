@@ -1,0 +1,4 @@
+[2026-May-06 12:00:01.123456] uid=aaa status=ok path=/api/users
+[2026-May-06 12:00:02.654321] uid=bbb status=fail path=/health
+[2026-May-06 12:00:03.111111] uid=ccc status=ok path=/api/orders
+[2026-May-06 12:00:04.222222] uid=ddd status=warn path=/internal

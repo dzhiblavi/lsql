@@ -1,0 +1,5 @@
+[2026-May-06 12:00:01.111111] uid=aaa status=ok kind=api
+[2026-May-06 12:00:02.222222] uid=bbb status=fail kind=api
+[2026-May-06 12:00:03.333333] uid=ccc status=ok kind=worker
+[2026-May-06 12:00:04.444444] uid=ddd status=ok kind=api
+[2026-May-06 12:00:05.555555] uid=eee status=fail kind=worker

@@ -1,0 +1,4 @@
+[2026-May-06 12:00:01.111111] uid=aaa status=ok
+[2026-May-06 12:00:02.222222] uid=bbb status=ok
+[2026-May-06 12:00:03.333333] uid=ccc status=fail
+[2026-May-06 12:00:04.444444] uid=ddd status=ok

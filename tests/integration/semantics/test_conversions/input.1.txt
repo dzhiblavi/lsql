@@ -1,0 +1,3 @@
+[2026-May-06 12:00:01.123456] uid=aaa code=200 latency=12.5 flag=true
+[2026-May-06 12:00:02.654321] uid=bbb code=500 latency=0.75 flag=false
+[2026-May-06 12:00:03.111111] uid=ccc code=200 latency=100 flag=true

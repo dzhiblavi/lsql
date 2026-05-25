@@ -41,6 +41,10 @@ BinaryExprType exprType(ast::BinaryExprType ast) {
             return BinaryExprType::Or;
         case ast::BinaryExprType::Divide:
             return BinaryExprType::Divide;
+        case ast::BinaryExprType::Plus:
+            return BinaryExprType::Add;
+        case ast::BinaryExprType::Minus:
+            return BinaryExprType::Subtract;
     }
 }
 
@@ -75,6 +79,11 @@ ValueType valueType(ValueType l, ValueType r, BinaryExprType type) {
         case BinaryExprType::Divide:
             require(l == r, "/ arguments should have same type");
             require(arithmetic(l), "/ arguments should be arithmetic");
+            return l;
+        case BinaryExprType::Add:
+        case BinaryExprType::Subtract:
+            require(l == r, "+/- arguments should have same type");
+            // TODO
             return l;
     }
 }
@@ -525,7 +534,7 @@ class Binder {
 
             return {
                 .node = CoalesceExpr{.args = std::move(args)},
-                .value_type = args[0].value_type,
+                .value_type = *types.begin(),
                 .level = level,
                 .required_fields = fields,
             };
@@ -584,10 +593,11 @@ class Binder {
                 });
 
             return {
-                .node = RSubstrExpr{
-                    .expr = box(std::move(args[0])),
-                    .regex = std::move(regex),
-                },
+                .node =
+                    RSubstrExpr{
+                        .expr = box(std::move(args[0])),
+                        .regex = std::move(regex),
+                    },
                 .value_type = ValueType::String,
                 .level = level,
                 .required_fields = fields,

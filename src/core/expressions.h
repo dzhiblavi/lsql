@@ -21,6 +21,8 @@ enum class BinaryExprType {
     And,
     Or,
     Divide,
+    Add,
+    Subtract,
 };
 
 enum class ExprKindLevel {

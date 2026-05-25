@@ -233,6 +233,10 @@ class Planner {
                 return std::make_shared<BinaryExpression<OrOp>>(l, r);
             case BinaryExprType::Divide:
                 return std::make_shared<BinaryExpression<DivideOp>>(l, r, info.value_type);
+            case BinaryExprType::Add:
+                return std::make_shared<BinaryExpression<AddOp>>(l, r, info.value_type);
+            case BinaryExprType::Subtract:
+                return std::make_shared<BinaryExpression<SubtractOp>>(l, r, info.value_type);
         }
     }
 
