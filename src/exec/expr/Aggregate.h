@@ -4,11 +4,10 @@
 
 #include "core/Fields.h"
 #include "core/Value.h"
+#include "core/types.h"
 
 #include <reflex/matcher.h>
 #include <reflex/pattern.h>
-
-#include <memory>
 
 namespace lsql::exec {
 
@@ -20,7 +19,7 @@ class Aggregator {
     virtual void feed(const exec::Record& record) = 0;
 };
 
-using AggregatorPtr = std::shared_ptr<Aggregator>;
+using AggregatorPtr = Arc<Aggregator>;
 
 class Aggregate {
  public:
@@ -32,6 +31,6 @@ class Aggregate {
     virtual AggregatorPtr aggregator() const = 0;
 };
 
-using AggregatePtr = std::shared_ptr<Aggregate>;
+using AggregatePtr = Arc<Aggregate>;
 
 }  // namespace lsql::exec

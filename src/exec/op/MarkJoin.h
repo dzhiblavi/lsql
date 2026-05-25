@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/verify.h"
-#include "exec/expr/Expression.h"
+#include "exec/expr/Scalar.h"
 #include "exec/op/MemberSubscriber.h"
 #include "exec/op/OperationBase.h"
 
@@ -39,7 +39,7 @@ class MarkJoin : public OperationBase<MarkJoin> {
     MarkJoin(
         OperationPtr source,
         OperationPtr match_source,
-        ExpressionPtr proj,
+        ScalarPtr proj,
         FieldId output_field_id,
         FieldId match_field_id,
         ConstFieldBindingPtr binding)
@@ -137,7 +137,7 @@ class MarkJoin : public OperationBase<MarkJoin> {
 
     OperationPtr source_;
     OperationPtr match_source_;
-    ExpressionPtr proj_;
+    ScalarPtr proj_;
     FieldId output_field_id_;
     FieldId match_field_id_;
 
@@ -160,7 +160,7 @@ class MarkJoin : public OperationBase<MarkJoin> {
 OperationPtr markJoin(
     OperationPtr source,
     OperationPtr match,
-    ExpressionPtr proj,
+    ScalarPtr proj,
     FieldId output_field_id,
     FieldId match_field_id,
     ConstFieldBindingPtr binding) {

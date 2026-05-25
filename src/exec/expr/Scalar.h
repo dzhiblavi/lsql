@@ -4,17 +4,16 @@
 
 #include "core/Fields.h"
 #include "core/Value.h"
+#include "core/types.h"
 
 #include <reflex/matcher.h>
 #include <reflex/pattern.h>
 
-#include <memory>
-
 namespace lsql::exec {
 
-class Expression {
+class Scalar {
  public:
-    virtual ~Expression() = default;
+    virtual ~Scalar() = default;
 
     virtual FieldSet requiredFields() const = 0;
     virtual ValueType valueType() const = 0;
@@ -22,6 +21,6 @@ class Expression {
     virtual Value eval(const exec::Record& record) const = 0;
 };
 
-using ExpressionPtr = std::shared_ptr<Expression>;
+using ScalarPtr = Arc<Scalar>;
 
 }  // namespace lsql::exec

@@ -2,13 +2,12 @@
 
 #include "exec/plan/GetFileSourceFunc.h"
 
-#include "exec/expr/BinaryExpression.h"
-#include "exec/expr/Coalesce.h"
-#include "exec/expr/Expression.h"
-#include "exec/expr/IdentifierExpression.h"
-#include "exec/expr/UnaryAggregateExpression.h"
-#include "exec/expr/UnaryExpression.h"
-#include "exec/expr/ValueExpression.h"
+#include "exec/expr/BinaryScalar.h"
+#include "exec/expr/CoalesceScalar.h"
+#include "exec/expr/IdentifierScalar.h"
+#include "exec/expr/UnaryAggregate.h"
+#include "exec/expr/UnaryScalar.h"
+#include "exec/expr/ValueScalar.h"
 
 #include "exec/op/Aggregate.h"
 #include "exec/op/Filter.h"
@@ -55,7 +54,7 @@ class Planner {
             std::move(s.node), [&](auto node) { return planRelation(std::move(node), s); });
     }
 
-    ExpressionPtr planExpr(ir::Expr s) {
+    ScalarPtr planExpr(ir::Expr s) {
         return util::match(
             std::move(s.node), [&](auto node) { return planExpr(std::move(node), s); });
     }
@@ -180,63 +179,59 @@ class Planner {
         return src;
     }
 
-    ExpressionPtr planExpr(ir::FieldExpr e, auto& info) {
-        return std::make_shared<IdentifierExpression>(e.field_id, info.value_type);
+    ScalarPtr planExpr(ir::FieldExpr e, auto& info) {
+        return arc<IdentifierScalar>(e.field_id, info.value_type);
     }
 
-    ExpressionPtr planExpr(ir::ValueExpr e, auto& /*info*/) {
-        return std::make_shared<ValueExpression>(e.value);
+    ScalarPtr planExpr(ir::ValueExpr e, auto& /*info*/) { return arc<ValueScalar>(e.value); }
+
+    ScalarPtr planExpr(ir::CoalesceExpr e, auto& /*info*/) {
+        return arc<CoalesceScalar>(expressionList(std::move(e.args)));
     }
 
-    ExpressionPtr planExpr(ir::CoalesceExpr e, auto& /*info*/) {
-        return std::make_shared<Coalesce>(expressionList(std::move(e.args)));
-    }
-
-    ExpressionPtr planExpr(ir::CastExpr e, auto& /*info*/) {
+    ScalarPtr planExpr(ir::CastExpr e, auto& /*info*/) {
         auto arg = planExpr(std::move(*e.expr));
-        return std::make_shared<UnaryExpression<CastOp>>(arg, arg->valueType(), e.cast_to);
+        return arc<UnaryScalar<CastOp>>(arg, arg->valueType(), e.cast_to);
     }
 
-    ExpressionPtr planExpr(ir::LikeExpr e, auto& /*info*/) {
+    ScalarPtr planExpr(ir::LikeExpr e, auto& /*info*/) {
         auto arg = planExpr(std::move(*e.expr));
-        return std::make_shared<UnaryExpression<LikeOp>>(arg, e.regex);
+        return arc<UnaryScalar<LikeOp>>(arg, e.regex);
     }
 
-    ExpressionPtr planExpr(ir::RSubstrExpr e, auto& /*info*/) {
+    ScalarPtr planExpr(ir::RSubstrExpr e, auto& /*info*/) {
         auto arg = planExpr(std::move(*e.expr));
-        return std::make_shared<UnaryExpression<RSubstrOp>>(arg, e.regex);
+        return arc<UnaryScalar<RSubstrOp>>(arg, e.regex);
     }
 
-    ExpressionPtr planExpr(ir::UnaryExpr e, auto& /*info*/) {
+    ScalarPtr planExpr(ir::UnaryExpr e, auto& /*info*/) {
         auto arg = planExpr(std::move(*e.expr));
 
         switch (e.type) {
             case UnaryExprType::BooleanNegate:
-                return std::make_shared<UnaryExpression<BooleanNegationOp>>(arg);
+                return arc<UnaryScalar<BooleanNegationOp>>(arg);
         }
     }
 
-    ExpressionPtr planExpr(ir::BinaryExpr e, auto& info) {
+    ScalarPtr planExpr(ir::BinaryExpr e, auto& info) {
         auto l = planExpr(std::move(*e.left));
         auto r = planExpr(std::move(*e.right));
 
         switch (e.type) {
             case BinaryExprType::Equal:
-                return std::make_shared<BinaryExpression<EqualOp>>(
-                    l, r, l->valueType(), r->valueType());
+                return arc<BinaryScalar<EqualOp>>(l, r, l->valueType(), r->valueType());
             case BinaryExprType::NotEqual:
-                return std::make_shared<BinaryExpression<NotEqualOp>>(
-                    l, r, l->valueType(), r->valueType());
+                return arc<BinaryScalar<NotEqualOp>>(l, r, l->valueType(), r->valueType());
             case BinaryExprType::And:
-                return std::make_shared<BinaryExpression<AndOp>>(l, r);
+                return arc<BinaryScalar<AndOp>>(l, r);
             case BinaryExprType::Or:
-                return std::make_shared<BinaryExpression<OrOp>>(l, r);
+                return arc<BinaryScalar<OrOp>>(l, r);
             case BinaryExprType::Divide:
-                return std::make_shared<BinaryExpression<DivideOp>>(l, r, info.value_type);
+                return arc<BinaryScalar<DivideOp>>(l, r, info.value_type);
             case BinaryExprType::Add:
-                return std::make_shared<BinaryExpression<AddOp>>(l, r, info.value_type);
+                return arc<BinaryScalar<AddOp>>(l, r, info.value_type);
             case BinaryExprType::Subtract:
-                return std::make_shared<BinaryExpression<SubtractOp>>(l, r, info.value_type);
+                return arc<BinaryScalar<SubtractOp>>(l, r, info.value_type);
         }
     }
 
@@ -245,13 +240,13 @@ class Planner {
         auto aggregate = [&] -> AggregatePtr {
             switch (a.type) {
                 case UnaryAggregateExprType::Count:
-                    return std::make_shared<UnaryAggregateExpression<CountOp>>(arg);
+                    return arc<UnaryAggregate<CountOp>>(arg);
                 case UnaryAggregateExprType::Min:
-                    return std::make_shared<UnaryAggregateExpression<MinOp>>(arg, info.value_type);
+                    return arc<UnaryAggregate<MinOp>>(arg, info.value_type);
                 case UnaryAggregateExprType::Max:
-                    return std::make_shared<UnaryAggregateExpression<MaxOp>>(arg, info.value_type);
+                    return arc<UnaryAggregate<MaxOp>>(arg, info.value_type);
                 case UnaryAggregateExprType::Sum:
-                    return std::make_shared<UnaryAggregateExpression<SumOp>>(arg, info.value_type);
+                    return arc<UnaryAggregate<SumOp>>(arg, info.value_type);
             }
         }();
 
@@ -264,8 +259,8 @@ class Planner {
 
     AggregateProjectorPtr planAggregate(ir::PercentileAggregate a, auto&& info) {
         auto arg = planExpr(std::move(*a.expr));
-        auto aggregate = arc<UnaryAggregateExpression<PercentileOp>>(
-            arg, std::move(a.percentiles), arg->valueType());
+        auto aggregate =
+            arc<UnaryAggregate<PercentileOp>>(arg, std::move(a.percentiles), arg->valueType());
 
         return box(
             AggregateProjector{
@@ -275,11 +270,11 @@ class Planner {
     }
 
     ScalarProjectorPtr planProjector(ir::Projector p) {
-        return std::make_unique<ScalarProjector>(p.alias_field_id, planExpr(std::move(*p.expr)));
+        return box<ScalarProjector>(p.alias_field_id, planExpr(std::move(*p.expr)));
     }
 
-    std::vector<ExpressionPtr> expressionList(std::vector<ir::Expr> list) {
-        std::vector<ExpressionPtr> exprs;
+    std::vector<ScalarPtr> expressionList(std::vector<ir::Expr> list) {
+        std::vector<ScalarPtr> exprs;
         exprs.reserve(list.size());
         for (auto&& item : list) {
             exprs.push_back(planExpr(std::move(item)));

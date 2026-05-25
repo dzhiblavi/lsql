@@ -1,12 +1,12 @@
 #pragma once
 
-#include "exec/expr/Expression.h"
+#include "exec/expr/Scalar.h"
 
 #include <vector>
 
 namespace lsql::exec {
 
-using SortList = std::vector<ExpressionPtr>;
+using SortList = std::vector<ScalarPtr>;
 using SortKey = std::vector<Value>;
 
 }  // namespace lsql::exec

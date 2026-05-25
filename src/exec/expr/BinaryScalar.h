@@ -1,6 +1,6 @@
 #pragma once
 
-#include "exec/expr/Expression.h"
+#include "exec/expr/Scalar.h"
 
 namespace lsql::exec {
 
@@ -15,17 +15,14 @@ concept BinaryOperation =
     };
 
 template <BinaryOperation Op>
-class BinaryExpression : public Expression {
+class BinaryScalar : public Scalar {
  public:
     template <typename... Args>
-    BinaryExpression(ExpressionPtr l, ExpressionPtr r, Args&&... args)
+    BinaryScalar(ScalarPtr l, ScalarPtr r, Args&&... args)
         : l_(std::move(l))
         , r_(std::move(r))
         , op_(std::forward<Args>(args)...) {
-        if (l_->valueType() != op_.argTypeL() || r_->valueType() != op_.argTypeR()) {
-            verify(false);
-            throw std::runtime_error("argument type mismatch");
-        }
+        verify(l_->valueType() == op_.argTypeL() && r_->valueType() == op_.argTypeR());
     }
 
     FieldSet requiredFields() const override {
@@ -39,7 +36,7 @@ class BinaryExpression : public Expression {
     }
 
  private:
-    ExpressionPtr l_, r_;
+    ScalarPtr l_, r_;
     [[no_unique_address]] Op op_;
 };
 
@@ -102,10 +99,7 @@ struct AddOp {
                 [](int64_t a, int64_t b) -> Value { return a + b; },
                 [](float a, float b) -> Value { return a + b; },
                 [](const std::string& a, const std::string& b) -> Value { return a + b; },
-                [](auto...) -> Value {
-                    assert(false);
-                    throw std::runtime_error("invalid argument types");
-                },
+                [](auto...) -> Value { panic("invalid argument types"); },
             },
             l,
             r);
@@ -124,10 +118,7 @@ struct SubtractOp {
             util::Overloaded{
                 [](int64_t a, int64_t b) -> Value { return a - b; },
                 [](float a, float b) -> Value { return a - b; },
-                [](auto...) -> Value {
-                    assert(false);
-                    throw std::runtime_error("invalid argument types");
-                },
+                [](auto...) -> Value { panic("invalid argument types"); },
             },
             l,
             r);

@@ -1,15 +1,15 @@
 #pragma once
 
-#include "exec/expr/Expression.h"
+#include "exec/expr/Scalar.h"
 
 namespace lsql::exec {
 
-class ValueExpression : public Expression {
+class ValueScalar : public Scalar {
  public:
-    explicit ValueExpression(Value value) : value_(std::move(value)) {}
+    explicit ValueScalar(Value value) : value_(std::move(value)) {}
+    const Value& get() const { return value_; }
 
     FieldSet requiredFields() const override { return FieldSet::emptySet(); }
-    const Value& get() const { return value_; }
     ValueType valueType() const override { return value_.type(); }
     Value eval(const exec::Record& /*record*/) const override { return value_; }
 

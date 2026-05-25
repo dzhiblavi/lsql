@@ -1,7 +1,7 @@
 #pragma once
 
 #include "exec/expr/Aggregate.h"
-#include "exec/expr/Expression.h"
+#include "exec/expr/Scalar.h"
 #include "exec/prof/Metrics.h"
 #include "exec/prof/OperationHandle.h"
 #include "util/instrument/Timer.h"
@@ -23,20 +23,20 @@ concept UnaryAggregateOperation = requires(Op op, Value val, Op::State* state) {
 };
 
 template <UnaryAggregateOperation Op>
-class UnaryAggregateExpression : public Aggregate {
+class UnaryAggregate : public Aggregate {
     struct Aggr : Aggregator {
-        Aggr(ExpressionPtr expr, const Op* op) : expr(expr), op(op) {}
+        Aggr(ScalarPtr expr, const Op* op) : expr(expr), op(op) {}
         void feed(const exec::Record& record) override { op->update(&state, expr->eval(record)); }
         Value get() override { return op->result(&state); }
 
-        ExpressionPtr expr;
+        ScalarPtr expr;
         const Op* op;
         typename Op::State state;
     };
 
  public:
     template <typename... Args>
-    explicit UnaryAggregateExpression(ExpressionPtr arg, Args&&... args)
+    explicit UnaryAggregate(ScalarPtr arg, Args&&... args)
         : arg_(std::move(arg))
         , op_(std::forward<Args>(args)...) {
         if (arg_->valueType() != op_.argType()) {
@@ -45,13 +45,11 @@ class UnaryAggregateExpression : public Aggregate {
     }
 
     FieldSet requiredFields() const override { return arg_->requiredFields(); }
-
     ValueType valueType() const override { return op_.valueType(); }
-
-    AggregatorPtr aggregator() const override { return std::make_shared<Aggr>(arg_, &op_); }
+    AggregatorPtr aggregator() const override { return arc<Aggr>(arg_, &op_); }
 
  private:
-    ExpressionPtr arg_;
+    ScalarPtr arg_;
     [[no_unique_address]] Op op_;
 };
 

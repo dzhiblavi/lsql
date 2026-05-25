@@ -2,10 +2,9 @@
 
 #include "core/Fields.h"
 #include "core/Value.h"
+#include "core/types.h"
 
 #include <absl/container/flat_hash_set.h>
-
-#include <memory>
 
 namespace lsql::exec {
 
@@ -19,7 +18,7 @@ class Record : public std::enable_shared_from_this<Record> {
 
     virtual Value value(FieldId id) const = 0;
 
-    std::shared_ptr<const Record> clone() const {
+    Arc<const Record> clone() const {
         if (!weak_from_this().expired()) {
             return shared_from_this();
         }
@@ -28,11 +27,11 @@ class Record : public std::enable_shared_from_this<Record> {
     }
 
  private:
-    virtual std::shared_ptr<const Record> cloneImpl() const = 0;
+    virtual Arc<const Record> cloneImpl() const = 0;
 };
 
-using RecordPtr = std::shared_ptr<Record>;
-using ConstRecordPtr = std::shared_ptr<const Record>;
+using RecordPtr = Arc<Record>;
+using ConstRecordPtr = Arc<const Record>;
 
 class EmptyRecord : public Record {
  public:
@@ -43,12 +42,12 @@ class EmptyRecord : public Record {
     Value value(FieldId) const override { return null; }
 
     static ConstRecordPtr instance() {
-        static ConstRecordPtr record = std::make_shared<EmptyRecord>();
+        static ConstRecordPtr record = arc<EmptyRecord>();
         return record;
     }
 
  private:
-    std::shared_ptr<const Record> cloneImpl() const override { return instance(); }
+    Arc<const Record> cloneImpl() const override { return instance(); }
 };
 
 using RecordRef = std::variant<const Record*, ConstRecordPtr>;

@@ -1,8 +1,10 @@
 #include "tests/exec/op/MockOperation.h"
 #include "tests/exec/op/OperationTest.h"
 
-#include "exec/expr/IdentifierExpression.h"
+#include "exec/expr/IdentifierScalar.h"
 #include "exec/op/MergeSorted.h"
+
+#include "core/types.h"
 
 #include <catch2/catch_all.hpp>
 
@@ -11,15 +13,11 @@ namespace lsql::exec {
 struct MergeSortedTest : OperationTest {
     MergeSortedTest() {
         setOperation(mergeSorted(
-            left,
-            right,
-            SortList{std::make_shared<IdentifierExpression>(0, ValueType::Integer)},
-            false,
-            binding));
+            left, right, SortList{arc<IdentifierScalar>(0, ValueType::Integer)}, false, binding));
     }
 
-    std::shared_ptr<MockOperation> left = std::make_shared<MockOperation>(binding);
-    std::shared_ptr<MockOperation> right = std::make_shared<MockOperation>(binding);
+    std::shared_ptr<MockOperation> left = arc<MockOperation>(binding);
+    std::shared_ptr<MockOperation> right = arc<MockOperation>(binding);
 };
 
 TEST_CASE_METHOD(MergeSortedTest, "BothStreamsEmpty") {

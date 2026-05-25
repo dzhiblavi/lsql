@@ -1,12 +1,12 @@
 #pragma once
 
-#include "exec/expr/Expression.h"
+#include "exec/expr/Scalar.h"
 
 namespace lsql::exec {
 
-class Coalesce : public Expression, public std::enable_shared_from_this<Coalesce> {
+class CoalesceScalar : public Scalar, public std::enable_shared_from_this<CoalesceScalar> {
  public:
-    explicit Coalesce(std::vector<ExpressionPtr> values) : values_(std::move(values)) {}
+    explicit CoalesceScalar(std::vector<ScalarPtr> values) : values_(std::move(values)) {}
 
     ValueType valueType() const override { return values_.front()->valueType(); }
 
@@ -28,7 +28,7 @@ class Coalesce : public Expression, public std::enable_shared_from_this<Coalesce
     }
 
  private:
-    std::vector<ExpressionPtr> values_;
+    std::vector<ScalarPtr> values_;
 };
 
 }  // namespace lsql::exec

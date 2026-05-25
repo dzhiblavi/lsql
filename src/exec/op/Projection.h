@@ -1,6 +1,6 @@
 #pragma once
 
-#include "exec/expr/Expression.h"
+#include "exec/expr/Scalar.h"
 #include "exec/op/MemberSubscriber.h"
 #include "exec/op/OperationBase.h"
 
@@ -10,7 +10,7 @@ namespace lsql::exec {
 
 struct ScalarProjector {
     FieldId field_id;
-    std::shared_ptr<Expression> expr;
+    ScalarPtr expr;
 };
 
 using ScalarProjectorPtr = std::unique_ptr<ScalarProjector>;
@@ -115,7 +115,8 @@ class Projection : public OperationBase<Projection>,
     };
 };
 
-OperationPtr projection(OperationPtr source, ScalarProjectionList slist, ConstFieldBindingPtr binding) {
+OperationPtr projection(
+    OperationPtr source, ScalarProjectionList slist, ConstFieldBindingPtr binding) {
     return std::make_shared<Projection>(std::move(source), std::move(slist), std::move(binding));
 }
 

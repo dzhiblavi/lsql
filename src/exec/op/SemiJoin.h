@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/verify.h"
-#include "exec/expr/Expression.h"
+#include "exec/expr/Scalar.h"
 #include "exec/op/MemberSubscriber.h"
 #include "exec/op/OperationBase.h"
 
@@ -12,7 +12,7 @@ class SemiJoin : public OperationBase<SemiJoin> {
     SemiJoin(
         OperationPtr source,
         OperationPtr match_source,
-        ExpressionPtr proj,
+        ScalarPtr proj,
         FieldId match_field_id,
         ConstFieldBindingPtr binding)
         : OperationBase(
@@ -112,7 +112,7 @@ class SemiJoin : public OperationBase<SemiJoin> {
 
     OperationPtr source_;
     OperationPtr match_source_;
-    ExpressionPtr proj_;
+    ScalarPtr proj_;
     FieldId match_field_id_;
 
     MemberSubscriber<SemiJoin> sub_source_{
@@ -134,7 +134,7 @@ class SemiJoin : public OperationBase<SemiJoin> {
 OperationPtr semiJoin(
     OperationPtr source,
     OperationPtr match,
-    ExpressionPtr proj,
+    ScalarPtr proj,
     FieldId match_field_id,
     ConstFieldBindingPtr binding) {
     return std::make_shared<SemiJoin>(

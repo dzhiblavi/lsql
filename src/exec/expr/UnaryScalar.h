@@ -1,6 +1,6 @@
 #pragma once
 
-#include "exec/expr/Expression.h"
+#include "exec/expr/Scalar.h"
 
 #include <reflex/stdmatcher.h>
 
@@ -14,15 +14,13 @@ concept UnaryOperation = requires(const Op& op, Value val) {
 };
 
 template <UnaryOperation Op>
-class UnaryExpression : public Expression {
+class UnaryScalar : public Scalar {
  public:
     template <typename... Args>
-    explicit UnaryExpression(ExpressionPtr arg, Args&&... args)
+    explicit UnaryScalar(ScalarPtr arg, Args&&... args)
         : arg_(std::move(arg))
         , op_(std::forward<Args>(args)...) {
-        if (arg_->valueType() != op_.argType()) {
-            throw std::runtime_error("argument type mismatch");
-        }
+        verify(arg_->valueType() == op_.argType());
     }
 
     FieldSet requiredFields() const override { return arg_->requiredFields(); }
@@ -32,7 +30,7 @@ class UnaryExpression : public Expression {
     Value eval(const exec::Record& record) const override { return op_.apply(arg_->eval(record)); }
 
  private:
-    ExpressionPtr arg_;
+    ScalarPtr arg_;
     [[no_unique_address]] Op op_;
 };
 

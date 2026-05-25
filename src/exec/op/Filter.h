@@ -1,6 +1,6 @@
 #pragma once
 
-#include "exec/expr/Expression.h"
+#include "exec/expr/Scalar.h"
 #include "exec/op/MemberSubscriber.h"
 #include "exec/op/OperationBase.h"
 
@@ -8,7 +8,7 @@ namespace lsql::exec {
 
 class Filter : public OperationBase<Filter> {
  public:
-    Filter(OperationPtr source, ExpressionPtr condition, ConstFieldBindingPtr binding)
+    Filter(OperationPtr source, ScalarPtr condition, ConstFieldBindingPtr binding)
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , condition_(std::move(condition)) {}
@@ -45,7 +45,7 @@ class Filter : public OperationBase<Filter> {
     }
 
     OperationPtr source_;
-    ExpressionPtr condition_;
+    ScalarPtr condition_;
     MemberSubscriber<Filter> sub_{
         this,
         &Filter::consume,
@@ -53,7 +53,7 @@ class Filter : public OperationBase<Filter> {
     };
 };
 
-OperationPtr filter(OperationPtr source, ExpressionPtr condition, ConstFieldBindingPtr binding) {
+OperationPtr filter(OperationPtr source, ScalarPtr condition, ConstFieldBindingPtr binding) {
     return std::make_shared<Filter>(std::move(source), std::move(condition), std::move(binding));
 }
 
