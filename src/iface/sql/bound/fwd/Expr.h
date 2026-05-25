@@ -2,7 +2,7 @@
 
 #include <variant>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::iface::sql::bound {
 
 struct IdentifierExpr;
 struct ValueExpr;
@@ -32,4 +32,4 @@ using ExprNode = std::variant< //
 
 struct Expr;
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::iface::sql::bound

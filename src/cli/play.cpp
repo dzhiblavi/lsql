@@ -1,10 +1,10 @@
 #include "iface/sql/ast/Stringifier.h"
-#include "iface/sql/bind/bind.h"
+#include "iface/sql/bound/bind.h"
 #include "iface/sql/parser/parse.h"
 
-#include "iface/sql/bind/Expressions.h"  // IWYU pragma: keep
-#include "iface/sql/bind/Relations.h"    // IWYU pragma: keep
-#include "iface/sql/bind/Statement.h"    // IWYU pragma: keep
+#include "iface/sql/bound/Expressions.h"  // IWYU pragma: keep
+#include "iface/sql/bound/Relations.h"    // IWYU pragma: keep
+#include "iface/sql/bound/Statement.h"    // IWYU pragma: keep
 
 #include <iostream>
 #include <llog/log.h>

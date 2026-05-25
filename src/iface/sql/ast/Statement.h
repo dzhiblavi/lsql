@@ -1,7 +1,8 @@
 #pragma once
 
+#include "iface/sql/ast/fwd/Relation.h"
+
 #include "core/types.h"
-#include "iface/sql/ast/Relation.h"
 
 #include <variant>
 #include <vector>

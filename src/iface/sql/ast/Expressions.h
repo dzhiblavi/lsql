@@ -3,9 +3,10 @@
 #include "core/ValueType.h"
 #include "core/types.h"
 
-#include "iface/sql/ast/Expr.h"
+#include "iface/sql/ast/fwd/Expr.h"
+#include "iface/sql/ast/fwd/Relation.h"
+
 #include "iface/sql/ast/Literal.h"
-#include "iface/sql/ast/Relation.h"
 
 #include <string>
 #include <vector>

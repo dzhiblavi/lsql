@@ -1,8 +1,8 @@
 #pragma once
 
-#include "iface/sql/bind/Expressions.h"  // IWYU pragma: keep
-#include "iface/sql/bind/Relations.h"    // IWYU pragma: keep
-#include "iface/sql/bind/Statement.h"    // IWYU pragma: keep
+#include "iface/sql/bound/Expressions.h"  // IWYU pragma: keep
+#include "iface/sql/bound/Relations.h"    // IWYU pragma: keep
+#include "iface/sql/bound/Statement.h"    // IWYU pragma: keep
 
 #include "util/StrBuilder.h"
 #include "util/string.h"
@@ -11,7 +11,7 @@
 
 #include <format>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::iface::sql::bound {
 
 class Stringifier {
     using StrBuilder = util::StrBuilder;
@@ -224,4 +224,4 @@ class Stringifier {
     ConstFieldBindingPtr binding_;
 };
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::iface::sql::bound

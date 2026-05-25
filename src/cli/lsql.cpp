@@ -3,7 +3,7 @@
 #include "util/ThreadPool.h"
 
 #include "iface/sql/ast/Stringifier.h"
-#include "iface/sql/bind/Stringifier.h"
+#include "iface/sql/bound/Stringifier.h"
 #include "ir/Stringifier.h"
 
 #include "exec/plan/plan.h"
@@ -15,10 +15,6 @@
 #include "ir/Relations.h"  // IWYU pragma: keep
 #include "ir/Scalars.h"    // IWYU pragma: keep
 #include "ir/Statement.h"  // IWYU pragma: keep
-
-#include "iface/sql/bind/Expressions.h"  // IWYU pragma: keep
-#include "iface/sql/bind/Relations.h"    // IWYU pragma: keep
-#include "iface/sql/bind/Statement.h"    // IWYU pragma: keep
 
 #include "core/require.h"
 
@@ -166,7 +162,7 @@ exec::Plan makePlan(std::string maybe_path) {
     auto bound_ast = iface::sql::bind::bind(std::move(ast));
     if (debug_bind_arg) {
         std::cout << "Bound AST dump:" << std::endl;
-        std::cout << iface::sql::bind::Stringifier().print(bound_ast) << std::endl;
+        std::cout << iface::sql::bound::Stringifier().print(bound_ast) << std::endl;
     }
     auto ir = iface::sql::lower::lowerToIR(std::move(bound_ast));
     if (debug_ir_arg) {

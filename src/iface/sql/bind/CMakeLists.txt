@@ -2,6 +2,9 @@ add_library(lsql-iface-sql-bind STATIC)
 
 target_sources(
     lsql-iface-sql-bind PRIVATE
+    Expressions.cpp
+    Relations.cpp
+    Statements.cpp
     bind.cpp
 )
 

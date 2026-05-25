@@ -1,20 +1,17 @@
 #pragma once
 
-#include "iface/sql/ast/fwd/Expr.h"
-#include "iface/sql/ast/fwd/Relation.h"
+#include "iface/sql/bound/FieldSetNode.h"
+#include "iface/sql/bound/fwd/Expr.h"
+#include "iface/sql/bound/fwd/Relation.h"
 
-#include "iface/sql/ast/Literal.h"
-
+#include "core/Fields.h"
+#include "core/Value.h"
 #include "core/types.h"
 
 #include <optional>
 #include <vector>
 
-namespace lsql::iface::sql::ast {
-
-struct AdhocRelation {
-    std::vector<Literal> literals;
-};
+namespace lsql::iface::sql::bound {
 
 struct StarProjector;
 struct IdentifierProjector;
@@ -25,11 +22,11 @@ using Projector = std::variant<StarProjector, IdentifierProjector, ExprProjector
 struct StarProjector {};
 
 struct IdentifierProjector {
-    std::string identifier;
+    FieldId field_id;
 };
 
 struct ExprProjector {
-    std::string alias;
+    FieldId alias_field_id;
     Box<Expr> expr;
 };
 
@@ -50,6 +47,11 @@ struct GroupBy {
     std::vector<Projector> group_list;
 };
 
+struct AdhocRelation {
+    std::vector<Value> values;
+    FieldId output_field_id;
+};
+
 struct SelectRelation {
     std::vector<Projector> projectors;
 
@@ -58,6 +60,7 @@ struct SelectRelation {
     std::optional<Where> where;
     std::optional<OrderBy> order_by;
     std::optional<GroupBy> group_by;
+    bool aggregate;
 };
 
 struct UnionAllRelation {
@@ -77,8 +80,8 @@ struct FileRelation {
 
 struct FileIntervalRelation {
     std::string path;
-    std::string ts_from;
-    int interval_s;
+    timestamp_t ts_from;
+    timestamp_t ts_to;
 };
 
 struct NamedRelationReferenceRelation {
@@ -89,4 +92,9 @@ struct MaterializeRelation {
     Box<Relation> relation;
 };
 
-}  // namespace lsql::iface::sql::ast
+struct Relation {
+    RelationNode node;
+    FieldSetNodePtr fields_out;
+};
+
+}  // namespace lsql::iface::sql::bound

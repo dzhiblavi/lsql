@@ -1,11 +1,11 @@
 #pragma once
 
-#include "iface/sql/bind/Statement.h"
+#include "iface/sql/bound/Statement.h"
 
 #include "ir/Statement.h"
 
 namespace lsql::iface::sql::lower {
 
-ir::Program lowerToIR(bind::Program program);
+ir::Program lowerToIR(bound::Program program);
 
 }  // namespace lsql::iface::sql::lower

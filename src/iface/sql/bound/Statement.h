@@ -1,6 +1,6 @@
 #pragma once
 
-#include "iface/sql/bind/Relation.h"
+#include "iface/sql/bound/Relations.h"
 
 #include "core/Fields.h"
 #include "core/types.h"
@@ -8,7 +8,7 @@
 #include <variant>
 #include <vector>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::iface::sql::bound {
 
 struct NamedRelationStatement;
 struct QueryStatement;
@@ -32,4 +32,4 @@ struct Program {
     FieldBindingPtr binding;
 };
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::iface::sql::bound

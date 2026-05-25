@@ -2,7 +2,7 @@
 
 #include <variant>
 
-namespace lsql::iface::sql::bind {
+namespace lsql::iface::sql::bound {
 
 struct AdhocRelation;
 struct SelectRelation;
@@ -26,4 +26,4 @@ using RelationNode = std::variant< //
 
 struct Relation;
 
-}  // namespace lsql::iface::sql::bind
+}  // namespace lsql::iface::sql::bound
