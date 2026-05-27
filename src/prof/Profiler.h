@@ -121,4 +121,55 @@ inline util::StrBuilder formatProfile(const Profiler& p) {
     return b.render();
 }
 
+inline std::string join(const std::vector<std::string>& strs, std::string_view sep) {
+    if (strs.empty()) {
+        return "";
+    }
+
+    std::stringstream ss;
+    for (size_t i = 0; i < strs.size() - 1; ++i) {
+        ss << strs[i] << sep;
+    }
+    ss << strs.back();
+    return ss.str();
+}
+
+inline void appendFoldedStacks(
+    const ScopeNode& node, std::vector<std::string>& stack, std::vector<std::string>& out) {
+    if (node.metrics->empty()) {
+        return;
+    }
+
+    stack.push_back(node.name);
+
+    auto self = node.metrics->self_dur;
+    if (self.count() > 0) {
+        out.push_back(
+            std::format(
+                "{} {}",
+                join(stack, ";"),
+                std::chrono::duration_cast<std::chrono::nanoseconds>(self).count()));
+    }
+
+    for (auto* child : node.children) {
+        appendFoldedStacks(*child, stack, out);  // expanded mode: no visited set
+    }
+
+    stack.pop_back();
+}
+
+inline std::string formatFoldedStacks(const Profiler& p) {
+    std::vector<std::string> lines;
+    std::vector<std::string> stack;
+
+    for (auto&& [_, node] : p.nodes()) {
+        if (node.is_root) {
+            appendFoldedStacks(node, stack, lines);
+        }
+    }
+
+    std::ranges::sort(lines);
+    return join(lines, "\n");
+}
+
 }  // namespace lsql::prof

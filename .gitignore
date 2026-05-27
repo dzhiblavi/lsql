@@ -5,3 +5,4 @@
 /ref.out
 /output
 /.venv
+/prof.*

@@ -107,6 +107,12 @@ TCLAP::SwitchArg profile_arg{
     "enable profiling (printed to stderr)",
 };
 
+TCLAP::SwitchArg flamegraph_arg{
+    "",
+    "flamegraph",
+    "build phase flamegraphs (dumped to prof.N.folded)",
+};
+
 void println(std::string_view s) {
     static std::mutex m;
     std::lock_guard lg(m);
@@ -125,6 +131,7 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&debug_ir_arg);
     cmd.add(&threads_arg);
     cmd.add(&profile_arg);
+    cmd.add(&flamegraph_arg);
     cmd.setExceptionHandling(false);
 
     try {
@@ -336,8 +343,15 @@ void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
                 "profile [phase={}]\n{}",
                 phase,
                 prof::formatProfile(*prof::globalProfiler()).render());
+        }
 
-            prof::reset();
+        if (flamegraph_arg.getValue()) {
+            std::ofstream ofs(std::format("prof.{}.folded", phase));
+            ofs << prof::formatFoldedStacks(*prof::globalProfiler());
+        }
+
+        if (auto p = prof::globalProfiler()) {
+            p->reset();
         }
     }
 

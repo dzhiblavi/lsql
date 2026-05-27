@@ -16,6 +16,9 @@ class MetricsBase {
     virtual bool empty() const = 0;
     virtual void reset() = 0;
     virtual util::StrBuilder report() const = 0;
+
+    instr::MonotonicDuration self_dur{};
+    instr::MonotonicDuration total_dur{};
 };
 
 template <typename M>
@@ -66,6 +69,8 @@ class Scope : public ScopeBase, util::NonCopyable {
         if (parent_) {
             parent_->child_duration_ += full_duration;
         }
+        metrics_->total_dur += full_duration;
+        metrics_->self_dur += full_duration - child_duration_;
         metrics_->onExitScope(full_duration, child_duration_);
     }
 
