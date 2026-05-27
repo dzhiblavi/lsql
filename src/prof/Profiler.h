@@ -10,17 +10,15 @@
 
 namespace lsql::prof {
 
+struct ScopeNode {
+    bool is_root;
+    std::string name;
+    std::unique_ptr<MetricsBase> metrics;
+    std::vector<ScopeNode*> children;
+    std::vector<ScopeNode*> parents;
+};
+
 class Profiler {
-    using StrBuilder = util::StrBuilder;
-
-    struct ScopeNode {
-        bool is_root;
-        std::string name;
-        std::unique_ptr<MetricsBase> metrics;
-        std::vector<ScopeNode*> children;
-        std::vector<ScopeNode*> parents;
-    };
-
  public:
     template <Metrics M, typename... Args>
     ScopeHandle<M> newScope(std::string name, Args&&... args) {
@@ -61,30 +59,22 @@ class Profiler {
         child_node.is_root = false;
     }
 
-    std::string format() const {
-        std::unordered_set<const ScopeNode*> visited;
-        auto b = StrBuilder("Profiler report");
-
-        for (auto&& [_, node] : nodes_) {
-            if (!node.is_root) {
-                continue;
-            }
-
-            if (auto nb = formatNode(node, visited); !nb.empty()) {
-                b.item(nb);
-            }
-        }
-        return b.render();
-    }
-
     void reset() {
         for (auto&& [_, node] : nodes_) {
             node.metrics->reset();
         }
     }
 
+    const std::unordered_map<MetricsBase*, ScopeNode>& nodes() const { return nodes_; }
+
  private:
-    static StrBuilder formatNode(const ScopeNode& node, auto& visited) {
+    std::unordered_map<MetricsBase*, ScopeNode> nodes_;
+};
+
+inline util::StrBuilder formatProfile(const Profiler& p) {
+    using util::StrBuilder;
+
+    auto formatNode = [&]<typename S>(this S& self, const ScopeNode& node, auto& visited) {
         visited.insert(&node);
         if (node.metrics->empty()) {
             return StrBuilder("{} - no metrics", node.name);
@@ -107,16 +97,28 @@ class Profiler {
                 if (visited.contains(child)) {
                     cb.item(StrBuilder("(visited) {}", child->name));
                 } else {
-                    cb.item(formatNode(*child, visited));
+                    cb.item(self(*child, visited));
                 }
             }
             b.child(StrBuilder("children").block(cb));
         }
 
         return b;
-    }
+    };
 
-    std::unordered_map<MetricsBase*, ScopeNode> nodes_;
-};
+    std::unordered_set<const ScopeNode*> visited;
+    auto b = StrBuilder("Profiler report");
+
+    for (auto&& [_, node] : p.nodes()) {
+        if (!node.is_root) {
+            continue;
+        }
+
+        if (auto nb = formatNode(node, visited); !nb.empty()) {
+            b.item(nb);
+        }
+    }
+    return b.render();
+}
 
 }  // namespace lsql::prof

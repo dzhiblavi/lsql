@@ -34,14 +34,6 @@ void addEdge(ScopeHandle<P>* parent, ScopeHandle<C>* child) {
     }
 }
 
-inline std::string format() {
-    if (auto prof = globalProfiler()) {
-        return prof->format();
-    }
-
-    return "";
-}
-
 inline void reset() {
     if (auto prof = globalProfiler()) {
         prof->reset();

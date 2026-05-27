@@ -332,7 +332,11 @@ void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
         llog::info("phase {} completed", phase);
 
         if (profile_arg.getValue()) {
-            prof << std::format("profile [phase={}]\n{}", phase, prof::format());
+            prof << std::format(
+                "profile [phase={}]\n{}",
+                phase,
+                prof::formatProfile(*prof::globalProfiler()).render());
+
             prof::reset();
         }
     }
