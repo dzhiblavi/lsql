@@ -1,9 +1,11 @@
 #pragma once
 
-#include "core/verify.h"
 #include "exec/op/MemberSubscriber.h"
 #include "exec/op/OperationBase.h"
 #include "exec/op/types.h"
+
+#include "core/verify.h"
+#include "util/instrument/Counters.h"
 #include "util/instrument/Timer.h"
 
 #include <llog/log.h>
@@ -13,7 +15,24 @@
 
 namespace lsql::exec {
 
-class Sort : public OperationBase<Sort>, public std::enable_shared_from_this<Sort> {
+struct SortCustomMetrics {
+    instr::Counter<size_t> dataset_size{0};
+    instr::MonotonicDuration sort_time{};
+
+    void reset() {
+        dataset_size.set(0);
+        sort_time = {};
+    }
+
+    util::StrBuilder format() const {
+        return util::StrBuilder()
+            .item("dataset_size: {}", dataset_size.value())
+            .item("sort_time:    {}", instr::prettyDuration(sort_time));
+    }
+};
+
+class Sort : public OperationBase<Sort, SortCustomMetrics>,
+             public std::enable_shared_from_this<Sort> {
     using Key = std::vector<Value>;
 
  public:
@@ -22,12 +41,8 @@ class Sort : public OperationBase<Sort>, public std::enable_shared_from_this<Sor
         , source_(std::move(source))
         , desc_(desc)
         , sort_list_(std::move(sort_list)) {
-        if (sort_list_.empty()) {
-            throw std::runtime_error("ORDER BY list cannot be empty");
-        }
-
-        prof_.registerMetric(&dataset_size_);
-        prof_.registerMetric(&sort_time_);
+        require(!sort_list_.empty(), "ORDER BY list cannot be empty");
+        prof::addEdge(&prof_sub_, &prof_);
     }
 
  private:
@@ -60,9 +75,9 @@ class Sort : public OperationBase<Sort>, public std::enable_shared_from_this<Sor
             });
         }
 
-        if (prof_) {
-            dataset_size_.counter.set(records_.size());
-            sort_time_.set("sort time: {}", instr::prettyDuration(timer.elapsed()));
+        if (auto m = prof_.metrics()) {
+            m->custom.dataset_size.set(records_.size());
+            m->custom.sort_time = timer.elapsed();
         }
 
         for (auto&& [record, _] : records_) {
@@ -110,13 +125,17 @@ class Sort : public OperationBase<Sort>, public std::enable_shared_from_this<Sor
         return ExplanationItem().line("{} desc={}", description(ctx.phase), desc_).child(source);
     }
 
-    prof::NamedCounter<size_t> dataset_size_{"dataset size", size_t(0)};
-    prof::Message sort_time_;
-
     OperationPtr source_;
     bool desc_;
     SortList sort_list_;
-    MemberSubscriber<Sort> sub_{this, &Sort::consume, prof_.inputHandle(&sub_)};
+
+    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
+        prof::newScope<ScopeMetrics<>>("{} input", name());
+    MemberSubscriber<Sort> sub_{
+        this,
+        &Sort::consume,
+        &prof_sub_,
+    };
 
     // phase state
     int curr_phase_ = 0;

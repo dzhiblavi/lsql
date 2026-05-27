@@ -1,13 +1,25 @@
 #pragma once
 
-#include "core/verify.h"
 #include "exec/expr/Scalar.h"
 #include "exec/op/MemberSubscriber.h"
 #include "exec/op/OperationBase.h"
 
+#include "core/verify.h"
+#include "util/instrument/Counters.h"
+
 namespace lsql::exec {
 
-class SemiJoin : public OperationBase<SemiJoin> {
+struct SemiJoinMetrics {
+    instr::Counter<size_t> match_set_size{0};
+
+    void reset() { match_set_size.set(0); }
+
+    util::StrBuilder format() const {
+        return util::StrBuilder("match_set_size: {}", match_set_size.value());
+    }
+};
+
+class SemiJoin : public OperationBase<SemiJoin, SemiJoinMetrics> {
  public:
     SemiJoin(
         OperationPtr source,
@@ -21,7 +33,8 @@ class SemiJoin : public OperationBase<SemiJoin> {
         , match_source_(std::move(match_source))
         , proj_(std::move(proj))
         , match_field_id_(match_field_id) {
-        prof_.registerMetric(&match_set_size_);
+        prof::addEdge(&prof_match_, &prof_);
+        prof::addEdge(&prof_source_, &prof_);
     }
 
  private:
@@ -29,32 +42,41 @@ class SemiJoin : public OperationBase<SemiJoin> {
         verify(phase == match_phase_);
 
         if (record == nullptr) {
-            match_set_size_.counter.set(values_.size());
+            updateMetrics();
             // not emitting because it's not the last phase
             return false;
         }
 
         values_.insert(record->value(match_field_id_));
-        return active(phase + 1);
+
+        if (!active(phase + 1)) {
+            updateMetrics();
+            return false;
+        }
+
+        return true;
     }
 
     bool consumeSource(int phase, const Record* record) {
         if (record == nullptr) {
-            match_set_size_.counter.set(values_.size());
             cleanIfDone(phase);
             return emit(phase, nullptr);
         }
 
         if (values_.contains(proj_->eval(*record))) {
-            return emit(phase, record);
-        }
-
-        if (active(phase)) {
+            if (!emit(phase, record)) {
+                cleanIfDone(phase);
+                return false;
+            }
             return true;
         }
 
-        cleanIfDone(phase);
-        return false;
+        if (!active(phase)) {
+            cleanIfDone(phase);
+            return false;
+        }
+
+        return true;
     }
 
     void init(int out_phase, const FieldSet& downstream) override {
@@ -73,7 +95,15 @@ class SemiJoin : public OperationBase<SemiJoin> {
             out_phase, &sub_source_, FieldSet::merge(proj_->requiredFields(), downstream));
     }
 
+    void updateMetrics() {
+        if (auto m = prof_.metrics()) {
+            m->custom.match_set_size.set(values_.size());
+        }
+    }
+
     void cleanIfDone(int phase) {
+        updateMetrics();
+
         if (phase < maxPhase()) {
             return;
         }
@@ -118,17 +148,21 @@ class SemiJoin : public OperationBase<SemiJoin> {
     OperationPtr match_source_;
     ScalarPtr proj_;
     FieldId match_field_id_;
-    prof::NamedCounter<size_t> match_set_size_{"match set size", size_t(0)};
 
+    prof::ScopeHandle<ScopeMetrics<>> prof_source_ =
+        prof::newScope<ScopeMetrics<>>("{} src input", name());
     MemberSubscriber<SemiJoin> sub_source_{
         this,
         &SemiJoin::consumeSource,
-        prof_.inputHandle(&sub_source_),
+        &prof_source_,
     };
+
+    prof::ScopeHandle<ScopeMetrics<>> prof_match_ =
+        prof::newScope<ScopeMetrics<>>("{} match set input", name());
     MemberSubscriber<SemiJoin> sub_match_{
         this,
         &SemiJoin::consumeMatch,
-        prof_.inputHandle(&sub_match_),
+        &prof_match_,
     };
 
     // phase at which values_ are built

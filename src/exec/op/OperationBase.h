@@ -1,21 +1,25 @@
 #pragma once
 
-#include "core/verify.h"
-#include "exec/prof/Profiler.h"
-#include "util/uniq_id.h"
-
 #include "exec/op/Operation.h"
+#include "exec/op/ScopeMetrics.h"
+
+#include "prof/global.h"
+
+#include "core/verify.h"
+#include "util/uniq_id.h"
 
 #include <rfl.hpp>
 #include <unordered_set>
 
 namespace lsql::exec {
 
-template <typename Self>
+template <typename Self, CustomMetrics M = EmptyCustomMetrics>
 class OperationBase : public virtual Operation {
+    using MetricsType = ScopeMetrics<M>;
+
  public:
     OperationBase(int min_out_phase, ConstFieldBindingPtr binding)
-        : prof_(prof::Profiler::registerOperation(this))
+        : prof_(prof::newScope<MetricsType>("{} emitter", name()))
         , binding_(std::move(binding))
         , min_out_phase_(min_out_phase) {}
 
@@ -29,6 +33,9 @@ class OperationBase : public virtual Operation {
         max_out_phase_ = std::max(max_out_phase_, out_phase);
         subs_[out_phase].insert(sub);
         init(out_phase, requiredFields(out_phase));
+
+        // add profiling DAG edge
+        prof::addEdge(prof_.metrics(), sub->profHandle());
     }
 
     int minPhase() const override { return min_out_phase_; }
@@ -77,7 +84,7 @@ class OperationBase : public virtual Operation {
     // returns active(phase)
     bool emit(int phase, const Record* record) {
         verify(active(phase));
-        auto _ = prof_.emitScope();
+        auto _ = prof_.scope();
 
         auto&& subs = subs_[phase];
         auto it = subs.begin();
@@ -96,7 +103,8 @@ class OperationBase : public virtual Operation {
     }
 
  protected:
-    prof::OperationHandle prof_;
+    const int uniq_id_ = util::uniqId();
+    prof::ScopeHandle<MetricsType> prof_;
     ConstFieldBindingPtr binding_;
 
  private:
@@ -104,7 +112,6 @@ class OperationBase : public virtual Operation {
     using PhaseFieldSet = std::unordered_map<int, FieldSet>;
 
     const int min_out_phase_ = 0;
-    const int uniq_id_ = util::uniqId();
     int max_out_phase_ = 0;
     Subscribers subs_;
     PhaseFieldSet phase_required_fields_;

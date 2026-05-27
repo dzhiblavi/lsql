@@ -31,6 +31,8 @@ class SequenceProfile {
  public:
     SequenceProfile() = default;
 
+    bool empty() const { return count_ == 0; }
+
     Item scope() { return Item(this); }
 
     void reset() {

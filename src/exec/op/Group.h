@@ -49,7 +49,9 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , aggregators_(toProjectionMap(std::move(aggregators)))
-        , group_key_(toProjectionMap(std::move(group_key))) {}
+        , group_key_(toProjectionMap(std::move(group_key))) {
+        prof::addEdge(&prof_sub_, &prof_);
+    }
 
  private:
     bool consume(int phase, const Record* record) {
@@ -198,10 +200,14 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     OperationPtr source_;
     AggregateProjectionMap aggregators_;
     ScalarProjectionMap group_key_;
+
+    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
+        prof::newScope<ScopeMetrics<>>("{} input", name());
+
     MemberSubscriber<Group> sub_{
         this,
         &Group::consume,
-        prof_.inputHandle(&sub_),
+        &prof_sub_,
     };
 
     // phase state

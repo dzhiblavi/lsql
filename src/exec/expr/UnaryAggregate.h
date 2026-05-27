@@ -2,8 +2,8 @@
 
 #include "exec/expr/Aggregate.h"
 #include "exec/expr/Scalar.h"
-#include "exec/prof/Metrics.h"
-#include "exec/prof/OperationHandle.h"
+//#include "exec/prof/Metrics.h"
+//#include "exec/prof/OperationHandle.h"
 
 #include "core/exprs/concepts.h"
 #include "util/instrument/Timer.h"
@@ -138,10 +138,10 @@ struct SumOp {
 template <Comparable T>
 struct PercentileOp {
     struct State {
-        State() : info(prof::currentOperation().addTransientMetric<prof::Message>()) {}
+        //State() : info(prof::currentOperation().addTransientMetric<prof::Message>()) {}
 
         std::vector<T> values;
-        prof::Message* info;
+        //prof::Message* info;
     };
 
     PercentileOp(std::vector<float> perc, ValueType type)
@@ -187,13 +187,13 @@ struct PercentileOp {
             return "";
         }
 
-        if (state->info) {
-            state->info->set(
-                "percentile size: {}, percentiles: {}, time={}",
-                state->values.size(),
-                percentiles.size(),
-                instr::prettyDuration(timer.elapsed()));
-        }
+        //if (state->info) {
+            //state->info->set(
+                //"percentile size: {}, percentiles: {}, time={}",
+                //state->values.size(),
+                //percentiles.size(),
+                //instr::prettyDuration(timer.elapsed()));
+        //}
 
         std::stringstream ss;
         ss << '[';

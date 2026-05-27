@@ -1,16 +1,33 @@
 #pragma once
 
-#include "core/verify.h"
 #include "exec/op/MemberSubscriber.h"
 #include "exec/op/OperationBase.h"
 #include "exec/op/types.h"
+
+#include "core/verify.h"
+#include "util/instrument/Counters.h"
 
 #include <array>
 #include <queue>
 
 namespace lsql::exec {
 
-class MergeSorted : public OperationBase<MergeSorted> {
+struct MergeSortedMetrics {
+    std::array<instr::Counter<size_t>, 2> buf_sizes{};
+
+    void reset() {
+        buf_sizes[0].set(0);
+        buf_sizes[1].set(0);
+    }
+
+    util::StrBuilder format() const {
+        return util::StrBuilder()
+            .item("max_buf_size (L): {}", buf_sizes[0].value())
+            .item("max_buf_size (R): {}", buf_sizes[1].value());
+    }
+};
+
+class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
     enum class DrainResult : uint8_t {
         Continue,
         StopRequested,
@@ -24,8 +41,8 @@ class MergeSorted : public OperationBase<MergeSorted> {
         , r_(std::move(r))
         , slist_(std::move(slist))
         , desc_(desc) {
-        prof_.registerMetric(&buf_sizes_[0]);
-        prof_.registerMetric(&buf_sizes_[1]);
+        prof::addEdge(&prof_left_, &prof_);
+        prof::addEdge(&prof_right_, &prof_);
     }
 
  private:
@@ -116,8 +133,8 @@ class MergeSorted : public OperationBase<MergeSorted> {
     void push(int index, const Record* record, SortKey key) {
         buffers_[index].emplace(record->clone(), std::move(key));
 
-        if (prof_) {
-            buf_sizes_[index].counter.max(buffers_[index].size());
+        if (auto m = prof_.metrics()) {
+            m->custom.buf_sizes[index].max(buffers_[index].size());
         }
     }
 
@@ -261,28 +278,29 @@ class MergeSorted : public OperationBase<MergeSorted> {
     static constexpr int Left = 0;
     static constexpr int Right = 1;
 
-    std::array<prof::NamedCounter<size_t>, 2> buf_sizes_{
-        prof::NamedCounter("max left buf size", size_t(0)),
-        prof::NamedCounter("max right buf size", size_t(0)),
-    };
-
     OperationPtr l_;
     OperationPtr r_;
     SortList slist_;
     bool desc_;
 
     std::mutex m_;
+
+    prof::ScopeHandle<ScopeMetrics<>> prof_left_ =
+        prof::newScope<ScopeMetrics<>>("{} input(L)", name());
     MemberSubscriber<MergeSorted, LockMixin> sub_l_{
         this,
         &MergeSorted::consume<0>,
+        &prof_left_,
         &m_,
-        prof_.inputHandle(&sub_l_),
     };
+
+    prof::ScopeHandle<ScopeMetrics<>> prof_right_ =
+        prof::newScope<ScopeMetrics<>>("{} input(R)", name());
     MemberSubscriber<MergeSorted, LockMixin> sub_r_{
         this,
         &MergeSorted::consume<1>,
+        &prof_right_,
         &m_,
-        prof_.inputHandle(&sub_r_),
     };
 
     bool delay_done_ = false;

@@ -53,7 +53,9 @@ class Projection : public OperationBase<Projection>,
     Projection(OperationPtr source, ScalarProjectionList projectors, ConstFieldBindingPtr binding)
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
-        , projectors_(buildProjectionMap(std::move(projectors))) {}
+        , projectors_(buildProjectionMap(std::move(projectors))) {
+        prof::addEdge(&prof_sub_, &prof_);
+    }
 
  private:
     bool consume(int phase, const Record* record) {
@@ -108,10 +110,13 @@ class Projection : public OperationBase<Projection>,
 
     OperationPtr source_;
     ScalarProjectionMap projectors_;
+
+    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
+        prof::newScope<ScopeMetrics<>>("{} input", name());
     MemberSubscriber<Projection> sub_{
         this,
         &Projection::consume,
-        prof_.inputHandle(&sub_),
+        &prof_sub_,
     };
 };
 

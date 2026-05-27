@@ -10,7 +10,9 @@ class Limit : public OperationBase<Limit> {
     Limit(OperationPtr source, int limit, ConstFieldBindingPtr binding)
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
-        , limit_(limit) {}
+        , limit_(limit) {
+        prof::addEdge(&prof_sub_, &prof_);
+    }
 
  private:
     // Subscriber
@@ -55,10 +57,14 @@ class Limit : public OperationBase<Limit> {
 
     OperationPtr source_;
     const int limit_;
+
+    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
+        prof::newScope<ScopeMetrics<>>("{} input", name());
+
     MemberSubscriber<Limit> sub_{
         this,
         &Limit::consume,
-        prof_.inputHandle(&sub_),
+        &prof_sub_,
     };
 
     // phase state

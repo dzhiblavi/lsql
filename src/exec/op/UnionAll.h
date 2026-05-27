@@ -11,7 +11,10 @@ class UnionAll : public OperationBase<UnionAll> {
     UnionAll(OperationPtr l, OperationPtr r, ConstFieldBindingPtr binding)
         : OperationBase(std::max(l->minPhase(), r->minPhase()), std::move(binding))
         , l_(std::move(l))
-        , r_(std::move(r)) {}
+        , r_(std::move(r)) {
+        prof::addEdge(&prof_left_, &prof_);
+        prof::addEdge(&prof_right_, &prof_);
+    }
 
  private:
     template <int Index>
@@ -77,17 +80,23 @@ class UnionAll : public OperationBase<UnionAll> {
     bool done_[2] = {false};
 
     std::mutex m_;
+
+    prof::ScopeHandle<ScopeMetrics<>> prof_left_ =
+        prof::newScope<ScopeMetrics<>>("{} input(L)", name());
     MemberSubscriber<UnionAll, LockMixin> sub_l_{
         this,
         &UnionAll::consume<0>,
+        &prof_left_,
         &m_,
-        prof_.inputHandle(&sub_l_),
     };
+
+    prof::ScopeHandle<ScopeMetrics<>> prof_right_ =
+        prof::newScope<ScopeMetrics<>>("{} input(R)", name());
     MemberSubscriber<UnionAll, LockMixin> sub_r_{
         this,
         &UnionAll::consume<1>,
+        &prof_right_,
         &m_,
-        prof_.inputHandle(&sub_r_),
     };
 };
 

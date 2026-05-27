@@ -30,7 +30,9 @@ class AggregateProjection
         OperationPtr source, AggregateProjectionList projectors, ConstFieldBindingPtr binding)
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
-        , projectors_(std::move(projectors)) {}
+        , projectors_(std::move(projectors)) {
+        prof::addEdge(&prof_sub_, &prof_);
+    }
 
  private:
     void push(int phase) override {
@@ -169,10 +171,13 @@ class AggregateProjection
     OperationPtr source_;
     AggregateProjectionList projectors_;
 
+    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
+        prof::newScope<ScopeMetrics<>>("{} input", name());
+
     MemberSubscriber<AggregateProjection> sub_{
         this,
         &AggregateProjection::consume,
-        prof_.inputHandle(&sub_),
+        &prof_sub_,
     };
 
     // phase state

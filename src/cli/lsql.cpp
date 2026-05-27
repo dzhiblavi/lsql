@@ -1,5 +1,5 @@
 #include "exec/op/Operation.h"
-#include "exec/prof/Profiler.h"
+#include "prof/global.h"
 #include "util/ThreadPool.h"
 
 #include "iface/sql/ast/Stringifier.h"
@@ -252,6 +252,8 @@ class Print : public exec::Subscriber {
     }
 
  private:
+    prof::MetricsBase* profHandle() override { return nullptr; }
+
     void done() const {
         println(ss_.str());
         ss_.str() = "";
@@ -330,8 +332,8 @@ void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
         llog::info("phase {} completed", phase);
 
         if (profile_arg.getValue()) {
-            prof << std::format("profile [phase={}]\n{}", phase, exec::prof::Profiler::report());
-            exec::prof::Profiler::reset();
+            prof << std::format("profile [phase={}]\n{}", phase, prof::format());
+            prof::reset();
         }
     }
 
@@ -382,10 +384,11 @@ void main(std::span<const char*> argv) {
             std::format("invalid value for format: {}", format_arg.getValue()));
     }
 
-    std::optional<exec::prof::Profiler> profiler;
+    std::optional<prof::Profiler> profiler;
     if (profile_arg.getValue()) {
         llog::info("enabling profiling [threads={}]", threads_arg.getValue());
-        profiler.emplace(threads_arg.getValue());
+        profiler.emplace();
+        prof::setGlobalProfiler(&profiler.value());
     } else {
         llog::info("profiling disabled");
     }

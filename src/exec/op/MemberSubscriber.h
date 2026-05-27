@@ -1,8 +1,11 @@
 #pragma once
 
-#include "core/verify.h"
+#include "exec/op/ScopeMetrics.h"
 #include "exec/op/Subscriber.h"
-#include "exec/prof/InputHandle.h"
+
+#include "prof/Scope.h"
+
+#include "core/verify.h"
 
 #include <tuple>
 
@@ -15,23 +18,28 @@ concept SubscriberMixin = requires(F& f) {
 };
 
 template <typename Self, SubscriberMixin... Mixins>
-class MemberSubscriberBase : public Subscriber {
+class MemberSubscriber : public Subscriber {
  public:
     using MethodType = bool (Self::*)(int, const Record*);
 
     template <typename... Args>
-    MemberSubscriberBase(Self* self, MethodType method, Args&&... args)
+    MemberSubscriber(
+        Self* self, MethodType method, prof::ScopeHandle<ScopeMetrics<>>* handle, Args&&... args)
         : self_(self)
         , method_(method)
-        , mixins_(std::forward<Args>(args)...) {
+        , mixins_(std::forward<Args>(args)...)
+        , handle_(handle) {
         verify(self != nullptr);
         verify(method != nullptr);
     }
 
     bool consume(int phase, const Record* record) override {
-        auto scope = consumeScope();
+        [[maybe_unused]] auto scope = consumeScope();
+        auto _ = handle_->scope();
         return (self_->*method_)(phase, record);
     }
+
+    prof::MetricsBase* profHandle() override { return handle_->metrics(); }
 
  private:
     std::tuple<typename Mixins::ScopeValueType...> consumeScope() {
@@ -42,15 +50,7 @@ class MemberSubscriberBase : public Subscriber {
     Self* self_;
     MethodType method_;
     std::tuple<Mixins...> mixins_;
-};
-
-struct ProfilerMixin {
-    using ScopeValueType = decltype(prof::InputHandle().consumeScope());
-    explicit ProfilerMixin(prof::InputHandle handle) : handle_(std::move(handle)) {}
-    ScopeValueType consumeScope() { return handle_.consumeScope(); }
-
- private:
-    prof::InputHandle handle_;
+    prof::ScopeHandle<ScopeMetrics<>>* handle_;
 };
 
 struct LockMixin {
@@ -61,10 +61,5 @@ struct LockMixin {
  private:
     std::mutex* m_;
 };
-
-// ProfilerMixin should be last because Mixins... can optionally
-// control concurrency (ProfilerMixin is not threadsafe).
-template <typename Op, SubscriberMixin... Mixins>
-using MemberSubscriber = MemberSubscriberBase<Op, Mixins..., ProfilerMixin>;
 
 }  // namespace lsql::exec

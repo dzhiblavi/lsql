@@ -1,11 +1,23 @@
 #pragma once
 
-#include "core/verify.h"
 #include "exec/expr/Scalar.h"
 #include "exec/op/MemberSubscriber.h"
 #include "exec/op/OperationBase.h"
 
+#include "core/verify.h"
+#include "util/instrument/Counters.h"
+
 namespace lsql::exec {
+
+struct MarkJoinMetrics {
+    instr::Counter<size_t> match_set_size{0};
+
+    void reset() { match_set_size.set(0); }
+
+    util::StrBuilder format() const {
+        return util::StrBuilder("match_set_size: {}", match_set_size.value());
+    }
+};
 
 class MarkJoinRecord : public Record {
  public:
@@ -34,7 +46,7 @@ class MarkJoinRecord : public Record {
     bool value_;
 };
 
-class MarkJoin : public OperationBase<MarkJoin> {
+class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {
  public:
     MarkJoin(
         OperationPtr source,
@@ -50,7 +62,8 @@ class MarkJoin : public OperationBase<MarkJoin> {
         , proj_(std::move(proj))
         , output_field_id_(output_field_id)
         , match_field_id_(match_field_id) {
-        prof_.registerMetric(&match_set_size_);
+        prof::addEdge(&prof_sub_match_, &prof_);
+        prof::addEdge(&prof_sub_source_, &prof_);
     }
 
  private:
@@ -58,18 +71,23 @@ class MarkJoin : public OperationBase<MarkJoin> {
         verify(phase == match_phase_);
 
         if (record == nullptr) {
-            match_set_size_.counter.set(values_.size());
+            updateMetrics();
             // not emitting because it's not the last phase
             return false;
         }
 
         values_.insert(record->value(match_field_id_));
-        return active(phase + 1);
+
+        if (!active(phase + 1)) {
+            updateMetrics();
+            return false;
+        }
+
+        return true;
     }
 
     bool consumeSource(int phase, const Record* record) {
         if (record == nullptr) {
-            match_set_size_.counter.set(values_.size());
             cleanIfDone(phase);
             return emit(phase, nullptr);
         }
@@ -77,7 +95,12 @@ class MarkJoin : public OperationBase<MarkJoin> {
         bool value = values_.contains(proj_->eval(*record));
         MarkJoinRecord marked_record(value, output_field_id_, record);
 
-        return emit(phase, &marked_record);
+        if (!emit(phase, &marked_record)) {
+            cleanIfDone(phase);
+            return false;
+        }
+
+        return true;
     }
 
     void init(int out_phase, const FieldSet& downstream) override {
@@ -96,7 +119,15 @@ class MarkJoin : public OperationBase<MarkJoin> {
             out_phase, &sub_source_, FieldSet::merge(proj_->requiredFields(), downstream));
     }
 
+    void updateMetrics() {
+        if (auto m = prof_.metrics()) {
+            m->custom.match_set_size.set(values_.size());
+        }
+    }
+
     void cleanIfDone(int phase) {
+        updateMetrics();
+
         if (phase < maxPhase()) {
             return;
         }
@@ -144,17 +175,21 @@ class MarkJoin : public OperationBase<MarkJoin> {
     ScalarPtr proj_;
     FieldId output_field_id_;
     FieldId match_field_id_;
-    prof::NamedCounter<size_t> match_set_size_{"match set size", size_t(0)};
 
+    prof::ScopeHandle<ScopeMetrics<>> prof_sub_source_ =
+        prof::newScope<ScopeMetrics<>>("{} src input", name());
     MemberSubscriber<MarkJoin> sub_source_{
         this,
         &MarkJoin::consumeSource,
-        prof_.inputHandle(&sub_source_),
+        &prof_sub_source_,
     };
+
+    prof::ScopeHandle<ScopeMetrics<>> prof_sub_match_ =
+        prof::newScope<ScopeMetrics<>>("{} match set input", name());
     MemberSubscriber<MarkJoin> sub_match_{
         this,
         &MarkJoin::consumeMatch,
-        prof_.inputHandle(&sub_match_),
+        &prof_sub_match_,
     };
 
     // phase at which values_ are built

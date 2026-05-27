@@ -11,7 +11,9 @@ class Materialize : public Source, public OperationBase<Materialize> {
  public:
     Materialize(OperationPtr source, ConstFieldBindingPtr binding)
         : OperationBase(source->minPhase(), std::move(binding))
-        , source_(std::move(source)) {}
+        , source_(std::move(source)) {
+        prof::addEdge(&prof_sub_, &prof_);
+    }
 
     void push(int phase) override {
         if (first_phase_ == -1) {
@@ -103,11 +105,16 @@ class Materialize : public Source, public OperationBase<Materialize> {
     }
 
     OperationPtr source_;
+
+    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
+        prof::newScope<ScopeMetrics<>>("{} input", name());
+
     MemberSubscriber<Materialize> sub_{
         this,
         &Materialize::consume,
-        prof_.inputHandle(&sub_),
+        &prof_sub_,
     };
+
     std::optional<std::vector<ConstRecordPtr>> materialized_ = std::nullopt;
     int first_phase_ = -1;
 };

@@ -2,6 +2,8 @@
 
 #include "exec/Record.h"
 
+#include "prof/Scope.h"
+
 namespace lsql::exec {
 
 class Subscriber {
@@ -20,6 +22,8 @@ class Subscriber {
     // Result means "continue sending me records". If false, no more records
     // will be pushed into this subscriber.
     virtual bool consume(int phase, const exec::Record* record) = 0;
+
+    virtual prof::MetricsBase* profHandle() { return nullptr; }
 };
 
 }  // namespace lsql::exec

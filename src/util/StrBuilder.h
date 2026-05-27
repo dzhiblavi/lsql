@@ -38,6 +38,11 @@ class StrBuilder {
         return *this;
     }
 
+    template <typename... Args>
+    StrBuilder& item(std::format_string<const Args&...> fmt, const Args&... args) {
+        return item(StrBuilder(fmt, args...));
+    }
+
     StrBuilder& child(StrBuilder builder) {
         for (auto&& line : builder.lines_) {
             lines_.push_back(std::format("|  {}", line));
