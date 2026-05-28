@@ -33,21 +33,3 @@ target_link_options(lsql PRIVATE
     "-stdlib=libc++"
     "-static-libstdc++"
 )
-
-#add_executable(play play.cpp)
-#target_link_libraries(
-    #play PRIVATE
-    #tclap::tclap
-    #magic_enum::magic_enum
-    #lsql-exec
-    #lsql-data
-    #lsql-util
-    #lsql-core
-    #lsql-logs
-    #lsql-iface-sql
-#)
-
-#target_link_options(play PRIVATE
-    #"-stdlib=libc++"
-    #"-static-libstdc++"
-#)

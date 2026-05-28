@@ -1,6 +1,8 @@
 #include "data/PagedFile.h"
 #include "logs/SearchTimestamp.h"
 
+#include "core/build_info.h"
+
 #include <tclap/CmdLine.h>
 
 #include <span>
@@ -51,7 +53,7 @@ TCLAP::UnlabeledValueArg<std::string> file_arg{
 };
 
 void parseArgs(std::span<const char*> argv) {
-    TCLAP::CmdLine cmd{"tcat", ' ', "0.0.1"};
+    TCLAP::CmdLine cmd{"tcat", ' ', formatBuildInfo()};
     cmd.add(&interval_arg);
     cmd.add(&timestamp_arg);
     cmd.add(&file_arg);
