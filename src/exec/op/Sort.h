@@ -49,7 +49,7 @@ class Sort : public OperationBase<Sort, SortMetrics>, public std::enable_shared_
     bool consume(int phase, const Record* record) {
         if (curr_phase_ != phase) {
             curr_phase_ = phase;
-            verify(records_.empty());
+            verify_dbg(records_.empty());
         }
 
         if (record != nullptr) {

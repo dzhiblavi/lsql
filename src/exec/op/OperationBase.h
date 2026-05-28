@@ -82,7 +82,7 @@ class OperationBase : public virtual Operation {
 
     // returns active(phase)
     bool emit(int phase, const Record* record) {
-        verify(active(phase));
+        verify_dbg(active(phase));
         auto _ = prof_.scope();
 
         auto&& subs = subs_[phase];

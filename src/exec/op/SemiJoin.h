@@ -40,7 +40,7 @@ class SemiJoin : public OperationBase<SemiJoin, SemiJoinMetrics> {
 
  private:
     bool consumeMatch(int phase, const Record* record) {
-        verify(phase == match_phase_);
+        verify_dbg(phase == match_phase_);
 
         if (record == nullptr) {
             updateMetrics();

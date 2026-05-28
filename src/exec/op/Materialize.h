@@ -31,7 +31,7 @@ class Materialize : public Source, public OperationBase<Materialize> {
  private:
     // Subscriber
     bool consume(int phase, const Record* record) {
-        verify(phase == first_phase_);
+        verify_dbg(phase == first_phase_);
 
         if (!materialized_) {
             materialized_.emplace();

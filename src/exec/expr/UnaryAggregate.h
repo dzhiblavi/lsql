@@ -39,7 +39,7 @@ class UnaryAggregate : public Aggregate {
     explicit UnaryAggregate(ScalarPtr arg, Args&&... args)
         : arg_(std::move(arg))
         , op_(std::forward<Args>(args)...) {
-        require(arg_->valueType() == op_.argType());
+        require(arg_->valueType() == op_.argType(), "wrong argument type");
     }
 
     FieldSet requiredFields() const override { return arg_->requiredFields(); }

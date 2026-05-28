@@ -34,7 +34,7 @@ class Scope : public ScopeBase, util::NonCopyable {
     Scope() : ScopeBase(false) {}
 
     explicit Scope(M* metrics) : ScopeBase(true), metrics_(metrics) {
-        verify(metrics != nullptr);
+        verify_dbg(metrics != nullptr);
         metrics_->onEnterScope();
     }
 

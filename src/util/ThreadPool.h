@@ -28,7 +28,7 @@ class MPMCLockedQueue {
             return std::nullopt;
         }
 
-        verify(!queue_.empty());
+        verify_dbg(!queue_.empty());
         return popQueue();
     }
 
@@ -101,7 +101,7 @@ class ThreadPool {
             try {
                 (*task)();
             } catch (...) {
-                verify(false, "unhandled exception in ThreadPool task");
+                panic("unhandled exception in ThreadPool task");
             }
         }
 

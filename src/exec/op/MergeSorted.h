@@ -54,12 +54,12 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
         static_assert(Index == 0 || Index == 1);
 
         if (delay_done_) {
-            verify(eof_[1 - Index]);
+            verify_dbg(eof_[1 - Index]);
             reset();
             return false;
         }
 
-        verify(!eof_[Index]);
+        verify_dbg(!eof_[Index]);
 
         if (record == nullptr) {
             eof_[Index] = true;
@@ -77,7 +77,7 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
             return false;
         }
 
-        verify(record != nullptr);
+        verify_dbg(record != nullptr);
 
         if (shouldWait(1 - Index)) {
             // waiting for records from other side to compare to, cannot emit
@@ -142,7 +142,7 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
 
     // drain from buffers only
     DrainResult drain(int phase) {
-        verify(!delay_done_);
+        verify_dbg(!delay_done_);
 
         auto& lb = buffers_[Left];
         auto& rb = buffers_[Right];
@@ -160,12 +160,12 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
         }
 
         if (eof_[Right] && !lb.empty()) {
-            verify(rb.empty());
+            verify_dbg(rb.empty());
             return drainSide(phase, Left);
         }
 
         if (eof_[Left] && !rb.empty()) {
-            verify(lb.empty());
+            verify_dbg(lb.empty());
             return drainSide(phase, Right);
         }
 
@@ -173,9 +173,9 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
     }
 
     DrainResult drainSide(int phase, int side) {
-        verify(eof_[1 - side]);
-        verify(buffers_[1 - side].empty());
-        verify(!delay_done_);
+        verify_dbg(eof_[1 - side]);
+        verify_dbg(buffers_[1 - side].empty());
+        verify_dbg(!delay_done_);
 
         // "other" will not push more records, so drain the buffer
         while (!buffers_[side].empty()) {
@@ -190,8 +190,8 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
     }
 
     DrainResult drain(int phase, int curr_side, const Record* record) {
-        verify(record != nullptr);
-        verify(buffers_[curr_side].empty());
+        verify_dbg(record != nullptr);
+        verify_dbg(buffers_[curr_side].empty());
 
         auto k = key(*record);
         auto& b = buffers_[1 - curr_side];  // other side's buffer
@@ -247,7 +247,7 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
     }
 
     ConstRecordPtr pop(int index) {
-        verify(!buffers_[index].empty());
+        verify_dbg(!buffers_[index].empty());
         auto [val, _] = std::move(buffers_[index].front());
         buffers_[index].pop();
         return val;

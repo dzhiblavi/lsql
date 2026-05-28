@@ -22,7 +22,7 @@ ScopeBase::~ScopeBase() {
         return;
     }
 
-    verify(this_thread_top_ == this);
+    verify_dbg(this_thread_top_ == this);
     this_thread_top_ = parent_;
 }
 
@@ -32,7 +32,7 @@ ScopeBase::ScopeBase(ScopeBase&& rhs) noexcept
     , parent_(rhs.parent_)
     , active_(std::exchange(rhs.active_, false)) {
     if (active_) {
-        verify(this_thread_top_ == &rhs);
+        verify_dbg(this_thread_top_ == &rhs);
         this_thread_top_ = this;
     }
 }

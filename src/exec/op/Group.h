@@ -57,7 +57,7 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     bool consume(int phase, const Record* record) {
         if (curr_phase_ != phase) {
             curr_phase_ = phase;
-            verify(groups_.empty());
+            verify_dbg(groups_.empty());
         }
 
         if (record != nullptr) {
@@ -161,7 +161,7 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
             }
 
             auto it = aggregators_.find(id);
-            verify(it != aggregators_.end());
+            verify_dbg(it != aggregators_.end());
             aggregators.emplace(id, it->second->expr->aggregator());
         }
     }

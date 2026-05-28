@@ -17,6 +17,7 @@
 #include "ir/Scalars.h"    // IWYU pragma: keep
 #include "ir/Statement.h"  // IWYU pragma: keep
 
+#include "core/build_info.h"
 #include "core/require.h"
 
 #include <llog/load.h>
@@ -129,7 +130,7 @@ void println(std::string_view s) {
 }
 
 bool parseArgs(std::span<const char*> argv) {
-    TCLAP::CmdLine cmd{"tsql", ' ', "0.0.1"};
+    TCLAP::CmdLine cmd{"tsql", ' ', formatBuildInfo()};
     cmd.add(&sql_file_arg);
     cmd.add(&format_arg);
     cmd.add(&log_level_arg);
@@ -278,7 +279,7 @@ class Print : public exec::Subscriber {
     }
 
     bool consume(int phase, const exec::Record* record) override {
-        verify(phase == source_->minPhase());
+        verify_dbg(phase == source_->minPhase());
 
         if (record == nullptr) {
             done();

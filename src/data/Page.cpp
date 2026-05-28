@@ -37,7 +37,7 @@ MappedPage::~MappedPage() {
 }
 
 std::string_view MappedPage::data() const {
-    verify(addr_ != nullptr);
+    verify_dbg(addr_ != nullptr);
     return {static_cast<const char*>(addr_), size_};
 }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/build_info.h"
+
 #include <llog/log.h>
 
 #define panic(...)                         \
@@ -17,3 +19,13 @@
                                                                        \
         return std::forward<decltype(X)>(res);                         \
     }()
+
+#if defined(LSQL_BUILD_DEBUG)
+
+#define verify_dbg verify
+
+#else
+
+#define verify_dbg(...)
+
+#endif

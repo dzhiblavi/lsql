@@ -21,7 +21,7 @@ class UnionAll : public OperationBase<UnionAll> {
     bool consume(int phase, const Record* record) {
         if (done_[Index]) {
             // the stream has ended prematurely via receiver request
-            verify(done_[1 - Index]);
+            verify_dbg(done_[1 - Index]);
             reset();
             return false;
         }
@@ -30,7 +30,7 @@ class UnionAll : public OperationBase<UnionAll> {
             if (finished<Index>()) {
                 // the second subscription finished. no more records
                 reset();
-                verify(!emit(phase, nullptr));
+                verify_dbg(!emit(phase, nullptr));
             }
 
             // we want to cancel current subscription anyhow
@@ -50,7 +50,7 @@ class UnionAll : public OperationBase<UnionAll> {
 
     template <int Index>
     bool finished() {
-        verify(!done_[Index]);
+        verify_dbg(!done_[Index]);
         done_[Index] = true;
         return done_[1 - Index];
     }

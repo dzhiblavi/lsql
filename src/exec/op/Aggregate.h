@@ -60,17 +60,17 @@ class AggregateProjection
 
     // Subscriber
     bool consume(int phase, const Record* record) {
-        verify(phase == first_phase_);
+        verify_dbg(phase == first_phase_);
 
         if (aggregators_.size() != projectors_.size()) {
-            verify(aggregators_.empty());
+            verify_dbg(aggregators_.empty());
             aggregators_.reserve(projectors_.size());
             for (auto&& proj : projectors_) {
                 aggregators_.push_back(proj->expr->aggregator());
             }
         }
 
-        verify(aggregators_.size() == projectors_.size());
+        verify_dbg(aggregators_.size() == projectors_.size());
 
         if (record != nullptr) {
             for (auto&& aggregator : aggregators_) {

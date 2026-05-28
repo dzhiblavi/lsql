@@ -25,6 +25,8 @@ include(./cmake/thirdparty/reflect-cpp.cmake)
 include(./cmake/CompileOptions.cmake)
 include(./cmake/Werror.cmake)
 
+include(./cmake/GenerateBuildInfo.cmake)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 add_subdirectory(src)
 
