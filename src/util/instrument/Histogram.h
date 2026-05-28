@@ -1,8 +1,14 @@
 #pragma once
 
+#include "util/instrument/duration.h"
+#include "util/instrument/types.h"
+
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <format>
+#include <sstream>
+#include <string>
 
 namespace lsql::util {
 
@@ -64,6 +70,32 @@ class Histogram {
 template <size_t Bits = 31, size_t Resolution = 1>
 auto histogram() {
     return Histogram<Bits, Resolution>();
+}
+
+template <typename Duration, size_t Bits, size_t Resolution>
+std::string to_string(const Histogram<Bits, Resolution>& hist) {
+    std::stringstream ss;
+    ss << '[';
+
+    bool any_bucket = false;
+    for (size_t bucket = 0; bucket < hist.BucketsCount; ++bucket) {
+        if (hist[bucket] == 0) {
+            continue;
+        }
+
+        any_bucket = true;
+        ss << std::format(
+            "<={}: {},",
+            instr::prettyDuration(
+                std::chrono::duration_cast<instr::MonotonicDuration>(
+                    Duration(hist.bucketMax(bucket)))),
+            hist[bucket]);
+    }
+    if (any_bucket) {
+        ss.seekp(-1, std::ios_base::end);  // remove last ','
+    }
+    ss << ']';
+    return std::move(ss).str();
 }
 
 }  // namespace lsql::util

@@ -7,7 +7,7 @@ namespace lsql::prof {
 void setGlobalProfiler(Profiler* prof);
 Profiler* globalProfiler();
 
-template <Metrics M>
+template <CMetrics M>
 ScopeHandle<M> newScope(std::string name) {
     if (auto prof = globalProfiler()) {
         return prof->newScope<M>(std::move(name));
@@ -16,18 +16,18 @@ ScopeHandle<M> newScope(std::string name) {
     return {};
 }
 
-template <Metrics M, typename... Args>
+template <CMetrics M, typename... Args>
 ScopeHandle<M> newScope(std::format_string<const Args&...> fmt, const Args&... args) {
     return newScope<M>(std::format(fmt, args...));
 }
 
-inline void addEdge(prof::MetricsBase* parent, prof::MetricsBase* child) {
+inline void addEdge(prof::Metrics* parent, prof::Metrics* child) {
     if (auto prof = globalProfiler()) {
         return prof->addEdge(parent, child);
     }
 }
 
-template <Metrics P, Metrics C>
+template <CMetrics P, CMetrics C>
 void addEdge(ScopeHandle<P>* parent, ScopeHandle<C>* child) {
     if (auto prof = globalProfiler()) {
         return prof->addEdge(parent->metrics(), child->metrics());

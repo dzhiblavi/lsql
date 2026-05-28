@@ -50,28 +50,12 @@ class SequenceProfile {
     }
 
     std::string format() const {
-        std::stringstream ss;
-        ss << std::format(
-            "count={} total={} avg={} [",
+        return std::format(
+            "count={} total={} avg={} {}",
             count_,
             prettyDuration(total_duration_),
-            prettyDuration(count_ > 0 ? total_duration_ / count_ : Duration{}));
-
-        for (size_t bucket = 0; bucket < hist_.BucketsCount; ++bucket) {
-            if (hist_[bucket] != 0) {
-                ss << std::format(
-                    "<={}: {}, ",
-                    prettyDuration(
-                        std::chrono::duration_cast<MonotonicDuration>(
-                            Duration(hist_.bucketMax(bucket)))),
-                    hist_[bucket]);
-            }
-        }
-        if (ss.str().back() != '[') {
-            ss.seekp(-2, std::ios_base::end);  // remove last ', '
-        }
-        ss << "]";
-        return std::move(ss).str();
+            prettyDuration(count_ > 0 ? total_duration_ / count_ : Duration{}),
+            to_string<Duration>(hist_));
     }
 
  private:

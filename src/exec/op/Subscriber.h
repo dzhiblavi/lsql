@@ -23,7 +23,7 @@ class Subscriber {
     // will be pushed into this subscriber.
     virtual bool consume(int phase, const exec::Record* record) = 0;
 
-    virtual prof::MetricsBase* profHandle() { return nullptr; }
+    virtual prof::Metrics* profHandle() { return nullptr; }
 };
 
 }  // namespace lsql::exec

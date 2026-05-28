@@ -63,6 +63,7 @@ class StrBuilder {
     }
 
     template <typename... Args>
+    requires(sizeof...(Args) > 0)
     StrBuilder& line(std::format_string<const Args&...> fmt, const Args&... args) {
         lines_.push_back(std::format(fmt, args...));
         return *this;

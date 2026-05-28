@@ -2,10 +2,7 @@
 
 #include "prof/Scope.h"
 
-#include "util/StrBuilder.h"
-
 #include <algorithm>
-#include <unordered_set>
 #include <vector>
 
 namespace lsql::prof {
@@ -13,14 +10,24 @@ namespace lsql::prof {
 struct ScopeNode {
     bool is_root;
     std::string name;
-    std::unique_ptr<MetricsBase> metrics;
+    std::unique_ptr<Metrics> metrics;
     std::vector<ScopeNode*> children;
     std::vector<ScopeNode*> parents;
 };
 
+struct ScopeNodeSnapshot {
+    bool is_root;
+    std::string name;
+    std::unique_ptr<const Metrics> metrics;
+    std::vector<const ScopeNodeSnapshot*> children;
+    std::vector<const ScopeNodeSnapshot*> parents;
+};
+
 class Profiler {
  public:
-    template <Metrics M, typename... Args>
+    using Snapshot = std::unordered_map<const Metrics*, ScopeNodeSnapshot>;
+
+    template <CMetrics M, typename... Args>
     ScopeHandle<M> newScope(std::string name, Args&&... args) {
         auto metrics = std::make_unique<M>(std::forward<Args>(args)...);
         M* metrics_ptr = metrics.get();
@@ -37,7 +44,7 @@ class Profiler {
     }
 
     // Idempotent
-    void addEdge(MetricsBase* parent, MetricsBase* child) {
+    void addEdge(Metrics* parent, Metrics* child) {
         if (parent == nullptr || child == nullptr) {
             return;
         }
@@ -65,111 +72,61 @@ class Profiler {
         }
     }
 
-    const std::unordered_map<MetricsBase*, ScopeNode>& nodes() const { return nodes_; }
+    std::unordered_map<const Metrics*, ScopeNodeSnapshot> snapshot() const {
+        // metrics -> snapshot node pointer (resides in nodes)
+        std::unordered_map<const Metrics*, ScopeNodeSnapshot*> visited;
+        // snapsnot metrics -> snapshot node
+        std::unordered_map<const Metrics*, ScopeNodeSnapshot> nodes;
+
+        for (auto&& [metrics, node] : nodes_) {
+            if (node.is_root) {
+                snapshot(node, nodes, visited);
+            }
+        }
+
+        // fill parents
+        for (auto&& [metrics, node] : nodes_) {
+            auto* snapshot = visited.at(metrics);
+
+            for (auto* parent : node.parents) {
+                auto* parent_snapshot = visited.at(parent->metrics.get());
+                snapshot->parents.push_back(parent_snapshot);
+            }
+        }
+
+        return nodes;
+    }
 
  private:
-    std::unordered_map<MetricsBase*, ScopeNode> nodes_;
+    ScopeNodeSnapshot* snapshot(const ScopeNode& n, auto& nodes, auto& visited) const {
+        if (auto it = visited.find(n.metrics.get()); it != visited.end()) {
+            return it->second;
+        }
+
+        auto metrics = n.metrics->clone();
+
+        auto [it, _] = nodes.emplace(
+            metrics.get(),
+            ScopeNodeSnapshot{
+                .is_root = n.is_root,
+                .name = n.name,
+                .metrics = std::move(metrics),
+                .children = {},
+                .parents = {},
+            });
+
+        auto* ptr = &it->second;
+        visited[n.metrics.get()] = ptr;
+
+        ptr->children.reserve(n.children.size());
+        for (auto* child : n.children) {
+            ptr->children.push_back(snapshot(*child, nodes, visited));
+        }
+
+        return ptr;
+    }
+
+    std::unordered_map<Metrics*, ScopeNode> nodes_;
 };
-
-inline util::StrBuilder formatProfile(const Profiler& p) {
-    using util::StrBuilder;
-
-    auto formatNode = [&]<typename S>(this S& self, const ScopeNode& node, auto& visited) {
-        visited.insert(&node);
-        if (node.metrics->empty()) {
-            return StrBuilder("{} - no metrics", node.name);
-        }
-
-        auto b = StrBuilder(node.name);
-        b.child(StrBuilder("metrics").child(node.metrics->report()));
-
-        if (node.parents.size() > 1) {
-            auto pb = StrBuilder("parents");
-            for (auto* parent : node.parents) {
-                pb.item(StrBuilder("(see) {}", parent->name));
-            }
-            b.child(pb);
-        }
-
-        if (!node.children.empty()) {
-            auto cb = StrBuilder();
-            for (auto* child : node.children) {
-                if (visited.contains(child)) {
-                    cb.item(StrBuilder("(visited) {}", child->name));
-                } else {
-                    cb.item(self(*child, visited));
-                }
-            }
-            b.child(StrBuilder("children").block(cb));
-        }
-
-        return b;
-    };
-
-    std::unordered_set<const ScopeNode*> visited;
-    auto b = StrBuilder("Profiler report");
-
-    for (auto&& [_, node] : p.nodes()) {
-        if (!node.is_root) {
-            continue;
-        }
-
-        if (auto nb = formatNode(node, visited); !nb.empty()) {
-            b.item(nb);
-        }
-    }
-    return b.render();
-}
-
-inline std::string join(const std::vector<std::string>& strs, std::string_view sep) {
-    if (strs.empty()) {
-        return "";
-    }
-
-    std::stringstream ss;
-    for (size_t i = 0; i < strs.size() - 1; ++i) {
-        ss << strs[i] << sep;
-    }
-    ss << strs.back();
-    return ss.str();
-}
-
-inline void appendFoldedStacks(
-    const ScopeNode& node, std::vector<std::string>& stack, std::vector<std::string>& out) {
-    if (node.metrics->empty()) {
-        return;
-    }
-
-    stack.push_back(node.name);
-
-    auto self = node.metrics->self_dur;
-    if (self.count() > 0) {
-        out.push_back(
-            std::format(
-                "{} {}",
-                join(stack, ";"),
-                std::chrono::duration_cast<std::chrono::nanoseconds>(self).count()));
-    }
-
-    for (auto* child : node.children) {
-        appendFoldedStacks(*child, stack, out);  // expanded mode: no visited set
-    }
-
-    stack.pop_back();
-}
-
-inline std::string formatFoldedStacks(const Profiler& p) {
-    std::vector<std::string> lines;
-    std::vector<std::string> stack;
-
-    for (auto&& [_, node] : p.nodes()) {
-        if (node.is_root) {
-            appendFoldedStacks(node, stack, lines);
-        }
-    }
-
-    std::ranges::sort(lines);
-    return join(lines, "\n");
-}
 
 }  // namespace lsql::prof

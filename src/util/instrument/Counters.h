@@ -11,6 +11,7 @@ class Counter {
  public:
     Counter() = default;
     explicit Counter(T init) : value_{init} {}
+    Counter(const Counter& r) : value_(r.value()) {}
 
     T value() const { return value_.load(std::memory_order_relaxed); }
     void set(T value) { value_.store(value, std::memory_order_relaxed); }

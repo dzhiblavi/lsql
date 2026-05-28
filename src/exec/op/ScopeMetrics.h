@@ -2,7 +2,7 @@
 
 #include "prof/Scope.h"
 
-#include "util/instrument/SequenceProfile.h"
+#include "util/instrument/Histogram.h"
 
 namespace lsql::exec {
 
@@ -18,38 +18,41 @@ struct EmptyCustomMetrics {
 };
 
 template <CustomMetrics Custom = EmptyCustomMetrics>
-struct ScopeMetrics : public prof::MetricsBase {
-    bool empty() const override { return hist_total.empty(); }
+struct ScopeMetrics : public prof::MetricsBase<ScopeMetrics<Custom>> {
+    using Duration = std::chrono::microseconds;
+
+    bool empty() const override { return this->count == 0; }
 
     void reset() override {
-        custom.reset();
+        this->baseReset();
         hist_total.reset();
         hist_this.reset();
+        custom.reset();
     }
 
     void onEnterScope() {}
 
     void onExitScope(auto dur, auto child_dur) {
-        hist_total.add(dur);
-        hist_this.add(dur - child_dur);
+        hist_total.add(std::chrono::duration_cast<Duration>(dur).count());
+        hist_this.add(std::chrono::duration_cast<Duration>(dur - child_dur).count());
     }
 
     util::StrBuilder report() const override {
-        using util::StrBuilder;
+        return this->shortReport()
+            .line("self_hist:  {}", to_string<Duration>(hist_this))
+            .line("total_hist: {}", to_string<Duration>(hist_total));
+    }
 
-        auto b = StrBuilder()
-                     .block(StrBuilder("total: {}", hist_total.format()))
-                     .block(StrBuilder("this:  {}", hist_this.format()));
-
+    util::StrBuilder shortReport() const override {
+        auto b = this->baseReport();
         if (auto cb = custom.format(); !cb.empty()) {
-            b.block(StrBuilder("custom").child(cb));
+            b.block(util::StrBuilder("custom").child(cb));
         }
-
         return b;
     }
 
-    instr::SequenceProfile<std::chrono::microseconds> hist_total = {};
-    instr::SequenceProfile<std::chrono::microseconds> hist_this = {};
+    util::Histogram<> hist_total = {};
+    util::Histogram<> hist_this = {};
     [[no_unique_address]] Custom custom;
 };
 

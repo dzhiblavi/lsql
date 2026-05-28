@@ -1,5 +1,6 @@
 #include "exec/op/Operation.h"
 #include "prof/global.h"
+#include "prof/presentation.h"
 #include "util/ThreadPool.h"
 
 #include "iface/sql/ast/Stringifier.h"
@@ -101,6 +102,8 @@ TCLAP::SwitchArg debug_ir_arg{
     "show IR",
 };
 
+bool any_profile_enabled = false;
+
 TCLAP::SwitchArg profile_arg{
     "p",
     "profile",
@@ -111,6 +114,12 @@ TCLAP::SwitchArg flamegraph_arg{
     "",
     "flamegraph",
     "build phase flamegraphs (dumped to prof.N.folded)",
+};
+
+TCLAP::SwitchArg dot_graph_arg{
+    "",
+    "dot-graph",
+    "build .dot graph (dumped to prof.N.dot)",
 };
 
 void println(std::string_view s) {
@@ -132,6 +141,7 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&threads_arg);
     cmd.add(&profile_arg);
     cmd.add(&flamegraph_arg);
+    cmd.add(&dot_graph_arg);
     cmd.setExceptionHandling(false);
 
     try {
@@ -146,6 +156,7 @@ bool parseArgs(std::span<const char*> argv) {
         run_query = false;
     }
 
+    any_profile_enabled = profile_arg || flamegraph_arg || dot_graph_arg;
     return true;
 }
 
@@ -259,7 +270,7 @@ class Print : public exec::Subscriber {
     }
 
  private:
-    prof::MetricsBase* profHandle() override { return nullptr; }
+    prof::Metrics* profHandle() override { return nullptr; }
 
     void done() const {
         println(ss_.str());
@@ -315,7 +326,7 @@ class Print : public exec::Subscriber {
 };
 
 void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
-    std::stringstream prof;
+    std::vector<prof::Profiler::Snapshot> snapshots;
 
     for (int phase = 0; phase <= max_phase; ++phase) {
         llog::info("executing phase {}", phase);
@@ -338,26 +349,31 @@ void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
         latch.wait();
         llog::info("phase {} completed", phase);
 
-        if (profile_arg.getValue()) {
-            prof << std::format(
-                "profile [phase={}]\n{}",
-                phase,
-                prof::formatProfile(*prof::globalProfiler()).render());
-        }
-
-        if (flamegraph_arg.getValue()) {
-            std::ofstream ofs(std::format("prof.{}.folded", phase));
-            ofs << prof::formatFoldedStacks(*prof::globalProfiler());
-        }
-
-        if (auto p = prof::globalProfiler()) {
-            p->reset();
+        if (auto* prof = prof::globalProfiler()) {
+            snapshots.push_back(prof->snapshot());
+            prof->reset();
         }
     }
 
-    if (profile_arg.getValue()) {
+    if (profile_arg) {
         llog::info("dumping profile");
-        std::cerr << prof.str() << std::endl;
+
+        for (size_t i = 0; i < snapshots.size(); ++i) {
+            std::cerr << std::format(
+                "profile [phase={}]\n{}", i, prof::formatProfile(snapshots[i]));
+        }
+    }
+
+    if (flamegraph_arg) {
+        for (size_t i = 0; i < snapshots.size(); ++i) {
+            std::ofstream ofs(std::format("prof.{}.folded", i));
+            ofs << prof::formatFoldedStacks(snapshots[i]);
+        }
+    }
+
+    if (dot_graph_arg) {
+        std::ofstream ofs("prof.dot");
+        ofs << prof::formatDot(snapshots);
     }
 }
 
@@ -403,7 +419,7 @@ void main(std::span<const char*> argv) {
     }
 
     std::optional<prof::Profiler> profiler;
-    if (profile_arg.getValue()) {
+    if (any_profile_enabled) {
         llog::info("enabling profiling [threads={}]", threads_arg.getValue());
         profiler.emplace();
         prof::setGlobalProfiler(&profiler.value());

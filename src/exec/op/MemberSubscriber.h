@@ -39,7 +39,7 @@ class MemberSubscriber : public Subscriber {
         return (self_->*method_)(phase, record);
     }
 
-    prof::MetricsBase* profHandle() override { return handle_->metrics(); }
+    prof::Metrics* profHandle() override { return handle_->metrics(); }
 
  private:
     std::tuple<typename Mixins::ScopeValueType...> consumeScope() {
