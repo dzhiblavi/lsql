@@ -10,7 +10,7 @@
 #include <sstream>
 #include <string>
 
-namespace lsql::util {
+namespace lsql::instr {
 
 // value: 0 0 0 0 0 0 0 0 0 0
 //                |  Bits   |   -- looking for this bits only
@@ -98,4 +98,4 @@ std::string to_string(const Histogram<Bits, Resolution>& hist) {
     return std::move(ss).str();
 }
 
-}  // namespace lsql::util
+}  // namespace lsql::instr

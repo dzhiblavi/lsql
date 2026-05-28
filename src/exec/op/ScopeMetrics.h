@@ -25,8 +25,8 @@ struct CustomScopeMetrics {
             .line("total_hist: {}", to_string<Duration>(hist_total));
     }
 
-    util::Histogram<> hist_total = {};
-    util::Histogram<> hist_this = {};
+    instr::Histogram<> hist_total = {};
+    instr::Histogram<> hist_this = {};
 };
 
 using ScopeMetrics = prof::ScopeMetrics<CustomScopeMetrics>;
