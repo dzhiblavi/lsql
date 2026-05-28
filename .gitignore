@@ -4,5 +4,10 @@
 /examples.sql
 /ref.out
 /output
-/.venv
-/prof.*
+
+/*.svg
+/*.out
+/*.data
+/*.dot
+/*.script
+/*.folded
