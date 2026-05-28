@@ -5,7 +5,6 @@
 #include "exec/op/types.h"
 
 #include "core/verify.h"
-#include "util/instrument/Counters.h"
 #include "util/instrument/Timer.h"
 
 #include <llog/log.h>
@@ -15,24 +14,25 @@
 
 namespace lsql::exec {
 
-struct SortCustomMetrics {
-    instr::Counter<size_t> dataset_size{0};
-    instr::MonotonicDuration sort_time{};
-
+struct SortMetrics {
     void reset() {
-        dataset_size.set(0);
+        dataset_size = 0;
         sort_time = {};
     }
 
-    util::StrBuilder format() const {
+    util::StrBuilder report() const { return shortReport(); }
+
+    util::StrBuilder shortReport() const {
         return util::StrBuilder()
-            .item("dataset_size: {}", dataset_size.value())
+            .item("dataset_size: {}", dataset_size)
             .item("sort_time:    {}", instr::prettyDuration(sort_time));
     }
+
+    size_t dataset_size{0};
+    instr::MonotonicDuration sort_time{};
 };
 
-class Sort : public OperationBase<Sort, SortCustomMetrics>,
-             public std::enable_shared_from_this<Sort> {
+class Sort : public OperationBase<Sort, SortMetrics>, public std::enable_shared_from_this<Sort> {
     using Key = std::vector<Value>;
 
  public:
@@ -76,8 +76,8 @@ class Sort : public OperationBase<Sort, SortCustomMetrics>,
         }
 
         if (auto m = prof_.metrics()) {
-            m->custom.dataset_size.set(records_.size());
-            m->custom.sort_time = timer.elapsed();
+            m->custom<SortMetrics>().dataset_size = records_.size();
+            m->custom<SortMetrics>().sort_time = timer.elapsed();
         }
 
         for (auto&& [record, _] : records_) {
@@ -129,8 +129,7 @@ class Sort : public OperationBase<Sort, SortCustomMetrics>,
     bool desc_;
     SortList sort_list_;
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
-        prof::newScope<ScopeMetrics<>>("{} input", name());
+    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
     MemberSubscriber<Sort> sub_{
         this,
         &Sort::consume,

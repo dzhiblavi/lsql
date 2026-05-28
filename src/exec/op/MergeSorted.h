@@ -13,18 +13,20 @@
 namespace lsql::exec {
 
 struct MergeSortedMetrics {
-    std::array<instr::Counter<size_t>, 2> buf_sizes{};
-
     void reset() {
         buf_sizes[0].set(0);
         buf_sizes[1].set(0);
     }
 
-    util::StrBuilder format() const {
+    util::StrBuilder report() const { return shortReport(); }
+
+    util::StrBuilder shortReport() const {
         return util::StrBuilder()
             .item("max_buf_size (L): {}", buf_sizes[0].value())
             .item("max_buf_size (R): {}", buf_sizes[1].value());
     }
+
+    std::array<instr::Counter<size_t>, 2> buf_sizes{};
 };
 
 class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
@@ -134,7 +136,7 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
         buffers_[index].emplace(record->clone(), std::move(key));
 
         if (auto m = prof_.metrics()) {
-            m->custom.buf_sizes[index].max(buffers_[index].size());
+            m->custom<MergeSortedMetrics>().buf_sizes[index].max(buffers_[index].size());
         }
     }
 
@@ -285,8 +287,8 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
 
     std::mutex m_;
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_left_ =
-        prof::newScope<ScopeMetrics<>>("{} input(L)", name());
+    prof::ScopeHandle<ScopeMetrics> prof_left_ =
+        prof::newScope<ScopeMetrics>("{} input(L)", name());
     MemberSubscriber<MergeSorted, LockMixin> sub_l_{
         this,
         &MergeSorted::consume<0>,
@@ -294,8 +296,8 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
         &m_,
     };
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_right_ =
-        prof::newScope<ScopeMetrics<>>("{} input(R)", name());
+    prof::ScopeHandle<ScopeMetrics> prof_right_ =
+        prof::newScope<ScopeMetrics>("{} input(R)", name());
     MemberSubscriber<MergeSorted, LockMixin> sub_r_{
         this,
         &MergeSorted::consume<1>,

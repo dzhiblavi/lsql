@@ -106,8 +106,7 @@ class Materialize : public Source, public OperationBase<Materialize> {
 
     OperationPtr source_;
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
-        prof::newScope<ScopeMetrics<>>("{} input", name());
+    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
 
     MemberSubscriber<Materialize> sub_{
         this,

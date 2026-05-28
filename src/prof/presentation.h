@@ -2,8 +2,8 @@
 
 #include "prof/Profiler.h"
 
-#include <string>
 #include <span>
+#include <string>
 
 namespace lsql::prof {
 

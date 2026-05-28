@@ -270,7 +270,7 @@ class Print : public exec::Subscriber {
     }
 
  private:
-    prof::Metrics* profHandle() override { return nullptr; }
+    prof::ScopeMetricsBase* profHandle() override { return nullptr; }
 
     void done() const {
         println(ss_.str());

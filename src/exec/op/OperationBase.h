@@ -1,7 +1,6 @@
 #pragma once
 
 #include "exec/op/Operation.h"
-#include "exec/op/ScopeMetrics.h"
 
 #include "prof/global.h"
 
@@ -13,9 +12,9 @@
 
 namespace lsql::exec {
 
-template <typename Self, CustomMetrics M = EmptyCustomMetrics>
+template <typename Self, typename... CustomScopeMetrics>
 class OperationBase : public virtual Operation {
-    using MetricsType = ScopeMetrics<M>;
+    using MetricsType = prof::ScopeMetrics<CustomScopeMetrics...>;
 
  public:
     OperationBase(int min_out_phase, ConstFieldBindingPtr binding)

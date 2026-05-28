@@ -10,7 +10,7 @@ namespace lsql::prof {
 struct ScopeNode {
     bool is_root;
     std::string name;
-    std::unique_ptr<Metrics> metrics;
+    std::unique_ptr<ScopeMetricsBase> metrics;
     std::vector<ScopeNode*> children;
     std::vector<ScopeNode*> parents;
 };
@@ -18,16 +18,16 @@ struct ScopeNode {
 struct ScopeNodeSnapshot {
     bool is_root;
     std::string name;
-    std::unique_ptr<const Metrics> metrics;
+    std::unique_ptr<const ScopeMetricsBase> metrics;
     std::vector<const ScopeNodeSnapshot*> children;
     std::vector<const ScopeNodeSnapshot*> parents;
 };
 
 class Profiler {
  public:
-    using Snapshot = std::unordered_map<const Metrics*, ScopeNodeSnapshot>;
+    using Snapshot = std::unordered_map<const ScopeMetricsBase*, ScopeNodeSnapshot>;
 
-    template <CMetrics M, typename... Args>
+    template <CScopeMetrics M, typename... Args>
     ScopeHandle<M> newScope(std::string name, Args&&... args) {
         auto metrics = std::make_unique<M>(std::forward<Args>(args)...);
         M* metrics_ptr = metrics.get();
@@ -44,7 +44,7 @@ class Profiler {
     }
 
     // Idempotent
-    void addEdge(Metrics* parent, Metrics* child) {
+    void addEdge(ScopeMetricsBase* parent, ScopeMetricsBase* child) {
         if (parent == nullptr || child == nullptr) {
             return;
         }
@@ -72,11 +72,11 @@ class Profiler {
         }
     }
 
-    std::unordered_map<const Metrics*, ScopeNodeSnapshot> snapshot() const {
+    std::unordered_map<const ScopeMetricsBase*, ScopeNodeSnapshot> snapshot() const {
         // metrics -> snapshot node pointer (resides in nodes)
-        std::unordered_map<const Metrics*, ScopeNodeSnapshot*> visited;
+        std::unordered_map<const ScopeMetricsBase*, ScopeNodeSnapshot*> visited;
         // snapsnot metrics -> snapshot node
-        std::unordered_map<const Metrics*, ScopeNodeSnapshot> nodes;
+        std::unordered_map<const ScopeMetricsBase*, ScopeNodeSnapshot> nodes;
 
         for (auto&& [metrics, node] : nodes_) {
             if (node.is_root) {
@@ -126,7 +126,7 @@ class Profiler {
         return ptr;
     }
 
-    std::unordered_map<Metrics*, ScopeNode> nodes_;
+    std::unordered_map<ScopeMetricsBase*, ScopeNode> nodes_;
 };
 
 }  // namespace lsql::prof

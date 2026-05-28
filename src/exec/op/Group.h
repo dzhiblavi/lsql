@@ -201,8 +201,7 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     AggregateProjectionMap aggregators_;
     ScalarProjectionMap group_key_;
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
-        prof::newScope<ScopeMetrics<>>("{} input", name());
+    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
 
     MemberSubscriber<Group> sub_{
         this,

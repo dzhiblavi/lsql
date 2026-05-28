@@ -60,8 +60,7 @@ class Filter : public OperationBase<Filter> {
     OperationPtr source_;
     ScalarPtr condition_;
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
-        prof::newScope<ScopeMetrics<>>("{} input", name());
+    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
 
     MemberSubscriber<Filter> sub_{
         this,

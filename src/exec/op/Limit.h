@@ -58,8 +58,7 @@ class Limit : public OperationBase<Limit> {
     OperationPtr source_;
     const int limit_;
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
-        prof::newScope<ScopeMetrics<>>("{} input", name());
+    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
 
     MemberSubscriber<Limit> sub_{
         this,

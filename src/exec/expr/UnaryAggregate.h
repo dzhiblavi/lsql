@@ -2,8 +2,6 @@
 
 #include "exec/expr/Aggregate.h"
 #include "exec/expr/Scalar.h"
-//#include "exec/prof/Metrics.h"
-//#include "exec/prof/OperationHandle.h"
 
 #include "core/exprs/concepts.h"
 #include "util/instrument/Timer.h"
@@ -41,9 +39,7 @@ class UnaryAggregate : public Aggregate {
     explicit UnaryAggregate(ScalarPtr arg, Args&&... args)
         : arg_(std::move(arg))
         , op_(std::forward<Args>(args)...) {
-        if (arg_->valueType() != op_.argType()) {
-            throw std::runtime_error("argument type mismatch");
-        }
+        require(arg_->valueType() == op_.argType());
     }
 
     FieldSet requiredFields() const override { return arg_->requiredFields(); }
@@ -138,10 +134,7 @@ struct SumOp {
 template <Comparable T>
 struct PercentileOp {
     struct State {
-        //State() : info(prof::currentOperation().addTransientMetric<prof::Message>()) {}
-
         std::vector<T> values;
-        //prof::Message* info;
     };
 
     PercentileOp(std::vector<float> perc, ValueType type)
@@ -186,14 +179,6 @@ struct PercentileOp {
         if (result.empty()) {
             return "";
         }
-
-        //if (state->info) {
-            //state->info->set(
-                //"percentile size: {}, percentiles: {}, time={}",
-                //state->values.size(),
-                //percentiles.size(),
-                //instr::prettyDuration(timer.elapsed()));
-        //}
 
         std::stringstream ss;
         ss << '[';

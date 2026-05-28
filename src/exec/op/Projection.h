@@ -111,8 +111,7 @@ class Projection : public OperationBase<Projection>,
     OperationPtr source_;
     ScalarProjectionMap projectors_;
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
-        prof::newScope<ScopeMetrics<>>("{} input", name());
+    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
     MemberSubscriber<Projection> sub_{
         this,
         &Projection::consume,

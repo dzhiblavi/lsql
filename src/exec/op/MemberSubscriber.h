@@ -24,7 +24,7 @@ class MemberSubscriber : public Subscriber {
 
     template <typename... Args>
     MemberSubscriber(
-        Self* self, MethodType method, prof::ScopeHandle<ScopeMetrics<>>* handle, Args&&... args)
+        Self* self, MethodType method, prof::ScopeHandle<ScopeMetrics>* handle, Args&&... args)
         : self_(self)
         , method_(method)
         , mixins_(std::forward<Args>(args)...)
@@ -39,7 +39,7 @@ class MemberSubscriber : public Subscriber {
         return (self_->*method_)(phase, record);
     }
 
-    prof::Metrics* profHandle() override { return handle_->metrics(); }
+    prof::ScopeMetricsBase* profHandle() override { return handle_->metrics(); }
 
  private:
     std::tuple<typename Mixins::ScopeValueType...> consumeScope() {
@@ -50,7 +50,7 @@ class MemberSubscriber : public Subscriber {
     Self* self_;
     MethodType method_;
     std::tuple<Mixins...> mixins_;
-    prof::ScopeHandle<ScopeMetrics<>>* handle_;
+    prof::ScopeHandle<ScopeMetrics>* handle_;
 };
 
 struct LockMixin {

@@ -10,13 +10,14 @@
 namespace lsql::exec {
 
 struct MarkJoinMetrics {
-    instr::Counter<size_t> match_set_size{0};
-
     void reset() { match_set_size.set(0); }
+    util::StrBuilder report() const { return shortReport(); }
 
-    util::StrBuilder format() const {
+    util::StrBuilder shortReport() const {
         return util::StrBuilder("match_set_size: {}", match_set_size.value());
     }
+
+    instr::Counter<size_t> match_set_size{0};
 };
 
 class MarkJoinRecord : public Record {
@@ -121,7 +122,7 @@ class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {
 
     void updateMetrics() {
         if (auto m = prof_.metrics()) {
-            m->custom.match_set_size.set(values_.size());
+            m->custom<MarkJoinMetrics>().match_set_size.set(values_.size());
         }
     }
 
@@ -176,16 +177,16 @@ class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {
     FieldId output_field_id_;
     FieldId match_field_id_;
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_sub_source_ =
-        prof::newScope<ScopeMetrics<>>("{} src input", name());
+    prof::ScopeHandle<ScopeMetrics> prof_sub_source_ =
+        prof::newScope<ScopeMetrics>("{} src input", name());
     MemberSubscriber<MarkJoin> sub_source_{
         this,
         &MarkJoin::consumeSource,
         &prof_sub_source_,
     };
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_sub_match_ =
-        prof::newScope<ScopeMetrics<>>("{} match set input", name());
+    prof::ScopeHandle<ScopeMetrics> prof_sub_match_ =
+        prof::newScope<ScopeMetrics>("{} match set input", name());
     MemberSubscriber<MarkJoin> sub_match_{
         this,
         &MarkJoin::consumeMatch,

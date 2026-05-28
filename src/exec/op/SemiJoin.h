@@ -10,13 +10,14 @@
 namespace lsql::exec {
 
 struct SemiJoinMetrics {
-    instr::Counter<size_t> match_set_size{0};
-
     void reset() { match_set_size.set(0); }
+    util::StrBuilder report() const { return shortReport(); }
 
-    util::StrBuilder format() const {
+    util::StrBuilder shortReport() const {
         return util::StrBuilder("match_set_size: {}", match_set_size.value());
     }
+
+    instr::Counter<size_t> match_set_size{0};
 };
 
 class SemiJoin : public OperationBase<SemiJoin, SemiJoinMetrics> {
@@ -97,7 +98,7 @@ class SemiJoin : public OperationBase<SemiJoin, SemiJoinMetrics> {
 
     void updateMetrics() {
         if (auto m = prof_.metrics()) {
-            m->custom.match_set_size.set(values_.size());
+            m->custom<SemiJoinMetrics>().match_set_size.set(values_.size());
         }
     }
 
@@ -149,16 +150,16 @@ class SemiJoin : public OperationBase<SemiJoin, SemiJoinMetrics> {
     ScalarPtr proj_;
     FieldId match_field_id_;
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_source_ =
-        prof::newScope<ScopeMetrics<>>("{} src input", name());
+    prof::ScopeHandle<ScopeMetrics> prof_source_ =
+        prof::newScope<ScopeMetrics>("{} src input", name());
     MemberSubscriber<SemiJoin> sub_source_{
         this,
         &SemiJoin::consumeSource,
         &prof_source_,
     };
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_match_ =
-        prof::newScope<ScopeMetrics<>>("{} match set input", name());
+    prof::ScopeHandle<ScopeMetrics> prof_match_ =
+        prof::newScope<ScopeMetrics>("{} match set input", name());
     MemberSubscriber<SemiJoin> sub_match_{
         this,
         &SemiJoin::consumeMatch,

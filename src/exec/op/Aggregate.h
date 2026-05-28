@@ -171,8 +171,7 @@ class AggregateProjection
     OperationPtr source_;
     AggregateProjectionList projectors_;
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_sub_ =
-        prof::newScope<ScopeMetrics<>>("{} input", name());
+    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
 
     MemberSubscriber<AggregateProjection> sub_{
         this,

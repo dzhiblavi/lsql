@@ -81,8 +81,8 @@ class UnionAll : public OperationBase<UnionAll> {
 
     std::mutex m_;
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_left_ =
-        prof::newScope<ScopeMetrics<>>("{} input(L)", name());
+    prof::ScopeHandle<ScopeMetrics> prof_left_ =
+        prof::newScope<ScopeMetrics>("{} input(L)", name());
     MemberSubscriber<UnionAll, LockMixin> sub_l_{
         this,
         &UnionAll::consume<0>,
@@ -90,8 +90,8 @@ class UnionAll : public OperationBase<UnionAll> {
         &m_,
     };
 
-    prof::ScopeHandle<ScopeMetrics<>> prof_right_ =
-        prof::newScope<ScopeMetrics<>>("{} input(R)", name());
+    prof::ScopeHandle<ScopeMetrics> prof_right_ =
+        prof::newScope<ScopeMetrics>("{} input(R)", name());
     MemberSubscriber<UnionAll, LockMixin> sub_r_{
         this,
         &UnionAll::consume<1>,

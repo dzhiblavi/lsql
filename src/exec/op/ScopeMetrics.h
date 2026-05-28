@@ -1,59 +1,34 @@
 #pragma once
 
-#include "prof/Scope.h"
+#include "prof/ScopeMetrics.h"
 
 #include "util/instrument/Histogram.h"
 
 namespace lsql::exec {
 
-template <typename M>
-concept CustomMetrics = requires(M& m, const M& mc) {
-    { mc.format() } -> std::same_as<util::StrBuilder>;
-    { m.reset() } -> std::same_as<void>;
-};
-
-struct EmptyCustomMetrics {
-    void reset() {}
-    util::StrBuilder format() const { return {}; }
-};
-
-template <CustomMetrics Custom = EmptyCustomMetrics>
-struct ScopeMetrics : public prof::MetricsBase<ScopeMetrics<Custom>> {
+struct CustomScopeMetrics {
     using Duration = std::chrono::microseconds;
 
-    bool empty() const override { return this->count == 0; }
-
-    void reset() override {
-        this->baseReset();
-        hist_total.reset();
+    void reset() {
         hist_this.reset();
-        custom.reset();
+        hist_total.reset();
     }
 
-    void onEnterScope() {}
-
-    void onExitScope(auto dur, auto child_dur) {
-        hist_total.add(std::chrono::duration_cast<Duration>(dur).count());
-        hist_this.add(std::chrono::duration_cast<Duration>(dur - child_dur).count());
+    void onExitScope(auto total, auto children) {
+        hist_total.add(std::chrono::duration_cast<Duration>(total).count());
+        hist_this.add(std::chrono::duration_cast<Duration>(total - children).count());
     }
 
-    util::StrBuilder report() const override {
-        return this->shortReport()
+    util::StrBuilder report() const {
+        return util::StrBuilder()
             .line("self_hist:  {}", to_string<Duration>(hist_this))
             .line("total_hist: {}", to_string<Duration>(hist_total));
     }
 
-    util::StrBuilder shortReport() const override {
-        auto b = this->baseReport();
-        if (auto cb = custom.format(); !cb.empty()) {
-            b.block(util::StrBuilder("custom").child(cb));
-        }
-        return b;
-    }
-
     util::Histogram<> hist_total = {};
     util::Histogram<> hist_this = {};
-    [[no_unique_address]] Custom custom;
 };
+
+using ScopeMetrics = prof::ScopeMetrics<CustomScopeMetrics>;
 
 }  // namespace lsql::exec

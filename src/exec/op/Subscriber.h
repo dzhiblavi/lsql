@@ -2,7 +2,7 @@
 
 #include "exec/Record.h"
 
-#include "prof/Scope.h"
+#include "prof/ScopeMetrics.h"
 
 namespace lsql::exec {
 
@@ -23,7 +23,7 @@ class Subscriber {
     // will be pushed into this subscriber.
     virtual bool consume(int phase, const exec::Record* record) = 0;
 
-    virtual prof::Metrics* profHandle() { return nullptr; }
+    virtual prof::ScopeMetricsBase* profHandle() { return nullptr; }
 };
 
 }  // namespace lsql::exec
