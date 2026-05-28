@@ -120,7 +120,7 @@ TCLAP::SwitchArg flamegraph_arg{
 TCLAP::SwitchArg dot_graph_arg{
     "",
     "dot-graph",
-    "build .dot graph (dumped to prof.N.dot)",
+    "build .dot graph (dumped to prof.dot)",
 };
 
 void println(std::string_view s) {
@@ -278,7 +278,7 @@ class Print : public exec::Subscriber {
         ss_.str() = "";
     }
 
-    bool consume(int phase, const exec::Record* record) override {
+    bool consume([[maybe_unused]] int phase, const exec::Record* record) override {
         verify_dbg(phase == source_->minPhase());
 
         if (record == nullptr) {
@@ -407,17 +407,11 @@ void main(std::span<const char*> argv) {
     }
 
     auto log_level = magic_enum::enum_cast<llog::Level>(log_level_arg.getValue());
-    if (!log_level) {
-        throw std::runtime_error(
-            std::format("invalid value for log-level: {}", log_level_arg.getValue()));
-    }
+    require(log_level.has_value(), "invalid value for log-level: {}", log_level_arg.getValue());
     llog::global()->set_level(static_cast<spdlog::level::level_enum>(*log_level));
 
     auto format = magic_enum::enum_cast<Format>(format_arg.getValue());
-    if (!format) {
-        throw std::runtime_error(
-            std::format("invalid value for format: {}", format_arg.getValue()));
-    }
+    require(format.has_value(), "invalid value for format: {}", format_arg.getValue());
 
     std::optional<prof::Profiler> profiler;
     if (any_profile_enabled) {
@@ -443,7 +437,7 @@ void main(std::span<const char*> argv) {
         max_phase = std::max(max_phase, source->maxPhase());
     }
 
-    if (explain_arg.getValue()) {
+    if (explain_arg) {
         explain(max_phase, ops);
     }
 

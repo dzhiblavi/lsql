@@ -31,6 +31,11 @@ class AggregateProjection
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , projectors_(std::move(projectors)) {
+        aggregators_.reserve(projectors_.size());
+        for (auto&& proj : projectors_) {
+            aggregators_.emplace_back(proj->field_id, proj->expr->aggregator());
+        }
+
         prof::addEdge(&prof_sub_, &prof_);
     }
 
@@ -62,18 +67,8 @@ class AggregateProjection
     bool consume(int phase, const Record* record) {
         verify_dbg(phase == first_phase_);
 
-        if (aggregators_.size() != projectors_.size()) {
-            verify_dbg(aggregators_.empty());
-            aggregators_.reserve(projectors_.size());
-            for (auto&& proj : projectors_) {
-                aggregators_.push_back(proj->expr->aggregator());
-            }
-        }
-
-        verify_dbg(aggregators_.size() == projectors_.size());
-
         if (record != nullptr) {
-            for (auto&& aggregator : aggregators_) {
+            for (auto&& [_, aggregator] : aggregators_) {
                 aggregator->feed(*record);
             }
 
@@ -82,11 +77,11 @@ class AggregateProjection
 
         // end of stream
         values_.reserve(aggregators_.size());
-        for (size_t i = 0; i < projectors_.size(); ++i) {
-            values_.emplace(projectors_[i]->field_id, aggregators_[i]->get());
+        for (auto&& [id, aggregator] : aggregators_) {
+            values_.emplace(id, aggregator->get());
         }
-        aggregators_.clear();
 
+        aggregators_.clear();
         return pushValue(phase);
     }
 
@@ -149,7 +144,7 @@ class AggregateProjection
         if (ctx.phase == first_phase_) {
             auto item =
                 ExplanationItem()
-                    .line("{} (store, {} projections)", description(ctx.phase), projectors_.size())
+                    .line("{} (store, {} aggregators)", description(ctx.phase), aggregators_.size())
                     .child(source);
 
             if (hasSubscriber(ctx.phase, ctx.requester)) {
@@ -181,7 +176,7 @@ class AggregateProjection
 
     // phase state
     int first_phase_ = -1;
-    std::vector<AggregatorPtr> aggregators_;
+    std::vector<std::pair<FieldId, AggregatorPtr>> aggregators_;
     std::unordered_map<FieldId, Value> values_;
 };
 

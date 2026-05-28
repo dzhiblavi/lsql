@@ -96,7 +96,7 @@ DotStyle styleFor(int64_t self, int64_t p50, int64_t p75, int64_t p90, int64_t p
     return {.fill = "#eeeeee", .font = "#777777"};
 }
 
-double edgeWeight(const ScopeNodeSnapshot& child, uint64_t max_total_ns) {
+double edgeWeight(const ScopeNodeSnapshot& child, int64_t max_total_ns) {
     if (child.metrics->empty() || max_total_ns == 0) {
         return 1.0;
     }
@@ -123,7 +123,7 @@ void formatDotSnapshot(util::StrBuilder& b, const Snapshot& p, size_t phase_inde
 
         ids[&node] = next++;
         self_values.push_back(node.metrics->self_dur.count());
-        max_total_ns = std::max(max_total_ns, node.metrics->total_dur.count());
+        max_total_ns = std::max(max_total_ns, (int64_t)node.metrics->total_dur.count());
     }
 
     std::ranges::sort(self_values);
