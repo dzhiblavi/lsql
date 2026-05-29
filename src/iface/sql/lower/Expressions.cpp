@@ -1,7 +1,8 @@
 #include "iface/sql/lower/Expressions.h"
 
 #include "iface/sql/lower/Relations.h"
-#include "iface/sql/lower/helpers.h"
+
+#include "util/containers.h"
 
 namespace lsql::iface::sql::lower {
 
@@ -175,7 +176,7 @@ LowerExprResult lowerToIR(bound::BinaryExpr e, auto& info, Context& ctx) {
                 },
             .value_type = info.value_type,
         },
-        concat(std::move(al), std::move(ar)));
+        util::concat(std::move(al), std::move(ar)));
 }
 
 LowerExprResult lowerToIR(bound::UnaryExpr e, auto& info, Context& ctx) {
@@ -203,7 +204,7 @@ LowerExprsResult lowerToIR(std::vector<bound::Expr> es, Context& ctx) {
     for (auto&& p : es) {
         auto [expr, aggregates] = lowerToIR(std::move(p), ctx);
         exprs.push_back(std::move(expr));
-        append(aggrs, std::move(aggregates));
+        util::append(aggrs, std::move(aggregates));
     }
 
     return std::make_pair(std::move(exprs), std::move(aggrs));

@@ -2,7 +2,7 @@
 
 #include <vector>
 
-namespace lsql::iface::sql::lower {
+namespace lsql::util {
 
 template <typename T>
 void append(std::vector<T>& a, std::vector<T> b) {
@@ -15,4 +15,4 @@ std::vector<T> concat(std::vector<T> a, std::vector<T> b) {
     return a;
 }
 
-}  // namespace lsql::iface::sql::lower
+}  // namespace lsql::util

@@ -1,10 +1,11 @@
-add_library(lsql-ir INTERFACE)
+add_library(lsql-ir STATIC)
 
 target_sources(
-    lsql-ir INTERFACE
+    lsql-ir PRIVATE
+    tools.cpp
 )
 
 target_link_libraries(
-    lsql-ir INTERFACE
+    lsql-ir PUBLIC
     lsql-core
 )

@@ -1,27 +1,14 @@
 #include "iface/sql/lower/Relations.h"
 
 #include "iface/sql/lower/Expressions.h"
-#include "iface/sql/lower/helpers.h"
+
+#include "ir/tools.h"
+
+#include "util/containers.h"
 
 namespace lsql::iface::sql::lower {
 
 namespace {
-
-FieldSet outputFieldsOf(const std::vector<ir::Projector>& ps) {
-    auto fields = FieldSet::emptySet();
-    for (auto&& p : ps) {
-        fields.add(p.alias_field_id);
-    }
-    return fields;
-}
-
-FieldSet outputFieldsOf(const std::vector<ir::Aggregate>& ps) {
-    auto fields = FieldSet::emptySet();
-    for (auto&& p : ps) {
-        fields.add(p.output_field_id);
-    }
-    return fields;
-}
 
 void lowerToIR(
     bound::Projector p,
@@ -63,7 +50,7 @@ void lowerToIR(
                     .expr = box(std::move(expr)),
                 });
 
-            append(aggrs, std::move(aggregates));
+            util::append(aggrs, std::move(aggregates));
         });
 }
 
