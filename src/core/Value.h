@@ -59,6 +59,9 @@ class Value {
 
     friend void swap(Value& a, Value& b) noexcept { std::swap(a.val_, b.val_); }
 
+    auto& variant() const { return val_; }
+    auto& variant() { return val_; }
+
  private:
     std::variant<null_t, int64_t, float, std::string, bool> val_;
 };

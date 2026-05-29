@@ -262,14 +262,16 @@ bound::Expr bindExpr(ast::FnCallExpr e, Context& ctx) {
     if (e.func == "builtin_coalesce") {
         std::unordered_set<ValueType> types;
         for (auto&& arg : args) {
-            types.insert(arg.value_type);
+            if (arg.value_type != ValueType::Null) {
+                types.insert(arg.value_type);
+            }
         }
         require(args.size() >= 1, "at least one argument required for COALESCE");
-        require(types.size() == 1, "COALESCE arguments must have the same type");
+        require(types.size() <= 1, "COALESCE arguments must have the same type");
 
         return {
             .node = bound::CoalesceExpr{.args = std::move(args)},
-            .value_type = *types.begin(),
+            .value_type = types.empty() ? ValueType::Null : *types.begin(),
             .level = level,
             .required_fields = fields,
         };

@@ -74,7 +74,10 @@ struct OrOp {
 
 template <Dividable T>
 struct DivideOp {
-    Value apply(const Value& l, const Value& r) const { return l.get<T>() / r.get<T>(); }
+    Value apply(const Value& l, const Value& r) const {
+        auto divisor = r.get<T>();
+        return divisor == T(0) ? T(0) : l.get<T>() / divisor;
+    }
     ValueType argTypeL() const { return type; }
     ValueType argTypeR() const { return type; }
     ValueType valueType() const { return type; }

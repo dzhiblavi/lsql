@@ -86,21 +86,27 @@ TCLAP::SwitchArg explain_arg{
     "show execution plan",
 };
 
-TCLAP::SwitchArg debug_ast_arg{
+TCLAP::SwitchArg print_ast_arg{
     "",
-    "debug-ast",
+    "print-ast",
     "show AST",
 };
 
-TCLAP::SwitchArg debug_bind_arg{
+TCLAP::SwitchArg print_bound_arg{
     "",
-    "debug-bind",
+    "print-bound",
     "show bound AST",
 };
 
-TCLAP::SwitchArg debug_ir_arg{
+TCLAP::SwitchArg print_ir_unoptimized_arg{
     "",
-    "debug-ir",
+    "print-ir-unoptimized",
+    "show IR",
+};
+
+TCLAP::SwitchArg print_ir_optimized_arg{
+    "",
+    "print-ir-optimized",
     "show IR",
 };
 
@@ -137,9 +143,10 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&log_level_arg);
     cmd.add(&force_run_arg);
     cmd.add(&explain_arg);
-    cmd.add(&debug_ast_arg);
-    cmd.add(&debug_bind_arg);
-    cmd.add(&debug_ir_arg);
+    cmd.add(&print_ast_arg);
+    cmd.add(&print_bound_arg);
+    cmd.add(&print_ir_unoptimized_arg);
+    cmd.add(&print_ir_optimized_arg);
     cmd.add(&threads_arg);
     cmd.add(&profile_arg);
     cmd.add(&flamegraph_arg);
@@ -154,7 +161,9 @@ bool parseArgs(std::span<const char*> argv) {
         return false;
     }
 
-    if ((explain_arg || debug_ast_arg || debug_bind_arg || debug_ir_arg) && !force_run_arg) {
+    if ((explain_arg || print_ast_arg || print_bound_arg || print_ir_unoptimized_arg ||
+         print_ir_optimized_arg) &&
+        !force_run_arg) {
         run_query = false;
     }
 
@@ -175,19 +184,23 @@ exec::Plan makePlan(std::string maybe_path) {
     }();
 
     auto ast = iface::sql::parse::parse(*is);
-    if (debug_ast_arg) {
+    if (print_ast_arg) {
         std::cout << "AST dump:" << std::endl;
         std::cout << iface::sql::ast::Stringifier().print(ast) << std::endl;
     }
     auto bound_ast = iface::sql::bind::bind(std::move(ast));
-    if (debug_bind_arg) {
+    if (print_bound_arg) {
         std::cout << "Bound AST dump:" << std::endl;
         std::cout << iface::sql::bound::Stringifier().print(bound_ast) << std::endl;
     }
     auto ir = iface::sql::lower::lowerToIR(std::move(bound_ast));
+    if (print_ir_unoptimized_arg) {
+        std::cout << "Unoptimized IR dump:" << std::endl;
+        std::cout << ir::Stringifier().print(ir) << std::endl;
+    }
     ir = opt::optimize(std::move(ir));
-    if (debug_ir_arg) {
-        std::cout << "IR dump:" << std::endl;
+    if (print_ir_optimized_arg) {
+        std::cout << "Optimized IR dump:" << std::endl;
         std::cout << ir::Stringifier().print(ir) << std::endl;
     }
     return exec::plan(std::move(ir));
