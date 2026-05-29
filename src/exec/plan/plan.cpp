@@ -4,6 +4,7 @@
 
 #include "exec/expr/BinaryScalar.h"
 #include "exec/expr/CoalesceScalar.h"
+#include "exec/expr/ConstAggregate.h"
 #include "exec/expr/IdentifierScalar.h"
 #include "exec/expr/UnaryAggregate.h"
 #include "exec/expr/UnaryScalar.h"
@@ -305,6 +306,14 @@ class Planner {
             AggregateProjector{
                 .field_id = info.output_field_id,
                 .expr = std::move(aggregate),
+            });
+    }
+
+    AggregateProjectorPtr planAggregate(ir::ConstAggregate a, auto&& info) {
+        return box(
+            AggregateProjector{
+                .field_id = info.output_field_id,
+                .expr = arc<ConstAggregate>(std::move(a.value), a.null_if_empty),
             });
     }
 

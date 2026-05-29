@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Value.h"
 #include "ir/Aggregate.h"
 #include "ir/Scalar.h"
 
@@ -17,6 +18,11 @@ struct UnaryAggregate {
 struct PercentileAggregate {
     Box<Scalar> expr;
     std::vector<float> percentiles;
+};
+
+struct ConstAggregate {
+    Value value;
+    bool null_if_empty;
 };
 
 struct Aggregate {

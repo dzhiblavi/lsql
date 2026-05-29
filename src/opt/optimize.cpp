@@ -205,17 +205,19 @@ ir::Scalar optimize(ir::RSubstrScalar& s, auto& self) {
 ir::Scalar optimize(ir::UnaryScalar& s, auto& self) {
     s.expr = box(optimizeScalar(std::move(*s.expr)));
 
-    if (auto* v = std::get_if<ir::ValueScalar>(&s.expr->node)) {
-        auto value = [&] -> Value {
-            switch (s.type) {
-                case UnaryExprType::BooleanNegate:
-                    return !v->value.get<bool>();
-            }
-        }();
-
-        self.node = ir::ValueScalar{.value = value};
+    auto* v = std::get_if<ir::ValueScalar>(&s.expr->node);
+    if (!v) {
+        return std::move(self);
     }
 
+    auto value = [&] -> Value {
+        switch (s.type) {
+            case UnaryExprType::BooleanNegate:
+                return !v->value.get<bool>();
+        }
+    }();
+
+    self.node = ir::ValueScalar{.value = value};
     return std::move(self);
 }
 
@@ -225,49 +227,91 @@ ir::Scalar optimize(ir::BinaryScalar& s, auto& self) {
 
     auto* vl = std::get_if<ir::ValueScalar>(&s.left->node);
     auto* vr = std::get_if<ir::ValueScalar>(&s.right->node);
-
-    if (vl && vr) {
-        auto value = [&] -> Value {
-            switch (s.type) {
-                case BinaryExprType::Equal:
-                    return vl->value == vr->value;
-                case BinaryExprType::NotEqual:
-                    return vl->value != vr->value;
-                case BinaryExprType::And:
-                    return vl->value.get<bool>() && vr->value.get<bool>();
-                case BinaryExprType::Or:
-                    return vl->value.get<bool>() || vr->value.get<bool>();
-                case BinaryExprType::Divide:
-                    return std::visit(
-                        util::Overloaded{
-                            []<Dividable T>(T& l, T& r) -> Value { return r == 0 ? 0 : l / r; },
-                            [](auto&&...) -> Value { panic(); },
-                        },
-                        vl->value.variant(),
-                        vr->value.variant());
-                case BinaryExprType::Add:
-                    return std::visit(
-                        util::Overloaded{
-                            []<Addable T>(T& l, T& r) -> Value { return l + r; },
-                            [](auto&&...) -> Value { panic(); },
-                        },
-                        vl->value.variant(),
-                        vr->value.variant());
-
-                case BinaryExprType::Subtract:
-                    return std::visit(
-                        util::Overloaded{
-                            []<Subtractable T>(T& l, T& r) -> Value { return l - r; },
-                            [](auto&&...) -> Value { panic(); },
-                        },
-                        vl->value.variant(),
-                        vr->value.variant());
-            }
-        }();
-
-        self.node = ir::ValueScalar{.value = value};
+    if (!vl || !vr) {
+        return std::move(self);
     }
 
+    auto value = [&] -> Value {
+        switch (s.type) {
+            case BinaryExprType::Equal:
+                return vl->value == vr->value;
+            case BinaryExprType::NotEqual:
+                return vl->value != vr->value;
+            case BinaryExprType::And:
+                return vl->value.get<bool>() && vr->value.get<bool>();
+            case BinaryExprType::Or:
+                return vl->value.get<bool>() || vr->value.get<bool>();
+            case BinaryExprType::Divide:
+                return std::visit(
+                    util::Overloaded{
+                        []<Dividable T>(T& l, T& r) -> Value { return r == 0 ? 0 : l / r; },
+                        [](auto&&...) -> Value { panic(); },
+                    },
+                    vl->value.variant(),
+                    vr->value.variant());
+            case BinaryExprType::Add:
+                return std::visit(
+                    util::Overloaded{
+                        []<Addable T>(T& l, T& r) -> Value { return l + r; },
+                        [](auto&&...) -> Value { panic(); },
+                    },
+                    vl->value.variant(),
+                    vr->value.variant());
+
+            case BinaryExprType::Subtract:
+                return std::visit(
+                    util::Overloaded{
+                        []<Subtractable T>(T& l, T& r) -> Value { return l - r; },
+                        [](auto&&...) -> Value { panic(); },
+                    },
+                    vl->value.variant(),
+                    vr->value.variant());
+        }
+    }();
+
+    self.node = ir::ValueScalar{.value = value};
+    return std::move(self);
+}
+
+ir::Aggregate optimize(ir::UnaryAggregate& a, auto& self) {
+    a.expr = box(optimizeScalar(std::move(*a.expr)));
+
+    auto* v = std::get_if<ir::ValueScalar>(&a.expr->node);
+    if (v == nullptr) {
+        return std::move(self);
+    }
+
+    switch (a.type) {
+        case UnaryAggregateType::Count:
+            if (v->value == false || v->value == null) {
+                self.node = ir::ConstAggregate{
+                    .value = int64_t(0),
+                    .null_if_empty = false,
+                };
+            }
+            return std::move(self);
+
+        case UnaryAggregateType::Min:
+            self.node = ir::ConstAggregate{
+                .value = v->value,
+                .null_if_empty = true,
+            };
+            return std::move(self);
+
+        case UnaryAggregateType::Max:
+            self.node = ir::ConstAggregate{
+                .value = v->value,
+                .null_if_empty = true,
+            };
+            return std::move(self);
+
+        case UnaryAggregateType::Sum:
+            return std::move(self);
+    }
+}
+
+ir::Aggregate optimize(ir::PercentileAggregate& a, auto& self) {
+    a.expr = box(optimizeScalar(std::move(*a.expr)));
     return std::move(self);
 }
 

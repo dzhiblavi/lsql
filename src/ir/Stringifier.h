@@ -4,7 +4,6 @@
 #include "ir/Relations.h"   // IWYU pragma: keep
 #include "ir/Scalars.h"     // IWYU pragma: keep
 #include "ir/Statement.h"   // IWYU pragma: keep
-
 #include "util/StrBuilder.h"
 #include "util/string.h"
 
@@ -243,6 +242,11 @@ class Stringifier {
         return StrBuilder("PercentileAggregate count={}", e.percentiles.size())
             .child(StrBuilder("percentiles").child(util::toString(e.percentiles)))
             .child(StrBuilder("expression").child(print(*e.expr)));
+    }
+
+    StrBuilder print(const ConstAggregate& e) {
+        return StrBuilder("ConstAggregate null_if_empty={}", e.null_if_empty)
+            .child(StrBuilder("value: {}", to_string(e.value)));
     }
 
     ConstFieldBindingPtr binding_;

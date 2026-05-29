@@ -6,10 +6,12 @@ namespace lsql::ir {
 
 struct UnaryAggregate;
 struct PercentileAggregate;
+struct ConstAggregate;
 
 using AggregateNode = std::variant< //
     UnaryAggregate, //
-    PercentileAggregate //
+    PercentileAggregate, //
+    ConstAggregate //
 >;
 
 struct Aggregate;
