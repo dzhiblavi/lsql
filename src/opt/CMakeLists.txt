@@ -9,4 +9,5 @@ target_link_libraries(
     lsql-opt PUBLIC
     lsql-ir
     lsql-core
+    reflectcpp
 )

@@ -1,375 +1,205 @@
 #include "opt/optimize.h"
-
-#include "ir/Aggregates.h"  // IWYU pragma: keep
-#include "ir/Relations.h"   // IWYU pragma: keep
-#include "ir/Scalars.h"     // IWYU pragma: keep
+#include "opt/pass.h"
 
 #include "core/valueCast.h"
+
+#include <llog/log.h>
+#include <rfl.hpp>
 
 namespace lsql::opt {
 
 namespace {
 
-ir::Relation optimizeRelation(ir::Relation rel);
-ir::Statement optimizeStatement(ir::Statement st);
-ir::Scalar optimizeScalar(ir::Scalar sc);
-ir::Aggregate optimizeAggregate(ir::Aggregate ag);
+struct Optimizer {
+    bool isForwardingProjection(const ir::ProjectionRelation& p) {
+        for (auto&& proj : p.projectors) {
+            auto* field_expr = std::get_if<ir::FieldScalar>(&proj.expr->node);
+            if (field_expr == nullptr) {
+                // not a field expression: not our case
+                return false;
+            }
 
-std::vector<ir::Projector> optimizeProjectors(std::vector<ir::Projector> ps) {
-    std::vector<ir::Projector> r;
-    r.reserve(ps.size());
-    for (auto&& p : ps) {
-        r.push_back({
-            .alias_field_id = p.alias_field_id,
-            .expr = box(optimizeScalar(std::move(*p.expr))),
-        });
-    }
-    return r;
-}
-
-std::vector<ir::Scalar> optimizeScalars(std::vector<ir::Scalar> ps) {
-    std::vector<ir::Scalar> r;
-    r.reserve(ps.size());
-    for (auto&& p : ps) {
-        r.push_back(optimizeScalar(std::move(p)));
-    }
-    return r;
-}
-
-std::vector<ir::Aggregate> optimizeAggregates(std::vector<ir::Aggregate> ps) {
-    std::vector<ir::Aggregate> r;
-    r.reserve(ps.size());
-    for (auto&& p : ps) {
-        r.push_back(optimizeAggregate(std::move(p)));
-    }
-    return r;
-}
-
-bool isForwardingProjection(const ir::ProjectionRelation& p) {
-    for (auto&& proj : p.projectors) {
-        auto* field_expr = std::get_if<ir::FieldScalar>(&proj.expr->node);
-        if (field_expr == nullptr) {
-            // not a field expression: not our case
-            return false;
+            if (field_expr->field_id != proj.alias_field_id) {
+                // field expression does some renaming apparently
+                return false;
+            }
         }
 
-        if (field_expr->field_id != proj.alias_field_id) {
-            // field expression does some renaming apparently
-            return false;
+        // All projectors are identity projectors
+        return true;
+    }
+
+    ir::Relation optimize(ir::ProjectionRelation& rel, ir::Relation& self) {
+        if (isForwardingProjection(rel)) {
+            return std::move(*rel.source);
         }
-    }
 
-    // All projectors are identity projectors
-    return true;
-}
-
-ir::Relation optimize(ir::ProjectionRelation& rel, ir::Relation& self) {
-    auto source = optimizeRelation(std::move(*rel.source));
-
-    if (isForwardingProjection(rel)) {
-        return source;
-    }
-
-    rel.source = box(std::move(source));
-    rel.projectors = optimizeProjectors(std::move(rel.projectors));
-    return std::move(self);
-}
-
-ir::Relation optimize(ir::AggregateRelation& rel, ir::Relation& self) {
-    rel.source = box(optimizeRelation(std::move(*rel.source)));
-    rel.aggregates = optimizeAggregates(std::move(rel.aggregates));
-    return std::move(self);
-}
-
-ir::Relation optimize(ir::GroupRelation& rel, ir::Relation& self) {
-    rel.source = box(optimizeRelation(std::move(*rel.source)));
-    rel.aggregates = optimizeAggregates(std::move(rel.aggregates));
-    rel.group_list = optimizeProjectors(std::move(rel.group_list));
-    return std::move(self);
-}
-
-ir::Relation optimize(ir::LimitRelation& rel, ir::Relation& self) {
-    rel.source = box(optimizeRelation(std::move(*rel.source)));
-    return std::move(self);
-}
-
-ir::Relation optimize(ir::FilterRelation& rel, ir::Relation& self) {
-    rel.source = box(optimizeRelation(std::move(*rel.source)));
-    rel.condition = box(optimizeScalar(std::move(*rel.condition)));
-
-    auto* v = std::get_if<ir::ValueScalar>(&rel.condition->node);
-    if (!v) {
         return std::move(self);
     }
 
-    if (v->value == true) {
-        return std::move(*rel.source);
+    ir::Relation optimize(ir::FilterRelation& rel, ir::Relation& self) {
+        auto* v = std::get_if<ir::ValueScalar>(&rel.condition->node);
+        if (!v) {
+            return std::move(self);
+        }
+
+        if (v->value == true) {
+            return std::move(*rel.source);
+        }
+
+        // TODO: optimize to empty relation
+        return std::move(self);
     }
 
-    // TODO: optimize to empty relation
-    return std::move(self);
-}
+    ir::Scalar optimize(ir::CoalesceScalar& s, auto& self) {
+        auto args = std::move(s.args);
+        s.args.reserve(args.size());
 
-ir::Relation optimize(ir::SortRelation& rel, ir::Relation& self) {
-    rel.source = box(optimizeRelation(std::move(*rel.source)));
-    rel.order_list = optimizeScalars(std::move(rel.order_list));
-    return std::move(self);
-}
+        for (auto&& a : args) {
+            if (auto* v = std::get_if<ir::ValueScalar>(&a.node)) {
+                if (v->value == null) {
+                    // just skip nulls, they don't make a difference
+                    continue;
+                }
 
-ir::Relation optimize(ir::TopKRelation& rel, ir::Relation& self) {
-    rel.source = box(optimizeRelation(std::move(*rel.source)));
-    rel.order_list = optimizeScalars(std::move(rel.order_list));
-    return std::move(self);
-}
-
-ir::Relation optimize(ir::SemiJoinRelation& rel, ir::Relation& self) {
-    rel.source = box(optimizeRelation(std::move(*rel.source)));
-    rel.match = box(optimizeRelation(std::move(*rel.match)));
-    rel.expr = box(optimizeScalar(std::move(*rel.expr)));
-    return std::move(self);
-}
-
-ir::Relation optimize(ir::MarkJoinRelation& rel, ir::Relation& self) {
-    rel.source = box(optimizeRelation(std::move(*rel.source)));
-    rel.match = box(optimizeRelation(std::move(*rel.match)));
-    rel.expr = box(optimizeScalar(std::move(*rel.expr)));
-    return std::move(self);
-}
-
-ir::Relation optimize(ir::UnionAllRelation& rel, ir::Relation& self) {
-    rel.left = box(optimizeRelation(std::move(*rel.left)));
-    rel.right = box(optimizeRelation(std::move(*rel.right)));
-    return std::move(self);
-}
-
-ir::Relation optimize(ir::UnionAllSortedByRelation& rel, ir::Relation& self) {
-    rel.left = box(optimizeRelation(std::move(*rel.left)));
-    rel.right = box(optimizeRelation(std::move(*rel.right)));
-    rel.order_list = optimizeScalars(std::move(rel.order_list));
-    return std::move(self);
-}
-
-ir::Relation optimize(ir::MaterializeRelation& rel, ir::Relation& self) {
-    rel.relation = box(optimizeRelation(std::move(*rel.relation)));
-    return std::move(self);
-}
-
-ir::Statement optimize(ir::NamedRelationStatement& st, auto& /*self*/) {
-    return ir::NamedRelationStatement{
-        .name = st.name,
-        .relation = box(optimizeRelation(std::move(*st.relation))),
-    };
-}
-
-ir::Scalar optimize(ir::CoalesceScalar& s, auto& self) {
-    auto args = std::move(s.args);
-    s.args.reserve(args.size());
-
-    for (auto&& a : args) {
-        auto arg = optimizeScalar(std::move(a));
-
-        if (auto* v = std::get_if<ir::ValueScalar>(&arg.node)) {
-            if (v->value == null) {
-                // just skip nulls, they don't make a difference
-                continue;
+                if (s.args.empty()) {
+                    // first value collapsed => done
+                    self.node = ir::ValueScalar{.value = std::move(v->value)};
+                    return std::move(self);
+                }
             }
 
-            if (s.args.empty()) {
-                // first value collapsed => done
-                self.node = ir::ValueScalar{.value = std::move(v->value)};
+            // not a constant
+            s.args.push_back(std::move(a));
+        }
+
+        if (s.args.empty()) {
+            self.node = ir::ValueScalar{.value = null};
+        }
+
+        return std::move(self);
+    }
+
+    ir::Scalar optimize(ir::CastScalar& s, auto& self) {
+        if (auto* v = std::get_if<ir::ValueScalar>(&s.expr->node)) {
+            self.node = ir::ValueScalar{.value = valueCast(std::move(v->value), s.cast_to)};
+        }
+        return std::move(self);
+    }
+
+    ir::Scalar optimize(ir::UnaryScalar& s, auto& self) {
+        auto* v = std::get_if<ir::ValueScalar>(&s.expr->node);
+        if (!v) {
+            return std::move(self);
+        }
+
+        auto value = [&] -> Value {
+            switch (s.type) {
+                case UnaryExprType::BooleanNegate:
+                    return !v->value.get<bool>();
+            }
+        }();
+
+        self.node = ir::ValueScalar{.value = value};
+        return std::move(self);
+    }
+
+    ir::Scalar optimize(ir::BinaryScalar& s, auto& self) {
+        auto* vl = std::get_if<ir::ValueScalar>(&s.left->node);
+        auto* vr = std::get_if<ir::ValueScalar>(&s.right->node);
+        if (!vl || !vr) {
+            return std::move(self);
+        }
+
+        auto value = [&] -> Value {
+            switch (s.type) {
+                case BinaryExprType::Equal:
+                    return vl->value == vr->value;
+                case BinaryExprType::NotEqual:
+                    return vl->value != vr->value;
+                case BinaryExprType::And:
+                    return vl->value.get<bool>() && vr->value.get<bool>();
+                case BinaryExprType::Or:
+                    return vl->value.get<bool>() || vr->value.get<bool>();
+                case BinaryExprType::Divide:
+                    return std::visit(
+                        util::Overloaded{
+                            []<Dividable T>(T& l, T& r) -> Value { return r == 0 ? 0 : l / r; },
+                            [](auto&&...) -> Value { panic(); },
+                        },
+                        vl->value.variant(),
+                        vr->value.variant());
+                case BinaryExprType::Add:
+                    return std::visit(
+                        util::Overloaded{
+                            []<Addable T>(T& l, T& r) -> Value { return l + r; },
+                            [](auto&&...) -> Value { panic(); },
+                        },
+                        vl->value.variant(),
+                        vr->value.variant());
+
+                case BinaryExprType::Subtract:
+                    return std::visit(
+                        util::Overloaded{
+                            []<Subtractable T>(T& l, T& r) -> Value { return l - r; },
+                            [](auto&&...) -> Value { panic(); },
+                        },
+                        vl->value.variant(),
+                        vr->value.variant());
+            }
+        }();
+
+        self.node = ir::ValueScalar{.value = value};
+        return std::move(self);
+    }
+
+    ir::Aggregate optimize(ir::UnaryAggregate& a, auto& self) {
+        auto* v = std::get_if<ir::ValueScalar>(&a.expr->node);
+        if (v == nullptr) {
+            return std::move(self);
+        }
+
+        switch (a.type) {
+            case UnaryAggregateType::Count:
+                if (v->value == false || v->value == null) {
+                    self.node = ir::ConstAggregate{
+                        .value = int64_t(0),
+                        .null_if_empty = false,
+                    };
+                }
                 return std::move(self);
-            }
-        }
 
-        // not a constant
-        s.args.push_back(std::move(arg));
-    }
-
-    if (s.args.empty()) {
-        self.node = ir::ValueScalar{.value = null};
-    }
-
-    return std::move(self);
-}
-
-ir::Scalar optimize(ir::CastScalar& s, auto& self) {
-    s.expr = box(optimizeScalar(std::move(*s.expr)));
-    if (auto* v = std::get_if<ir::ValueScalar>(&s.expr->node)) {
-        self.node = ir::ValueScalar{.value = valueCast(std::move(v->value), s.cast_to)};
-    }
-    return std::move(self);
-}
-
-ir::Scalar optimize(ir::LikeScalar& s, auto& self) {
-    s.expr = box(optimizeScalar(std::move(*s.expr)));
-    // TODO: perform actual Like on constant values
-    return std::move(self);
-}
-
-ir::Scalar optimize(ir::RSubstrScalar& s, auto& self) {
-    s.expr = box(optimizeScalar(std::move(*s.expr)));
-    // TODO: perform actual RSubstr on constant values
-    return std::move(self);
-}
-
-ir::Scalar optimize(ir::UnaryScalar& s, auto& self) {
-    s.expr = box(optimizeScalar(std::move(*s.expr)));
-
-    auto* v = std::get_if<ir::ValueScalar>(&s.expr->node);
-    if (!v) {
-        return std::move(self);
-    }
-
-    auto value = [&] -> Value {
-        switch (s.type) {
-            case UnaryExprType::BooleanNegate:
-                return !v->value.get<bool>();
-        }
-    }();
-
-    self.node = ir::ValueScalar{.value = value};
-    return std::move(self);
-}
-
-ir::Scalar optimize(ir::BinaryScalar& s, auto& self) {
-    s.left = box(optimizeScalar(std::move(*s.left)));
-    s.right = box(optimizeScalar(std::move(*s.right)));
-
-    auto* vl = std::get_if<ir::ValueScalar>(&s.left->node);
-    auto* vr = std::get_if<ir::ValueScalar>(&s.right->node);
-    if (!vl || !vr) {
-        return std::move(self);
-    }
-
-    auto value = [&] -> Value {
-        switch (s.type) {
-            case BinaryExprType::Equal:
-                return vl->value == vr->value;
-            case BinaryExprType::NotEqual:
-                return vl->value != vr->value;
-            case BinaryExprType::And:
-                return vl->value.get<bool>() && vr->value.get<bool>();
-            case BinaryExprType::Or:
-                return vl->value.get<bool>() || vr->value.get<bool>();
-            case BinaryExprType::Divide:
-                return std::visit(
-                    util::Overloaded{
-                        []<Dividable T>(T& l, T& r) -> Value { return r == 0 ? 0 : l / r; },
-                        [](auto&&...) -> Value { panic(); },
-                    },
-                    vl->value.variant(),
-                    vr->value.variant());
-            case BinaryExprType::Add:
-                return std::visit(
-                    util::Overloaded{
-                        []<Addable T>(T& l, T& r) -> Value { return l + r; },
-                        [](auto&&...) -> Value { panic(); },
-                    },
-                    vl->value.variant(),
-                    vr->value.variant());
-
-            case BinaryExprType::Subtract:
-                return std::visit(
-                    util::Overloaded{
-                        []<Subtractable T>(T& l, T& r) -> Value { return l - r; },
-                        [](auto&&...) -> Value { panic(); },
-                    },
-                    vl->value.variant(),
-                    vr->value.variant());
-        }
-    }();
-
-    self.node = ir::ValueScalar{.value = value};
-    return std::move(self);
-}
-
-ir::Aggregate optimize(ir::UnaryAggregate& a, auto& self) {
-    a.expr = box(optimizeScalar(std::move(*a.expr)));
-
-    auto* v = std::get_if<ir::ValueScalar>(&a.expr->node);
-    if (v == nullptr) {
-        return std::move(self);
-    }
-
-    switch (a.type) {
-        case UnaryAggregateType::Count:
-            if (v->value == false || v->value == null) {
+            case UnaryAggregateType::Min:
                 self.node = ir::ConstAggregate{
-                    .value = int64_t(0),
-                    .null_if_empty = false,
+                    .value = v->value,
+                    .null_if_empty = true,
                 };
-            }
-            return std::move(self);
+                return std::move(self);
 
-        case UnaryAggregateType::Min:
-            self.node = ir::ConstAggregate{
-                .value = v->value,
-                .null_if_empty = true,
-            };
-            return std::move(self);
+            case UnaryAggregateType::Max:
+                self.node = ir::ConstAggregate{
+                    .value = v->value,
+                    .null_if_empty = true,
+                };
+                return std::move(self);
 
-        case UnaryAggregateType::Max:
-            self.node = ir::ConstAggregate{
-                .value = v->value,
-                .null_if_empty = true,
-            };
-            return std::move(self);
-
-        case UnaryAggregateType::Sum:
-            return std::move(self);
+            case UnaryAggregateType::Sum:
+                return std::move(self);
+        }
     }
-}
 
-ir::Aggregate optimize(ir::PercentileAggregate& a, auto& self) {
-    a.expr = box(optimizeScalar(std::move(*a.expr)));
-    return std::move(self);
-}
+    auto operator()(auto& node, auto& self) {
+        auto name = rfl::type_name_t<decltype(node)>().name();
 
-ir::Statement optimize(ir::QueryStatement& st, auto& /*self*/) {
-    return ir::QueryStatement{
-        .relation = box(optimizeRelation(std::move(*st.relation))),
-    };
-}
-
-ir::Relation optimizeRelation(ir::Relation rel) {
-    return util::match(rel.node, [&](auto& r) -> ir::Relation {
-        if constexpr (requires { optimize(r, rel); }) {
-            return optimize(r, rel);
+        if constexpr (requires { optimize(node, self); }) {
+            llog::trace("applying optimization step for {}", name);
+            return optimize(node, self);
         } else {
-            return std::move(rel);
+            llog::trace("no rewrite rule for {}", name);
+            return std::move(self);
         }
-    });
-}
-
-ir::Statement optimizeStatement(ir::Statement st) {
-    return util::match(st, [&](auto& s) -> ir::Statement {
-        if constexpr (requires { optimize(s, st); }) {
-            return optimize(s, st);
-        } else {
-            return std::move(st);
-        }
-    });
-}
-
-ir::Scalar optimizeScalar(ir::Scalar sc) {
-    return util::match(sc.node, [&](auto& s) -> ir::Scalar {
-        if constexpr (requires { optimize(s, sc); }) {
-            return optimize(s, sc);
-        } else {
-            return std::move(sc);
-        }
-    });
-}
-
-ir::Aggregate optimizeAggregate(ir::Aggregate ag) {
-    return util::match(ag.node, [&](auto& s) -> ir::Aggregate {
-        if constexpr (requires { optimize(s, ag); }) {
-            return optimize(s, ag);
-        } else {
-            return std::move(ag);
-        }
-    });
-}
+    }
+};
 
 }  // namespace
 
@@ -379,8 +209,9 @@ ir::Program optimize(ir::Program program) {
         .field_binding = program.field_binding,
     };
 
+    Optimizer opt;
     for (auto&& statement : program.statements) {
-        result.statements.push_back(optimizeStatement(std::move(statement)));
+        result.statements.push_back(pass(std::move(statement), opt));
     }
 
     return result;
