@@ -59,7 +59,7 @@ class SemiJoin : public OperationBase<SemiJoin, SemiJoinMetrics> {
     }
 
     bool consumeSource(int phase, const Record* record) {
-        if (record == nullptr) {
+        if (record == nullptr || values_.empty()) {
             cleanIfDone(phase);
             return emit(phase, nullptr);
         }

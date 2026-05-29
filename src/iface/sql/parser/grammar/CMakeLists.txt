@@ -35,7 +35,5 @@ target_sources(lsql-iface-sql-parser-grammar PRIVATE ${PARSER_OUTPUT_SOURCE_FILE
 target_include_directories(lsql-iface-sql-parser-grammar INTERFACE ${CMAKE_BINARY_DIR}/src)
 target_link_libraries(lsql-iface-sql-parser-grammar PUBLIC lsql-core)
 
-message(STATUS "= ==== (debug) Included ${CMAKE_BINARY_DIR}/src")
-
 # Suppress warnings in generated code
 target_compile_options(lsql-iface-sql-parser-grammar PRIVATE -w)
