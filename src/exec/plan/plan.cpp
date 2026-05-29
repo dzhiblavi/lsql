@@ -19,6 +19,7 @@
 #include "exec/op/Projection.h"
 #include "exec/op/SemiJoin.h"
 #include "exec/op/Sort.h"
+#include "exec/op/TopK.h"
 #include "exec/op/UnionAll.h"
 #include "exec/op/Values.h"
 
@@ -117,13 +118,11 @@ class Planner {
     }
 
     OperationPtr planRelation(ir::TopKRelation r, auto& /*info*/) {
-        return limit(
-            sort(
-                planRelation(std::move(*r.source)),
-                expressionList(std::move(r.order_list)),
-                r.desc,
-                binding_),
+        return topK(
+            planRelation(std::move(*r.source)),
+            expressionList(std::move(r.order_list)),
             r.top_count,
+            r.desc,
             binding_);
     }
 
