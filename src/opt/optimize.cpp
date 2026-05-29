@@ -96,7 +96,17 @@ ir::Relation optimize(ir::LimitRelation& rel, ir::Relation& self) {
 ir::Relation optimize(ir::FilterRelation& rel, ir::Relation& self) {
     rel.source = box(optimizeRelation(std::move(*rel.source)));
     rel.condition = box(optimizeScalar(std::move(*rel.condition)));
-    // TODO: if always true/always false then just source
+
+    auto* v = std::get_if<ir::ValueScalar>(&rel.condition->node);
+    if (!v) {
+        return std::move(self);
+    }
+
+    if (v->value == true) {
+        return std::move(*rel.source);
+    }
+
+    // TODO: optimize to empty relation
     return std::move(self);
 }
 
