@@ -18,10 +18,15 @@ struct TopKMetrics {
     util::StrBuilder report() const { return shortReport(); }
 
     util::StrBuilder shortReport() const {
-        return util::StrBuilder().item("seen_count: {}", seen_count);
+        return util::StrBuilder()
+            .item("seen_count: {}", seen_count)
+            .item("inserted_count: {}", inserted_count)
+            .item("replaced_count: {}", replaced_count);
     }
 
     size_t seen_count{0};
+    size_t inserted_count{0};
+    size_t replaced_count{0};
 };
 
 class TopK : public OperationBase<TopK, TopKMetrics>, public std::enable_shared_from_this<TopK> {
@@ -51,16 +56,31 @@ class TopK : public OperationBase<TopK, TopKMetrics>, public std::enable_shared_
         }
 
         if (record != nullptr) {
-            if (auto m = prof_.metrics()) {
-                ++m->custom<TopKMetrics>().seen_count;
-            }
-
             if (!active(phase)) {
                 heap_.clear();
                 return false;
             }
 
-            heap_.push(record, key(*record));
+            auto action = heap_.push(record, key(*record));
+
+            if (auto m = prof_.metrics()) {
+                auto& custom = m->custom<TopKMetrics>();
+                ++custom.seen_count;
+
+                switch (action) {
+                    using enum BoundedPriorityQueue::Action;
+
+                    case Inserted:
+                        ++custom.inserted_count;
+                        break;
+                    case Replaced:
+                        ++custom.replaced_count;
+                        break;
+                    case Skipped:
+                        break;
+                }
+            }
+
             return true;
         }
 
@@ -128,6 +148,12 @@ class TopK : public OperationBase<TopK, TopKMetrics>, public std::enable_shared_
      public:
         using UnderlyingType = std::priority_queue<Item, std::vector<Item>, Comparator>;
 
+        enum class Action : uint8_t {
+            Inserted,
+            Replaced,
+            Skipped,
+        };
+
         BoundedPriorityQueue(size_t max_size, bool desc)
             : desc_(desc)
             , max_size_(max_size)
@@ -135,25 +161,29 @@ class TopK : public OperationBase<TopK, TopKMetrics>, public std::enable_shared_
             verify(max_size > 0);
         }
 
-        void push(const Record* record, Key key) {
+        Action push(const Record* record, Key key) {
             if (heap_.size() < max_size_) {
                 heap_.push(
                     Item{
                         .record = record->clone(),
                         .key = std::move(key),
                     });
+                return Action::Inserted;
             } else {
                 auto&& top = heap_.top();  // worst kept element
 
-                if (better(key, top.key)) {
-                    // key is better, should replace top
-                    heap_.pop();
-                    heap_.push(
-                        Item{
-                            .record = record->clone(),
-                            .key = std::move(key),
-                        });
+                if (!better(key, top.key)) {
+                    return Action::Skipped;
                 }
+
+                // key is better, should replace top
+                heap_.pop();
+                heap_.push(
+                    Item{
+                        .record = record->clone(),
+                        .key = std::move(key),
+                    });
+                return Action::Replaced;
             }
         }
 
