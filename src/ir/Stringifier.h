@@ -89,7 +89,13 @@ class Stringifier {
     }
 
     StrBuilder print(const SortRelation& r) {
-        return StrBuilder("SortRelation")
+        return StrBuilder("SortRelation desc={}", r.desc)
+            .child(StrBuilder("source").child(print(*r.source)))
+            .child(StrBuilder("order list").block(print(r.order_list)));
+    }
+
+    StrBuilder print(const TopKRelation& r) {
+        return StrBuilder("TopKRelation count={}, desc={}", r.top_count, r.desc)
             .child(StrBuilder("source").child(print(*r.source)))
             .child(StrBuilder("order list").block(print(r.order_list)));
     }

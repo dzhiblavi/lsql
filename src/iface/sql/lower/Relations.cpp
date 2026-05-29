@@ -203,18 +203,31 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
         auto [order_list, order_aggregates] = lowerToIR(std::move(r.order_by->order_list), ctx);
         verify(order_aggregates.empty());
 
-        ctx.setRelation({
-            .node =
-                ir::SortRelation{
-                    .source = box(ctx.pullRelation()),
-                    .order_list = std::move(order_list),
-                    .desc = r.order_by->desc,
-                },
-            .fields_out = projectors_output_fields,
-        });
+        if (r.limit) {
+            ctx.setRelation({
+                .node =
+                    ir::TopKRelation{
+                        .source = box(ctx.pullRelation()),
+                        .order_list = std::move(order_list),
+                        .desc = r.order_by->desc,
+                        .top_count = r.limit->limit,
+                    },
+                .fields_out = projectors_output_fields,
+            });
+        } else {
+            ctx.setRelation({
+                .node =
+                    ir::SortRelation{
+                        .source = box(ctx.pullRelation()),
+                        .order_list = std::move(order_list),
+                        .desc = r.order_by->desc,
+                    },
+                .fields_out = projectors_output_fields,
+            });
+        }
     }
 
-    if (r.limit) {
+    if (r.limit && !r.order_by) {
         ctx.setRelation({
             .node =
                 ir::LimitRelation{

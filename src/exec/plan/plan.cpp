@@ -116,6 +116,17 @@ class Planner {
             binding_);
     }
 
+    OperationPtr planRelation(ir::TopKRelation r, auto& /*info*/) {
+        return limit(
+            sort(
+                planRelation(std::move(*r.source)),
+                expressionList(std::move(r.order_list)),
+                r.desc,
+                binding_),
+            r.top_count,
+            binding_);
+    }
+
     OperationPtr planRelation(ir::SemiJoinRelation r, auto& /*info*/) {
         return semiJoin(
             planRelation(std::move(*r.source)),

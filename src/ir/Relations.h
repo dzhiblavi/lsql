@@ -54,6 +54,13 @@ struct SortRelation {
     bool desc;
 };
 
+struct TopKRelation {
+    Box<Relation> source;
+    std::vector<Scalar> order_list;
+    bool desc;
+    int top_count;
+};
+
 struct SemiJoinRelation {
     Box<Relation> source;
     Box<Relation> match;

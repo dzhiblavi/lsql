@@ -11,6 +11,7 @@ struct GroupRelation;
 struct LimitRelation;
 struct FilterRelation;
 struct SortRelation;
+struct TopKRelation;
 struct SemiJoinRelation;
 struct MarkJoinRelation;
 struct UnionAllRelation;
@@ -28,6 +29,7 @@ using RelationNode = std::variant< //
     LimitRelation, //
     FilterRelation, //
     SortRelation, //
+    TopKRelation, //
     SemiJoinRelation, //
     MarkJoinRelation, //
     UnionAllRelation, //
