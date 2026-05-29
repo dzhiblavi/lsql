@@ -8,6 +8,7 @@
 #include "ir/Stringifier.h"
 
 #include "exec/plan/plan.h"
+#include "opt/optimize.h"
 
 #include "iface/sql/bind/bind.h"
 #include "iface/sql/lower/lower.h"
@@ -184,6 +185,7 @@ exec::Plan makePlan(std::string maybe_path) {
         std::cout << iface::sql::bound::Stringifier().print(bound_ast) << std::endl;
     }
     auto ir = iface::sql::lower::lowerToIR(std::move(bound_ast));
+    ir = opt::optimize(std::move(ir));
     if (debug_ir_arg) {
         std::cout << "IR dump:" << std::endl;
         std::cout << ir::Stringifier().print(ir) << std::endl;

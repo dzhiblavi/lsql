@@ -21,6 +21,7 @@ target_link_libraries(
     lsql PRIVATE
     tclap::tclap
     magic_enum::magic_enum
+    lsql-opt
     lsql-exec
     lsql-data
     lsql-util
