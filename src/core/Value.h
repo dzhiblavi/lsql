@@ -39,16 +39,6 @@ class Value {
 
     auto operator<=>(const Value& rhs) const = default;
 
-    template <typename Visitor>
-    decltype(auto) visit(Visitor&& vis) {
-        return std::visit(std::forward<Visitor>(vis), val_);
-    }
-
-    template <typename Visitor>
-    decltype(auto) visit(Visitor&& vis) const {
-        return std::visit(std::forward<Visitor>(vis), val_);
-    }
-
     size_t hash() const;
 
     template <typename Visitor, typename... Values>
@@ -59,21 +49,35 @@ class Value {
     friend void swap(Value& a, Value& b) noexcept { std::swap(a.val_, b.val_); }
 
     auto& variant() const { return val_; }
-    auto& variant() { return val_; }
+    auto& variant() & { return val_; }
+    auto variant() && { return std::move(val_); }
 
  private:
     std::variant<null_t, int64_t, float, std::string, bool> val_;
 };
 
 inline std::string to_string(const Value& val) {
-    return val.visit(
+    return std::visit(
         util::Overloaded{
             [](null_t) -> std::string { return "null"; },
             [](bool x) -> std::string { return x ? "true" : "false"; },
             [](int64_t x) -> std::string { return std::to_string(x); },
             [](float x) -> std::string { return std::to_string(x); },
             [](const std::string& x) -> std::string { return x; },
-        });
+        },
+        val.variant());
+}
+
+inline std::string to_string(Value&& val) {
+    return std::visit(
+        util::Overloaded{
+            [](null_t) -> std::string { return "null"; },
+            [](bool x) -> std::string { return x ? "true" : "false"; },
+            [](int64_t x) -> std::string { return std::to_string(x); },
+            [](float x) -> std::string { return std::to_string(x); },
+            [](std::string x) -> std::string { return x; },
+        },
+        std::move(val).variant());
 }
 
 }  // namespace lsql

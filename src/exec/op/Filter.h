@@ -47,14 +47,15 @@ class Filter : public OperationBase<Filter> {
     }
 
     static bool trueish(const Value& val) {
-        return val.visit(
+        return std::visit(
             util::Overloaded{
                 [](const std::string& s) { return !s.empty(); },
                 [](bool b) { return b; },
                 [](int64_t x) { return x != 0; },
                 [](float x) { return abs(x) > 1e-6f; },
                 [](null_t) { return false; },
-            });
+            },
+            val.variant());
     }
 
     OperationPtr source_;

@@ -1,7 +1,14 @@
 #include "exec/op/Operation.h"
+#include "exec/op/explain.h"
 #include "prof/global.h"
 #include "prof/presentation.h"
 #include "util/ThreadPool.h"
+
+#include "out/CSVHeaderFormatter.h"
+#include "out/Consumer.h"
+#include "out/Formats.h"
+#include "out/JSONFormatter.h"
+#include "out/TSKVFormatter.h"
 
 #include "iface/sql/ast/Stringifier.h"
 #include "iface/sql/bound/Stringifier.h"
@@ -32,11 +39,6 @@
 
 namespace lsql {
 
-enum class Format {
-    TSKV,
-    JSON,
-};
-
 TCLAP::UnlabeledValueArg<std::string> sql_file_arg{
     "path",
     "path to the query file",
@@ -51,7 +53,7 @@ TCLAP::ValueArg<std::string> format_arg{
     "output format",
     false,
     "TSKV",
-    "see Format enum in " __FILE_NAME__,
+    "see lsql::out::Format enum",
 };
 
 TCLAP::ValueArg<std::string> log_level_arg{
@@ -145,12 +147,6 @@ TCLAP::SwitchArg dot_graph_arg{
     "build .dot graph (dumped to prof.dot)",
 };
 
-void println(std::string_view s) {
-    static std::mutex m;
-    std::lock_guard lg(m);
-    std::cout << s << '\n';
-}
-
 bool parseArgs(std::span<const char*> argv) {
     TCLAP::CmdLine cmd{"tsql", ' ', formatBuildInfo()};
     cmd.add(&sql_file_arg);
@@ -205,16 +201,19 @@ exec::Plan makePlan(std::string maybe_path) {
         std::cout << "AST dump:" << std::endl;
         std::cout << iface::sql::ast::Stringifier().print(ast) << std::endl;
     }
+
     auto bound_ast = iface::sql::bind::bind(std::move(ast));
     if (print_bound_arg) {
         std::cout << "Bound AST dump:" << std::endl;
         std::cout << iface::sql::bound::Stringifier().print(bound_ast) << std::endl;
     }
+
     auto ir = iface::sql::lower::lowerToIR(std::move(bound_ast));
     if (print_ir_unoptimized_arg) {
         std::cout << "Unoptimized IR dump:" << std::endl;
         std::cout << ir::Stringifier().print(ir).render() << std::endl;
     }
+
     opt::Context opt_ctx;
     for (unsigned i = 0; i < optimize_passes_arg.getValue(); ++i) {
         ir = opt::optimize(std::move(ir), opt_ctx);
@@ -227,77 +226,20 @@ exec::Plan makePlan(std::string maybe_path) {
     if (print_optimization_report_arg) {
         std::cout << opt_ctx.report() << std::endl;
     }
+
     if (print_ir_optimized_arg) {
         std::cout << "Optimized IR dump:" << std::endl;
         std::cout << ir::Stringifier().print(ir).render() << std::endl;
     }
+
     return exec::plan(std::move(ir));
 }
 
-std::string escapeForJSON(const std::string& input) {
-    std::ostringstream oss;
-
-    for (char c : input) {
-        switch (c) {
-            case '"':
-                oss << "\\\"";
-                break;
-            case '\\':
-                oss << "\\\\";
-                break;
-            case '/':
-                oss << "\\/";
-                break;
-            case '\b':
-                oss << "\\b";
-                break;
-            case '\f':
-                oss << "\\f";
-                break;
-            case '\n':
-                oss << "\\n";
-                break;
-            case '\r':
-                oss << "\\r";
-                break;
-            case '\t':
-                oss << "\\t";
-                break;
-            default:
-                // Control characters (0x00-0x1F) should be escaped as \uXXXX
-                if (static_cast<unsigned char>(c) < 0x20) {
-                    oss << "\\u00" << std::hex << std::uppercase
-                        << static_cast<int>(static_cast<unsigned char>(c));
-                } else {
-                    oss << c;
-                }
-                break;
-        }
-    }
-
-    return oss.str();
-}
-
-std::string toJSONStr(const Value& v) {
-    return visit(
-        util::Overloaded{
-            [](null_t) -> std::string { return "null"; },
-            [](bool x) -> std::string { return x ? "true" : "false"; },
-            [](int64_t x) -> std::string { return std::to_string(x); },
-            [](float x) -> std::string { return std::to_string(x); },
-            [](const std::string& x) -> std::string {
-                return std::format("\"{}\"", escapeForJSON(x));
-            },
-        },
-        v);
-}
-
-class Print : public exec::Subscriber {
+class ConsumerBridge : public exec::Subscriber {
  public:
-    Print(exec::OperationPtr source, FieldSet fields, Format format, ConstFieldBindingPtr binding)
+    ConsumerBridge(exec::OperationPtr source, FieldSet fields, Box<out::Consumer> consumer)
         : source_(std::move(source))
-        , format_(format)
-        , binding_(std::move(binding)) {
+        , consumer_(std::move(consumer)) {
         source_->subscribe(source_->minPhase(), this, fields);
     }
 
@@ -316,57 +258,26 @@ class Print : public exec::Subscriber {
  private:
     prof::ScopeMetricsBase* profHandle() override { return nullptr; }
 
-    void done() const {
-        println(ss_.str());
-        ss_.str() = "";
-    }
-
     bool consume([[maybe_unused]] int phase, const exec::Record* record) override {
         verify_dbg(phase == source_->minPhase());
 
         if (record == nullptr) {
-            done();
+            consumer_->done();
             return false;
         }
 
-        switch (format_) {
-            case Format::TSKV:
-                printRecordTSKV(*record);
-                break;
-
-            case Format::JSON:
-                printRecordJSON(*record);
-                break;
+        rec_.clear();
+        for (auto id : record->ids()) {
+            rec_.emplace(id, record->value(id));
         }
 
+        consumer_->consume(rec_);
         return true;
     }
 
-    void printRecordTSKV(const exec::Record& record) {
-        for (auto id : record.ids()) {
-            ss_ << std::format("{}={}", binding_->name(id), to_string(record.value(id))) << '\t';
-        }
-        ss_ << '\n';
-    }
-
-    void printRecordJSON(const exec::Record& record) {
-        if (record.ids().empty()) {
-            ss_ << "{}\n";
-            return;
-        }
-
-        ss_ << '{';
-        for (auto id : record.ids()) {
-            ss_ << std::format("\"{}\":{}", binding_->name(id), toJSONStr(record.value(id))) << ',';
-        }
-        ss_.seekp(-1, std::ios_base::end);  // remove last comma
-        ss_ << "}\n";
-    }
-
+    out::Record rec_;
     exec::OperationPtr source_;
-    Format format_;
-    std::stringstream ss_;
-    ConstFieldBindingPtr binding_;
+    Box<out::Consumer> consumer_;
 };
 
 void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
@@ -409,6 +320,8 @@ void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
     }
 
     if (flamegraph_arg) {
+        llog::info("dumping flamegraph to prof.<N>.folded");
+
         for (size_t i = 0; i < snapshots.size(); ++i) {
             std::ofstream ofs(std::format("prof.{}.folded", i));
             ofs << prof::formatFoldedStacks(snapshots[i]);
@@ -416,31 +329,37 @@ void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
     }
 
     if (dot_graph_arg) {
+        llog::info("dumping dot visualization to prof.dot");
+
         std::ofstream ofs("prof.dot");
         ofs << prof::formatDot(snapshots);
     }
 }
 
-void explain(int max_phase, const auto& operations) {
-    for (int phase = 0; phase <= max_phase; ++phase) {
-        std::cout << std::format("===================== planning phase {}", phase) << std::endl;
+struct StdoutSink {
+    StdoutSink() = default;
 
-        exec::Explanation explanation;
-        exec::ExplanationCtx ctx{
-            .requester = nullptr,
-            .phase = phase,
-            .explanation = explanation,
-        };
+    void push(std::string_view s) { buf_ << s << '\n'; }
 
-        for (auto&& op : operations) {
-            auto explain = op->explain(ctx);
+    void done() {
+        std::lock_guard lg(m_);
+        std::cout << buf_.str() << '\n';
+        buf_ = {};
+    }
 
-            if (!explain.empty()) {
-                std::cout << explain.render() << std::endl;
-            }
-        }
+ private:
+    inline static std::mutex m_;
+    std::stringstream buf_;
+};
 
-        std::cout << explanation.render() << std::endl;
+Box<out::Consumer> makeConsumer(out::Format format, ConstFieldBindingPtr binding) {
+    switch (format) {
+        case out::Format::JSON:
+            return box<out::JSONFormatter<StdoutSink>>(StdoutSink{}, binding);
+        case out::Format::TSKV:
+            return box<out::TSKVFormatter<StdoutSink>>(StdoutSink{}, binding);
+        case out::Format::CSVHeader:
+            return box<out::CSVHeaderFormatter<StdoutSink>>(StdoutSink{}, binding);
     }
 }
 
@@ -453,7 +372,7 @@ void main(std::span<const char*> argv) {
     require(log_level.has_value(), "invalid value for log-level: {}", log_level_arg.getValue());
     llog::global()->set_level(static_cast<spdlog::level::level_enum>(*log_level));
 
-    auto format = magic_enum::enum_cast<Format>(format_arg.getValue());
+    auto format = magic_enum::enum_cast<out::Format>(format_arg.getValue());
     require(format.has_value(), "invalid value for format: {}", format_arg.getValue());
 
     std::optional<prof::Profiler> profiler;
@@ -469,9 +388,9 @@ void main(std::span<const char*> argv) {
     auto [sources, top_operations, binding] = makePlan(sql_file_arg.getValue());
 
     llog::info("collecting print operations");
-    std::vector<std::shared_ptr<Print>> ops;
+    std::vector<Arc<ConsumerBridge>> ops;
     for (auto&& [op, fields] : top_operations) {
-        ops.push_back(std::make_shared<Print>(op, fields, *format, binding));
+        ops.push_back(arc<ConsumerBridge>(op, fields, makeConsumer(*format, binding)));
     }
 
     llog::info("determining phase count");
@@ -481,7 +400,7 @@ void main(std::span<const char*> argv) {
     }
 
     if (explain_arg) {
-        explain(max_phase, ops);
+        std::cout << exec::explain(max_phase, std::span<Arc<ConsumerBridge>>(ops));
     }
 
     if (run_query) {

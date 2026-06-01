@@ -5,7 +5,7 @@
 namespace lsql {
 
 inline Value valueCast(Value val, ValueType to) {
-    return std::move(val).visit(
+    return std::visit(
         util::Overloaded{
             [](null_t) -> Value { return null; },
             [&](const std::string& s) -> Value {
@@ -64,7 +64,8 @@ inline Value valueCast(Value val, ValueType to) {
                         return null;
                 };
             },
-        });
+        },
+        std::move(val).variant());
 }
 
 }  // namespace lsql
