@@ -72,6 +72,15 @@ TCLAP::ValueArg<unsigned> threads_arg{
     "unsigned",
 };
 
+TCLAP::ValueArg<unsigned> optimize_passes_arg{
+    "",
+    "optimize-passes",
+    "number of optimization passes",
+    false,
+    5,
+    "unsigned",
+};
+
 bool run_query = true;
 
 TCLAP::SwitchArg force_run_arg{
@@ -148,6 +157,7 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&print_ir_unoptimized_arg);
     cmd.add(&print_ir_optimized_arg);
     cmd.add(&threads_arg);
+    cmd.add(&optimize_passes_arg);
     cmd.add(&profile_arg);
     cmd.add(&flamegraph_arg);
     cmd.add(&dot_graph_arg);
@@ -196,12 +206,14 @@ exec::Plan makePlan(std::string maybe_path) {
     auto ir = iface::sql::lower::lowerToIR(std::move(bound_ast));
     if (print_ir_unoptimized_arg) {
         std::cout << "Unoptimized IR dump:" << std::endl;
-        std::cout << ir::Stringifier().print(ir) << std::endl;
+        std::cout << ir::Stringifier().print(ir).render() << std::endl;
     }
-    ir = opt::optimize(std::move(ir));
+    for (unsigned i = 0; i < optimize_passes_arg.getValue(); ++i) {
+        ir = opt::optimize(std::move(ir));
+    }
     if (print_ir_optimized_arg) {
         std::cout << "Optimized IR dump:" << std::endl;
-        std::cout << ir::Stringifier().print(ir) << std::endl;
+        std::cout << ir::Stringifier().print(ir).render() << std::endl;
     }
     return exec::plan(std::move(ir));
 }

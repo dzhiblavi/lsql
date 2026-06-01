@@ -17,7 +17,7 @@ class Stringifier {
  public:
     Stringifier() = default;
 
-    std::string print(const Program& program) {
+    StrBuilder print(const Program& program) {
         binding_ = program.field_binding;
         StrBuilder b("Program IR");
 
@@ -28,17 +28,8 @@ class Stringifier {
         return b.render();
     }
 
- private:
     StrBuilder print(const Statement& st) {
         return std::visit([this](auto&& arg) { return this->print(arg); }, st);
-    }
-
-    StrBuilder print(const QueryStatement& s) {
-        return StrBuilder("QueryStatement").child(print(*s.relation));
-    }
-
-    StrBuilder print(const NamedRelationStatement& s) {
-        return StrBuilder("NamedRelationStatement (name={})", s.name).child(print(*s.relation));
     }
 
     StrBuilder print(const Relation& r) {
@@ -48,6 +39,34 @@ class Stringifier {
                     StrBuilder("fields_out: {}", to_string(r.fields_out, *binding_)));
             },
             r.node);
+    }
+
+    StrBuilder print(const Scalar& e) {
+        return std::visit(
+            [this, &e](auto&& arg) {
+                return print(arg).child(
+                    StrBuilder("value_type: {}", magic_enum::enum_name(e.value_type)));
+            },
+            e.node);
+    }
+
+    StrBuilder print(const Aggregate& e) {
+        return std::visit(
+            [this, &e](auto&& arg) {
+                return print(arg)
+                    .child(StrBuilder("value_type: {}", magic_enum::enum_name(e.value_type)))
+                    .child(StrBuilder("output_field_id: {}", e.output_field_id));
+            },
+            e.node);
+    }
+
+ private:
+    StrBuilder print(const QueryStatement& s) {
+        return StrBuilder("QueryStatement").child(print(*s.relation));
+    }
+
+    StrBuilder print(const NamedRelationStatement& s) {
+        return StrBuilder("NamedRelationStatement (name={})", s.name).child(print(*s.relation));
     }
 
     StrBuilder print(const EmptyRelation& /*r*/) { return StrBuilder("EmptyRelation"); }
@@ -178,25 +197,6 @@ class Stringifier {
 
     StrBuilder print(const MaterializeRelation& r) {
         return StrBuilder("MaterializeRelation").child(print(*r.relation));
-    }
-
-    StrBuilder print(const Scalar& e) {
-        return std::visit(
-            [this, &e](auto&& arg) {
-                return print(arg).child(
-                    StrBuilder("value_type: {}", magic_enum::enum_name(e.value_type)));
-            },
-            e.node);
-    }
-
-    StrBuilder print(const Aggregate& e) {
-        return std::visit(
-            [this, &e](auto&& arg) {
-                return print(arg)
-                    .child(StrBuilder("value_type: {}", magic_enum::enum_name(e.value_type)))
-                    .child(StrBuilder("output_field_id: {}", e.output_field_id));
-            },
-            e.node);
     }
 
     StrBuilder print(const FieldScalar& e) {

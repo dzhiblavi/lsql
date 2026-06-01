@@ -8,7 +8,7 @@ namespace lsql::opt {
 
 namespace {
 
-struct Optimizer {
+struct Optimizer : ConsumePass<Optimizer> {
     bool isForwardingProjection(const ir::ProjectionRelation& p) {
         for (auto&& proj : p.projectors) {
             auto* field_expr = std::get_if<ir::FieldScalar>(&proj.expr->node);
@@ -64,7 +64,7 @@ struct Optimizer {
         return std::move(self);
     }
 
-    auto operator()(auto& node, auto& self) {
+    auto construct(auto& node, auto& self) {
         auto pass_name = "relation_simplify";
         auto name = rfl::type_name_t<decltype(node)>().name();
 
@@ -87,7 +87,7 @@ ir::Program relationSimplify(ir::Program program) {
 
     Optimizer opt;
     for (auto&& statement : program.statements) {
-        result.statements.push_back(pass(std::move(statement), opt));
+        result.statements.push_back(opt.pass(std::move(statement)));
     }
 
     return result;

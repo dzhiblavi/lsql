@@ -6,6 +6,7 @@
 
 #include "opt/aggregate_fold.h"
 #include "opt/const_fold.h"
+#include "opt/projection_collapse.h"
 #include "opt/relation_simplify.h"
 #include "opt/scalar_simplify.h"
 
@@ -17,6 +18,7 @@ ir::Program optimize(ir::Program program) {
     program = constFold(std::move(program));
     program = aggregateFold(std::move(program));
     program = relationSimplify(std::move(program));
+    program = projectionCollapse(std::move(program));
     return program;
 }
 

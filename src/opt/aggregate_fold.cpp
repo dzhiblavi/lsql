@@ -8,7 +8,7 @@ namespace lsql::opt {
 
 namespace {
 
-struct Optimizer {
+struct Optimizer : ConsumePass<Optimizer> {
     ir::Aggregate optimize(ir::UnaryAggregate& a, auto& self) {
         auto* v = std::get_if<ir::ValueScalar>(&a.expr->node);
         if (v == nullptr) {
@@ -44,7 +44,7 @@ struct Optimizer {
         }
     }
 
-    auto operator()(auto& node, auto& self) {
+    auto construct(auto& node, auto& self) {
         auto self_name = "aggregate_fold";
         auto name = rfl::type_name_t<decltype(node)>().name();
 
@@ -67,7 +67,8 @@ ir::Program aggregateFold(ir::Program program) {
 
     Optimizer opt;
     for (auto&& statement : program.statements) {
-        result.statements.push_back(pass(std::move(statement), opt));
+        result.statements.push_back(opt.pass(std::move(statement)));
+        // result.statements.push_back(pass(std::move(statement), opt));
     }
 
     return result;

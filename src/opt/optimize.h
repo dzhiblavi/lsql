@@ -4,6 +4,7 @@
 
 namespace lsql::opt {
 
+// Single pass
 ir::Program optimize(ir::Program program);
 
-}  // namespace lsql::exec
+}  // namespace lsql::opt

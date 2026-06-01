@@ -1,0 +1,274 @@
+#include "opt/projection_collapse.h"
+#include "opt/pass.h"
+
+#include <llog/log.h>
+#include <rfl.hpp>
+
+namespace lsql::opt {
+
+namespace {
+
+struct ScalarCostEstimator : ScalarViewPass<ScalarCostEstimator, int> {
+    static constexpr int CoalesceCostOverhead = 1;
+    static constexpr int UnaryOpCostOverhead = 1;
+    static constexpr int BinaryOpCostOverhead = 1;
+    static constexpr int CastToStringCostOverhead = 2;
+    static constexpr int ParseStringCostOverhead = 10;
+    static constexpr int RegexCostOverhead = 4;
+
+    virtual ~ScalarCostEstimator() = default;
+
+    int cost(FieldId id) const {
+        auto it = cost_.find(id);
+        verify(it != cost_.end());
+        return it->second;
+    }
+
+    virtual int view(const ir::FieldScalar&, const ir::Scalar& self) = 0;
+
+    int view(const ir::ValueScalar&, auto&) { return 0; }
+
+    int view(const ir::CoalesceScalar&, auto&, auto args) {
+        int cost = CoalesceCostOverhead;
+        for (auto&& a : args) {
+            cost += a;
+        }
+        return cost;
+    }
+
+    int view(const ir::CastScalar& s, auto&, int arg) {
+        int cost = arg;
+        if (s.cast_to == ValueType::String) {
+            cost += CastToStringCostOverhead;
+        }
+        if (s.expr->value_type == ValueType::String) {
+            cost += ParseStringCostOverhead;
+        }
+        return cost;
+    }
+
+    int view(const ir::LikeScalar&, auto&, int arg) { return RegexCostOverhead + arg; }
+    int view(const ir::RSubstrScalar&, auto&, int arg) { return RegexCostOverhead + arg; }
+    int view(const ir::UnaryScalar&, auto&, int arg) { return UnaryOpCostOverhead + arg; }
+
+    int view(const ir::BinaryScalar&, auto&, int left, int right) {
+        return BinaryOpCostOverhead + left + right;
+    }
+
+    void estimateProjector(FieldId id, const auto& s) {
+        int cost = pass(s);
+        cost_[id] = cost;
+        total_cost_ += cost;
+    }
+
+    int totalCost() const { return total_cost_; }
+
+ protected:
+    int total_cost_ = 0;
+    std::unordered_map<FieldId, int> cost_;
+};
+
+struct RawScalarCostEstimator : ScalarCostEstimator {
+    int view(const ir::FieldScalar&, const ir::Scalar&) override { return 0; }
+};
+
+struct ScalarCollapseCostEstimator : ScalarCostEstimator {
+    const ScalarCostEstimator* inner = nullptr;
+
+    int view(const ir::FieldScalar& outer, const ir::Scalar&) override {
+        return inner->cost(outer.field_id);
+    }
+};
+
+struct CloneScalarView : ScalarViewPass<CloneScalarView, ir::Scalar> {
+    virtual ~CloneScalarView() = default;
+
+    virtual ir::Scalar view(const ir::FieldScalar& s, const ir::Scalar& self) {
+        return {
+            .node = s,
+            .value_type = self.value_type,
+        };
+    }
+
+    ir::Scalar view(const ir::ValueScalar& s, auto& self) {
+        return ir::Scalar{
+            .node = s,
+            .value_type = self.value_type,
+        };
+    }
+
+    ir::Scalar view(const ir::CoalesceScalar& /*outer*/, auto& self, auto args) {
+        return ir::Scalar{
+            .node = ir::CoalesceScalar{.args = std::move(args)},
+            .value_type = self.value_type,
+        };
+    }
+
+    ir::Scalar view(const ir::CastScalar& s, auto& self, auto expr) {
+        return ir::Scalar{
+            .node =
+                ir::CastScalar{
+                    .cast_to = s.cast_to,
+                    .expr = box(std::move(expr)),
+                },
+            .value_type = self.value_type,
+        };
+    }
+
+    ir::Scalar view(const ir::LikeScalar& s, auto& self, auto expr) {
+        return ir::Scalar{
+            .node =
+                ir::LikeScalar{
+                    .expr = box(std::move(expr)),
+                    .regex = s.regex,
+                },
+            .value_type = self.value_type,
+        };
+    }
+
+    ir::Scalar view(const ir::RSubstrScalar& s, auto& self, auto expr) {
+        return ir::Scalar{
+            .node =
+                ir::RSubstrScalar{
+                    .expr = box(std::move(expr)),
+                    .regex = s.regex,
+                },
+            .value_type = self.value_type,
+        };
+    }
+
+    ir::Scalar view(const ir::UnaryScalar& s, auto& self, auto expr) {
+        return ir::Scalar{
+            .node =
+                ir::UnaryScalar{
+                    .type = s.type,
+                    .expr = box(std::move(expr)),
+                },
+            .value_type = self.value_type,
+        };
+    }
+
+    ir::Scalar view(const ir::BinaryScalar& s, auto& self, auto left, auto right) {
+        return ir::Scalar{
+            .node =
+                ir::BinaryScalar{
+                    .type = s.type,
+                    .left = box(std::move(left)),
+                    .right = box(std::move(right)),
+                },
+            .value_type = self.value_type,
+        };
+    }
+
+    ir::Scalar clone(const ir::Scalar& s) { return pass(s); }
+};
+
+struct ScalarCollapser : CloneScalarView {
+    CloneScalarView clone;
+    std::unordered_map<FieldId, const ir::Scalar*> inner;
+
+    ir::Scalar view(const ir::FieldScalar& s, const ir::Scalar& /*self*/) override {
+        auto it = inner.find(s.field_id);
+        verify(it != inner.end());
+        return clone.clone(*it->second);
+    }
+
+    ir::Scalar collapse(const ir::Scalar& s) { return pass(s); }
+};
+
+struct Optimizer : ConsumePass<Optimizer> {
+    bool isProjectionProjection(const ir::ProjectionRelation& p) {
+        return std::holds_alternative<ir::ProjectionRelation>(p.source->node);
+    }
+
+    ir::Relation optimize(ir::ProjectionRelation& rel, ir::Relation& self) {
+        if (!isProjectionProjection(rel)) {
+            return std::move(self);
+        }
+
+        auto& inner = std::get<ir::ProjectionRelation>(rel.source->node);
+
+        RawScalarCostEstimator inner_estimator;
+        for (auto&& [id, scalar] : inner.projectors) {
+            inner_estimator.estimateProjector(id, *scalar);
+        }
+        RawScalarCostEstimator outer_estimator;
+        for (auto&& [id, scalar] : rel.projectors) {
+            outer_estimator.estimateProjector(id, *scalar);
+        }
+
+        ScalarCollapseCostEstimator collapsed_estimator;
+        collapsed_estimator.inner = &inner_estimator;
+        for (auto&& [id, scalar] : rel.projectors) {
+            collapsed_estimator.estimateProjector(id, *scalar);
+        }
+
+        int total_current_cost = inner_estimator.totalCost() + outer_estimator.totalCost();
+        if (collapsed_estimator.totalCost() > total_current_cost) {
+            llog::trace(
+                "projection collapse skipped, cost too high: collapsed={}, old={}",
+                collapsed_estimator.totalCost(),
+                total_current_cost);
+            return std::move(self);
+        }
+
+        llog::trace(
+            "applying projection collapse, cost: collapsed={}, old={}",
+            collapsed_estimator.totalCost(),
+            total_current_cost);
+        std::unordered_map<FieldId, const ir::Scalar*> inner_scalars;
+        inner_scalars.reserve(inner.projectors.size());
+        for (auto&& [id, scalar] : inner.projectors) {
+            inner_scalars.emplace(id, scalar.get());
+        }
+
+        ScalarCollapser collapser;
+        collapser.inner = std::move(inner_scalars);
+
+        std::vector<ir::Projector> collapsed;
+        collapsed.reserve(rel.projectors.size());
+        for (auto&& [id, scalar] : rel.projectors) {
+            collapsed.push_back({
+                .alias_field_id = id,
+                .expr = box(collapser.collapse(*scalar)),
+            });
+        }
+
+        self.node = ir::ProjectionRelation{
+            .source = std::move(inner.source),
+            .projectors = std::move(collapsed),
+        };
+
+        return std::move(self);
+    }
+
+    auto construct(auto& node, auto& self) {
+        auto pass_name = "projection_collapse";
+        auto name = rfl::type_name_t<decltype(node)>().name();
+
+        if constexpr (requires { optimize(node, self); }) {
+            llog::trace("applying {} step for {}", pass_name, name);
+            return optimize(node, self);
+        } else {
+            return std::move(self);
+        }
+    }
+};
+
+}  // namespace
+
+ir::Program projectionCollapse(ir::Program program) {
+    ir::Program result{
+        .statements = {},
+        .field_binding = program.field_binding,
+    };
+
+    Optimizer opt;
+    for (auto&& statement : program.statements) {
+        result.statements.push_back(opt.pass(std::move(statement)));
+    }
+
+    return result;
+}
+
+}  // namespace lsql::opt

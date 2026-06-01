@@ -10,7 +10,7 @@ namespace lsql::opt {
 
 namespace {
 
-struct Optimizer {
+struct Optimizer : ConsumePass<Optimizer> {
     ir::Scalar optimize(ir::CastScalar& s, auto& self) {
         if (auto* v = std::get_if<ir::ValueScalar>(&s.expr->node)) {
             self.node = ir::ValueScalar{.value = valueCast(std::move(v->value), s.cast_to)};
@@ -84,7 +84,7 @@ struct Optimizer {
         return std::move(self);
     }
 
-    auto operator()(auto& node, auto& self) {
+    auto construct(auto& node, auto& self) {
         auto step_name = "const_fold";
         auto name = rfl::type_name_t<decltype(node)>().name();
 
@@ -107,7 +107,7 @@ ir::Program constFold(ir::Program program) {
 
     Optimizer opt;
     for (auto&& statement : program.statements) {
-        result.statements.push_back(pass(std::move(statement), opt));
+        result.statements.push_back(opt.pass(std::move(statement)));
     }
 
     return result;

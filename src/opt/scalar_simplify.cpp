@@ -8,7 +8,7 @@ namespace lsql::opt {
 
 namespace {
 
-struct Optimizer {
+struct Optimizer : ConsumePass<Optimizer> {
     ir::Scalar optimize(ir::CoalesceScalar& s, auto& self) {
         auto args = std::move(s.args);
         s.args.reserve(args.size());
@@ -38,7 +38,7 @@ struct Optimizer {
         return std::move(self);
     }
 
-    auto operator()(auto& node, auto& self) {
+    auto construct(auto& node, auto& self) {
         auto pass_name = "scalar_simplify";
         auto name = rfl::type_name_t<decltype(node)>().name();
 
@@ -61,7 +61,7 @@ ir::Program scalarSimplify(ir::Program program) {
 
     Optimizer opt;
     for (auto&& statement : program.statements) {
-        result.statements.push_back(pass(std::move(statement), opt));
+        result.statements.push_back(opt.pass(std::move(statement)));
     }
 
     return result;

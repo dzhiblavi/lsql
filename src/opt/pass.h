@@ -7,261 +7,322 @@
 
 namespace lsql::opt {
 
-template <typename F>
-ir::Relation pass(ir::Relation rel, F& f);
+class IRTree {
+ public:
+    template <typename>
+    struct FieldsOf {};
 
-template <typename F>
-ir::Statement pass(ir::Statement st, F& f);
+    template <>
+    struct FieldsOf<ir::FieldScalar> {
+        static auto get() { return std::tuple<>(); }
+    };
 
-template <typename F>
-ir::Scalar pass(ir::Scalar sc, F& f);
+    template <>
+    struct FieldsOf<ir::ValueScalar> {
+        static auto get() { return std::tuple<>(); }
+    };
 
-template <typename F>
-ir::Aggregate pass(ir::Aggregate ag, F& f);
+    template <>
+    struct FieldsOf<ir::CoalesceScalar> {
+        static auto get() { return std::make_tuple(&ir::CoalesceScalar::args); }
+    };
 
-template <typename F>
-std::vector<ir::Projector> pass(std::vector<ir::Projector> ps, F& f) {
-    std::vector<ir::Projector> r;
-    r.reserve(ps.size());
-    for (auto&& p : ps) {
-        r.push_back({
-            .alias_field_id = p.alias_field_id,
-            .expr = box(pass(std::move(*p.expr), f)),
-        });
+    template <>
+    struct FieldsOf<ir::CastScalar> {
+        static auto get() { return std::make_tuple(&ir::CastScalar::expr); }
+    };
+
+    template <>
+    struct FieldsOf<ir::LikeScalar> {
+        static auto get() { return std::make_tuple(&ir::LikeScalar::expr); }
+    };
+
+    template <>
+    struct FieldsOf<ir::RSubstrScalar> {
+        static auto get() { return std::make_tuple(&ir::RSubstrScalar::expr); }
+    };
+
+    template <>
+    struct FieldsOf<ir::UnaryScalar> {
+        static auto get() { return std::make_tuple(&ir::UnaryScalar::expr); }
+    };
+
+    template <>
+    struct FieldsOf<ir::BinaryScalar> {
+        static auto get() {
+            return std::make_tuple(&ir::BinaryScalar::left, &ir::BinaryScalar::right);
+        }
+    };
+
+    template <>
+    struct FieldsOf<ir::UnaryAggregate> {
+        static auto get() { return std::make_tuple(&ir::UnaryAggregate::expr); }
+    };
+
+    template <>
+    struct FieldsOf<ir::PercentileAggregate> {
+        static auto get() { return std::make_tuple(&ir::PercentileAggregate::expr); }
+    };
+
+    template <>
+    struct FieldsOf<ir::ConstAggregate> {
+        static auto get() { return std::make_tuple(); }
+    };
+
+    template <>
+    struct FieldsOf<ir::NamedRelationStatement> {
+        static auto get() { return std::make_tuple(&ir::NamedRelationStatement::relation); }
+    };
+
+    template <>
+    struct FieldsOf<ir::QueryStatement> {
+        static auto get() { return std::make_tuple(&ir::QueryStatement::relation); }
+    };
+
+    template <>
+    struct FieldsOf<ir::Projector> {
+        static auto get() { return std::make_tuple(&ir::Projector::expr); }
+    };
+
+    template <>
+    struct FieldsOf<ir::EmptyRelation> {
+        static auto get() { return std::make_tuple(); }
+    };
+
+    template <>
+    struct FieldsOf<ir::ValuesRelation> {
+        static auto get() { return std::make_tuple(); }
+    };
+
+    template <>
+    struct FieldsOf<ir::ProjectionRelation> {
+        static auto get() {
+            return std::make_tuple(
+                &ir::ProjectionRelation::source, &ir::ProjectionRelation::projectors);
+        }
+    };
+
+    template <>
+    struct FieldsOf<ir::AggregateRelation> {
+        static auto get() {
+            return std::make_tuple(
+                &ir::AggregateRelation::source, &ir::AggregateRelation::aggregates);
+        }
+    };
+
+    template <>
+    struct FieldsOf<ir::GroupRelation> {
+        static auto get() {
+            return std::make_tuple(
+                &ir::GroupRelation::source,
+                &ir::GroupRelation::aggregates,
+                &ir::GroupRelation::group_list);
+        }
+    };
+
+    template <>
+    struct FieldsOf<ir::LimitRelation> {
+        static auto get() { return std::make_tuple(&ir::LimitRelation::source); }
+    };
+
+    template <>
+    struct FieldsOf<ir::FilterRelation> {
+        static auto get() {
+            return std::make_tuple(&ir::FilterRelation::source, &ir::FilterRelation::condition);
+        }
+    };
+
+    template <>
+    struct FieldsOf<ir::SortRelation> {
+        static auto get() {
+            return std::make_tuple(&ir::SortRelation::source, &ir::SortRelation::order_list);
+        }
+    };
+
+    template <>
+    struct FieldsOf<ir::TopKRelation> {
+        static auto get() {
+            return std::make_tuple(&ir::TopKRelation::source, &ir::TopKRelation::order_list);
+        }
+    };
+
+    template <>
+    struct FieldsOf<ir::SemiJoinRelation> {
+        static auto get() {
+            return std::make_tuple(
+                &ir::SemiJoinRelation::source,
+                &ir::SemiJoinRelation::match,
+                &ir::SemiJoinRelation::expr);
+        }
+    };
+
+    template <>
+    struct FieldsOf<ir::MarkJoinRelation> {
+        static auto get() {
+            return std::make_tuple(
+                &ir::MarkJoinRelation::source,
+                &ir::MarkJoinRelation::match,
+                &ir::MarkJoinRelation::expr);
+        }
+    };
+
+    template <>
+    struct FieldsOf<ir::UnionAllRelation> {
+        static auto get() {
+            return std::make_tuple(&ir::UnionAllRelation::left, &ir::UnionAllRelation::right);
+        }
+    };
+
+    template <>
+    struct FieldsOf<ir::UnionAllSortedByRelation> {
+        static auto get() {
+            return std::make_tuple(
+                &ir::UnionAllSortedByRelation::left,
+                &ir::UnionAllSortedByRelation::right,
+                &ir::UnionAllSortedByRelation::order_list);
+        }
+    };
+
+    template <>
+    struct FieldsOf<ir::FileRelation> {
+        static auto get() { return std::make_tuple(); }
+    };
+
+    template <>
+    struct FieldsOf<ir::FileIntervalRelation> {
+        static auto get() { return std::make_tuple(); }
+    };
+
+    template <>
+    struct FieldsOf<ir::NamedRelationReferenceRelation> {
+        static auto get() { return std::make_tuple(); }
+    };
+
+    template <>
+    struct FieldsOf<ir::MaterializeRelation> {
+        static auto get() { return std::make_tuple(&ir::MaterializeRelation::relation); }
+    };
+};
+
+enum class PassType {
+    View,     // T pass(const N& node, const E& self); doCall f(node, self, <computed>)
+    Consume,  // E pass(N& node, E& self); doCall f(node, self)
+};
+
+template <typename Self>
+class ConsumePass {
+ public:
+    ir::Relation pass(ir::Relation rel) {
+        return util::match(rel.node, [&](auto& r) -> ir::Relation { return pass(r, rel); });
     }
-    return r;
-}
 
-template <typename F>
-std::vector<ir::Scalar> pass(std::vector<ir::Scalar> ps, F& f) {
-    std::vector<ir::Scalar> r;
-    r.reserve(ps.size());
-    for (auto&& p : ps) {
-        r.push_back(pass(std::move(p), f));
+    ir::Statement pass(ir::Statement st) {
+        return util::match(st, [&](auto& s) -> ir::Statement { return pass(s, st); });
     }
-    return r;
-}
 
-template <typename F>
-std::vector<ir::Aggregate> pass(std::vector<ir::Aggregate> ps, F& f) {
-    std::vector<ir::Aggregate> r;
-    r.reserve(ps.size());
-    for (auto&& p : ps) {
-        r.push_back(pass(std::move(p), f));
+    ir::Scalar pass(ir::Scalar sc) {
+        return util::match(sc.node, [&](auto& s) -> ir::Scalar { return pass(s, sc); });
     }
-    return r;
-}
 
-template <typename N, typename T, typename F>
-T call(N& node, T& entity, F& f) {
-    return f(node, entity);
-}
+    ir::Aggregate pass(ir::Aggregate ag) {
+        return util::match(ag.node, [&](auto& s) -> ir::Aggregate { return pass(s, ag); });
+    }
 
-template <typename F>
-ir::Relation pass(ir::EmptyRelation& rel, ir::Relation& self, F& f) {
-    return call(rel, self, f);
-}
+ private:
+    template <typename E>
+    E pass(auto& node, E& self) {
+        using Fields = IRTree::template FieldsOf<std::decay_t<decltype(node)>>;
+        auto modify = [&](auto field) { node.*field = pass(std::move(node.*field)); };
+        std::apply([&](auto&&... fields) { (modify(fields), ...); }, Fields::get());
+        return static_cast<Self*>(this)->construct(node, self);
+    }
 
-template <typename F>
-ir::Relation pass(ir::ValuesRelation& rel, ir::Relation& self, F& f) {
-    return call(rel, self, f);
-}
+    template <typename E>
+    Box<E> pass(Box<E> x) {
+        return box(pass(std::move(*x)));
+    }
 
-template <typename F>
-ir::Relation pass(ir::ProjectionRelation& rel, ir::Relation& self, F& f) {
-    rel.source = box(pass(std::move(*rel.source), f));
-    rel.projectors = pass(std::move(rel.projectors), f);
-    return call(rel, self, f);
-}
+    std::vector<ir::Scalar> pass(std::vector<ir::Scalar> ag) {
+        std::vector<ir::Scalar> r;
+        r.reserve(ag.size());
+        for (auto&& a : ag) {
+            r.push_back(pass(std::move(a)));
+        }
+        return r;
+    }
 
-template <typename F>
-ir::Relation pass(ir::AggregateRelation& rel, ir::Relation& self, F& f) {
-    rel.source = box(pass(std::move(*rel.source), f));
-    rel.aggregates = pass(std::move(rel.aggregates), f);
-    return call(rel, self, f);
-}
+    std::vector<ir::Aggregate> pass(std::vector<ir::Aggregate> ag) {
+        std::vector<ir::Aggregate> r;
+        r.reserve(ag.size());
+        for (auto&& a : ag) {
+            r.push_back(pass(std::move(a)));
+        }
+        return r;
+    }
 
-template <typename F>
-ir::Relation pass(ir::GroupRelation& rel, ir::Relation& self, F& f) {
-    rel.source = box(pass(std::move(*rel.source), f));
-    rel.aggregates = pass(std::move(rel.aggregates), f);
-    rel.group_list = pass(std::move(rel.group_list), f);
-    return call(rel, self, f);
-}
+    std::vector<ir::Projector> pass(std::vector<ir::Projector> ag) {
+        std::vector<ir::Projector> r;
+        r.reserve(ag.size());
+        for (auto&& a : ag) {
+            r.push_back({
+                .alias_field_id = a.alias_field_id,
+                .expr = box(pass(std::move(*a.expr))),
+            });
+        }
+        return r;
+    }
+};
 
-template <typename F>
-ir::Relation pass(ir::LimitRelation& rel, ir::Relation& self, F& f) {
-    rel.source = box(pass(std::move(*rel.source), f));
-    return call(rel, self, f);
-}
+template <typename Self, typename R>
+class ScalarViewPass {
+ public:
+    R pass(const ir::Scalar& sc) {
+        return util::match(sc.node, [&](auto& s) -> R { return pass(s, sc); });
+    }
 
-template <typename F>
-ir::Relation pass(ir::FilterRelation& rel, ir::Relation& self, F& f) {
-    rel.source = box(pass(std::move(*rel.source), f));
-    rel.condition = box(pass(std::move(*rel.condition), f));
-    return call(rel, self, f);
-}
+ private:
+    template <typename E>
+    R pass(auto& node, E& self) {
+        using Fields = IRTree::template FieldsOf<std::decay_t<decltype(node)>>;
+        auto do_view = [&](auto field) { return pass(node.*field); };
+        return std::apply(
+            [&](auto&&... fields) {
+                return static_cast<Self*>(this)->view(node, self, do_view(fields)...);
+            },
+            Fields::get());
+    }
 
-template <typename F>
-ir::Relation pass(ir::SortRelation& rel, ir::Relation& self, F& f) {
-    rel.source = box(pass(std::move(*rel.source), f));
-    rel.order_list = pass(std::move(rel.order_list), f);
-    return call(rel, self, f);
-}
+    template <typename E>
+    R pass(const Box<E>& x) {
+        return pass(*x);
+    }
 
-template <typename F>
-ir::Relation pass(ir::TopKRelation& rel, ir::Relation& self, F& f) {
-    rel.source = box(pass(std::move(*rel.source), f));
-    rel.order_list = pass(std::move(rel.order_list), f);
-    return call(rel, self, f);
-}
+    std::vector<R> pass(const std::vector<ir::Scalar>& ag) {
+        std::vector<R> r;
+        r.reserve(ag.size());
+        for (auto&& a : ag) {
+            r.push_back(pass(a));
+        }
+        return r;
+    }
 
-template <typename F>
-ir::Relation pass(ir::SemiJoinRelation& rel, ir::Relation& self, F& f) {
-    rel.source = box(pass(std::move(*rel.source), f));
-    rel.match = box(pass(std::move(*rel.match), f));
-    rel.expr = box(pass(std::move(*rel.expr), f));
-    return call(rel, self, f);
-}
+    std::vector<R> pass(const std::vector<ir::Aggregate>& ag) {
+        std::vector<R> r;
+        r.reserve(ag.size());
+        for (auto&& a : ag) {
+            r.push_back(pass(a));
+        }
+        return r;
+    }
 
-template <typename F>
-ir::Relation pass(ir::MarkJoinRelation& rel, ir::Relation& self, F& f) {
-    rel.source = box(pass(std::move(*rel.source), f));
-    rel.match = box(pass(std::move(*rel.match), f));
-    rel.expr = box(pass(std::move(*rel.expr), f));
-    return call(rel, self, f);
-}
-
-template <typename F>
-ir::Relation pass(ir::UnionAllRelation& rel, ir::Relation& self, F& f) {
-    rel.left = box(pass(std::move(*rel.left), f));
-    rel.right = box(pass(std::move(*rel.right), f));
-    return call(rel, self, f);
-}
-
-template <typename F>
-ir::Relation pass(ir::UnionAllSortedByRelation& rel, ir::Relation& self, F& f) {
-    rel.left = box(pass(std::move(*rel.left), f));
-    rel.right = box(pass(std::move(*rel.right), f));
-    rel.order_list = pass(std::move(rel.order_list), f);
-    return call(rel, self, f);
-}
-
-template <typename F>
-ir::Relation pass(ir::FileRelation& rel, ir::Relation& self, F& f) {
-    return call(rel, self, f);
-}
-
-template <typename F>
-ir::Relation pass(ir::FileIntervalRelation& rel, ir::Relation& self, F& f) {
-    return call(rel, self, f);
-}
-
-template <typename F>
-ir::Relation pass(ir::NamedRelationReferenceRelation& rel, ir::Relation& self, F& f) {
-    return call(rel, self, f);
-}
-
-template <typename F>
-ir::Relation pass(ir::MaterializeRelation& rel, ir::Relation& self, F& f) {
-    rel.relation = box(pass(std::move(*rel.relation), f));
-    return call(rel, self, f);
-}
-
-template <typename F>
-ir::Statement pass(ir::NamedRelationStatement& st, auto& self, F& f) {
-    st.relation = box(pass(std::move(*st.relation), f));
-    return call(st, self, f);
-}
-
-template <typename F>
-ir::Statement pass(ir::QueryStatement& st, auto& self, F& f) {
-    st.relation = box(pass(std::move(*st.relation), f));
-    return call(st, self, f);
-}
-
-template <typename F>
-ir::Scalar pass(ir::ValueScalar& s, auto& self, F& f) {
-    return call(s, self, f);
-}
-
-template <typename F>
-ir::Scalar pass(ir::FieldScalar& s, auto& self, F& f) {
-    return call(s, self, f);
-}
-
-template <typename F>
-ir::Scalar pass(ir::CoalesceScalar& s, auto& self, F& f) {
-    s.args = pass(std::move(s.args), f);
-    return call(s, self, f);
-}
-
-template <typename F>
-ir::Scalar pass(ir::CastScalar& s, auto& self, F& f) {
-    s.expr = box(pass(std::move(*s.expr), f));
-    return call(s, self, f);
-}
-
-template <typename F>
-ir::Scalar pass(ir::LikeScalar& s, auto& self, F& f) {
-    s.expr = box(pass(std::move(*s.expr), f));
-    return call(s, self, f);
-}
-
-template <typename F>
-ir::Scalar pass(ir::RSubstrScalar& s, auto& self, F& f) {
-    s.expr = box(pass(std::move(*s.expr), f));
-    return call(s, self, f);
-}
-
-template <typename F>
-ir::Scalar pass(ir::UnaryScalar& s, auto& self, F& f) {
-    s.expr = box(pass(std::move(*s.expr), f));
-    return call(s, self, f);
-}
-
-template <typename F>
-ir::Scalar pass(ir::BinaryScalar& s, auto& self, F& f) {
-    s.left = box(pass(std::move(*s.left), f));
-    s.right = box(pass(std::move(*s.right), f));
-    return call(s, self, f);
-}
-
-template <typename F>
-ir::Aggregate pass(ir::UnaryAggregate& a, auto& self, F& f) {
-    a.expr = box(pass(std::move(*a.expr), f));
-    return call(a, self, f);
-}
-
-template <typename F>
-ir::Aggregate pass(ir::PercentileAggregate& a, auto& self, F& f) {
-    a.expr = box(pass(std::move(*a.expr), f));
-    return call(a, self, f);
-}
-
-template <typename F>
-ir::Aggregate pass(ir::ConstAggregate& a, auto& self, F& f) {
-    return call(a, self, f);
-}
-
-template <typename F>
-ir::Relation pass(ir::Relation rel, F& f) {
-    return util::match(rel.node, [&](auto& r) -> ir::Relation { return pass(r, rel, f); });
-}
-
-template <typename F>
-ir::Statement pass(ir::Statement st, F& f) {
-    return util::match(st, [&](auto& s) -> ir::Statement { return pass(s, st, f); });
-}
-
-template <typename F>
-ir::Scalar pass(ir::Scalar sc, F& f) {
-    return util::match(sc.node, [&](auto& s) -> ir::Scalar { return pass(s, sc, f); });
-}
-
-template <typename F>
-ir::Aggregate pass(ir::Aggregate ag, F& f) {
-    return util::match(ag.node, [&](auto& s) -> ir::Aggregate { return pass(s, ag, f); });
-}
+    std::vector<R> pass(const std::vector<ir::Projector>& ag) {
+        std::vector<R> r;
+        r.reserve(ag.size());
+        for (auto&& a : ag) {
+            r.push_back(pass(*a.expr));
+        }
+        return r;
+    }
+};
 
 }  // namespace lsql::opt
