@@ -39,6 +39,67 @@
 
 namespace lsql {
 
+class ConsumerBridge : public exec::Subscriber {
+ public:
+    ConsumerBridge(exec::OperationPtr source, FieldSet fields, Box<out::Consumer> consumer)
+        : source_(std::move(source))
+        , consumer_(std::move(consumer)) {
+        source_->subscribe(source_->minPhase(), this, fields);
+    }
+
+    exec::ExplanationItem explain(exec::ExplanationCtx ctx) const {
+        auto source = source_->explain(ctx.withRequester(this));
+
+        if (ctx.phase != source_->minPhase()) {
+            verify(source.empty());
+            return {};
+        } else {
+            verify(!source.empty());
+            return exec::ExplanationItem().line("Print").child(source);
+        }
+    }
+
+ private:
+    prof::ScopeMetricsBase* profHandle() override { return nullptr; }
+
+    bool consume([[maybe_unused]] int phase, const exec::Record* record) override {
+        verify_dbg(phase == source_->minPhase());
+
+        if (record == nullptr) {
+            consumer_->done();
+            return false;
+        }
+
+        rec_.clear();
+        for (auto id : record->ids()) {
+            rec_.emplace(id, record->value(id));
+        }
+
+        consumer_->consume(rec_);
+        return true;
+    }
+
+    out::Record rec_;
+    exec::OperationPtr source_;
+    Box<out::Consumer> consumer_;
+};
+
+struct StdoutSink {
+    StdoutSink() = default;
+
+    void push(std::string_view s) { buf_ << s << '\n'; }
+
+    void done() {
+        std::lock_guard lg(m_);
+        std::cout << buf_.str() << '\n';
+        buf_ = {};
+    }
+
+ private:
+    inline static std::mutex m_;
+    std::stringstream buf_;
+};
+
 TCLAP::UnlabeledValueArg<std::string> sql_file_arg{
     "path",
     "path to the query file",
@@ -117,7 +178,7 @@ TCLAP::SwitchArg print_ir_unoptimized_arg{
 
 TCLAP::SwitchArg print_optimization_report_arg{
     "",
-    "print-opt-report",
+    "print-optimize-report",
     "print optimization report",
 };
 
@@ -235,51 +296,6 @@ exec::Plan makePlan(std::string maybe_path) {
     return exec::plan(std::move(ir));
 }
 
-class ConsumerBridge : public exec::Subscriber {
- public:
-    ConsumerBridge(exec::OperationPtr source, FieldSet fields, Box<out::Consumer> consumer)
-        : source_(std::move(source))
-        , consumer_(std::move(consumer)) {
-        source_->subscribe(source_->minPhase(), this, fields);
-    }
-
-    exec::ExplanationItem explain(exec::ExplanationCtx ctx) const {
-        auto source = source_->explain(ctx.withRequester(this));
-
-        if (ctx.phase != source_->minPhase()) {
-            verify(source.empty());
-            return {};
-        } else {
-            verify(!source.empty());
-            return exec::ExplanationItem().line("Print").child(source);
-        }
-    }
-
- private:
-    prof::ScopeMetricsBase* profHandle() override { return nullptr; }
-
-    bool consume([[maybe_unused]] int phase, const exec::Record* record) override {
-        verify_dbg(phase == source_->minPhase());
-
-        if (record == nullptr) {
-            consumer_->done();
-            return false;
-        }
-
-        rec_.clear();
-        for (auto id : record->ids()) {
-            rec_.emplace(id, record->value(id));
-        }
-
-        consumer_->consume(rec_);
-        return true;
-    }
-
-    out::Record rec_;
-    exec::OperationPtr source_;
-    Box<out::Consumer> consumer_;
-};
-
 void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
     std::vector<prof::Profiler::Snapshot> snapshots;
 
@@ -335,22 +351,6 @@ void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
         ofs << prof::formatDot(snapshots);
     }
 }
-
-struct StdoutSink {
-    StdoutSink() = default;
-
-    void push(std::string_view s) { buf_ << s << '\n'; }
-
-    void done() {
-        std::lock_guard lg(m_);
-        std::cout << buf_.str() << '\n';
-        buf_ = {};
-    }
-
- private:
-    inline static std::mutex m_;
-    std::stringstream buf_;
-};
 
 Box<out::Consumer> makeConsumer(out::Format format, ConstFieldBindingPtr binding) {
     switch (format) {

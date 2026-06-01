@@ -171,6 +171,7 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
             .fields_out = projectors_output_fields,
         });
 
+        // Old visible fields are dropped
         visible_fields = projectors_output_fields;
     } else {
         verify(proj_aggregates.empty());
@@ -184,7 +185,8 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
             .fields_out = projectors_output_fields,
         });
 
-        visible_fields = projectors_output_fields;
+        // Append to current visible fields
+        visible_fields.merge(projectors_output_fields);
     }
 
     if (r.order_by) {

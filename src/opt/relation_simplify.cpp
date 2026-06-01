@@ -55,19 +55,67 @@ struct Optimizer : ConsumePass<Optimizer> {
     }
 
     ir::Relation optimize(ir::LimitRelation& rel, ir::Relation& self) {
+        // Limit(Sort(X), L) => TopK(X, L)
         auto* sort = std::get_if<ir::SortRelation>(&rel.source->node);
-        if (!sort) {
+        if (sort) {
+            ctx.setChanges().note("sort/limit -> topk");
+
+            self.node = ir::TopKRelation{
+                .source = std::move(sort->source),
+                .order_list = std::move(sort->order_list),
+                .desc = sort->desc,
+                .top_count = rel.limit,
+            };
             return std::move(self);
         }
 
-        ctx.setChanges().note("sort/limit -> topk");
+        // Limit(Projection(X), L) => Projection(Limit(X, L))
+        auto* projection = std::get_if<ir::ProjectionRelation>(&rel.source->node);
+        if (projection) {
+            ctx.setChanges().note("limit(projection) -> projection(limit)");
+            auto proj_source_fields = projection->source->fields_out;
 
-        self.node = ir::TopKRelation{
-            .source = std::move(sort->source),
-            .order_list = std::move(sort->order_list),
-            .desc = sort->desc,
-            .top_count = rel.limit,
-        };
+            self.node = ir::ProjectionRelation{
+                .source =
+                    box(ir::Relation{
+                        .node =
+                            ir::LimitRelation{
+                                .source = std::move(projection->source),
+                                .limit = rel.limit,
+                            },
+                        .fields_out = proj_source_fields,
+                    }),
+                .projectors = std::move(projection->projectors),
+            };
+            return std::move(self);
+        }
+
+        // Limit(Limit(X, A), B) => Limit(X, min(A, B))
+        auto* limit = std::get_if<ir::LimitRelation>(&rel.source->node);
+        if (limit) {
+            ctx.setChanges().note("limit(limit) -> limit");
+
+            self.node = ir::LimitRelation{
+                .source = std::move(limit->source),
+                .limit = std::min(rel.limit, limit->limit),
+            };
+            return std::move(self);
+        }
+
+        // Limit(TopK(X, A), B) => TopK(X, min(A, B))
+        auto* topk = std::get_if<ir::TopKRelation>(&rel.source->node);
+        if (topk) {
+            ctx.setChanges().note("limit(topk) -> topk");
+
+            self.node = ir::TopKRelation{
+                .source = std::move(topk->source),
+                .order_list = std::move(topk->order_list),
+                .desc = topk->desc,
+                .top_count = std::min(rel.limit, topk->top_count),
+            };
+            return std::move(self);
+        }
+
         return std::move(self);
     }
 

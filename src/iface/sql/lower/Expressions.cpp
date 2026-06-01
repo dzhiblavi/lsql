@@ -9,7 +9,7 @@ namespace lsql::iface::sql::lower {
 namespace {
 
 LowerExprResult lowerToIR(bound::IdentifierExpr e, auto& info, Context& ctx) {
-    require(
+    verify(
         ctx.currFieldSet().fieldIds().contains(e.field_id),
         "unknown field: {}",
         to_string(e.field_id, *ctx.binding()));
