@@ -49,6 +49,9 @@ class Stringifier {
             },
             r.node);
     }
+
+    StrBuilder print(const EmptyRelation& /*r*/) { return StrBuilder("EmptyRelation"); }
+
     StrBuilder print(const ValuesRelation& r) {
         return StrBuilder()
             .line(

@@ -77,6 +77,12 @@ class Planner {
         plan_.top_operations.emplace_back(std::move(r), fields);
     }
 
+    OperationPtr planRelation(ir::EmptyRelation /*r*/, auto& /*info*/) {
+        auto src = values({}, UnknownFieldId, binding_);
+        plan_.sources.push_back(src);
+        return src;
+    }
+
     OperationPtr planRelation(ir::ValuesRelation r, auto& /*info*/) {
         auto src = values(std::move(r.values), r.output_id, binding_);
         plan_.sources.push_back(src);

@@ -45,7 +45,7 @@ struct Optimizer {
             return std::move(*rel.source);
         }
 
-        self.node = ir::ValuesRelation{.values = {}, .output_id = UnknownFieldId};
+        self.node = ir::EmptyRelation{};
         return std::move(self);
     }
 

@@ -58,6 +58,11 @@ T call(N& node, T& entity, F& f) {
 }
 
 template <typename F>
+ir::Relation pass(ir::EmptyRelation& rel, ir::Relation& self, F& f) {
+    return call(rel, self, f);
+}
+
+template <typename F>
 ir::Relation pass(ir::ValuesRelation& rel, ir::Relation& self, F& f) {
     return call(rel, self, f);
 }

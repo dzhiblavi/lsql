@@ -4,6 +4,7 @@
 
 namespace lsql::ir {
 
+struct EmptyRelation;
 struct ValuesRelation;
 struct ProjectionRelation;
 struct AggregateRelation;
@@ -22,6 +23,7 @@ struct NamedRelationReferenceRelation;
 struct MaterializeRelation;
 
 using RelationNode = std::variant< //
+    EmptyRelation, //
     ValuesRelation, //
     ProjectionRelation, //
     AggregateRelation, //

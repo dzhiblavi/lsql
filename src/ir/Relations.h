@@ -17,6 +17,8 @@ struct Projector {
     Box<Scalar> expr;
 };
 
+struct EmptyRelation {};
+
 struct ValuesRelation {
     std::vector<Value> values;
     FieldId output_id;
