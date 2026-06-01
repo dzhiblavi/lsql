@@ -4,6 +4,8 @@
 /*.sql
 /ref.out
 /output
+/Makefile.dev
+/.dvim.lua
 
 /*.svg
 /*.out
