@@ -49,6 +49,21 @@ struct Optimizer {
         return std::move(self);
     }
 
+    ir::Relation optimize(ir::LimitRelation& rel, ir::Relation& self) {
+        auto* sort = std::get_if<ir::SortRelation>(&rel.source->node);
+        if (!sort) {
+            return std::move(self);
+        }
+
+        self.node = ir::TopKRelation{
+            .source = std::move(sort->source),
+            .order_list = std::move(sort->order_list),
+            .desc = sort->desc,
+            .top_count = rel.limit,
+        };
+        return std::move(self);
+    }
+
     auto operator()(auto& node, auto& self) {
         auto pass_name = "relation_simplify";
         auto name = rfl::type_name_t<decltype(node)>().name();
