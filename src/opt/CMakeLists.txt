@@ -7,6 +7,7 @@ target_sources(
     relation_simplify.cpp
     scalar_simplify.cpp
     projection_collapse.cpp
+    empty_relation_prune.cpp
     optimize.cpp
 )
 

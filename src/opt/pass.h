@@ -200,13 +200,8 @@ class IRTree {
 
     template <>
     struct FieldsOf<ir::MaterializeRelation> {
-        static auto get() { return std::make_tuple(&ir::MaterializeRelation::relation); }
+        static auto get() { return std::make_tuple(&ir::MaterializeRelation::source); }
     };
-};
-
-enum class PassType {
-    View,     // T pass(const N& node, const E& self); doCall f(node, self, <computed>)
-    Consume,  // E pass(N& node, E& self); doCall f(node, self)
 };
 
 template <typename Self>

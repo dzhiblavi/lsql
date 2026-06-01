@@ -105,7 +105,7 @@ struct NamedRelationReferenceRelation {
 };
 
 struct MaterializeRelation {
-    Box<Relation> relation;
+    Box<Relation> source;
 };
 
 struct Relation {

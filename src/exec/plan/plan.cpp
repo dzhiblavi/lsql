@@ -191,7 +191,7 @@ class Planner {
     }
 
     OperationPtr planRelation(ir::MaterializeRelation r, auto& /*info*/) {
-        auto src = materialize(planRelation(std::move(*r.relation)), binding_);
+        auto src = materialize(planRelation(std::move(*r.source)), binding_);
         plan_.sources.push_back(src);
         return src;
     }

@@ -196,7 +196,7 @@ class Stringifier {
     }
 
     StrBuilder print(const MaterializeRelation& r) {
-        return StrBuilder("MaterializeRelation").child(print(*r.relation));
+        return StrBuilder("MaterializeRelation").child(print(*r.source));
     }
 
     StrBuilder print(const FieldScalar& e) {

@@ -6,6 +6,7 @@
 
 #include "opt/aggregate_fold.h"
 #include "opt/const_fold.h"
+#include "opt/empty_relation_prune.h"
 #include "opt/projection_collapse.h"
 #include "opt/relation_simplify.h"
 #include "opt/scalar_simplify.h"
@@ -20,6 +21,7 @@ ir::Program optimize(ir::Program program, Context& ctx) {
     program = aggregateFold(std::move(program), ctx);
     program = relationSimplify(std::move(program), ctx);
     program = projectionCollapse(std::move(program), ctx);
+    program = emptyRelationPrune(std::move(program), ctx);
     return program;
 }
 

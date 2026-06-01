@@ -292,7 +292,7 @@ ir::Relation lowerToIR(bound::MaterializeRelation r, auto& /*info*/, Context& ct
     auto fields = arg.fields_out;
 
     return {
-        .node = ir::MaterializeRelation{.relation = box(std::move(arg))},
+        .node = ir::MaterializeRelation{.source = box(std::move(arg))},
         .fields_out = fields,
     };
 }
