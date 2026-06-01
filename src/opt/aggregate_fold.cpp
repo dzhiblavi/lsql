@@ -9,6 +9,8 @@ namespace lsql::opt {
 namespace {
 
 struct Optimizer : ConsumePass<Optimizer> {
+    Context& ctx;
+
     ir::Aggregate optimize(ir::UnaryAggregate& a, auto& self) {
         auto* v = std::get_if<ir::ValueScalar>(&a.expr->node);
         if (v == nullptr) {
@@ -18,6 +20,7 @@ struct Optimizer : ConsumePass<Optimizer> {
         switch (a.type) {
             case UnaryAggregateType::Count:
                 if (v->value == false || v->value == null) {
+                    ctx.setChanges().note("UnaryAggregate (count) folded to 0");
                     self.node = ir::ConstAggregate{
                         .value = int64_t(0),
                         .null_if_empty = false,
@@ -26,6 +29,7 @@ struct Optimizer : ConsumePass<Optimizer> {
                 return std::move(self);
 
             case UnaryAggregateType::Min:
+                ctx.setChanges().note("UnaryAggregate (min) folded");
                 self.node = ir::ConstAggregate{
                     .value = v->value,
                     .null_if_empty = true,
@@ -33,6 +37,7 @@ struct Optimizer : ConsumePass<Optimizer> {
                 return std::move(self);
 
             case UnaryAggregateType::Max:
+                ctx.setChanges().note("UnaryAggregate (max) folded");
                 self.node = ir::ConstAggregate{
                     .value = v->value,
                     .null_if_empty = true,
@@ -59,16 +64,15 @@ struct Optimizer : ConsumePass<Optimizer> {
 
 }  // namespace
 
-ir::Program aggregateFold(ir::Program program) {
+ir::Program aggregateFold(ir::Program program, Context& ctx) {
     ir::Program result{
         .statements = {},
         .field_binding = program.field_binding,
     };
 
-    Optimizer opt;
+    Optimizer opt{.ctx = ctx};
     for (auto&& statement : program.statements) {
         result.statements.push_back(opt.pass(std::move(statement)));
-        // result.statements.push_back(pass(std::move(statement), opt));
     }
 
     return result;

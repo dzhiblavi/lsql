@@ -177,6 +177,8 @@ struct ScalarCollapser : CloneScalarView {
 };
 
 struct Optimizer : ConsumePass<Optimizer> {
+    Context& ctx;
+
     bool isProjectionProjection(const ir::ProjectionRelation& p) {
         return std::holds_alternative<ir::ProjectionRelation>(p.source->node);
     }
@@ -212,8 +214,8 @@ struct Optimizer : ConsumePass<Optimizer> {
             return std::move(self);
         }
 
-        llog::trace(
-            "applying projection collapse, cost: collapsed={}, old={}",
+        ctx.setChanges().note(
+            "projection collapsed, cost: collapsed={}, old={}",
             collapsed_estimator.totalCost(),
             total_current_cost);
         std::unordered_map<FieldId, const ir::Scalar*> inner_scalars;
@@ -257,13 +259,13 @@ struct Optimizer : ConsumePass<Optimizer> {
 
 }  // namespace
 
-ir::Program projectionCollapse(ir::Program program) {
+ir::Program projectionCollapse(ir::Program program, Context& ctx) {
     ir::Program result{
         .statements = {},
         .field_binding = program.field_binding,
     };
 
-    Optimizer opt;
+    Optimizer opt{.ctx = ctx};
     for (auto&& statement : program.statements) {
         result.statements.push_back(opt.pass(std::move(statement)));
     }

@@ -113,6 +113,12 @@ TCLAP::SwitchArg print_ir_unoptimized_arg{
     "show IR",
 };
 
+TCLAP::SwitchArg print_optimization_report_arg{
+    "",
+    "print-opt-report",
+    "print optimization report",
+};
+
 TCLAP::SwitchArg print_ir_optimized_arg{
     "",
     "print-ir-optimized",
@@ -155,6 +161,7 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&print_ast_arg);
     cmd.add(&print_bound_arg);
     cmd.add(&print_ir_unoptimized_arg);
+    cmd.add(&print_optimization_report_arg);
     cmd.add(&print_ir_optimized_arg);
     cmd.add(&threads_arg);
     cmd.add(&optimize_passes_arg);
@@ -172,7 +179,7 @@ bool parseArgs(std::span<const char*> argv) {
     }
 
     if ((explain_arg || print_ast_arg || print_bound_arg || print_ir_unoptimized_arg ||
-         print_ir_optimized_arg) &&
+         print_optimization_report_arg || print_ir_optimized_arg) &&
         !force_run_arg) {
         run_query = false;
     }
@@ -208,8 +215,17 @@ exec::Plan makePlan(std::string maybe_path) {
         std::cout << "Unoptimized IR dump:" << std::endl;
         std::cout << ir::Stringifier().print(ir).render() << std::endl;
     }
+    opt::Context opt_ctx;
     for (unsigned i = 0; i < optimize_passes_arg.getValue(); ++i) {
-        ir = opt::optimize(std::move(ir));
+        ir = opt::optimize(std::move(ir), opt_ctx);
+
+        if (!opt_ctx.changes()) {
+            llog::info("stopped at optimization pass {} due to no changes", i);
+            break;
+        }
+    }
+    if (print_optimization_report_arg) {
+        std::cout << opt_ctx.report() << std::endl;
     }
     if (print_ir_optimized_arg) {
         std::cout << "Optimized IR dump:" << std::endl;

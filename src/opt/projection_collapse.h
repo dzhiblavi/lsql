@@ -1,9 +1,11 @@
 #pragma once
 
+#include "opt/optimize.h"
+
 #include "ir/Statement.h"
 
 namespace lsql::opt {
 
-ir::Program projectionCollapse(ir::Program program);
+ir::Program projectionCollapse(ir::Program program, Context& ctx);
 
 }  // namespace lsql::exec

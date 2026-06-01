@@ -12,13 +12,14 @@
 
 namespace lsql::opt {
 
-ir::Program optimize(ir::Program program) {
-    program = constFold(std::move(program));
-    program = scalarSimplify(std::move(program));
-    program = constFold(std::move(program));
-    program = aggregateFold(std::move(program));
-    program = relationSimplify(std::move(program));
-    program = projectionCollapse(std::move(program));
+ir::Program optimize(ir::Program program, Context& ctx) {
+    ctx.nextPass();
+    program = constFold(std::move(program), ctx);
+    program = scalarSimplify(std::move(program), ctx);
+    program = constFold(std::move(program), ctx);
+    program = aggregateFold(std::move(program), ctx);
+    program = relationSimplify(std::move(program), ctx);
+    program = projectionCollapse(std::move(program), ctx);
     return program;
 }
 

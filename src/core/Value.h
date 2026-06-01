@@ -2,7 +2,6 @@
 
 #include "core/ValueType.h"
 #include "core/null_t.h"
-#include "core/require.h"
 #include "util/overloaded.h"
 
 #include <cassert>
@@ -30,7 +29,7 @@ class Value {
     template <typename T>
     const T& get() const {
         const T* val = std::get_if<T>(&val_);
-        require(val != nullptr, "type mismatch");
+        verify_dbg(val != nullptr, "type mismatch");
         return *val;
     }
 

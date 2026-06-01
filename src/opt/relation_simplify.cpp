@@ -9,6 +9,8 @@ namespace lsql::opt {
 namespace {
 
 struct Optimizer : ConsumePass<Optimizer> {
+    Context& ctx;
+
     bool isForwardingProjection(const ir::ProjectionRelation& p) {
         for (auto&& proj : p.projectors) {
             auto* field_expr = std::get_if<ir::FieldScalar>(&proj.expr->node);
@@ -29,6 +31,7 @@ struct Optimizer : ConsumePass<Optimizer> {
 
     ir::Relation optimize(ir::ProjectionRelation& rel, ir::Relation& self) {
         if (isForwardingProjection(rel)) {
+            ctx.setChanges().note("forwarding projection collapsed");
             return std::move(*rel.source);
         }
 
@@ -40,6 +43,8 @@ struct Optimizer : ConsumePass<Optimizer> {
         if (!v) {
             return std::move(self);
         }
+
+        ctx.setChanges().note("filter condition collapsed empty={}", v->value.get<bool>());
 
         if (v->value == true) {
             return std::move(*rel.source);
@@ -54,6 +59,8 @@ struct Optimizer : ConsumePass<Optimizer> {
         if (!sort) {
             return std::move(self);
         }
+
+        ctx.setChanges().note("sort/limit -> topk");
 
         self.node = ir::TopKRelation{
             .source = std::move(sort->source),
@@ -79,13 +86,13 @@ struct Optimizer : ConsumePass<Optimizer> {
 
 }  // namespace
 
-ir::Program relationSimplify(ir::Program program) {
+ir::Program relationSimplify(ir::Program program, Context& ctx) {
     ir::Program result{
         .statements = {},
         .field_binding = program.field_binding,
     };
 
-    Optimizer opt;
+    Optimizer opt{.ctx = ctx};
     for (auto&& statement : program.statements) {
         result.statements.push_back(opt.pass(std::move(statement)));
     }

@@ -91,11 +91,12 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
             r.where->condition->node,
             [&](bound::InExpr& e) {
                 auto match = lowerToIR(std::move(*e.match), ctx);
+                verify(
+                    match.fields_out.contains(e.match_field_id),
+                    "unknown field {}",
+                    to_string(e.match_field_id, *ctx.binding()));
 
-                auto [key, key_aggregates] = [&] {
-                    auto _ = ctx.scopedFieldSet(&match.fields_out);
-                    return lowerToIR(std::move(*e.expr), ctx);
-                }();
+                auto [key, key_aggregates] = lowerToIR(std::move(*e.expr), ctx);
                 verify(key_aggregates.empty());
 
                 ctx.setRelation({

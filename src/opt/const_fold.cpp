@@ -11,10 +11,16 @@ namespace lsql::opt {
 namespace {
 
 struct Optimizer : ConsumePass<Optimizer> {
+    Context& ctx;
+
     ir::Scalar optimize(ir::CastScalar& s, auto& self) {
-        if (auto* v = std::get_if<ir::ValueScalar>(&s.expr->node)) {
-            self.node = ir::ValueScalar{.value = valueCast(std::move(v->value), s.cast_to)};
+        auto* v = std::get_if<ir::ValueScalar>(&s.expr->node);
+        if (!v) {
+            return std::move(self);
         }
+
+        ctx.setChanges().note("CastScalar const propagation");
+        self.node = ir::ValueScalar{.value = valueCast(std::move(v->value), s.cast_to)};
         return std::move(self);
     }
 
@@ -31,6 +37,7 @@ struct Optimizer : ConsumePass<Optimizer> {
             }
         }();
 
+        ctx.setChanges().note("UnaryScalar const propagation");
         self.node = ir::ValueScalar{.value = value};
         return std::move(self);
     }
@@ -80,6 +87,7 @@ struct Optimizer : ConsumePass<Optimizer> {
             }
         }();
 
+        ctx.setChanges().note("BinaryScalar const propagation");
         self.node = ir::ValueScalar{.value = value};
         return std::move(self);
     }
@@ -99,13 +107,13 @@ struct Optimizer : ConsumePass<Optimizer> {
 
 }  // namespace
 
-ir::Program constFold(ir::Program program) {
+ir::Program constFold(ir::Program program, Context& ctx) {
     ir::Program result{
         .statements = {},
         .field_binding = program.field_binding,
     };
 
-    Optimizer opt;
+    Optimizer opt{.ctx = ctx};
     for (auto&& statement : program.statements) {
         result.statements.push_back(opt.pass(std::move(statement)));
     }

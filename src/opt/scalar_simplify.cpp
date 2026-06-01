@@ -9,6 +9,8 @@ namespace lsql::opt {
 namespace {
 
 struct Optimizer : ConsumePass<Optimizer> {
+    Context& ctx;
+
     ir::Scalar optimize(ir::CoalesceScalar& s, auto& self) {
         auto args = std::move(s.args);
         s.args.reserve(args.size());
@@ -22,6 +24,7 @@ struct Optimizer : ConsumePass<Optimizer> {
 
                 if (s.args.empty()) {
                     // first value collapsed => done
+                    ctx.setChanges().note("coalesce folded to a constant");
                     self.node = ir::ValueScalar{.value = std::move(v->value)};
                     return std::move(self);
                 }
@@ -31,7 +34,13 @@ struct Optimizer : ConsumePass<Optimizer> {
             s.args.push_back(std::move(a));
         }
 
+        if (s.args.size() != args.size()) {
+            ctx.setChanges().note(
+                "some coalesce folded: was {}, now {}", args.size(), s.args.size());
+        }
+
         if (s.args.empty()) {
+            ctx.note("coalesce folded to a null");
             self.node = ir::ValueScalar{.value = null};
         }
 
@@ -53,13 +62,13 @@ struct Optimizer : ConsumePass<Optimizer> {
 
 }  // namespace
 
-ir::Program scalarSimplify(ir::Program program) {
+ir::Program scalarSimplify(ir::Program program, Context& ctx) {
     ir::Program result{
         .statements = {},
         .field_binding = program.field_binding,
     };
 
-    Optimizer opt;
+    Optimizer opt{.ctx = ctx};
     for (auto&& statement : program.statements) {
         result.statements.push_back(opt.pass(std::move(statement)));
     }

@@ -4,6 +4,7 @@
 #include "exec/expr/Scalar.h"
 
 #include "core/exprs/concepts.h"
+#include "core/require.h"
 #include "util/instrument/Timer.h"
 
 #include <llog/log.h>

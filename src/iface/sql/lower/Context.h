@@ -1,10 +1,11 @@
 #pragma once
 
-#include "ir/Aggregates.h"
-#include "ir/Relations.h"
-#include "ir/Scalars.h"
+#include "ir/Aggregates.h"  // IWYU pragma: keep
+#include "ir/Relations.h"   // IWYU pragma: keep
+#include "ir/Scalars.h"     // IWYU pragma: keep
 
 #include "core/Fields.h"
+#include "core/require.h"
 #include "util/Pinned.h"
 
 namespace lsql::iface::sql::lower {
