@@ -36,3 +36,24 @@ target_link_options(lsql PRIVATE
     "-stdlib=libc++"
     "-static-libstdc++"
 )
+
+add_executable(pipe pipe.cpp)
+target_link_libraries(
+    pipe PRIVATE
+    tclap::tclap
+    magic_enum::magic_enum
+    lsql-back-exec
+    lsql-back-plan
+    lsql-back-storage
+    lsql-back-logfmt
+    lsql-front-pipe-parser
+    lsql-util
+    lsql-core
+    lsql-opt
+    lsql-front-sql
+)
+
+target_link_options(pipe PRIVATE
+    "-stdlib=libc++"
+    "-static-libstdc++"
+)

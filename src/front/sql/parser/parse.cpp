@@ -25,7 +25,7 @@ class SQLFlexLexer : public sql_FlexLexer {
 
         int token = 0;
 
-        while ((token = sql_FlexLexer::yylex()) != 0) {
+        while ((token = sql_FlexLexer::sql_lex()) != 0) {
             if (token == 0) {
                 continue;
             }

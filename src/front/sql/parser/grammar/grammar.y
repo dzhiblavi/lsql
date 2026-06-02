@@ -67,6 +67,8 @@
 %token TOKEN_FLOAT.
 %token TOKEN_BOOL.
 %token TOKEN_EXCLAMATION.
+%token TOKEN_NOT.
+%token TOKEN_TIMESTAMP.
 
 // Precedence (from LOWEST to HIGHEST)
 %left TOKEN_UNION_ALL.
