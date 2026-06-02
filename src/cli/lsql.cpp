@@ -10,16 +10,16 @@
 #include "out/JSONFormatter.h"
 #include "out/TSKVFormatter.h"
 
-#include "iface/sql/ast/Stringifier.h"
-#include "iface/sql/bound/Stringifier.h"
+#include "front/sql/ast/Stringifier.h"
+#include "front/sql/bound/Stringifier.h"
 #include "ir/Stringifier.h"
 
 #include "exec/plan/plan.h"
 #include "opt/optimize.h"
 
-#include "iface/sql/bind/bind.h"
-#include "iface/sql/lower/lower.h"
-#include "iface/sql/parser/parse.h"
+#include "front/sql/bind/bind.h"
+#include "front/sql/lower/lower.h"
+#include "front/sql/parser/parse.h"
 
 #include "ir/Relations.h"  // IWYU pragma: keep
 #include "ir/Scalars.h"    // IWYU pragma: keep
@@ -257,19 +257,19 @@ exec::Plan makePlan(std::string maybe_path) {
         }
     }();
 
-    auto ast = iface::sql::parse::parse(*is);
+    auto ast = front::sql::parse::parse(*is);
     if (print_ast_arg) {
         std::cout << "AST dump:" << std::endl;
-        std::cout << iface::sql::ast::Stringifier().print(ast) << std::endl;
+        std::cout << front::sql::ast::Stringifier().print(ast) << std::endl;
     }
 
-    auto bound_ast = iface::sql::bind::bind(std::move(ast));
+    auto bound_ast = front::sql::bind::bind(std::move(ast));
     if (print_bound_arg) {
         std::cout << "Bound AST dump:" << std::endl;
-        std::cout << iface::sql::bound::Stringifier().print(bound_ast) << std::endl;
+        std::cout << front::sql::bound::Stringifier().print(bound_ast) << std::endl;
     }
 
-    auto ir = iface::sql::lower::lowerToIR(std::move(bound_ast));
+    auto ir = front::sql::lower::lowerToIR(std::move(bound_ast));
     if (print_ir_unoptimized_arg) {
         std::cout << "Unoptimized IR dump:" << std::endl;
         std::cout << ir::Stringifier().print(ir).render() << std::endl;
