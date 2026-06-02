@@ -6,7 +6,7 @@
 #include <optional>
 #include <string_view>
 
-namespace lsql::back::logfmt {
+namespace lsql::back::plan::search {
 
 std::optional<std::string_view> findFirst(std::string_view s, const reflex::Pattern& pattern);
 std::optional<std::string_view> findLast(std::string_view s, const reflex::Pattern& rev_pattern);
@@ -14,4 +14,4 @@ std::optional<std::string_view> findLast(std::string_view s, const reflex::Patte
 std::optional<timestamp_t> searchFirstTimestamp(std::string_view s, TimeFormat format);
 std::optional<timestamp_t> searchLastTimestamp(std::string_view s, TimeFormat format);
 
-}  // namespace lsql::back::logfmt
+}  // namespace lsql::back::plan::search

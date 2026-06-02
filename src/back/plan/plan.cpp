@@ -1,6 +1,5 @@
-#include "back/exec/plan/plan.h"
-
-#include "back/exec/plan/GetFileSourceFunc.h"
+#include "back/plan/plan.h"
+#include "back/plan/GetFileSourceFunc.h"
 
 #include "back/exec/expr/BinaryScalar.h"
 #include "back/exec/expr/CoalesceScalar.h"
@@ -31,9 +30,11 @@
 
 #include "util/require.h"
 
-namespace lsql::back::exec {
+namespace lsql::back::plan {
 
 namespace {
+
+using namespace exec;
 
 class Planner {
  public:
@@ -366,4 +367,4 @@ Plan plan(ir::Program program) {
     return Planner().plan(std::move(program));
 }
 
-}  // namespace lsql::back::exec
+}  // namespace lsql::back::plan

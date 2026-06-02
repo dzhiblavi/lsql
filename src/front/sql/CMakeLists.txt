@@ -9,5 +9,4 @@ target_link_libraries(
     lsql-front-sql-parser
     lsql-front-sql-bind
     lsql-front-sql-lower
-    lsql-back-exec
 )

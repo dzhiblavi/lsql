@@ -14,7 +14,7 @@
 #include "front/sql/bound/Stringifier.h"
 #include "ir/Stringifier.h"
 
-#include "back/exec/plan/plan.h"
+#include "back/plan/plan.h"
 #include "opt/optimize.h"
 
 #include "front/sql/bind/bind.h"
@@ -245,7 +245,7 @@ bool parseArgs(std::span<const char*> argv) {
     return true;
 }
 
-back::exec::Plan makePlan(std::string maybe_path) {
+back::plan::Plan makePlan(std::string maybe_path) {
     std::ifstream ifs;
     std::istream* is = [&] -> std::istream* {
         if (maybe_path.empty()) {
@@ -293,7 +293,7 @@ back::exec::Plan makePlan(std::string maybe_path) {
         std::cout << ir::Stringifier().print(ir).render() << std::endl;
     }
 
-    return back::exec::plan(std::move(ir));
+    return back::plan::plan(std::move(ir));
 }
 
 void run(int max_phase, const auto& sources, util::ThreadPool& tp) {

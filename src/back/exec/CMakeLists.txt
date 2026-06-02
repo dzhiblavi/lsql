@@ -1,15 +1,13 @@
 find_package(absl REQUIRED)
 
 add_library(
-    lsql-back-exec STATIC
-    plan/plan.cpp
-    plan/GetFileSourceFunc.cpp
+    lsql-back-exec INTERFACE
 )
 
 target_link_libraries(
-    lsql-back-exec PUBLIC
-    lsql-core
+    lsql-back-exec INTERFACE
     lsql-back-logfmt
+    lsql-core
     lsql-ir
     lsql-prof
     reflectcpp

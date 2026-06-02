@@ -1,11 +1,11 @@
-#include "back/logfmt/SearchTimestamp.h"
+#include "back/plan/search/SearchTimestamp.h"
+#include "back/plan/search/SearchRegex.h"
 
-#include "back/logfmt/SearchRegex.h"
 #include "util/PageSize.h"
 
 #include <cassert>
 
-namespace lsql::back::logfmt {
+namespace lsql::back::plan::search {
 
 namespace {
 
@@ -172,4 +172,4 @@ size_t upperBoundLine(const back::storage::PagedFile& file, timestamp_t ts, Time
     return pos == std::string::npos ? pos : pos + p * util::pageSize();
 }
 
-}  // namespace lsql::back::logfmt
+}  // namespace lsql::back::plan::search

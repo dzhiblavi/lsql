@@ -1,17 +1,19 @@
-#include "back/exec/plan/GetFileSourceFunc.h"
+#include "back/plan/GetFileSourceFunc.h"
 
 #include "back/storage/LineSource.h"
 #include "back/storage/PagedFile.h"
 
 #include "back/logfmt/LogType.h"
-#include "back/logfmt/SearchTimestamp.h"
 #include "back/logfmt/log_types.h"
+#include "back/plan/search/SearchTimestamp.h"
 
 #include "back/exec/op/Log.h"
 
-namespace lsql::back::exec {
+namespace lsql::back::plan {
 
 namespace {
+
+using namespace exec;
 
 back::logfmt::LogType getLogType(const back::storage::PagedFile& file) {
     // TODO: this assumes the file starts with a line
@@ -34,8 +36,8 @@ SourcePtr getFileSourceRange(std::string path, TimeRange range, ConstFieldBindin
     auto file = back::storage::NativePagedFile::open(path);
     auto log_type = getLogType(*file);
     auto time_format = back::logfmt::timeFormat(log_type);
-    auto from_pos = back::logfmt::lowerBoundLine(*file, range.ts_from, time_format);
-    auto to_pos = back::logfmt::upperBoundLine(*file, range.ts_to, time_format);
+    auto from_pos = search::lowerBoundLine(*file, range.ts_from, time_format);
+    auto to_pos = search::upperBoundLine(*file, range.ts_to, time_format);
 
     if (from_pos == std::string::npos || to_pos <= from_pos) {
         from_pos = to_pos = 0;
@@ -61,4 +63,4 @@ GetFileSourceFuncType defaultFileSourceFunc() {
     return &getFileSource;
 }
 
-}  // namespace lsql::back::exec
+}  // namespace lsql::back::plan

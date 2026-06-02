@@ -7,14 +7,14 @@
 
 #include <vector>
 
-namespace lsql::back::exec {
+namespace lsql::back::plan {
 
 struct Plan {
-    std::vector<back::exec::SourcePtr> sources;
-    std::vector<std::pair<back::exec::OperationPtr, FieldSet>> top_operations;
+    std::vector<exec::SourcePtr> sources;
+    std::vector<std::pair<exec::OperationPtr, FieldSet>> top_operations;
     ConstFieldBindingPtr field_binding;
 };
 
 Plan plan(ir::Program program);
 
-}  // namespace lsql::back::exec
+}  // namespace lsql::back::plan

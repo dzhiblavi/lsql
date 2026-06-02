@@ -1,10 +1,11 @@
-#include "back/logfmt/SearchRegex.h"
+#include "back/plan/search/SearchRegex.h"
+
 #include "util/NonCopyable.h"
 
 #include <algorithm>
 #include <reflex/matcher.h>
 
-namespace lsql::back::logfmt {
+namespace lsql::back::plan::search {
 
 namespace {
 
@@ -74,4 +75,4 @@ std::optional<timestamp_t> searchLastTimestamp(std::string_view s, TimeFormat fo
     });
 }
 
-}  // namespace lsql::back::logfmt
+}  // namespace lsql::back::plan::search

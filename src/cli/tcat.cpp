@@ -1,4 +1,4 @@
-#include "back/logfmt/SearchTimestamp.h"
+#include "back/plan/search/SearchTimestamp.h"
 #include "back/storage/PagedFile.h"
 
 #include "util/build_info.h"
@@ -75,12 +75,12 @@ void main(std::span<const char*> argv) {
     auto interval = interval_arg.getValue();
     auto file = back::storage::NativePagedFile::open(file_arg.getValue());
 
-    size_t from = back::logfmt::lowerBoundLine(*file, ts, format);
+    size_t from = back::plan::search::lowerBoundLine(*file, ts, format);
     if (from == std::string::npos) {
         return;
     }
 
-    size_t to = back::logfmt::upperBoundLine(*file, ts + interval, format);
+    size_t to = back::plan::search::upperBoundLine(*file, ts + interval, format);
     printFileRange(*file, from, to);
 }
 

@@ -7,6 +7,7 @@ target_link_libraries(
     tclap::tclap
     lsql-back-exec
     lsql-back-storage
+    lsql-back-plan
     lsql-util
     lsql-core
 )
@@ -21,12 +22,13 @@ target_link_libraries(
     lsql PRIVATE
     tclap::tclap
     magic_enum::magic_enum
-    lsql-opt
     lsql-back-exec
+    lsql-back-plan
     lsql-back-storage
+    lsql-back-logfmt
     lsql-util
     lsql-core
-    lsql-back-logfmt
+    lsql-opt
     lsql-front-sql
 )
 

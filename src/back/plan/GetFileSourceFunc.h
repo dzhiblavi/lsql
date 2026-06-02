@@ -8,7 +8,7 @@
 #include <functional>
 #include <string>
 
-namespace lsql::back::exec {
+namespace lsql::back::plan {
 
 struct TimeRange {
     timestamp_t ts_from;
