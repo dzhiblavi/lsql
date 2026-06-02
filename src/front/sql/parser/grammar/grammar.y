@@ -1,6 +1,7 @@
 %token_type     {lsql::front::sql::parse::Token}
 %default_type   {void*}
 %extra_argument {lsql::front::sql::parse::Context *pCtx}
+%name SqlParser
 
 %include {
     #include "front/sql/ast/Expressions.h"

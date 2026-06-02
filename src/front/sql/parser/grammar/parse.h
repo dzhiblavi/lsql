@@ -5,12 +5,12 @@
 
 #include <cstddef>
 
-// Lemon parser functions (sql_grammar.cpp)
-void* ParseAlloc(void* (*mallocProc)(size_t));
+// Lemon parser functions (generated)
+void* SqlParserAlloc(void* (*mallocProc)(size_t));
 
-void ParseFree(void* pParser, void (*freeProc)(void*));
+void SqlParserFree(void* pParser, void (*freeProc)(void*));
 
-void Parse(
+void SqlParser(
     void* yyp,
     int yymajor,
     lsql::front::sql::parse::Token yyminor,

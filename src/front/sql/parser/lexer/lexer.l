@@ -1,10 +1,11 @@
 %option c++
 %option noyywrap
 %option never-interactive
+%option prefix="sql_"
 
 %{
 
-#include "front/sql/parser/grammar/sql_grammar.h"
+#include "front/sql/parser/grammar/grammar.h"
 
 %}
 

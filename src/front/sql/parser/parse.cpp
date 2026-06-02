@@ -4,8 +4,8 @@
 
 #include "front/sql/parser/Context.h"
 
+#include "front/sql/parser/grammar/grammar.h"
 #include "front/sql/parser/grammar/parse.h"
-#include "front/sql/parser/grammar/sql_grammar.h"
 
 #include "front/sql/parser/lexer/lex.yy.h"
 
@@ -13,9 +13,9 @@ namespace lsql::front::sql::parse {
 
 namespace {
 
-class SQLFlexLexer : public yyFlexLexer {
+class SQLFlexLexer : public sql_FlexLexer {
  public:
-    explicit SQLFlexLexer(std::istream* input) : yyFlexLexer(input) {}
+    explicit SQLFlexLexer(std::istream* input) : sql_FlexLexer(input) {}
 
     void setParser(void* parser) { m_parser = parser; }
     void setParseContext(Context* ctx) { m_parse_context = ctx; }
@@ -25,7 +25,7 @@ class SQLFlexLexer : public yyFlexLexer {
 
         int token = 0;
 
-        while ((token = yyFlexLexer::yylex()) != 0) {
+        while ((token = sql_FlexLexer::yylex()) != 0) {
             if (token == 0) {
                 continue;
             }
@@ -36,14 +36,14 @@ class SQLFlexLexer : public yyFlexLexer {
                 .text = tokens.back().c_str(),
             };
 
-            Parse(m_parser, token, t, m_parse_context);
+            SqlParser(m_parser, token, t, m_parse_context);
 
             if (token == TOKEN_EOF) {
                 break;
             }
         }
 
-        Parse(m_parser, 0, {.code = 0, .text = ""}, m_parse_context);
+        SqlParser(m_parser, 0, {.code = 0, .text = ""}, m_parse_context);
     }
 
  private:
@@ -56,7 +56,7 @@ class SQLFlexLexer : public yyFlexLexer {
 
 ast::Program parse(std::istream& is) {
     Context ctx;
-    void* parser = ParseAlloc(malloc);
+    void* parser = SqlParserAlloc(malloc);
 
     SQLFlexLexer lexer(&is);
     lexer.setParser(parser);
@@ -64,7 +64,7 @@ ast::Program parse(std::istream& is) {
 
     lexer.run();
 
-    ParseFree(parser, free);
+    SqlParserFree(parser, free);
 
     if (ctx.has_error) {
         throw std::runtime_error("parsing failed");
