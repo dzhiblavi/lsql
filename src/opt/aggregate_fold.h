@@ -8,4 +8,4 @@ namespace lsql::opt {
 
 ir::Program aggregateFold(ir::Program program, Context& ctx);
 
-}  // namespace lsql::exec
+}  // namespace lsql::opt

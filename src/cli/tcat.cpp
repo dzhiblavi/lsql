@@ -1,7 +1,7 @@
-#include "data/PagedFile.h"
-#include "logs/SearchTimestamp.h"
+#include "back/logfmt/SearchTimestamp.h"
+#include "back/storage/PagedFile.h"
 
-#include "core/build_info.h"
+#include "util/build_info.h"
 
 #include <tclap/CmdLine.h>
 
@@ -10,7 +10,7 @@
 
 namespace lsql {
 
-void printFileRange(const data::File& file, size_t from, size_t to) {
+void printFileRange(const back::storage::File& file, size_t from, size_t to) {
     static constexpr size_t BufSize = 1ull << 14;
     std::array<char, BufSize> buf;  // NOLINT
 
@@ -73,14 +73,14 @@ void main(std::span<const char*> argv) {
     auto format = TimeFormat::SQL;
     auto ts = timestampFromString(timestamp_arg.getValue(), format);
     auto interval = interval_arg.getValue();
-    auto file = data::NativePagedFile::open(file_arg.getValue());
+    auto file = back::storage::NativePagedFile::open(file_arg.getValue());
 
-    size_t from = logs::lowerBoundLine(*file, ts, format);
+    size_t from = back::logfmt::lowerBoundLine(*file, ts, format);
     if (from == std::string::npos) {
         return;
     }
 
-    size_t to = logs::upperBoundLine(*file, ts + interval, format);
+    size_t to = back::logfmt::upperBoundLine(*file, ts + interval, format);
     printFileRange(*file, from, to);
 }
 

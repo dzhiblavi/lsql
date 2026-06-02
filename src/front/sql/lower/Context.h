@@ -5,8 +5,8 @@
 #include "ir/Scalars.h"     // IWYU pragma: keep
 
 #include "core/Fields.h"
-#include "core/require.h"
 #include "util/Pinned.h"
+#include "util/require.h"
 
 namespace lsql::front::sql::lower {
 

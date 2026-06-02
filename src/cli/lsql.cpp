@@ -1,5 +1,5 @@
-#include "exec/op/Operation.h"
-#include "exec/op/explain.h"
+#include "back/exec/op/Operation.h"
+#include "back/exec/op/explain.h"
 #include "prof/global.h"
 #include "prof/presentation.h"
 #include "util/ThreadPool.h"
@@ -14,7 +14,7 @@
 #include "front/sql/bound/Stringifier.h"
 #include "ir/Stringifier.h"
 
-#include "exec/plan/plan.h"
+#include "back/exec/plan/plan.h"
 #include "opt/optimize.h"
 
 #include "front/sql/bind/bind.h"
@@ -25,8 +25,8 @@
 #include "ir/Scalars.h"    // IWYU pragma: keep
 #include "ir/Statement.h"  // IWYU pragma: keep
 
-#include "core/build_info.h"
-#include "core/require.h"
+#include "util/build_info.h"
+#include "util/require.h"
 
 #include <llog/load.h>
 #include <llog/log.h>
@@ -39,15 +39,15 @@
 
 namespace lsql {
 
-class ConsumerBridge : public exec::Subscriber {
+class ConsumerBridge : public back::exec::Subscriber {
  public:
-    ConsumerBridge(exec::OperationPtr source, FieldSet fields, Box<out::Consumer> consumer)
+    ConsumerBridge(back::exec::OperationPtr source, FieldSet fields, Box<out::Consumer> consumer)
         : source_(std::move(source))
         , consumer_(std::move(consumer)) {
         source_->subscribe(source_->minPhase(), this, fields);
     }
 
-    exec::ExplanationItem explain(exec::ExplanationCtx ctx) const {
+    back::exec::ExplanationItem explain(back::exec::ExplanationCtx ctx) const {
         auto source = source_->explain(ctx.withRequester(this));
 
         if (ctx.phase != source_->minPhase()) {
@@ -55,14 +55,14 @@ class ConsumerBridge : public exec::Subscriber {
             return {};
         } else {
             verify(!source.empty());
-            return exec::ExplanationItem().line("Print").child(source);
+            return back::exec::ExplanationItem().line("Print").child(source);
         }
     }
 
  private:
     prof::ScopeMetricsBase* profHandle() override { return nullptr; }
 
-    bool consume([[maybe_unused]] int phase, const exec::Record* record) override {
+    bool consume([[maybe_unused]] int phase, const back::exec::Record* record) override {
         verify_dbg(phase == source_->minPhase());
 
         if (record == nullptr) {
@@ -80,7 +80,7 @@ class ConsumerBridge : public exec::Subscriber {
     }
 
     out::Record rec_;
-    exec::OperationPtr source_;
+    back::exec::OperationPtr source_;
     Box<out::Consumer> consumer_;
 };
 
@@ -245,7 +245,7 @@ bool parseArgs(std::span<const char*> argv) {
     return true;
 }
 
-exec::Plan makePlan(std::string maybe_path) {
+back::exec::Plan makePlan(std::string maybe_path) {
     std::ifstream ifs;
     std::istream* is = [&] -> std::istream* {
         if (maybe_path.empty()) {
@@ -293,7 +293,7 @@ exec::Plan makePlan(std::string maybe_path) {
         std::cout << ir::Stringifier().print(ir).render() << std::endl;
     }
 
-    return exec::plan(std::move(ir));
+    return back::exec::plan(std::move(ir));
 }
 
 void run(int max_phase, const auto& sources, util::ThreadPool& tp) {
@@ -400,7 +400,7 @@ void main(std::span<const char*> argv) {
     }
 
     if (explain_arg) {
-        std::cout << exec::explain(max_phase, std::span<Arc<ConsumerBridge>>(ops));
+        std::cout << back::exec::explain(max_phase, std::span<Arc<ConsumerBridge>>(ops));
     }
 
     if (run_query) {

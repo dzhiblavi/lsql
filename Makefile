@@ -72,11 +72,11 @@ check-tidy: configure
 		`find src/ -name '*.cpp' -o -name '*.h'
 
 check-format:
-	find src/ -type f -name '*.h' -o -name '*.cpp' \
+	find src/ tests/ -type f -name '*.h' -o -name '*.cpp' \
 		| xargs clang-format --dry-run --Werror
 
 apply-format:
-	find src/ -type f -name '*.h' -o -name '*.cpp' \
+	find src/ tests/ -type f -name '*.h' -o -name '*.cpp' \
 		| xargs clang-format -i
 
 sync-dev-vm:

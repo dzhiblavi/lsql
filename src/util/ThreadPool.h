@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/verify.h"
 #include "util/thread_name.h"
+#include "util/verify.h"
 
 #include <cassert>
 #include <functional>

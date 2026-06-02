@@ -6,7 +6,7 @@
 #include "util/Pinned.h"
 #include "util/instrument/types.h"
 
-#include "core/verify.h"
+#include "util/verify.h"
 
 namespace lsql::prof {
 

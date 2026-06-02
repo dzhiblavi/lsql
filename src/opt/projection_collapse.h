@@ -8,4 +8,4 @@ namespace lsql::opt {
 
 ir::Program projectionCollapse(ir::Program program, Context& ctx);
 
-}  // namespace lsql::exec
+}  // namespace lsql::opt

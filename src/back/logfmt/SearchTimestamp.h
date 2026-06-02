@@ -1,0 +1,17 @@
+#pragma once
+
+#include "back/storage/PagedFile.h"
+#include "core/time_formats.h"
+#include "core/types.h"
+
+#include <cstddef>
+
+namespace lsql::back::logfmt {
+
+// index of the first character of the first line with ts >= x
+size_t lowerBoundLine(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format);
+
+// index of the first character of the first line with ts > x
+size_t upperBoundLine(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format);
+
+}  // namespace lsql::back::logfmt

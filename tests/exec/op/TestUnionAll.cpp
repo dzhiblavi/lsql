@@ -1,11 +1,11 @@
 #include "tests/exec/op/MockOperation.h"
 #include "tests/exec/op/OperationTest.h"
 
-#include "exec/op/UnionAll.h"
+#include "back/exec/op/UnionAll.h"
 
 #include <catch2/catch_all.hpp>
 
-namespace lsql::exec {
+namespace lsql::back::exec {
 
 struct UnionAllTest : OperationTest {
     UnionAllTest() { setOperation(unionAll(left, right, binding)); }
@@ -122,4 +122,4 @@ TEST_CASE_METHOD(UnionAllTest, "StopRequestedBothDone") {
     pushFinal(left, eof);
 }
 
-}  // namespace lsql::exec
+}  // namespace lsql::back::exec

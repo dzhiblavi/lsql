@@ -2,7 +2,7 @@
 
 #include "front/sql/bound/FieldSetNode.h"
 
-#include "core/require.h"
+#include "util/require.h"
 
 namespace lsql::front::sql::bind {
 

@@ -1,11 +1,11 @@
 #include "tests/exec/op/MockOperation.h"
 
-#include "exec/op/Limit.h"
+#include "back/exec/op/Limit.h"
 #include "tests/exec/op/OperationTest.h"
 
 #include <catch2/catch_all.hpp>
 
-namespace lsql::exec {
+namespace lsql::back::exec {
 
 struct LimitTest : OperationTest {
     void set(int lim) { setOperation(limit(src, lim, binding)); }
@@ -67,4 +67,4 @@ TEST_CASE_METHOD(LimitTest, "EOFOnLimitExhaustion") {
     pushFinal(src, eof);
 }
 
-}  // namespace lsql::exec
+}  // namespace lsql::back::exec

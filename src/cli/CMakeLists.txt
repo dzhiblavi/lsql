@@ -5,8 +5,8 @@ add_executable(tcat tcat.cpp)
 target_link_libraries(
     tcat PRIVATE
     tclap::tclap
-    lsql-exec
-    lsql-data
+    lsql-back-exec
+    lsql-back-storage
     lsql-util
     lsql-core
 )
@@ -22,11 +22,11 @@ target_link_libraries(
     tclap::tclap
     magic_enum::magic_enum
     lsql-opt
-    lsql-exec
-    lsql-data
+    lsql-back-exec
+    lsql-back-storage
     lsql-util
     lsql-core
-    lsql-logs
+    lsql-back-logfmt
     lsql-front-sql
 )
 

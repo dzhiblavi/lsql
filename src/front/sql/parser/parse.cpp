@@ -1,6 +1,6 @@
 #include "front/sql/parser/parse.h"
 
-#include "core/verify.h"
+#include "util/verify.h"
 
 #include "front/sql/parser/Context.h"
 

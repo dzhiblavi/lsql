@@ -7,7 +7,6 @@ add_library(
     time_formats/oracle.cpp
     time_formats/iso8601.cpp
     time_formats/sql.cpp
-    build_info.cpp
 )
 
 target_link_libraries(

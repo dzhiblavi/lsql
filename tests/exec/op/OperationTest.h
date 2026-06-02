@@ -1,13 +1,13 @@
 #pragma once
 
-#include "exec/op/Operation.h"
-#include "exec/op/Subscriber.h"
+#include "back/exec/op/Operation.h"
+#include "back/exec/op/Subscriber.h"
 #include "tests/exec/MockRecord.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <queue>
 
-namespace lsql::exec {
+namespace lsql::back::exec {
 
 struct OperationTest : Subscriber {
     static constexpr int64_t eof = -1;
@@ -28,7 +28,7 @@ struct OperationTest : Subscriber {
         op->subscribe(0, this, FieldSet::withField(0));
     }
 
-    bool consume(int /*phase*/, const exec::Record* record) override {
+    bool consume(int /*phase*/, const back::exec::Record* record) override {
         CAPTURE(record ? record->value(0).get<int64_t>() : eof);
 
         REQUIRE(!expected_values.empty());
@@ -69,4 +69,4 @@ struct OperationTest : Subscriber {
     FieldBindingPtr binding;
 };
 
-}  // namespace lsql::exec
+}  // namespace lsql::back::exec

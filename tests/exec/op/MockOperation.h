@@ -1,8 +1,8 @@
 #pragma once
 
-#include "exec/op/OperationBase.h"
+#include "back/exec/op/OperationBase.h"
 
-namespace lsql::exec {
+namespace lsql::back::exec {
 
 struct MockOperation : OperationBase<MockOperation> {
     explicit MockOperation(ConstFieldBindingPtr binding) : OperationBase(0, binding) {}
@@ -18,4 +18,4 @@ struct MockOperation : OperationBase<MockOperation> {
     std::vector<int> init_calls;
 };
 
-}  // namespace lsql::exec
+}  // namespace lsql::back::exec

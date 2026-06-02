@@ -1,8 +1,8 @@
 #pragma once
 
-#include "exec/Record.h"
+#include "back/exec/Record.h"
 
-namespace lsql::exec {
+namespace lsql::back::exec {
 
 struct MockRecord : Record {
     using values_t = std::unordered_map<FieldId, Value>;
@@ -30,4 +30,4 @@ struct MockRecord : Record {
     values_t values_;
 };
 
-}  // namespace lsql::exec
+}  // namespace lsql::back::exec

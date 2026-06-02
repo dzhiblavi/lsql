@@ -1,14 +1,14 @@
 #include "tests/exec/op/MockOperation.h"
 #include "tests/exec/op/OperationTest.h"
 
-#include "exec/expr/IdentifierScalar.h"
-#include "exec/op/MergeSorted.h"
+#include "back/exec/expr/IdentifierScalar.h"
+#include "back/exec/op/MergeSorted.h"
 
 #include "core/types.h"
 
 #include <catch2/catch_all.hpp>
 
-namespace lsql::exec {
+namespace lsql::back::exec {
 
 struct MergeSortedTest : OperationTest {
     MergeSortedTest() {
@@ -204,4 +204,4 @@ TEST_CASE_METHOD(MergeSortedTest, "UnevenBursts") {
     pushFinal(right, eof);
 }
 
-}  // namespace lsql::exec
+}  // namespace lsql::back::exec
