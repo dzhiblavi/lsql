@@ -2,7 +2,7 @@
 
 #include "back/exec/op/Operation.h"
 
-#include "prof/global.h"
+#include "profiling/global.h"
 
 #include "util/uniq_id.h"
 #include "util/verify.h"

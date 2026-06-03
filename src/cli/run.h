@@ -5,18 +5,18 @@
 #include "back/exec/op/explain.h"
 #include "back/plan/plan.h"
 
-#include "prof/Profiler.h"
-#include "prof/global.h"
-#include "prof/presentation.h"
+#include "profiling/Profiler.h"
+#include "profiling/global.h"
+#include "profiling/presentation.h"
 
-#include "out/CSVHeaderFormatter.h"
-#include "out/Consumer.h"
-#include "out/Formats.h"
-#include "out/JSONFormatter.h"
-#include "out/TSKVFormatter.h"
+#include "output/CSVHeaderFormatter.h"
+#include "output/Consumer.h"
+#include "output/Formats.h"
+#include "output/JSONFormatter.h"
+#include "output/TSKVFormatter.h"
 
 #include "ir/Stringifier.h"
-#include "opt/optimize.h"
+#include "optimize/optimize.h"
 #include "util/ThreadPool.h"
 
 #include <fstream>
@@ -26,7 +26,7 @@ namespace lsql {
 
 class ConsumerBridge : public back::exec::Subscriber {
  public:
-    ConsumerBridge(back::exec::OperationPtr source, FieldSet fields, Box<out::Consumer> consumer)
+    ConsumerBridge(back::exec::OperationPtr source, FieldSet fields, Box<output::Consumer> consumer)
         : source_(std::move(source))
         , consumer_(std::move(consumer)) {
         source_->subscribe(source_->minPhase(), this, fields);
@@ -64,9 +64,9 @@ class ConsumerBridge : public back::exec::Subscriber {
         return true;
     }
 
-    out::Record rec_;
+    output::Record rec_;
     back::exec::OperationPtr source_;
-    Box<out::Consumer> consumer_;
+    Box<output::Consumer> consumer_;
 };
 
 struct StdoutSink {
@@ -97,7 +97,7 @@ struct Settings {
     bool run;
     unsigned optimization_passes;
     unsigned num_threads;
-    out::Format out_format;
+    output::Format out_format;
 };
 
 inline void run(int max_phase, const auto& sources, util::ThreadPool& tp, const Settings& s) {
@@ -156,14 +156,14 @@ inline void run(int max_phase, const auto& sources, util::ThreadPool& tp, const 
     }
 }
 
-inline Box<out::Consumer> makeConsumer(out::Format format, ConstFieldBindingPtr binding) {
+inline Box<output::Consumer> makeConsumer(output::Format format, ConstFieldBindingPtr binding) {
     switch (format) {
-        case out::Format::JSON:
-            return box<out::JSONFormatter<StdoutSink>>(StdoutSink{}, binding);
-        case out::Format::TSKV:
-            return box<out::TSKVFormatter<StdoutSink>>(StdoutSink{}, binding);
-        case out::Format::CSVHeader:
-            return box<out::CSVHeaderFormatter<StdoutSink>>(StdoutSink{}, binding);
+        case output::Format::JSON:
+            return box<output::JSONFormatter<StdoutSink>>(StdoutSink{}, binding);
+        case output::Format::TSKV:
+            return box<output::TSKVFormatter<StdoutSink>>(StdoutSink{}, binding);
+        case output::Format::CSVHeader:
+            return box<output::CSVHeaderFormatter<StdoutSink>>(StdoutSink{}, binding);
     }
 }
 

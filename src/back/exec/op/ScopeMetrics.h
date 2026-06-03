@@ -1,6 +1,6 @@
 #pragma once
 
-#include "prof/ScopeMetrics.h"
+#include "profiling/ScopeMetrics.h"
 
 #include "util/instrument/Histogram.h"
 

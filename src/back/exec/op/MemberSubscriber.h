@@ -3,7 +3,7 @@
 #include "back/exec/op/ScopeMetrics.h"
 #include "back/exec/op/Subscriber.h"
 
-#include "prof/Scope.h"
+#include "profiling/Scope.h"
 
 #include "util/verify.h"
 

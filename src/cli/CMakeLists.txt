@@ -6,14 +6,14 @@ target_link_libraries(
     lsql PRIVATE
     tclap::tclap
     magic_enum::magic_enum
+    lsql-front-sql
     lsql-back-exec
     lsql-back-plan
     lsql-back-storage
     lsql-back-logfmt
-    lsql-util
+    lsql-optimize
     lsql-core
-    lsql-opt
-    lsql-front-sql
+    lsql-util
 )
 
 target_link_options(
@@ -27,14 +27,14 @@ target_link_libraries(
     lpipe PRIVATE
     tclap::tclap
     magic_enum::magic_enum
+    lsql-front-pipe
     lsql-back-exec
     lsql-back-plan
     lsql-back-storage
     lsql-back-logfmt
-    lsql-front-pipe
-    lsql-util
+    lsql-optimize
     lsql-core
-    lsql-opt
+    lsql-util
     lsql-front-sql
 )
 

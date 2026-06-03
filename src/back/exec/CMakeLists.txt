@@ -9,7 +9,7 @@ target_link_libraries(
     lsql-back-logfmt
     lsql-core
     lsql-ir
-    lsql-prof
+    lsql-profiling
     reflectcpp
     libcoro
     llog

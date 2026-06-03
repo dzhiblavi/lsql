@@ -1,5 +1,5 @@
 #include "cli/run.h"
-#include "out/Formats.h"
+#include "output/Formats.h"
 
 #include "ir/Relations.h"  // IWYU pragma: keep
 #include "ir/Scalars.h"    // IWYU pragma: keep
@@ -34,7 +34,7 @@ TCLAP::ValueArg<std::string> format_arg{
     "output format",
     false,
     "TSKV",
-    "see lsql::out::Format enum",
+    "see lsql::output::Format enum",
 };
 
 TCLAP::ValueArg<std::string> log_level_arg{
@@ -174,7 +174,7 @@ void cliMain(std::span<const char*> argv) {
     require(log_level.has_value(), "invalid value for log-level: {}", log_level_arg.getValue());
     llog::global()->set_level(static_cast<spdlog::level::level_enum>(*log_level));
 
-    auto format = magic_enum::enum_cast<out::Format>(format_arg.getValue());
+    auto format = magic_enum::enum_cast<output::Format>(format_arg.getValue());
     require(format.has_value(), "invalid value for format: {}", format_arg.getValue());
 
     auto settings = Settings{

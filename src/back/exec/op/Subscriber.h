@@ -2,7 +2,7 @@
 
 #include "back/exec/Record.h"
 
-#include "prof/ScopeMetrics.h"
+#include "profiling/ScopeMetrics.h"
 
 namespace lsql::back::exec {
 
