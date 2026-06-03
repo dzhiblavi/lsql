@@ -432,7 +432,7 @@ class Binder {
         };
     }
 
-    Expr bindExpr(ast::LiteralExpr e) {
+    Expr bindExpr(LiteralExpr e) {
         auto value = parseLiteral(e.literal);
 
         return {

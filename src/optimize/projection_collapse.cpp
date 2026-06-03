@@ -29,11 +29,7 @@ struct ScalarCostEstimator : ScalarViewPass<ScalarCostEstimator, int> {
     int view(const ir::ValueScalar&, auto&) { return 0; }
 
     int view(const ir::CoalesceScalar&, auto&, auto args) {
-        int cost = CoalesceCostOverhead;
-        for (auto&& a : args) {
-            cost += a;
-        }
-        return cost;
+        return std::ranges::fold_left(args, CoalesceCostOverhead, std::plus());
     }
 
     int view(const ir::CastScalar& s, auto&, int arg) {
@@ -84,17 +80,11 @@ struct CloneScalarView : ScalarViewPass<CloneScalarView, ir::Scalar> {
     virtual ~CloneScalarView() = default;
 
     virtual ir::Scalar view(const ir::FieldScalar& s, const ir::Scalar& self) {
-        return {
-            .node = s,
-            .value_type = self.value_type,
-        };
+        return {.node = s, .value_type = self.value_type};
     }
 
     ir::Scalar view(const ir::ValueScalar& s, auto& self) {
-        return ir::Scalar{
-            .node = s,
-            .value_type = self.value_type,
-        };
+        return ir::Scalar{.node = s, .value_type = self.value_type};
     }
 
     ir::Scalar view(const ir::CoalesceScalar& /*outer*/, auto& self, auto args) {
@@ -106,44 +96,28 @@ struct CloneScalarView : ScalarViewPass<CloneScalarView, ir::Scalar> {
 
     ir::Scalar view(const ir::CastScalar& s, auto& self, auto expr) {
         return ir::Scalar{
-            .node =
-                ir::CastScalar{
-                    .cast_to = s.cast_to,
-                    .expr = box(std::move(expr)),
-                },
+            .node = ir::CastScalar{.cast_to = s.cast_to, .expr = box(std::move(expr))},
             .value_type = self.value_type,
         };
     }
 
     ir::Scalar view(const ir::LikeScalar& s, auto& self, auto expr) {
         return ir::Scalar{
-            .node =
-                ir::LikeScalar{
-                    .expr = box(std::move(expr)),
-                    .regex = s.regex,
-                },
+            .node = ir::LikeScalar{.expr = box(std::move(expr)), .regex = s.regex},
             .value_type = self.value_type,
         };
     }
 
     ir::Scalar view(const ir::RSubstrScalar& s, auto& self, auto expr) {
         return ir::Scalar{
-            .node =
-                ir::RSubstrScalar{
-                    .expr = box(std::move(expr)),
-                    .regex = s.regex,
-                },
+            .node = ir::RSubstrScalar{.expr = box(std::move(expr)), .regex = s.regex},
             .value_type = self.value_type,
         };
     }
 
     ir::Scalar view(const ir::UnaryScalar& s, auto& self, auto expr) {
         return ir::Scalar{
-            .node =
-                ir::UnaryScalar{
-                    .type = s.type,
-                    .expr = box(std::move(expr)),
-                },
+            .node = ir::UnaryScalar{.type = s.type, .expr = box(std::move(expr))},
             .value_type = self.value_type,
         };
     }

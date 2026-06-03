@@ -1,10 +1,10 @@
 #pragma once
 
-#include "core/types.h"
-
-#include "front/pipe/ast/Literal.h"
+#include "front/Literal.h"
 #include "front/pipe/ast/Pipeline.h"
 #include "front/pipe/ast/fwd/Expr.h"
+
+#include "core/types.h"
 
 #include <string>
 #include <vector>

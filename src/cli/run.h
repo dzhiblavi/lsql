@@ -9,11 +9,7 @@
 #include "profiling/global.h"
 #include "profiling/presentation.h"
 
-#include "output/CSVHeaderFormatter.h"
-#include "output/Consumer.h"
-#include "output/Formats.h"
-#include "output/JSONFormatter.h"
-#include "output/TSKVFormatter.h"
+#include "output/factory.h"
 
 #include "ir/Stringifier.h"
 #include "optimize/optimize.h"
@@ -89,13 +85,13 @@ struct Settings {
     bool print_optimization_report;
     bool print_ir_optimized;
     bool print_ir_unoptimized;
-    bool profiling_enabled;
     bool dump_profile;
     bool dump_flamegraphs;
     bool dump_dot_graph;
-    bool explain;
-    bool run;
     unsigned optimization_passes;
+    bool explain;
+    bool profiling_enabled;
+    bool run;
     unsigned num_threads;
     output::Format out_format;
 };
@@ -156,17 +152,6 @@ inline void run(int max_phase, const auto& sources, util::ThreadPool& tp, const 
     }
 }
 
-inline Box<output::Consumer> makeConsumer(output::Format format, ConstFieldBindingPtr binding) {
-    switch (format) {
-        case output::Format::JSON:
-            return box<output::JSONFormatter<StdoutSink>>(StdoutSink{}, binding);
-        case output::Format::TSKV:
-            return box<output::TSKVFormatter<StdoutSink>>(StdoutSink{}, binding);
-        case output::Format::CSVHeader:
-            return box<output::CSVHeaderFormatter<StdoutSink>>(StdoutSink{}, binding);
-    }
-}
-
 inline back::plan::Plan plan(ir::Program ir, const Settings& s) {
     if (s.print_ir_unoptimized) {
         std::cout << "Unoptimized IR dump:" << std::endl;
@@ -212,7 +197,9 @@ inline void run(ir::Program ir, Settings s) {
 
     std::vector<Arc<ConsumerBridge>> ops;
     for (auto&& [op, fields] : top_operations) {
-        ops.push_back(arc<ConsumerBridge>(op, fields, makeConsumer(s.out_format, binding)));
+        ops.push_back(
+            arc<ConsumerBridge>(
+                op, fields, output::makeConsumer<StdoutSink>(s.out_format, binding)));
     }
 
     llog::info("determining phase count");

@@ -13,10 +13,6 @@
 
 namespace lsql::front::sql::ast {
 
-inline std::string to_string(const ast::Literal& v) {
-    return std::format("{}({})", magic_enum::enum_name(v.type), v.value_str);
-}
-
 class Stringifier {
     using StrBuilder = util::StrBuilder;
 

@@ -2,11 +2,6 @@
 
 #include "front/FieldSetChain.h"
 
-#include "front/pipe/bound/Expressions.h"  // IWYU pragma: keep
-#include "front/pipe/bound/Pipeline.h"     // IWYU pragma: keep
-#include "front/pipe/bound/Sources.h"      // IWYU pragma: keep
-#include "front/pipe/bound/Stages.h"       // IWYU pragma: keep
-
 #include "core/Fields.h"
 #include "util/Pinned.h"
 

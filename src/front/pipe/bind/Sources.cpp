@@ -7,7 +7,6 @@
 
 #include "front/pipe/bind/Expressions.h"
 #include "front/pipe/bind/Pipeline.h"
-#include "front/pipe/bind/helpers.h"
 
 #include "front/pipe/bound/Expressions.h"  // IWYU pragma: keep
 #include "front/pipe/bound/Sources.h"      // IWYU pragma: keep

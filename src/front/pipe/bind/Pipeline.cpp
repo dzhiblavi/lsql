@@ -5,10 +5,12 @@
 #include "front/pipe/ast/Stages.h"       // IWYU pragma: keep
 
 #include "front/pipe/bind/Sources.h"
-
 #include "front/pipe/bind/Stages.h"
+
+#include "front/pipe/bound/Expressions.h"  // IWYU pragma: keep
 #include "front/pipe/bound/Pipeline.h"
 #include "front/pipe/bound/Sources.h"
+#include "front/pipe/bound/Stages.h"
 
 namespace lsql::front::pipe::bind {
 

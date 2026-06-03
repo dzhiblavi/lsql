@@ -6,7 +6,7 @@
 #include "front/sql/ast/fwd/Expr.h"
 #include "front/sql/ast/fwd/Relation.h"
 
-#include "front/sql/ast/Literal.h"
+#include "front/Literal.h"
 
 #include <string>
 #include <vector>

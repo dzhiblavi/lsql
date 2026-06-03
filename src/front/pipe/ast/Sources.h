@@ -1,9 +1,8 @@
 #pragma once
 
-#include "front/pipe/ast/Literal.h"
+#include "front/Literal.h"
 #include "front/pipe/ast/Pipeline.h"
 #include "front/pipe/ast/fwd/Expr.h"
-#include "front/pipe/ast/fwd/Source.h"  // IWYU pragma: keep
 
 #include <string>
 #include <vector>

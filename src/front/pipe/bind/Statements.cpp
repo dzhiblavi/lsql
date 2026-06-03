@@ -6,6 +6,10 @@
 
 #include "front/pipe/bind/Pipeline.h"
 
+#include "front/pipe/bound/Expressions.h"  // IWYU pragma: keep
+#include "front/pipe/bound/Sources.h"      // IWYU pragma: keep
+#include "front/pipe/bound/Stages.h"       // IWYU pragma: keep
+
 namespace lsql::front::pipe::bind {
 
 namespace {

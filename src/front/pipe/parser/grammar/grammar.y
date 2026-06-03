@@ -22,6 +22,7 @@
     namespace ast = lsql::front::pipe::ast;
     using lsql::Box;
     using lsql::ValueType;
+    using lsql::front::Literal;
 
     static std::string unquote(std::string s) {
         if (s.size() >= 2 && s.front() == '\'' && s.back() == '\'') {
@@ -105,8 +106,8 @@
 %type expression_list {std::vector<ast::Expr>*}
 %type projector       {ast::Projector*}
 %type projector_list  {std::vector<ast::Projector>*}
-%type value           {ast::Literal*}
-%type value_list      {std::vector<ast::Literal>*}
+%type value           {Literal*}
+%type value_list      {std::vector<Literal>*}
 %type desc_opt        {bool}
 
 %start_symbol input
@@ -486,7 +487,7 @@ expression(E) ::= TOKEN_RSUBSTR TOKEN_LPAREN expression(X) TOKEN_COMMA TOKEN_STR
     delete X;
 
     args.emplace_back(ast::LiteralExpr{
-        .literal = ast::Literal{
+        .literal = Literal{
             .type = ValueType::String,
             .value_str = P.text,
         },
@@ -499,7 +500,7 @@ expression(E) ::= TOKEN_RSUBSTR TOKEN_LPAREN expression(X) TOKEN_COMMA TOKEN_STR
 }
 
 value_list(L) ::= value(V). {
-    L = new std::vector<ast::Literal>();
+    L = new std::vector<Literal>();
     L->push_back(std::move(*V));
     delete V;
 }
@@ -511,42 +512,42 @@ value_list(L) ::= value_list(L1) TOKEN_COMMA value(V). {
 }
 
 value(V) ::= TOKEN_STR(S). {
-    V = new ast::Literal{
+    V = new Literal{
         .type = ValueType::String,
         .value_str = S.text,
     };
 }
 
 value(V) ::= TOKEN_INTEGER(I). {
-    V = new ast::Literal{
+    V = new Literal{
         .type = ValueType::Integer,
         .value_str = I.text,
     };
 }
 
 value(V) ::= TOKEN_FLOATING(F). {
-    V = new ast::Literal{
+    V = new Literal{
         .type = ValueType::Floating,
         .value_str = F.text,
     };
 }
 
 value(V) ::= TOKEN_TRUE(T). {
-    V = new ast::Literal{
+    V = new Literal{
         .type = ValueType::Boolean,
         .value_str = T.text,
     };
 }
 
 value(V) ::= TOKEN_FALSE(T). {
-    V = new ast::Literal{
+    V = new Literal{
         .type = ValueType::Boolean,
         .value_str = T.text,
     };
 }
 
 value(V) ::= TOKEN_NULL. {
-    V = new ast::Literal{
+    V = new Literal{
         .type = ValueType::Null,
         .value_str = "",
     };

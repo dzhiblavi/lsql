@@ -1,6 +1,6 @@
 #pragma once
 
-#include "front/pipe/ast/Expressions.h"  // IWYU pragma: keep
+#include "front/pipe/ast/Expressions.h"
 #include "front/pipe/ast/Pipeline.h"
 #include "front/pipe/ast/Sources.h"
 #include "front/pipe/ast/Stages.h"
@@ -14,10 +14,6 @@
 #include <format>
 
 namespace lsql::front::pipe::ast {
-
-inline std::string to_string(const ast::Literal& v) {
-    return std::format("{}({})", magic_enum::enum_name(v.type), v.value_str);
-}
 
 class Stringifier {
     using StrBuilder = util::StrBuilder;

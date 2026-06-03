@@ -1,7 +1,7 @@
 #pragma once
 
-#include "front/pipe/ast/fwd/Source.h"  // IWYU pragma: keep
-#include "front/pipe/ast/fwd/Stage.h"   // IWYU pragma: keep
+#include "front/pipe/ast/fwd/Source.h"
+#include "front/pipe/ast/fwd/Stage.h"
 
 #include "core/types.h"
 
