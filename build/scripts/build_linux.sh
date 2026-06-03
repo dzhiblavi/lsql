@@ -18,4 +18,5 @@ for type in "${@}"; do
 
     make BUILD_TYPE="${type}" PROFILE="${arch}-linux.docker" build
     cp "./target/${arch}-linux.docker/${type}/src/cli/lsql" "./output/lsql-${type}-linux-${arch}"
+    cp "./target/${arch}-linux.docker/${type}/src/cli/lpipe" "./output/lpipe-${type}-linux-${arch}"
 done

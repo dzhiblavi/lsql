@@ -43,7 +43,8 @@ configure: deps
 
 build: configure
 	cmake --build --preset $(CONAN_PRESET) && \
-	cp $(TARGET_DIR)/src/cli/lsql output/lsql-$(BUILD_TYPE)
+	cp $(TARGET_DIR)/src/cli/lsql output/lsql-$(BUILD_TYPE) && \
+	cp $(TARGET_DIR)/src/cli/lpipe output/lpipe-$(BUILD_TYPE)
 
 build-docker-linux-builder:
 	docker build                    \

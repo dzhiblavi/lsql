@@ -13,6 +13,10 @@
 
 namespace lsql {
 
+std::string_view syntaxName() {
+    return "unix pipe style";
+}
+
 ir::Program parseQuery(std::string maybe_path) {
     std::ifstream ifs;
     std::istream* is = [&] -> std::istream* {

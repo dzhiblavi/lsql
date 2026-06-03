@@ -8,7 +8,7 @@ function(add_pipe_test TEST_DIR)
     add_test(
         NAME ${TEST_NAME}
         COMMAND ${CMAKE_COMMAND}
-            -DCLI=$<TARGET_FILE:pipe>
+            -DCLI=$<TARGET_FILE:lpipe>
             -DTEST_DIR=${TEST_DIR_BINARY}
             -DCOMPARE_SCRIPT=${COMPARE_SCRIPT}
             -DQUERY_FILE=${TEST_DIR_BINARY}/query.pipe

@@ -16,6 +16,10 @@
 
 namespace lsql {
 
+// These can be overriden by different CLIs
+ir::Program parseQuery(std::string maybe_path);
+std::string_view syntaxName();
+
 TCLAP::UnlabeledValueArg<std::string> query_file_arg{
     "path",
     "path to the query file",
@@ -125,7 +129,7 @@ TCLAP::SwitchArg dot_graph_arg{
 };
 
 bool parseArgs(std::span<const char*> argv) {
-    TCLAP::CmdLine cmd{"tsql", ' ', formatBuildInfo()};
+    TCLAP::CmdLine cmd{"tsql", ' ', std::format("{} syntax: {}", formatBuildInfo(), syntaxName())};
     cmd.add(&query_file_arg);
     cmd.add(&format_arg);
     cmd.add(&log_level_arg);
@@ -160,9 +164,6 @@ bool parseArgs(std::span<const char*> argv) {
     any_profile_enabled = profile_arg || flamegraph_arg || dot_graph_arg;
     return true;
 }
-
-// This can be overriden by different CLIs
-ir::Program parseQuery(std::string maybe_path);
 
 void cliMain(std::span<const char*> argv) {
     if (!parseArgs(argv)) {

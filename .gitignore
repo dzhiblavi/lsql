@@ -2,6 +2,7 @@
 /CMakeUserPresets.json
 /_logs
 /*.sql
+/*.pipe
 /ref.out
 /output
 /Makefile.dev
