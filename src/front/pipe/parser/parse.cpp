@@ -15,9 +15,9 @@ namespace lsql::front::pipe::parse {
 
 namespace {
 
-class SQLFlexLexer : public pipe_FlexLexer {
+class PipeFlexLexer : public pipe_FlexLexer {
  public:
-    explicit SQLFlexLexer(std::istream* input) : pipe_FlexLexer(input) {}
+    explicit PipeFlexLexer(std::istream* input) : pipe_FlexLexer(input) {}
 
     void setParser(void* parser) { m_parser = parser; }
     void setParseContext(Context* ctx) { m_parse_context = ctx; }
@@ -56,11 +56,11 @@ class SQLFlexLexer : public pipe_FlexLexer {
 
 }  // namespace
 
-ast::Pipeline parse(std::istream& is) {
+ast::Program parse(std::istream& is) {
     Context ctx;
     void* parser = PipeParserAlloc(malloc);
 
-    SQLFlexLexer lexer(&is);
+    PipeFlexLexer lexer(&is);
     lexer.setParser(parser);
     lexer.setParseContext(&ctx);
 
@@ -72,7 +72,7 @@ ast::Pipeline parse(std::istream& is) {
         throw std::runtime_error("parsing failed");
     }
 
-    return std::move(ctx.pipeline);
+    return std::move(ctx.program);
 }
 
 }  // namespace lsql::front::pipe::parse

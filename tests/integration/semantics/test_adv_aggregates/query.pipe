@@ -1,0 +1,27 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| select
+    percentile(int(.latency), 0.5) as p50,
+    1 as test_index
+
+$input
+| select
+    percentile(int(.latency), 0.1, 0.5, 0.9) as percentiles,
+    2 as test_index
+
+$input
+| select
+    percentile(int(.latency), 0.0, 1.0) as edge_percentiles,
+    3 as test_index
+
+$input
+| select
+    .kind,
+    percentile(int(.latency), 0.5) as p50,
+    count(true) as count,
+    4 as test_index
+  group by .kind
+| sort by .kind

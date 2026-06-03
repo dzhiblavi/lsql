@@ -5,7 +5,9 @@
 #include "front/sql/bind/helpers.h"
 
 #include "front/sql/ast/Expressions.h"
-#include "front/sql/ast/Relations.h"
+#include "front/sql/ast/Relations.h"  // IWYU pragma: keep
+
+#include "front/Expressions.h"
 
 #include "front/sql/bound/Expressions.h"
 
@@ -19,65 +21,6 @@
 namespace lsql::front::sql::bind {
 
 namespace {
-
-template <UnaryExprType Type>
-ValueType unaryExprResultType(ValueType value_type) {
-    using Traits = UnaryExprTraits<Type>;
-
-    return dispatch<ValueType>(
-        [&]<typename T>(std::type_identity<T>) {
-            if constexpr (!Traits::template allowed<T>()) {
-                throwError(
-                    "unsupported operand type {} for unary operation {}",
-                    magic_enum::enum_name(value_type),
-                    magic_enum::enum_name(Type));
-            }
-
-            using ValueType = Traits::template ValueType<T>;
-            return valueType<ValueType>();
-        },
-        value_type);
-}
-
-template <BinaryExprType Type>
-ValueType binaryExprResultType(ValueType left, ValueType right) {
-    using Traits = BinaryExprTraits<Type>;
-
-    return dispatch<ValueType>(
-        [&]<typename L, typename R>(std::type_identity<L>, std::type_identity<R>) {
-            if constexpr (!Traits::template allowed<L, R>()) {
-                throwError(
-                    "unsupported operand types {}, {} for binary operation {}",
-                    magic_enum::enum_name(left),
-                    magic_enum::enum_name(right),
-                    magic_enum::enum_name(Type));
-            }
-
-            using ValueType = Traits::template ValueType<L, R>;
-            return valueType<ValueType>();
-        },
-        left,
-        right);
-}
-
-template <UnaryAggregateType Type>
-ValueType unaryAggregateResultType(ValueType value_type) {
-    using Traits = UnaryAggregateTraits<Type>;
-
-    return dispatch<ValueType>(
-        [&]<typename T>(std::type_identity<T>) {
-            if constexpr (!Traits::template allowed<T>()) {
-                throwError(
-                    "unsupported operand type {} for unary aggregate {}",
-                    magic_enum::enum_name(value_type),
-                    magic_enum::enum_name(Type));
-            }
-
-            using ValueType = Traits::template ValueType<T>;
-            return valueType<ValueType>();
-        },
-        value_type);
-}
 
 UnaryExprType exprType(ast::UnaryExprType ast) {
     switch (ast) {
@@ -298,7 +241,11 @@ bound::Expr bindExpr(ast::FnCallExpr e, Context& ctx) {
             percentiles.push_back(
                 util::match(
                     std::move(args[i].node),
-                    [](bound::ValueExpr e) -> float { return e.value.get<float>(); },
+                    [](bound::ValueExpr e) -> float {
+                        auto p = e.value.get<float>();
+                        require(p >= 0.0f && p <= 1.0f, "PERCENTILE value must be in [0, 1]");
+                        return p;
+                    },
                     [](auto) -> float {
                         throwError("PERCENTILE's arguments in positions >=1 must be literals");
                     }));

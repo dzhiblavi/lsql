@@ -1,11 +1,11 @@
 #pragma once
 
-#include "front/pipe/ast/Pipeline.h"
+#include "front/pipe/ast/Statements.h"
 
 #include <istream>
 
 namespace lsql::front::pipe::parse {
 
-ast::Pipeline parse(std::istream& is);
+ast::Program parse(std::istream& is);
 
 }  // namespace lsql::front::pipe::parse

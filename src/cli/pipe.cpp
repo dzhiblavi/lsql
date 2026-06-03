@@ -1,19 +1,19 @@
+#include "cli/cli.h"
+
 #include "front/pipe/ast/Stringifier.h"
+#include "front/pipe/bind/Statements.h"
+#include "front/pipe/bound/Stringifier.h"
+
+#include "front/pipe/lower/Statements.h"
 #include "front/pipe/parser/parse.h"
+
 #include "util/require.h"
 
-#include <llog/load.h>
-#include <llog/log.h>
-
-#include <magic_enum/magic_enum.hpp>
-#include <tclap/CmdLine.h>
-
 #include <fstream>
-#include <span>
 
 namespace lsql {
 
-void makePlan(std::string maybe_path) {
+ir::Program parseQuery(std::string maybe_path) {
     std::ifstream ifs;
     std::istream* is = [&] -> std::istream* {
         if (maybe_path.empty()) {
@@ -26,25 +26,18 @@ void makePlan(std::string maybe_path) {
     }();
 
     auto ast = front::pipe::parse::parse(*is);
-    std::cout << "AST dump:" << std::endl;
-    std::cout << front::pipe::ast::Stringifier().print(ast) << std::endl;
-}
+    if (print_ast_arg) {
+        std::cout << "AST dump:" << std::endl;
+        std::cout << front::pipe::ast::Stringifier().print(ast) << std::endl;
+    }
 
-void main(std::span<const char*> /*argv*/) {
-    makePlan("");
+    auto bound_ast = front::pipe::bind::bindProgram(std::move(ast));
+    if (print_bound_arg) {
+        std::cout << "Bound AST dump:" << std::endl;
+        std::cout << front::pipe::bound::Stringifier().print(bound_ast) << std::endl;
+    }
+
+    return front::pipe::lower::lowerToIR(std::move(bound_ast));
 }
 
 }  // namespace lsql
-
-int main(int argc, const char** argv) {
-    try {
-        lsql::main(std::span<const char*>(argv, argc));
-        return 0;
-    } catch (const std::exception& e) {
-        llog::critical("error: {}", e.what());
-        return 1;
-    } catch (...) {
-        llog::critical("unknown error");
-        return 2;
-    }
-}

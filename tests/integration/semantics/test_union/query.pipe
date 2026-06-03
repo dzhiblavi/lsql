@@ -1,0 +1,46 @@
+input1 = file input.1.txt
+input2 = file input.2.txt
+
+merged =
+    union (
+        $input1
+    ) (
+        $input2
+    )
+
+sorted =
+    merge by .timestamp (
+        $input1
+        | sort by .timestamp
+    ) (
+        $input2
+        | sort by .timestamp
+    )
+
+---------------------
+
+$merged
+| select
+    .uid,
+    .source,
+    1 as test_index
+
+$sorted
+| select
+    .timestamp,
+    .uid,
+    .source,
+    2 as test_index
+
+$merged
+| where .uid in (
+    values ('aaa', 'ddd')
+)
+| select *, 3 as test_index
+
+$merged
+| select
+    .uid,
+    .status,
+    .path,
+    4 as test_index

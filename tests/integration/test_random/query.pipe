@@ -1,0 +1,169 @@
+access = file ../../../../../../_logs/access.log@2026-05-06T14:10:00+300
+access2 = file ../../../../../../_logs/access.log@2026-05-06T14:10:00+300
+
+app = file ../../../../../../_logs/app.log@2026-05-07T06:00:00+3000
+app2 = file ../../../../../../_logs/app.log@2026-05-07T06:00:00+3000
+
+typed = file ../../../../../../_logs/typed.log
+typed2 = file ../../../../../../_logs/typed.log
+
+all = union ($access) ($typed)
+
+ordered =
+    merge by .timestamp
+        ($access | sort by .timestamp)
+        (merge by .timestamp
+            ($typed | sort by .timestamp)
+            (merge by .timestamp
+                ($typed2 | sort by .timestamp)
+                ($access2 | sort by .timestamp)))
+
+uids =
+    $typed
+    | where .uid like 'aaa.*'
+    | select .uid
+
+timestamps =
+    $typed
+    | where .uid in (
+        $typed
+        | where .uid like 'aaa.*'
+        | select .uid
+    )
+    | select .timestamp
+
+---------------------
+
+$all
+| select 'all' as log_type, *, 1 as test_index
+| take 2
+
+$ordered
+| select count(true) as count, 2 as test_index
+
+$ordered
+| select .timestamp, .ctx, 3 as test_index
+| take 10
+
+$all
+| where .context in (
+    values (
+        '40i4qb1D7a61',
+        '40i6qb1D7Cg1',
+        'A0iCqb1D8Cg1',
+        'A0iEqb1D80U1',
+        'A0iGqb1D8Cg1',
+        '90iAqb1D7Cg1',
+        'I0iMqb1D70U1',
+        'H0iKqb1D70U1',
+        'O0iSqb1D7Os1',
+        'b0iYqb1D7mI1'
+    )
+)
+| select count(true) as count, 4 as test_index
+
+$all
+| select .timestamp
+| select count(true) as count, 5 as test_index
+
+$all
+| select .timestamp, 6 as test_index
+| take 10
+
+$typed
+| sort by .timestamp desc
+| select *, 7 as test_index
+| take 10
+
+$uids
+| where .uid in (
+    $typed
+    | where .uid like 'aaa.*'
+    | select .uid
+)
+| select *, 8 as test_index
+
+$timestamps
+| where .timestamp in (
+    $typed
+    | where .uid in (
+        $typed
+        | where .uid like 'aaa.*'
+        | select .uid
+    )
+    | select .timestamp
+)
+| select *, 9 as test_index
+
+$typed
+| where .timestamp in (
+    $typed
+    | where .uid in (
+        $typed
+        | where .uid like 'aaa.*'
+        | select .uid
+    )
+    | select .timestamp
+)
+| select .payload_sz, .timestamp, .uid, 10 as test_index
+
+$access
+| select min(.timestamp) as min_ts, 11 as test_index
+
+$access
+| select max(.timestamp) as max_ts, 12 as test_index
+
+$access
+| select count(true) as access_count, 13 as test_index
+
+$typed
+| select count(true) as typed_count, 14 as test_index
+
+$app
+| select count(true) as app_count, 15 as test_index
+
+$app
+| select min(.timestamp) as min_ts, max(.timestamp) as max_ts, 16 as test_index
+
+$app
+| select .anon1 as module, count(true) as count, 17 as test_index group by .anon1
+
+$access
+| select
+    percentile(float(.profiler_exec), 0.1, 0.3, 0.5, 0.8, 0.9, 0.99, 0.999, 0.9999, 0.99999) as p_exec,
+    count(true) as count,
+    max(float(.profiler_exec)) as max_exec,
+    min(float(.profiler_exec)) as min_exec,
+    min(.timestamp) as min_ts,
+    max(.timestamp) as max_ts,
+    18 as test_index
+
+$access
+| select
+    .status_code as status_code,
+    .tvm_src as tvm_source,
+    count(true) as count,
+    19 as test_index
+  group by .status_code, .tvm_src
+| sort by .count desc
+
+$access
+| where int(.status_code) = 1001
+| select .request, 20 as test_index
+| take 5
+
+$access
+| where string(.request) like '.*uid=1.*'
+| select .request, .uid, 21 as test_index
+| take 5
+
+$access
+| select rsubstr(.request, 'user=[\d]+') as uid
+| where .uid != null
+| select
+    .uid,
+    count(true) as count,
+    22 as test_index
+  group by .uid
+| sort by .count desc
+| take 20

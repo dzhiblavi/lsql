@@ -1,0 +1,28 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| select
+    count(true) as count,
+    1 as test_index
+
+$input
+| select
+    min(.timestamp) as min_ts,
+    max(.timestamp) as max_ts,
+    2 as test_index
+
+$input
+| select
+    min(.uid) as min_uid,
+    max(.uid) as max_uid,
+    3 as test_index
+
+$input
+| where .status = 'ok'
+| select
+    count(true) as count,
+    min(.timestamp) as min_ts,
+    max(.timestamp) as max_ts,
+    4 as test_index

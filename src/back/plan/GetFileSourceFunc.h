@@ -20,4 +20,4 @@ using GetFileSourceFuncType = std::function<back::exec::SourcePtr(
 
 GetFileSourceFuncType defaultFileSourceFunc();
 
-}  // namespace lsql::back::exec
+}  // namespace lsql::back::plan

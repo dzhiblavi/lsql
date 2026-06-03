@@ -46,7 +46,7 @@ target_link_libraries(
     lsql-back-plan
     lsql-back-storage
     lsql-back-logfmt
-    lsql-front-pipe-parser
+    lsql-front-pipe
     lsql-util
     lsql-core
     lsql-opt

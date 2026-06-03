@@ -1,7 +1,5 @@
-set(TARGET_FILE ${CMAKE_BINARY_DIR}/src/cli/lsql)
-
 function(add_sql_test TEST_DIR)
-    set(TEST_NAME "${TEST_DIR}_integration")
+    set(TEST_NAME "${TEST_DIR}_sql")
 
     set(TEST_DIR_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/${TEST_DIR}")
     set(TEST_DIR_BINARY "${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIR}")
@@ -13,6 +11,7 @@ function(add_sql_test TEST_DIR)
             -DCLI=$<TARGET_FILE:lsql>
             -DTEST_DIR=${TEST_DIR_BINARY}
             -DCOMPARE_SCRIPT=${COMPARE_SCRIPT}
+            -DQUERY_FILE=${TEST_DIR_BINARY}/query.sql
             -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/run_compare_test.cmake
     )
 

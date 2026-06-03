@@ -75,6 +75,8 @@ using ConstFieldBindingPtr = std::shared_ptr<const FieldBinding>;
 
 class FieldSet {
  public:
+    FieldSet() = default;
+
     bool contains(FieldId id) const { return fields_.contains(id); }
     bool empty() const { return fields_.empty(); }
     size_t size() const { return fields_.size(); }

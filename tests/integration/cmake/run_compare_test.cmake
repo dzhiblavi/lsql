@@ -1,7 +1,6 @@
-# arguments: CLI, TEST_DIR, COMPARE_SCRIPT
+# arguments: CLI, TEST_DIR, COMPARE_SCRIPT, QUERY_FILE, ARGS
 
 # check query file
-set(QUERY_FILE ${TEST_DIR}/query.sql)
 if(NOT EXISTS ${QUERY_FILE})
     message(FATAL_ERROR "Query file not found: ${QUERY_FILE}")
 endif()

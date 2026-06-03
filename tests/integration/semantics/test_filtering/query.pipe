@@ -1,0 +1,33 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| where .status = 'ok'
+| select .uid, .status, 1 as test_index
+
+$input
+| where .status = 'ok' and .uid = 'aaa'
+| select .uid, .status, 2 as test_index
+
+$input
+| where .status = 'ok' or .uid = 'bbb'
+| select .uid, .status, 3 as test_index
+
+$input
+| where not .status = 'ok'
+| select .uid, .status, 4 as test_index
+
+$input
+| where .uid in (
+    values ('aaa', 'ccc')
+)
+| select .uid, 5 as test_index
+
+$input
+| where .path like '/api/.*'
+| select .uid, .path, 6 as test_index
+
+$input
+| where .missing = null
+| select .uid, .missing, 7 as test_index

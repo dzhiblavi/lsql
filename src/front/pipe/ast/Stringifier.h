@@ -5,6 +5,7 @@
 #include "front/pipe/ast/Sources.h"
 #include "front/pipe/ast/Stages.h"
 
+#include "front/pipe/ast/Statements.h"
 #include "util/StrBuilder.h"
 #include "util/string.h"
 
@@ -24,15 +25,35 @@ class Stringifier {
  public:
     Stringifier() = default;
 
-    std::string print(const Pipeline& p) {
-        auto b = print(*p.source);
-        for (auto&& s : p.stages) {
-            b.item(print(s));
+    std::string print(const Program& p) {
+        auto b = StrBuilder("Program");
+        for (auto&& st : p.statements) {
+            b.item(print(st));
         }
         return b.render();
     }
 
+    StrBuilder print(const Pipeline& p) {
+        auto b = print(*p.source);
+        for (auto&& s : p.stages) {
+            b.item(print(s));
+        }
+        return b;
+    }
+
  private:
+    StrBuilder print(const Statement& s) {
+        return std::visit([this](auto&& arg) { return this->print(arg); }, s);
+    }
+
+    StrBuilder print(const QueryStatement& s) {
+        return StrBuilder("Query").child(print(*s.pipeline));
+    }
+
+    StrBuilder print(const NamedPipelineStatement& s) {
+        return StrBuilder("NamedPipeline name={}", s.name).child(print(*s.pipeline));
+    }
+
     StrBuilder print(const Source& s) {
         return std::visit([this](auto&& arg) { return this->print(arg); }, s);
     }
@@ -40,6 +61,10 @@ class Stringifier {
     StrBuilder print(const AdhocSource& r) {
         return StrBuilder("Adhoc count={}", r.literals.size())
             .child(StrBuilder("literals").child(util::toString(r.literals)));
+    }
+
+    StrBuilder print(const NamedPipelineReferenceSource& r) {
+        return StrBuilder("NamedPipelineReference name: {}", r.name);
     }
 
     StrBuilder print(const FileSource& r) { return StrBuilder("FileSource path={}", r.path); }
@@ -85,12 +110,16 @@ class Stringifier {
         return b;
     }
 
-    StrBuilder print(const GroupStage& g) {
-        auto b = StrBuilder("Group");
-        for (auto&& p : g.group_list) {
-            b.item(print(p));
+    StrBuilder print(const GroupStage& s) {
+        auto p = StrBuilder("projectors");
+        for (auto&& proj : s.projectors) {
+            p.item(print(proj));
         }
-        return b;
+        auto g = StrBuilder("group key");
+        for (auto&& proj : s.group_list) {
+            g.item(print(proj));
+        }
+        return StrBuilder("Group").child(p).child(g);
     }
 
     StrBuilder print(const WhereInStage& s) {
@@ -110,6 +139,8 @@ class Stringifier {
     StrBuilder print(const Projector& p) {
         return std::visit([this](auto&& p) { return print(p); }, p);
     }
+
+    StrBuilder print(const StarProjector& /*p*/) { return StrBuilder("StarProjector"); }
 
     StrBuilder print(const IdentifierProjector& p) {
         return StrBuilder("IdentifierProjector '{}'", p.identifier);

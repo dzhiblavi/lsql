@@ -9,10 +9,7 @@
 
 namespace lsql::front::pipe::ast {
 
-struct IdentifierProjector;
-struct ExprProjector;
-
-using Projector = std::variant<IdentifierProjector, ExprProjector>;
+struct StarProjector {};
 
 struct IdentifierProjector {
     std::string identifier;
@@ -22,6 +19,8 @@ struct ExprProjector {
     std::string alias;
     Box<Expr> expr;
 };
+
+using Projector = std::variant<StarProjector, IdentifierProjector, ExprProjector>;
 
 struct TakeStage {
     int count;
@@ -42,6 +41,7 @@ struct SortStage {
 };
 
 struct GroupStage {
+    std::vector<Projector> projectors;
     std::vector<Projector> group_list;
 };
 

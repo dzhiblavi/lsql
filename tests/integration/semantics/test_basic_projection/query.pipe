@@ -1,0 +1,27 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| select
+    .uid,
+    .status,
+    1 as test_index
+
+$input
+| select
+    .user as username,
+    .action as event,
+    2 as test_index
+
+$input
+| select
+    'literal' as kind,
+    42 as answer,
+    3 as test_index
+| take 1
+
+$input
+| select
+    *,
+    4 as test_index

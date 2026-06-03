@@ -3,7 +3,7 @@
 #include "front/sql/bound/fwd/Expr.h"
 #include "front/sql/bound/fwd/Relation.h"
 
-#include "front/sql/bound/ExprKindLevel.h"
+#include "front/ExprKindLevel.h"
 
 #include "core/exprs/BinaryExpr.h"
 #include "core/exprs/UnaryAggregate.h"

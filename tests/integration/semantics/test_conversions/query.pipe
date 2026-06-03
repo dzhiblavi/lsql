@@ -1,0 +1,44 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| select
+    .uid,
+    int(.code) as code_i,
+    1 as test_index
+
+$input
+| select
+    .uid,
+    float(.latency) as latency_f,
+    2 as test_index
+
+$input
+| select
+    .uid,
+    string(.code) as code_s,
+    3 as test_index
+
+$input
+| where int(.code) = 200
+| select
+    .uid,
+    int(.code) as code_i,
+    float(.latency) as latency_f,
+    string(.flag) as flag_s,
+    4 as test_index
+
+$input
+| select
+    .uid,
+    float(.missing) as missing_f,
+    5 as test_index
+
+$input
+| select
+    .uid,
+    int(.missing) as missing_i,
+    float(.missing) as missing_f,
+    string(.missing) as missing_s,
+    6 as test_index

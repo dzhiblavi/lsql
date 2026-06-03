@@ -1,0 +1,30 @@
+input = file input.1.txt
+
+filtered =
+    $input
+    | where .status = 'ok'
+    | select .uid, .status
+
+renamed =
+    $filtered
+    | select .uid as user_id
+
+---------------------
+
+$filtered
+| select .uid, .status, 1 as test_index
+
+$renamed
+| select .user_id, 2 as test_index
+
+$input
+| where .kind = 'api'
+| select .uid
+| select .uid, 3 as test_index
+
+$input
+| select .uid, .status
+| where .uid in (
+    values ('aaa', 'ccc')
+)
+| select .uid, .status, 4 as test_index

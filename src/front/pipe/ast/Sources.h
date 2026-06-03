@@ -14,6 +14,10 @@ struct AdhocSource {
     std::vector<Literal> literals;
 };
 
+struct NamedPipelineReferenceSource {
+    std::string name;
+};
+
 struct FileSource {
     std::string path;
 };

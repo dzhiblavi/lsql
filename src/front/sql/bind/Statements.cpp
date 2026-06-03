@@ -18,7 +18,7 @@ bound::Statement bindStatement(ast::QueryStatement s, Context& ctx) {
 
 bound::Statement bindStatement(ast::NamedRelationStatement s, Context& ctx) {
     auto relation = box(bindRelation(std::move(*s.relation), ctx));
-    ctx.insertRelation(s.name, relation.get());
+    ctx.insertRelation(s.name, relation->fields_out);
 
     return bound::NamedRelationStatement{
         .name = s.name,

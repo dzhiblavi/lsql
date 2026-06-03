@@ -1,0 +1,31 @@
+input1 = file input.1.txt
+input2 = file input.2.txt
+
+only_uid =
+    $input1
+    | where .status = 'ok'
+    | select .uid
+
+star_from_source =
+    $input1
+    | sort by .timestamp
+    | select *
+
+right_only =
+    $input2
+    | sort by .timestamp
+    | select *
+
+---------------------
+
+$only_uid
+| select *, 1 as test_index
+
+$star_from_source
+| where .uid in (
+    values ('aaa', 'ccc')
+)
+| select *, 2 as test_index
+
+$right_only
+| select *, 3 as test_index

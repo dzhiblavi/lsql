@@ -15,4 +15,4 @@ size_t lowerBoundLine(const back::storage::PagedFile& file, timestamp_t ts, Time
 // index of the first character of the first line with ts > x
 size_t upperBoundLine(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format);
 
-}  // namespace lsql::back::exec::search
+}  // namespace lsql::back::plan::search

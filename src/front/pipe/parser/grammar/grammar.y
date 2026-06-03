@@ -81,16 +81,23 @@
 %token TOKEN_MINUS.
 %token TOKEN_DIVIDE.
 %token TOKEN_AT.
+%token TOKEN_DOLLAR.
+%token TOKEN_STAR.
 %token TOKEN_EOF.
 
 %left TOKEN_OR.
 %left TOKEN_AND.
+%right TOKEN_NOT.
 %left TOKEN_EQ TOKEN_NEQ TOKEN_LIKE TOKEN_IN.
 %left TOKEN_PLUS TOKEN_MINUS.
 %left TOKEN_DIVIDE.
-%right TOKEN_EXCLAMATION TOKEN_NOT.
+%right TOKEN_EXCLAMATION.
 
+%type alias           {std::string*}
+%type statement       {ast::Statement*}
+%type statements      {std::vector<ast::Statement>*}
 %type pipeline        {ast::Pipeline*}
+%type pipelines       {std::vector<ast::Pipeline>*}
 %type source          {ast::Source*}
 %type stage           {ast::Stage*}
 %type stage_list      {std::vector<ast::Stage>*}
@@ -104,9 +111,34 @@
 
 %start_symbol input
 
-input ::= pipeline(P) TOKEN_EOF. {
-    pCtx->pipeline = std::move(*P);
+input ::= statements(Ss) TOKEN_EOF. {
+    pCtx->program.statements = std::move(*Ss);
+    delete Ss;
+}
+
+statements(Ps) ::= statement(P). {
+    Ps = new std::vector<ast::Statement>();
+    Ps->push_back(std::move(*P));
     delete P;
+}
+
+statements(Os) ::= statements(Ps) statement(P). {
+    Os = Ps;
+    Os->push_back(std::move(*P));
+    delete P;
+}
+
+statement(S) ::= pipeline(P). {
+    S = new ast::Statement(ast::QueryStatement{
+        .pipeline = Box<ast::Pipeline>(P),
+    });
+}
+
+statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ pipeline(P). {
+    S = new ast::Statement(ast::NamedPipelineStatement{
+        .name = Name.text,
+        .pipeline = Box<ast::Pipeline>(P),
+    });
 }
 
 pipeline(P) ::= source(S) stage_list(L). {
@@ -125,6 +157,12 @@ stage_list(L) ::= stage_list(LS) TOKEN_PIPE stage(S). {
     L = LS;
     L->push_back(std::move(*S));
     delete S;
+}
+
+source(S) ::= TOKEN_DOLLAR TOKEN_IDENTIFIER(Name). {
+    S = new ast::Source(ast::NamedPipelineReferenceSource{
+        .name = Name.text,
+    });
 }
 
 source(S) ::= TOKEN_FILE TOKEN_PATH(P). {
@@ -194,11 +232,13 @@ stage(S) ::= TOKEN_SORT TOKEN_BY expression_list(L) desc_opt(D). {
     delete L;
 }
 
-stage(S) ::= TOKEN_GROUP TOKEN_BY projector_list(L). {
+stage(S) ::= TOKEN_SELECT projector_list(P) TOKEN_GROUP TOKEN_BY projector_list(G). {
     S = new ast::Stage(ast::GroupStage{
-        .group_list = std::move(*L),
+        .projectors = std::move(*P),
+        .group_list = std::move(*G),
     });
-    delete L;
+    delete P;
+    delete G;
 }
 
 stage(S) ::= TOKEN_SELECT projector_list(L). {
@@ -224,18 +264,27 @@ projector_list(L) ::= projector_list(PL) TOKEN_COMMA projector(P). {
     delete P;
 }
 
+projector(P) ::= TOKEN_STAR. {
+    P = new ast::Projector(ast::StarProjector{});
+}
+
 projector(P) ::= TOKEN_IDENTIFIER(Id). {
     P = new ast::Projector(ast::IdentifierProjector{
         .identifier = Id.text,
     });
 }
 
-projector(P) ::= expression(E) TOKEN_AS TOKEN_IDENTIFIER(Id). {
+projector(P) ::= expression(E) TOKEN_AS alias(A). {
     P = new ast::Projector(ast::ExprProjector{
-        .alias = Id.text,
+        .alias = std::move(*A),
         .expr = Box<ast::Expr>(E),
     });
+    delete A;
 }
+
+alias(A) ::= TOKEN_IDENTIFIER(Id). { A = new std::string(Id.text); }
+alias(A) ::= TOKEN_COUNT. { A = new std::string("count"); }
+alias(A) ::= TOKEN_GROUP. { A = new std::string("group"); }
 
 expression_list(L) ::= expression(E). {
     L = new std::vector<ast::Expr>();
@@ -405,6 +454,22 @@ expression(E) ::= TOKEN_SUM TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
     args.push_back(std::move(*X));
     delete X;
     E = new ast::Expr(ast::FnCallExpr{.func = "builtin_sum", .args = std::move(args)});
+}
+
+expression(E) ::= TOKEN_PERCENTILE TOKEN_LPAREN expression(X) TOKEN_COMMA expression_list(L) TOKEN_RPAREN. {
+    std::vector<ast::Expr> args;
+    args.push_back(std::move(*X));
+    delete X;
+
+    for (auto&& p : *L) {
+        args.push_back(std::move(p));
+    }
+    delete L;
+
+    E = new ast::Expr(ast::FnCallExpr{
+        .func = "builtin_percentile",
+        .args = std::move(args),
+    });
 }
 
 expression(E) ::= TOKEN_COALESCE TOKEN_LPAREN expression_list(L) TOKEN_RPAREN. {

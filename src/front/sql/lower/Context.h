@@ -28,6 +28,8 @@ class Context {
 
     FieldBindingPtr binding() { return binding_; }
 
+    bool hasRelation() const { return curr_relation_slot_.has_value(); }
+
     ScopedRelation scopedRelation(ir::Relation curr) {
         return ScopedRelation{
             .slot = &curr_relation_slot_,
@@ -63,12 +65,12 @@ class Context {
         return *curr_field_set_slot_;
     }
 
-    void insertRelation(const std::string& name, ir::Relation* rel) {
+    void insertRelation(const std::string& name, FieldSet rel) {
         require(!named_relations_.contains(name), "duplicate named relation '{}", name);
         named_relations_[name] = rel;
     }
 
-    ir::Relation* findRelation(const std::string& name) {
+    FieldSet findRelation(const std::string& name) {
         auto it = named_relations_.find(name);
         require(it != named_relations_.end(), "unknown named relation '{}'", name);
         return it->second;
@@ -76,7 +78,7 @@ class Context {
 
  private:
     FieldBindingPtr binding_;
-    std::unordered_map<std::string, ir::Relation*> named_relations_;
+    std::unordered_map<std::string, FieldSet> named_relations_;
     std::optional<ir::Relation> curr_relation_slot_;
     const FieldSet* curr_field_set_slot_ = nullptr;
 };

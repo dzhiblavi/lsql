@@ -1,0 +1,32 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| select
+    min(int(.latency)) + max(int(.latency)) as span,
+    1 as test_index
+
+$input
+| select
+    coalesce(.tag, 'unknown') as tag_value,
+    2 as test_index
+
+$input
+| select
+    .uid,
+    not .status = 'ok' as bad,
+    3 as test_index
+
+$input
+| select
+    .uid,
+    .status = 'ok' or .status = 'warn' as acceptable,
+    4 as test_index
+
+$input
+| select
+    min(int(.latency)) as min_latency,
+    max(int(.latency)) as max_latency,
+    max(int(.latency)) - min(int(.latency)) as delta,
+    5 as test_index

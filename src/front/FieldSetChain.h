@@ -1,15 +1,15 @@
 #pragma once
 
-#include "front/sql/bound/FieldSetNode.h"
+#include "front/FieldSetNode.h"
 
 #include "util/require.h"
 
-namespace lsql::front::sql::bind {
+namespace lsql::front {
 
 struct FieldSetChain {
-    FieldSetChain(bound::FieldSetNode* top, FieldSetChain* parent)
-        : current_(top)
-        , parent_(parent) {}
+    FieldSetChain(FieldSetNodePtr top, FieldSetChain* parent) : current_(top), parent_(parent) {}
+
+    FieldSetNodePtr top() { return current_; }
 
     ValueType typeOfSourceField(std::string_view name, FieldBindingPtr binding) {
         if (current_ == nullptr) {
@@ -34,8 +34,8 @@ struct FieldSetChain {
     }
 
  private:
-    bound::FieldSetNode* current_;
+    FieldSetNodePtr current_;
     FieldSetChain* parent_;
 };
 
-}  // namespace lsql::front::sql::bind
+}  // namespace lsql::front

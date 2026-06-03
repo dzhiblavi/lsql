@@ -1,0 +1,28 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| select
+    .status,
+    count(true) as count,
+    1 as test_index
+  group by .status
+| sort by .status
+
+$input
+| select
+    .status,
+    .kind,
+    count(true) as count,
+    2 as test_index
+  group by .status, .kind
+| sort by .count, .kind desc
+
+$input
+| select
+    .status as state,
+    count(true) as count,
+    3 as test_index
+  group by .status
+| sort by .count desc

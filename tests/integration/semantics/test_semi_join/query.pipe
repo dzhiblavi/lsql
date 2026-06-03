@@ -1,0 +1,52 @@
+input = file input.1.txt
+
+uids =
+    $input
+    | where .status = 'ok'
+    | select .uid
+
+sessions =
+    $input
+    | where .kind = 'api'
+    | select .session
+
+renamed_only =
+    $input
+    | select .uid as user_id
+
+---------------------
+
+$input
+| where .uid in (
+    $uids
+)
+| select .uid, 1 as test_index
+
+$input
+| where .session in (
+    $sessions
+)
+| select .uid, .session, 2 as test_index
+
+$input
+| where .uid in (
+    values ('aaa', 'ccc')
+)
+| select .uid, 3 as test_index
+
+$input
+| where not .uid in (
+    $uids
+)
+| select .uid, 4 as test_index
+
+$input
+| where .uid in (
+    $input
+    | where .kind = 'worker'
+    | select .uid
+)
+| select .uid, 5 as test_index
+
+$renamed_only
+| select *, 6 as test_index

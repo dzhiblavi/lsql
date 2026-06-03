@@ -1,11 +1,11 @@
 #pragma once
 
-#include "front/pipe/ast/Pipeline.h"
+#include "front/pipe/ast/Statements.h"
 
 namespace lsql::front::pipe::parse {
 
 struct Context {
-    ast::Pipeline pipeline;
+    ast::Program program;
     bool has_error = false;
 };
 

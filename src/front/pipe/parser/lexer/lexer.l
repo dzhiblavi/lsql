@@ -32,6 +32,8 @@ TIMESTAMP        [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}
 "-"              { return TOKEN_MINUS; }
 "/"              { return TOKEN_DIVIDE; }
 "@"              { return TOKEN_AT; }
+"$"              { return TOKEN_DOLLAR; }
+"*"              { return TOKEN_STAR; }
 
 file             { return TOKEN_FILE; }
 values           { return TOKEN_VALUES; }
@@ -60,10 +62,10 @@ true             { return TOKEN_TRUE; }
 false            { return TOKEN_FALSE; }
 null             { return TOKEN_NULL; }
 
-String           { return TOKEN_STRING; }
-Int              { return TOKEN_INT; }
-Float            { return TOKEN_FLOAT; }
-Bool             { return TOKEN_BOOL; }
+string           { return TOKEN_STRING; }
+int              { return TOKEN_INT; }
+float            { return TOKEN_FLOAT; }
+bool             { return TOKEN_BOOL; }
 
 count            { return TOKEN_COUNT; }
 min              { return TOKEN_MIN; }

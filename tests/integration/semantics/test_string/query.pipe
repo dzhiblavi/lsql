@@ -1,0 +1,21 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| select
+    .uid,
+    rsubstr(.request, 'user=[\d]+') as user_id,
+    1 as test_index
+
+$input
+| select
+    .uid,
+    rsubstr(.request, 'session=[a-z]+') as session_id,
+    2 as test_index
+
+$input
+| select
+    .uid,
+    coalesce(rsubstr(.request, 'user=[\d]+'), 'missing') as user_id,
+    3 as test_index

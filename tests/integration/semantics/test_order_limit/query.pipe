@@ -1,0 +1,33 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| sort by .timestamp
+| select
+    .timestamp,
+    .uid,
+    1 as test_index
+
+$input
+| sort by .timestamp desc
+| select
+    .timestamp,
+    .uid,
+    2 as test_index
+
+$input
+| sort by .timestamp
+| select
+    .timestamp,
+    .uid,
+    3 as test_index
+| take 2
+
+$input
+| sort by .timestamp desc
+| select
+    .timestamp,
+    .uid,
+    4 as test_index
+| take 2

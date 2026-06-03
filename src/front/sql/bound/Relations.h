@@ -1,6 +1,6 @@
 #pragma once
 
-#include "front/sql/bound/FieldSetNode.h"
+#include "front/FieldSetNode.h"
 #include "front/sql/bound/fwd/Expr.h"
 #include "front/sql/bound/fwd/Relation.h"
 
@@ -13,12 +13,6 @@
 
 namespace lsql::front::sql::bound {
 
-struct StarProjector;
-struct IdentifierProjector;
-struct ExprProjector;
-
-using Projector = std::variant<StarProjector, IdentifierProjector, ExprProjector>;
-
 struct StarProjector {};
 
 struct IdentifierProjector {
@@ -29,6 +23,8 @@ struct ExprProjector {
     FieldId alias_field_id;
     Box<Expr> expr;
 };
+
+using Projector = std::variant<StarProjector, IdentifierProjector, ExprProjector>;
 
 struct Limit {
     int limit;

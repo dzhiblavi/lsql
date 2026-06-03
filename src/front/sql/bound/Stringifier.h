@@ -216,7 +216,7 @@ class Stringifier {
     }
 
     StrBuilder print(const UnaryAggregateExpr& e) {
-        return StrBuilder("UnaryExpr type: {}", magic_enum::enum_name(e.type))
+        return StrBuilder("UnaryAggregateExpr type: {}", magic_enum::enum_name(e.type))
             .child(print(*e.expr));
     }
 

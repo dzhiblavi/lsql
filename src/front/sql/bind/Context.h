@@ -1,6 +1,6 @@
 #pragma once
 
-#include "front/sql/bind/FieldSetChain.h"
+#include "front/FieldSetChain.h"
 
 #include "front/sql/bound/Expressions.h"  // IWYU pragma: keep
 #include "front/sql/bound/Relations.h"    // IWYU pragma: keep
@@ -35,12 +35,12 @@ class Context {
         };
     }
 
-    void insertRelation(const std::string& name, bound::Relation* rel) {
+    void insertRelation(const std::string& name, FieldSetNodePtr rel) {
         require(!named_relations_.contains(name), "duplicate named relation '{}", name);
         named_relations_[name] = rel;
     }
 
-    bound::Relation* findRelation(const std::string& name) {
+    FieldSetNodePtr findRelation(const std::string& name) {
         auto it = named_relations_.find(name);
         require(it != named_relations_.end(), "unknown named relation '{}'", name);
         return it->second;
@@ -48,7 +48,7 @@ class Context {
 
  private:
     FieldBindingPtr binding_;
-    std::unordered_map<std::string, bound::Relation*> named_relations_;
+    std::unordered_map<std::string, FieldSetNodePtr> named_relations_;
     FieldSetChain* curr_field_set_slot_ = nullptr;
 };
 

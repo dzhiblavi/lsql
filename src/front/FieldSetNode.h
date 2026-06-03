@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace lsql::front::sql::bound {
+namespace lsql::front {
 
 class FieldSetNode;
 using FieldSetNodePtr = Arc<FieldSetNode>;
@@ -102,4 +102,4 @@ FieldSetNodePtr FieldSetNode::proxy(Children... children) {
     return arc<FieldSetNode>(false, true, FieldSet::emptySet(), children...);
 }
 
-}  // namespace lsql::front::sql::bound
+}  // namespace lsql::front
