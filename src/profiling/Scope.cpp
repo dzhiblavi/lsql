@@ -37,8 +37,4 @@ ScopeBase::ScopeBase(ScopeBase&& rhs) noexcept
     }
 }
 
-ScopeBase* ScopeBase::top() {
-    return this_thread_top_;
-}
-
 }  // namespace lsql::prof

@@ -19,8 +19,6 @@ class ScopeBase {
     explicit ScopeBase(bool active);
     ScopeBase(ScopeBase&& rhs) noexcept;
 
-    static ScopeBase* top();
-
  protected:
     instr::MonotonicTimePoint started_at_;
     instr::MonotonicDuration child_duration_ = {};
