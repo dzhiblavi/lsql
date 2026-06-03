@@ -3,6 +3,7 @@ add_library(
     global.cpp
     Scope.cpp
     presentation.cpp
+    Profiler.cpp
 )
 
 target_link_libraries(
