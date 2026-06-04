@@ -63,8 +63,8 @@ class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {
         , proj_(std::move(proj))
         , output_field_id_(output_field_id)
         , match_field_id_(match_field_id) {
-        prof::addEdge(&prof_sub_match_, &prof_);
-        prof::addEdge(&prof_sub_source_, &prof_);
+        prof::addEdge(sub_match_.scopeHandle(), prof_);
+        prof::addEdge(sub_source_.scopeHandle(), prof_);
     }
 
  private:
@@ -177,20 +177,15 @@ class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {
     FieldId output_field_id_;
     FieldId match_field_id_;
 
-    prof::ScopeHandle<ScopeMetrics> prof_sub_source_ =
-        prof::newScope<ScopeMetrics>("{} src input", name());
     MemberSubscriber<MarkJoin> sub_source_{
         this,
         &MarkJoin::consumeSource,
-        &prof_sub_source_,
+        prof::newScope<ScopeMetrics>("{} src input", name()),
     };
-
-    prof::ScopeHandle<ScopeMetrics> prof_sub_match_ =
-        prof::newScope<ScopeMetrics>("{} match set input", name());
     MemberSubscriber<MarkJoin> sub_match_{
         this,
         &MarkJoin::consumeMatch,
-        &prof_sub_match_,
+        prof::newScope<ScopeMetrics>("{} match set input", name()),
     };
 
     // phase at which values_ are built

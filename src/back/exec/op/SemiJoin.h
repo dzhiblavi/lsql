@@ -34,8 +34,8 @@ class SemiJoin : public OperationBase<SemiJoin, SemiJoinMetrics> {
         , match_source_(std::move(match_source))
         , proj_(std::move(proj))
         , match_field_id_(match_field_id) {
-        prof::addEdge(&prof_match_, &prof_);
-        prof::addEdge(&prof_source_, &prof_);
+        prof::addEdge(sub_match_.scopeHandle(), prof_);
+        prof::addEdge(sub_source_.scopeHandle(), prof_);
     }
 
  private:
@@ -150,20 +150,15 @@ class SemiJoin : public OperationBase<SemiJoin, SemiJoinMetrics> {
     ScalarPtr proj_;
     FieldId match_field_id_;
 
-    prof::ScopeHandle<ScopeMetrics> prof_source_ =
-        prof::newScope<ScopeMetrics>("{} src input", name());
     MemberSubscriber<SemiJoin> sub_source_{
         this,
         &SemiJoin::consumeSource,
-        &prof_source_,
+        prof::newScope<ScopeMetrics>("{} src input", name()),
     };
-
-    prof::ScopeHandle<ScopeMetrics> prof_match_ =
-        prof::newScope<ScopeMetrics>("{} match set input", name());
     MemberSubscriber<SemiJoin> sub_match_{
         this,
         &SemiJoin::consumeMatch,
-        &prof_match_,
+        prof::newScope<ScopeMetrics>("{} match set input", name()),
     };
 
     // phase at which values_ are built

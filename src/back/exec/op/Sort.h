@@ -42,7 +42,7 @@ class Sort : public OperationBase<Sort, SortMetrics>, public std::enable_shared_
         , desc_(desc)
         , sort_list_(std::move(sort_list)) {
         require(!sort_list_.empty(), "ORDER BY list cannot be empty");
-        prof::addEdge(&prof_sub_, &prof_);
+        prof::addEdge(sub_.scopeHandle(), prof_);
     }
 
  private:
@@ -129,11 +129,10 @@ class Sort : public OperationBase<Sort, SortMetrics>, public std::enable_shared_
     bool desc_;
     SortList sort_list_;
 
-    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
     MemberSubscriber<Sort> sub_{
         this,
         &Sort::consume,
-        &prof_sub_,
+        prof::newScope<ScopeMetrics>("{} input", name()),
     };
 
     // phase state

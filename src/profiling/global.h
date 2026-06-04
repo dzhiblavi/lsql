@@ -21,22 +21,21 @@ ScopeHandle<M> newScope(std::format_string<const Args&...> fmt, const Args&... a
     return newScope<M>(std::format(fmt, args...));
 }
 
-inline void addEdge(prof::ScopeMetricsBase* parent, prof::ScopeMetricsBase* child) {
+inline void addEdge(ScopeHandleBase parent, ScopeHandleBase child) {
     if (auto prof = globalProfiler()) {
         return prof->addEdge(parent, child);
-    }
-}
-
-template <CScopeMetrics P, CScopeMetrics C>
-void addEdge(ScopeHandle<P>* parent, ScopeHandle<C>* child) {
-    if (auto prof = globalProfiler()) {
-        return prof->addEdge(parent->metrics(), child->metrics());
     }
 }
 
 inline void reset() {
     if (auto prof = globalProfiler()) {
         prof->reset();
+    }
+}
+
+inline void addCounter(std::string_view name, int64_t delta = 1) {
+    if (auto scope = ScopeBase::current()) {
+        scope->metrics().counters[name] += delta;
     }
 }
 

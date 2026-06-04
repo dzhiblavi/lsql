@@ -2,14 +2,14 @@
 
 namespace lsql::prof {
 
-void Profiler::addEdge(ScopeMetricsBase* parent, ScopeMetricsBase* child) {
-    if (parent == nullptr || child == nullptr) {
+void Profiler::addEdge(ScopeHandleBase parent, ScopeHandleBase child) {
+    if (!parent || !child) {
         return;
     }
 
-    auto pit = nodes_.find(parent);
+    auto pit = nodes_.find(parent.metrics_);
     verify(pit != nodes_.end());
-    auto cit = nodes_.find(child);
+    auto cit = nodes_.find(child.metrics_);
     verify(cit != nodes_.end());
 
     auto& child_node = cit->second;

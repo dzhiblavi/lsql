@@ -43,8 +43,8 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
         , r_(std::move(r))
         , slist_(std::move(slist))
         , desc_(desc) {
-        prof::addEdge(&prof_left_, &prof_);
-        prof::addEdge(&prof_right_, &prof_);
+        prof::addEdge(sub_l_.scopeHandle(), prof_);
+        prof::addEdge(sub_r_.scopeHandle(), prof_);
     }
 
  private:
@@ -287,21 +287,16 @@ class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
 
     std::mutex m_;
 
-    prof::ScopeHandle<ScopeMetrics> prof_left_ =
-        prof::newScope<ScopeMetrics>("{} input(L)", name());
     MemberSubscriber<MergeSorted, LockMixin> sub_l_{
         this,
         &MergeSorted::consume<0>,
-        &prof_left_,
+        prof::newScope<ScopeMetrics>("{} input(L)", name()),
         &m_,
     };
-
-    prof::ScopeHandle<ScopeMetrics> prof_right_ =
-        prof::newScope<ScopeMetrics>("{} input(R)", name());
     MemberSubscriber<MergeSorted, LockMixin> sub_r_{
         this,
         &MergeSorted::consume<1>,
-        &prof_right_,
+        prof::newScope<ScopeMetrics>("{} input(R)", name()),
         &m_,
     };
 

@@ -2,7 +2,7 @@
 
 #include "back/exec/Record.h"
 
-#include "profiling/ScopeMetrics.h"
+#include "profiling/ScopeBase.h"
 
 namespace lsql::back::exec {
 
@@ -23,7 +23,7 @@ class Subscriber {
     // will be pushed into this subscriber.
     virtual bool consume(int phase, const back::exec::Record* record) = 0;
 
-    virtual prof::ScopeMetricsBase* profHandle() { return nullptr; }
+    virtual prof::ScopeHandleBase scopeHandle() { return prof::ScopeHandleBase(); }
 };
 
 }  // namespace lsql::back::exec

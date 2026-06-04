@@ -12,8 +12,8 @@ class UnionAll : public OperationBase<UnionAll> {
         : OperationBase(std::max(l->minPhase(), r->minPhase()), std::move(binding))
         , l_(std::move(l))
         , r_(std::move(r)) {
-        prof::addEdge(&prof_left_, &prof_);
-        prof::addEdge(&prof_right_, &prof_);
+        prof::addEdge(sub_l_.scopeHandle(), prof_);
+        prof::addEdge(sub_r_.scopeHandle(), prof_);
     }
 
  private:
@@ -81,21 +81,16 @@ class UnionAll : public OperationBase<UnionAll> {
 
     std::mutex m_;
 
-    prof::ScopeHandle<ScopeMetrics> prof_left_ =
-        prof::newScope<ScopeMetrics>("{} input(L)", name());
     MemberSubscriber<UnionAll, LockMixin> sub_l_{
         this,
         &UnionAll::consume<0>,
-        &prof_left_,
+        prof::newScope<ScopeMetrics>("{} input(L)", name()),
         &m_,
     };
-
-    prof::ScopeHandle<ScopeMetrics> prof_right_ =
-        prof::newScope<ScopeMetrics>("{} input(R)", name());
     MemberSubscriber<UnionAll, LockMixin> sub_r_{
         this,
         &UnionAll::consume<1>,
-        &prof_right_,
+        prof::newScope<ScopeMetrics>("{} input(R)", name()),
         &m_,
     };
 };

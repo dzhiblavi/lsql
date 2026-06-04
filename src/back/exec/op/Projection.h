@@ -54,7 +54,7 @@ class Projection : public OperationBase<Projection>,
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , projectors_(buildProjectionMap(std::move(projectors))) {
-        prof::addEdge(&prof_sub_, &prof_);
+        prof::addEdge(sub_.scopeHandle(), prof_);
     }
 
  private:
@@ -111,11 +111,10 @@ class Projection : public OperationBase<Projection>,
     OperationPtr source_;
     ScalarProjectionMap projectors_;
 
-    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
     MemberSubscriber<Projection> sub_{
         this,
         &Projection::consume,
-        &prof_sub_,
+        prof::newScope<ScopeMetrics>("{} input", name()),
     };
 };
 

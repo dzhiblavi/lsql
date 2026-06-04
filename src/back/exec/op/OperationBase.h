@@ -34,7 +34,7 @@ class OperationBase : public virtual Operation {
         init(out_phase, requiredFields(out_phase));
 
         // add profiling DAG edge
-        prof::addEdge(prof_.metrics(), sub->profHandle());
+        prof::addEdge(prof_, sub->scopeHandle());
     }
 
     int minPhase() const override { return min_out_phase_; }

@@ -41,7 +41,7 @@ class ConsumerBridge : public back::exec::Subscriber {
     }
 
  private:
-    prof::ScopeMetricsBase* profHandle() override { return nullptr; }
+    prof::ScopeHandleBase scopeHandle() override { return prof::ScopeHandleBase(); }
 
     bool consume([[maybe_unused]] int phase, const back::exec::Record* record) override {
         verify_dbg(phase == source_->minPhase());

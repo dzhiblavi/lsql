@@ -36,7 +36,7 @@ class AggregateProjection
             aggregators_.emplace_back(proj->field_id, proj->expr->aggregator());
         }
 
-        prof::addEdge(&prof_sub_, &prof_);
+        prof::addEdge(sub_.scopeHandle(), prof_);
     }
 
  private:
@@ -166,12 +166,10 @@ class AggregateProjection
     OperationPtr source_;
     AggregateProjectionList projectors_;
 
-    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
-
     MemberSubscriber<AggregateProjection> sub_{
         this,
         &AggregateProjection::consume,
-        &prof_sub_,
+        prof::newScope<ScopeMetrics>("{} input", name()),
     };
 
     // phase state

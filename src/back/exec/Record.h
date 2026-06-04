@@ -1,5 +1,7 @@
 #pragma once
 
+#include "profiling/global.h"
+
 #include "core/Fields.h"
 #include "core/Value.h"
 #include "core/types.h"
@@ -20,9 +22,11 @@ class Record : public std::enable_shared_from_this<Record> {
 
     Arc<const Record> clone() const {
         if (!weak_from_this().expired()) {
+            prof::addCounter("record.share");
             return shared_from_this();
         }
 
+        prof::addCounter("record.clone");
         return cloneImpl();
     }
 

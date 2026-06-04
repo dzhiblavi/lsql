@@ -12,7 +12,7 @@ class Filter : public OperationBase<Filter> {
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
         , condition_(std::move(condition)) {
-        prof::addEdge(&prof_sub_, &prof_);
+        prof::addEdge(sub_.scopeHandle(), prof_);
     }
 
  private:
@@ -61,12 +61,10 @@ class Filter : public OperationBase<Filter> {
     OperationPtr source_;
     ScalarPtr condition_;
 
-    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
-
     MemberSubscriber<Filter> sub_{
         this,
         &Filter::consume,
-        &prof_sub_,
+        prof::newScope<ScopeMetrics>("{} input", name()),
     };
 };
 

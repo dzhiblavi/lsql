@@ -50,7 +50,7 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         , source_(std::move(source))
         , aggregators_(toProjectionMap(std::move(aggregators)))
         , group_key_(toProjectionMap(std::move(group_key))) {
-        prof::addEdge(&prof_sub_, &prof_);
+        prof::addEdge(sub_.scopeHandle(), prof_);
     }
 
  private:
@@ -201,12 +201,10 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     AggregateProjectionMap aggregators_;
     ScalarProjectionMap group_key_;
 
-    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
-
     MemberSubscriber<Group> sub_{
         this,
         &Group::consume,
-        &prof_sub_,
+        prof::newScope<ScopeMetrics>("{} input", name()),
     };
 
     // phase state

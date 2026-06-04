@@ -4,6 +4,7 @@
 #include "back/exec/op/OperationBase.h"
 #include "back/exec/op/types.h"
 
+#include "util/require.h"
 #include "util/verify.h"
 
 #include <llog/log.h>
@@ -45,7 +46,7 @@ class TopK : public OperationBase<TopK, TopKMetrics>, public std::enable_shared_
         , sort_list_(std::move(sort_list))
         , heap_(top_count, desc_) {
         require(!sort_list_.empty(), "ORDER BY list cannot be empty");
-        prof::addEdge(&prof_sub_, &prof_);
+        prof::addEdge(sub_.scopeHandle(), prof_);
     }
 
  private:
@@ -223,11 +224,10 @@ class TopK : public OperationBase<TopK, TopKMetrics>, public std::enable_shared_
     bool desc_;
     SortList sort_list_;
 
-    prof::ScopeHandle<ScopeMetrics> prof_sub_ = prof::newScope<ScopeMetrics>("{} input", name());
     MemberSubscriber<TopK> sub_{
         this,
         &TopK::consume,
-        &prof_sub_,
+        prof::newScope<ScopeMetrics>("{} input", name()),
     };
 
     // phase state

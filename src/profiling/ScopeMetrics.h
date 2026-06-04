@@ -1,25 +1,10 @@
 #pragma once
 
-#include "util/StrBuilder.h"
+#include "profiling/ScopeMetricsBase.h"
+
 #include "util/instrument/duration.h"
-#include "util/instrument/types.h"
 
 namespace lsql::prof {
-
-class ScopeMetricsBase {
- public:
-    virtual ~ScopeMetricsBase() = default;
-
-    virtual bool empty() const = 0;
-    virtual void reset() = 0;
-    virtual util::StrBuilder report() const = 0;
-    virtual util::StrBuilder shortReport() const { return report(); }
-    virtual std::unique_ptr<ScopeMetricsBase> clone() const = 0;
-
-    uint64_t count = 0;
-    instr::MonotonicDuration self_dur{};
-    instr::MonotonicDuration total_dur{};
-};
 
 template <typename... Custom>
 class ScopeMetrics : public ScopeMetricsBase {
@@ -30,18 +15,19 @@ class ScopeMetrics : public ScopeMetricsBase {
         count = 0;
         self_dur = {};
         total_dur = {};
+        counters.clear();
         std::apply([&](auto&&... c) { (callReset(c), ...); }, custom_);
     }
 
     util::StrBuilder report() const override {
         auto b = baseReport();
-        std::apply([&](auto&&... c) { (b.item(callReport(c)), ...); }, custom_);
+        std::apply([&](auto&&... c) { (b.block(callReport(c)), ...); }, custom_);
         return b;
     }
 
     util::StrBuilder shortReport() const override {
         auto b = baseReport();
-        std::apply([&](auto&&... c) { (b.item(callShortReport(c)), ...); }, custom_);
+        std::apply([&](auto&&... c) { (b.block(callShortReport(c)), ...); }, custom_);
         return b;
     }
 
@@ -67,16 +53,27 @@ class ScopeMetrics : public ScopeMetricsBase {
 
  private:
     util::StrBuilder baseReport() const {
-        return util::StrBuilder()
-            .line("count: {}", count)
-            .line(
-                "self: total={} avg={}",
-                instr::prettyDuration(self_dur),
-                count == 0 ? "0" : instr::prettyDuration(self_dur / count))
-            .line(
-                "total: total={} avg={}",
-                instr::prettyDuration(total_dur),
-                count == 0 ? "0" : instr::prettyDuration(total_dur / count));
+        auto b =
+            util::StrBuilder()
+                .line("count: {}", count)
+                .line(
+                    "self: total={} avg={}",
+                    instr::prettyDuration(self_dur),
+                    count == 0 ? "0" : instr::prettyDuration(self_dur / count))
+                .line(
+                    "total: total={} avg={}",
+                    instr::prettyDuration(total_dur),
+                    count == 0 ? "0" : instr::prettyDuration(total_dur / count));
+
+        if (!counters.empty()) {
+            auto cs = util::StrBuilder("counters");
+            for (auto&& [name, value] : counters) {
+                cs.item("{} = {}", name, value);
+            }
+            b.block(cs);
+        }
+
+        return b;
     }
 
     static util::StrBuilder callReport(auto& metric) {

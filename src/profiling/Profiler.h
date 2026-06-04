@@ -31,7 +31,7 @@ class Profiler {
     ScopeHandle<M> newScope(std::string name, Args&&... args);
 
     // Idempotent
-    void addEdge(ScopeMetricsBase* parent, ScopeMetricsBase* child);
+    void addEdge(ScopeHandleBase parent, ScopeHandleBase child);
     void reset();
     Snapshot snapshot() const;
 
