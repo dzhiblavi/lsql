@@ -48,13 +48,33 @@ struct Optimizer : ConsumePass<Optimizer> {
     ir::Relation prune(ir::ProjectionRelation& rel, auto& self) { return pruneSimple(rel, self); }
     ir::Relation prune(ir::AggregateRelation& /*rel*/, auto& self) { return std::move(self); }
     ir::Relation prune(ir::GroupRelation& rel, auto& self) { return pruneSimple(rel, self); }
-    ir::Relation prune(ir::LimitRelation& rel, auto& self) { return pruneSimple(rel, self); }
     ir::Relation prune(ir::FilterRelation& rel, auto& self) { return pruneSimple(rel, self); }
     ir::Relation prune(ir::SortRelation& rel, auto& self) { return pruneSimple(rel, self); }
-    ir::Relation prune(ir::TopKRelation& rel, auto& self) { return pruneSimple(rel, self); }
     ir::Relation prune(ir::MaterializeRelation& rel, auto& self) { return pruneSimple(rel, self); }
 
-    ir::Relation pruneSemiJoin(ir::SemiJoinRelation& rel, auto& self) {
+    ir::Relation prune(ir::UnionAllRelation& rel, auto& self) { return pruneUnion(rel, self); }
+
+    ir::Relation prune(ir::UnionAllSortedByRelation& rel, auto& self) {
+        return pruneUnion(rel, self);
+    }
+
+    ir::Relation prune(ir::TopKRelation& rel, auto& self) {
+        if (isEmpty(*rel.source) || rel.top_count == 0) {
+            ctx.setChanges().note("empty topk relation pruned");
+            self.node = ir::EmptyRelation{};
+        }
+        return pruneSimple(rel, self);
+    }
+
+    ir::Relation prune(ir::LimitRelation& rel, auto& self) {
+        if (isEmpty(*rel.source) || rel.limit == 0) {
+            ctx.setChanges().note("empty limit relation pruned");
+            self.node = ir::EmptyRelation{};
+        }
+        return pruneSimple(rel, self);
+    }
+
+    ir::Relation prune(ir::SemiJoinRelation& rel, auto& self) {
         if (isEmpty(*rel.source) || isEmpty(*rel.match)) {
             ctx.setChanges().note("empty semi-join relation pruned");
             self.node = ir::EmptyRelation{};
@@ -62,17 +82,12 @@ struct Optimizer : ConsumePass<Optimizer> {
         return std::move(self);
     }
 
-    ir::Relation pruneMarkJoin(ir::MarkJoinRelation& rel, auto& self) {
+    ir::Relation prune(ir::MarkJoinRelation& rel, auto& self) {
         if (isEmpty(*rel.source)) {
             ctx.setChanges().note("empty mark-join source pruned");
             self.node = ir::EmptyRelation{};
         }
         return std::move(self);
-    }
-
-    ir::Relation prune(ir::UnionAllRelation& rel, auto& self) { return pruneUnion(rel, self); }
-    ir::Relation prune(ir::UnionAllSortedByRelation& rel, auto& self) {
-        return pruneUnion(rel, self);
     }
 
     auto construct(auto& node, auto& self) {
