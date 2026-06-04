@@ -3,11 +3,11 @@
 #include "core/Fields.h"
 #include "core/Value.h"
 
-#include <absl/container/flat_hash_map.h>
+#include <vector>
 
 namespace lsql::output {
 
-using Record = absl::flat_hash_map<FieldId, Value>;
+using Record = std::vector<std::pair<FieldId, Value>>;
 
 class Consumer {
  public:

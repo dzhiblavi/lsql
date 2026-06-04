@@ -34,8 +34,6 @@ class CSVHeaderFormatter : public Consumer {
     void writeHeader(const Record& r) {
         std::stringstream ss;
 
-        // it is assumed that all records have same field set
-        // and that id ordering is same between all Records
         for (auto&& [id, _] : r) {
             ss << binding_->name(id) << ',';
         }

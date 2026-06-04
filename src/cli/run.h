@@ -17,6 +17,7 @@
 
 #include <fstream>
 #include <latch>
+#include <vector>
 
 namespace lsql {
 
@@ -26,6 +27,10 @@ class ConsumerBridge : public back::exec::Subscriber {
         : source_(std::move(source))
         , consumer_(std::move(consumer)) {
         source_->subscribe(source_->minPhase(), this, fields);
+
+        for (auto id : fields.fieldIds()) {
+            rec_.emplace_back(id, null);
+        }
     }
 
     back::exec::ExplanationItem explain(back::exec::ExplanationCtx ctx) const {
@@ -51,9 +56,8 @@ class ConsumerBridge : public back::exec::Subscriber {
             return false;
         }
 
-        rec_.clear();
-        for (auto id : record->ids()) {
-            rec_.emplace(id, record->value(id));
+        for (auto& [id, value] : rec_) {
+            value = record->value(id);
         }
 
         consumer_->consume(rec_);
