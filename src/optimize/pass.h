@@ -60,6 +60,11 @@ class IRTree {
     };
 
     template <>
+    struct FieldsOf<ir::CountAllAggregate> {
+        static auto get() { return std::make_tuple(); }
+    };
+
+    template <>
     struct FieldsOf<ir::PercentileAggregate> {
         static auto get() { return std::make_tuple(&ir::PercentileAggregate::expr); }
     };

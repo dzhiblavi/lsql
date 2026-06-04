@@ -15,6 +15,8 @@ struct UnaryAggregate {
     Box<Scalar> expr;
 };
 
+struct CountAllAggregate {};
+
 struct PercentileAggregate {
     Box<Scalar> expr;
     std::vector<float> percentiles;

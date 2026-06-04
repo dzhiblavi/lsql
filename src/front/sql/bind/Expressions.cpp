@@ -50,7 +50,7 @@ BinaryExprType exprType(ast::BinaryExprType ast) {
 
 std::optional<UnaryAggregateType> unaryAggregateType(std::string_view fn_name) {
     static constexpr std::array<std::pair<std::string_view, UnaryAggregateType>, 4> Types{
-        std::make_pair("builtin_count", UnaryAggregateType::Count),
+        std::make_pair("builtin_count_nonnull", UnaryAggregateType::CountNonNull),
         std::make_pair("builtin_min", UnaryAggregateType::Min),
         std::make_pair("builtin_max", UnaryAggregateType::Max),
         std::make_pair("builtin_sum", UnaryAggregateType::Sum),
@@ -199,6 +199,17 @@ bound::Expr bindExpr(ast::FnCallExpr e, Context& ctx) {
             .value_type = value_type,
             .level = ExprKindLevel::Group,
             .required_fields = fields,
+        };
+    }
+
+    if (e.func == "builtin_count_all") {
+        require(args.empty(), "no arguments expected for COUNT(*)");
+
+        return {
+            .node = bound::CountAllExpr{},
+            .value_type = ValueType::Integer,
+            .level = ExprKindLevel::Group,
+            .required_fields = FieldSet::emptySet(),
         };
     }
 

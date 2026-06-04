@@ -117,6 +117,24 @@ LowerExprResult lowerToIR(bound::UnaryAggregateExpr e, auto& info, Context& ctx)
         std::move(aggrs));
 }
 
+LowerExprResult lowerToIR(bound::CountAllExpr, auto& info, Context& ctx) {
+    auto output_field_id = ctx.binding()->addAnonymous("count_all", info.value_type);
+
+    std::vector<ir::Aggregate> aggrs;
+    aggrs.push_back({
+        .node = ir::CountAllAggregate{},
+        .output_field_id = output_field_id,
+        .value_type = info.value_type,
+    });
+
+    return LowerExprResult(
+        {
+            .node = ir::FieldScalar{.field_id = output_field_id},
+            .value_type = info.value_type,
+        },
+        std::move(aggrs));
+}
+
 LowerExprResult lowerToIR(bound::RSubstrExpr e, auto& info, Context& ctx) {
     auto [expr, aggregates] = lowerToIR(std::move(*e.expr), ctx);
 

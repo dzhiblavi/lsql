@@ -82,8 +82,8 @@ apply-format:
 
 sync-dev-vm:
 	rsync -av \
-		--exclude=target \
-		--exclude output \
-		--exclude _logs  \
-		--exclude .git   \
+		--exclude=/target \
+		--exclude=/output \
+		--exclude=/_logs  \
+		--exclude=.git   \
 		../logsql/ dev-vm:/home/dzhiblavi/logsql

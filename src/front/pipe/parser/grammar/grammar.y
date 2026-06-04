@@ -433,7 +433,11 @@ expression(E) ::= TOKEN_COUNT TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
     std::vector<ast::Expr> args;
     args.push_back(std::move(*X));
     delete X;
-    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_count", .args = std::move(args)});
+    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_count_nonnull", .args = std::move(args)});
+}
+
+expression(E) ::= TOKEN_COUNT TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN. {
+    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_count_all", .args = {}});
 }
 
 expression(E) ::= TOKEN_MIN TOKEN_LPAREN expression(X) TOKEN_RPAREN. {

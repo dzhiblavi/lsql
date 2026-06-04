@@ -54,11 +54,11 @@ class UnaryAggregate : public Aggregate {
     [[no_unique_address]] Op op_;
 };
 
-struct CountOp {
+struct CountNonNullOp {
     using State = int64_t;
 
-    void update(State* curr, const Value& condition) const {
-        if (condition.get<bool>()) {
+    void update(State* curr, const Value& value) const {
+        if (value != null) {
             ++*curr;
         }
     }

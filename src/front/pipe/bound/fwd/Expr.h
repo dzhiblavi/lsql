@@ -15,6 +15,7 @@ struct RSubstrExpr;
 struct BinaryExpr;
 struct UnaryExpr;
 struct UnaryAggregateExpr;
+struct CountAllExpr;
 
 using ExprNode = std::variant< //
     IdentifierExpr, //
@@ -27,7 +28,8 @@ using ExprNode = std::variant< //
     RSubstrExpr, //
     BinaryExpr, //
     UnaryExpr, //
-    UnaryAggregateExpr //
+    UnaryAggregateExpr, //
+    CountAllExpr //
 >;
 
 struct Expr;

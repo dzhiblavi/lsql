@@ -18,9 +18,9 @@ struct Optimizer : ConsumePass<Optimizer> {
         }
 
         switch (a.type) {
-            case UnaryAggregateType::Count:
-                if (v->value == false || v->value == null) {
-                    ctx.setChanges().note("UnaryAggregate (count) folded to 0");
+            case UnaryAggregateType::CountNonNull:
+                if (v->value == null) {
+                    ctx.setChanges().note("UnaryAggregate (count non-null) folded to 0");
                     self.node = ir::ConstAggregate{
                         .value = int64_t(0),
                         .null_if_empty = false,

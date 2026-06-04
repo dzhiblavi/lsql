@@ -68,6 +68,8 @@ struct UnaryAggregateExpr {
     Box<Expr> expr;
 };
 
+struct CountAllExpr {};
+
 struct UnaryExpr {
     UnaryExprType type;
     Box<Expr> expr;

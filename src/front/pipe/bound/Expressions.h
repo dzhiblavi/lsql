@@ -59,6 +59,8 @@ struct BinaryExpr {
     Box<Expr> right;
 };
 
+struct CountAllExpr {};
+
 struct UnaryAggregateExpr {
     UnaryAggregateType type;
     Box<Expr> expr;

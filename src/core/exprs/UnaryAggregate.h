@@ -5,7 +5,7 @@
 namespace lsql {
 
 enum class UnaryAggregateType {
-    Count,
+    CountNonNull,
     Min,
     Max,
     Sum,
@@ -15,10 +15,11 @@ template <UnaryAggregateType Type>
 struct UnaryAggregateTraits;
 
 template <>
-struct UnaryAggregateTraits<UnaryAggregateType::Count> {
+struct UnaryAggregateTraits<UnaryAggregateType::CountNonNull> {
     template <typename T>
     static constexpr bool allowed() {
-        return std::same_as<bool, T>;
+        // any type is allowed
+        return true;
     }
 
     template <typename T>

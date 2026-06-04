@@ -232,6 +232,8 @@ class Stringifier {
             .child(print(*e.expr));
     }
 
+    StrBuilder print(const CountAllExpr&) { return StrBuilder("CountAllExpr"); }
+
     StrBuilder print(const UnaryAggregateExpr& e) {
         return StrBuilder("UnaryAggregateExpr type: {}", magic_enum::enum_name(e.type))
             .child(print(*e.expr));

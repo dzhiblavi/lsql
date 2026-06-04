@@ -4,6 +4,7 @@
 #include "back/exec/expr/BinaryScalar.h"
 #include "back/exec/expr/CoalesceScalar.h"
 #include "back/exec/expr/ConstAggregate.h"
+#include "back/exec/expr/CountAllAggregate.h"
 #include "back/exec/expr/IdentifierScalar.h"
 #include "back/exec/expr/UnaryAggregate.h"
 #include "back/exec/expr/UnaryScalar.h"
@@ -269,8 +270,8 @@ class Planner {
         auto arg = planScalar(std::move(*a.expr));
         auto aggregate = [&] -> AggregatePtr {
             switch (a.type) {
-                case UnaryAggregateType::Count:
-                    return arc<UnaryAggregate<CountOp>>(arg);
+                case UnaryAggregateType::CountNonNull:
+                    return arc<UnaryAggregate<CountNonNullOp>>(arg);
                 case UnaryAggregateType::Min:
                     return dispatch<AggregatePtr>(
                         [&]<Comparable T>(std::type_identity<T>) -> AggregatePtr {
@@ -296,6 +297,14 @@ class Planner {
             AggregateProjector{
                 .field_id = info.output_field_id,
                 .expr = aggregate,
+            });
+    }
+
+    AggregateProjectorPtr planAggregate(ir::CountAllAggregate, auto&& info) {
+        return box(
+            AggregateProjector{
+                .field_id = info.output_field_id,
+                .expr = arc<CountAllAggregate>(),
             });
     }
 

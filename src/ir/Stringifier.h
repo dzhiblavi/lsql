@@ -241,6 +241,8 @@ class Stringifier {
             .child(print(*e.expr));
     }
 
+    StrBuilder print(const CountAllAggregate& /*e*/) { return StrBuilder("CountAllAggregate"); }
+
     StrBuilder print(const PercentileAggregate& e) {
         return StrBuilder("PercentileAggregate count={}", e.percentiles.size())
             .child(StrBuilder("percentiles").child(util::toString(e.percentiles)))
