@@ -30,7 +30,8 @@ class UnionAll : public OperationBase<UnionAll> {
             if (finished<Index>()) {
                 // the second subscription finished. no more records
                 reset();
-                verify_dbg(!emit(phase, nullptr));
+                [[maybe_unused]] auto res = emit(phase, nullptr);
+                verify_dbg(!res);
             }
 
             // we want to cancel current subscription anyhow

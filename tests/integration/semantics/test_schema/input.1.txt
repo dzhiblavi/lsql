@@ -1,0 +1,4 @@
+[2026-May-06 12:00:01.111111] context_id=ctx-a status_code=200
+[2026-May-06 12:00:02.222222] context_id=ctx-b status_code=500
+[2026-May-06 12:00:03.333333] context_id=ctx-c status_code=404
+[2026-May-06 12:00:04.444444] context_id=ctx-d status_code=200

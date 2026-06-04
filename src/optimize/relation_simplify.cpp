@@ -11,7 +11,11 @@ namespace {
 struct Optimizer : ConsumePass<Optimizer> {
     Context& ctx;
 
-    bool isForwardingProjection(const ir::ProjectionRelation& p) {
+    bool isForwardingProjection(const ir::ProjectionRelation& p, auto& self) {
+        if (self.fields_out.fieldIds() != p.source->fields_out.fieldIds()) {
+            return false;
+        }
+
         for (auto&& proj : p.projectors) {
             auto* field_expr = std::get_if<ir::FieldScalar>(&proj.expr->node);
             if (field_expr == nullptr) {
@@ -30,7 +34,7 @@ struct Optimizer : ConsumePass<Optimizer> {
     }
 
     ir::Relation optimize(ir::ProjectionRelation& rel, ir::Relation& self) {
-        if (isForwardingProjection(rel)) {
+        if (isForwardingProjection(rel, self)) {
             ctx.setChanges().note("forwarding projection collapsed");
             return std::move(*rel.source);
         }

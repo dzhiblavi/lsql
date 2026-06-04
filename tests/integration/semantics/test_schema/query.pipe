@@ -1,0 +1,11 @@
+input = file input.1.txt
+
+filtered_contexts =
+    $input
+    | where .status_code != '200'
+    | select .context_id
+
+---------------------
+
+$filtered_contexts
+| select *, 1 as test_index
