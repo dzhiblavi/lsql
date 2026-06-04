@@ -35,6 +35,8 @@ class LineRecord : public Record {
 };
 
 class Log : public Source, public OperationBase<Log> {
+    inline static constexpr std::string_view LineIdentifierName = "_line";
+
  public:
     Log(std::shared_ptr<back::storage::LineSource> log,
         back::logfmt::LogType type,
@@ -70,10 +72,18 @@ class Log : public Source, public OperationBase<Log> {
             };
 
             auto parse_func = back::logfmt::parseKeyValueFunc<decltype(parser)&>(type_);
+            const auto line_id = binding_->id(LineIdentifierName, ValueType::String);
+            const bool has_line = required_fields.contains(line_id);
+            const size_t values_count = required_fields.size() + (has_line ? 1 : 0);
 
             for (auto line : log_->lines()) {
-                values.reserve(required_fields.size());
+                values.reserve(values_count);
+
                 parse_func(line.view(), parser);
+                if (has_line) {
+                    values.emplace(line_id, line.view());
+                }
+
                 LineRecord record(line, std::move(values));
                 values = {};
 
