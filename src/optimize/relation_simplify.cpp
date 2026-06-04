@@ -116,6 +116,46 @@ struct Optimizer : ConsumePass<Optimizer> {
             return std::move(self);
         }
 
+        auto ensure_limited = [&](Box<ir::Relation>& node, auto name) {
+            if (auto* limit = std::get_if<ir::LimitRelation>(&node->node)) {
+                if (limit->limit > rel.limit) {
+                    ctx.setChanges().note("limit(union(L, R), N): re-limit {} by N", name);
+                    limit->limit = rel.limit;
+                }
+                return;
+            }
+
+            if (auto* topk = std::get_if<ir::TopKRelation>(&node->node)) {
+                if (topk->top_count > rel.limit) {
+                    ctx.setChanges().note("limit(union(L, R), N): re-topk {} by N", name);
+                    topk->top_count = rel.limit;
+                }
+                return;
+            }
+
+            ctx.setChanges().note("limit(union(L, R), N): limit {} by N", name);
+            auto fields = node->fields_out;
+            node =
+                box(ir::Relation{
+                    .node = ir::LimitRelation{.source = std::move(node), .limit = rel.limit},
+                    .fields_out = fields,
+                });
+        };
+
+        auto* union_all = std::get_if<ir::UnionAllRelation>(&rel.source->node);
+        if (union_all) {
+            ensure_limited(union_all->left, "L");
+            ensure_limited(union_all->right, "R");
+            return std::move(self);
+        }
+
+        auto* union_all_sb = std::get_if<ir::UnionAllSortedByRelation>(&rel.source->node);
+        if (union_all_sb) {
+            ensure_limited(union_all_sb->left, "L");
+            ensure_limited(union_all_sb->right, "R");
+            return std::move(self);
+        }
+
         return std::move(self);
     }
 
