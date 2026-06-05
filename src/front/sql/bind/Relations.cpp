@@ -153,6 +153,8 @@ bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
         fields_out = FieldSetNode::make(output_fields);
     } else if (has_group_projector) {
         // Aggregate
+        require(!r.order_by, "ORDER BY does not make much sense with aggregates");
+
         for (auto&& p : projectors) {
             util::match(
                 p,

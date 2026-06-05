@@ -1,5 +1,5 @@
 #include "optimize/limit_pushdown.h"
-#include "optimize/pass.h"
+#include "ir/pass.h"
 
 #include <llog/log.h>
 
@@ -7,7 +7,7 @@ namespace lsql::opt {
 
 namespace {
 
-struct Optimizer : ConsumePass<Optimizer> {
+struct Optimizer : ir::ConsumePass<Optimizer> {
     Context& ctx;
 
     void ensureLimited(ir::LimitRelation& lim, Box<ir::Relation>& node, auto label, auto name) {

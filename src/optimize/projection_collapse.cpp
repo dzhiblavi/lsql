@@ -1,5 +1,5 @@
 #include "optimize/projection_collapse.h"
-#include "optimize/pass.h"
+#include "ir/pass.h"
 
 #include <llog/log.h>
 #include <rfl.hpp>
@@ -8,7 +8,7 @@ namespace lsql::opt {
 
 namespace {
 
-struct ScalarCostEstimator : ScalarViewPass<ScalarCostEstimator, int> {
+struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
     static constexpr int CoalesceCostOverhead = 1;
     static constexpr int UnaryOpCostOverhead = 1;
     static constexpr int BinaryOpCostOverhead = 1;
@@ -76,7 +76,7 @@ struct ScalarCollapseCostEstimator : ScalarCostEstimator {
     }
 };
 
-struct CloneScalarView : ScalarViewPass<CloneScalarView, ir::Scalar> {
+struct CloneScalarView : ir::ScalarViewPass<CloneScalarView, ir::Scalar> {
     virtual ~CloneScalarView() = default;
 
     virtual ir::Scalar view(const ir::FieldScalar& s, const ir::Scalar& self) {
@@ -150,7 +150,7 @@ struct ScalarCollapser : CloneScalarView {
     ir::Scalar collapse(const ir::Scalar& s) { return pass(s); }
 };
 
-struct Optimizer : ConsumePass<Optimizer> {
+struct Optimizer : ir::ConsumePass<Optimizer> {
     Context& ctx;
 
     bool isProjectionProjection(const ir::ProjectionRelation& p) {

@@ -4,8 +4,6 @@
 
 #include "util/StrBuilder.h"
 
-#include <sstream>
-
 namespace lsql::back::exec {
 
 class Operation;
@@ -24,12 +22,12 @@ class Explanation {
         items.emplace(op, std::move(item));
     }
 
-    std::string render() const {
-        std::stringstream ss;
+    util::StrBuilder render() const {
+        util::StrBuilder b;
         for (auto&& [_, item] : items) {
-            ss << item.render() << '\n';
+            b.item(item);
         }
-        return ss.str();
+        return b;
     }
 
  private:

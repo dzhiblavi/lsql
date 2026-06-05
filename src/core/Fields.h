@@ -97,6 +97,17 @@ class FieldSet {
         return a;
     }
 
+    static FieldSet intersection(FieldSet a, const FieldSet& b) {
+        for (auto it = a.fields_.begin(); it != a.fields_.end();) {
+            if (b.fields_.contains(*it)) {
+                ++it;
+            } else {
+                it = a.fields_.erase(it);
+            }
+        }
+        return a;
+    }
+
  private:
     explicit FieldSet(std::unordered_set<FieldId> fields) : fields_(std::move(fields)) {}
 

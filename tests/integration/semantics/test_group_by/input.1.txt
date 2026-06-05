@@ -1,5 +1,10 @@
-[2026-May-06 12:00:01.111111] uid=aaa status=ok kind=api
-[2026-May-06 12:00:02.222222] uid=bbb status=fail kind=api
-[2026-May-06 12:00:03.333333] uid=ccc status=ok kind=worker
-[2026-May-06 12:00:04.444444] uid=ddd status=ok kind=api
-[2026-May-06 12:00:05.555555] uid=eee status=fail kind=worker
+[2026-May-06 12:00:01.111111] uid=aaa status=ok kind=api region=eu latency=120
+[2026-May-06 12:00:02.222222] uid=bbb status=fail kind=api region=us latency=450
+[2026-May-06 12:00:03.333333] uid=ccc status=ok kind=worker region=eu latency=90
+[2026-May-06 12:00:04.444444] uid=ddd status=ok kind=api region=us latency=220
+[2026-May-06 12:00:05.555555] uid=eee status=fail kind=worker region=eu latency=510
+[2026-May-06 12:00:06.666666] uid=aaa status=warn kind=api region=eu latency=180
+[2026-May-06 12:00:07.777777] uid=bbb status=ok kind=worker region=us latency=75
+[2026-May-06 12:00:08.888888] uid=fff status=warn kind=api region=apac latency=300
+[2026-May-06 12:00:09.999999] uid=ggg status=ok kind=worker region=apac latency=130
+[2026-May-06 12:00:10.101010] uid=hhh status=fail kind=api region=eu latency=700

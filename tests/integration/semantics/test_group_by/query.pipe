@@ -5,7 +5,7 @@ input = file input.1.txt
 $input
 | select
     .status,
-    count(true) as count,
+    count(*) as count,
     1 as test_index
   group by .status
 | sort by .status
@@ -14,7 +14,7 @@ $input
 | select
     .status,
     .kind,
-    count(true) as count,
+    count(*) as count,
     2 as test_index
   group by .status, .kind
 | sort by .count, .kind desc
@@ -22,7 +22,52 @@ $input
 $input
 | select
     .status as state,
-    count(true) as count,
+    count(*) as count,
     3 as test_index
   group by .status
 | sort by .count desc
+
+$input
+| select
+    count(*) as count,
+    4 as test_index,
+    .uid
+  group by .uid
+| sort by .uid
+| select .count, .test_index
+
+$input
+| select
+    count(*) as count,
+    5 as test_index,
+    'user_' + .uid as user_label,
+    .uid
+  group by .uid
+| sort by .uid
+| select .count, .test_index, .user_label
+
+$input
+| select
+    .status as state,
+    count(*) as count,
+    6 as test_index
+  group by .status
+| sort by .state
+
+$input
+| select
+    .kind,
+    count(*) as count,
+    7 as test_index,
+    .region
+  group by .kind, .region
+| sort by .region, .kind
+| select .kind, .count, .test_index
+
+$input
+| select
+    .region,
+    max(int(.latency)) as max_latency,
+    8 as test_index
+  group by .region
+| sort by .max_latency desc

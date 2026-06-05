@@ -1,5 +1,5 @@
 #include "optimize/scalar_simplify.h"
-#include "optimize/pass.h"
+#include "ir/pass.h"
 
 #include <llog/log.h>
 #include <rfl.hpp>
@@ -8,7 +8,7 @@ namespace lsql::opt {
 
 namespace {
 
-struct Optimizer : ConsumePass<Optimizer> {
+struct Optimizer : ir::ConsumePass<Optimizer> {
     Context& ctx;
 
     ir::Scalar optimize(ir::CoalesceScalar& s, auto& self) {

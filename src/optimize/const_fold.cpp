@@ -1,5 +1,5 @@
 #include "optimize/const_fold.h"
-#include "optimize/pass.h"
+#include "ir/pass.h"
 
 #include "core/valueCast.h"
 
@@ -10,7 +10,7 @@ namespace lsql::opt {
 
 namespace {
 
-struct Optimizer : ConsumePass<Optimizer> {
+struct Optimizer : ir::ConsumePass<Optimizer> {
     Context& ctx;
 
     ir::Scalar optimize(ir::CastScalar& s, auto& self) {

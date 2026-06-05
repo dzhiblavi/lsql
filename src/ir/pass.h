@@ -5,9 +5,9 @@
 #include "ir/Scalars.h"     // IWYU pragma: keep
 #include "ir/Statement.h"
 
-namespace lsql::opt {
+namespace lsql::ir {
 
-class IRTree {
+class Tree {
  public:
     template <typename>
     struct FieldsOf {};
@@ -231,7 +231,7 @@ class ConsumePass {
  private:
     template <typename E>
     E pass(auto& node, E& self) {
-        using Fields = IRTree::template FieldsOf<std::decay_t<decltype(node)>>;
+        using Fields = Tree::template FieldsOf<std::decay_t<decltype(node)>>;
         auto modify = [&](auto field) { node.*field = pass(std::move(node.*field)); };
         std::apply([&](auto&&... fields) { (modify(fields), ...); }, Fields::get());
         return static_cast<Self*>(this)->construct(node, self);
@@ -283,13 +283,19 @@ class ScalarViewPass {
  private:
     template <typename E>
     R pass(auto& node, E& self) {
-        using Fields = IRTree::template FieldsOf<std::decay_t<decltype(node)>>;
+        using Fields = Tree::template FieldsOf<std::decay_t<decltype(node)>>;
         auto do_view = [&](auto field) { return pass(node.*field); };
-        return std::apply(
-            [&](auto&&... fields) {
-                return static_cast<Self*>(this)->view(node, self, do_view(fields)...);
-            },
-            Fields::get());
+
+        if constexpr (std::is_same_v<R, void>) {
+            std::apply([&](auto&&... fields) { (do_view(fields), ...); }, Fields::get());
+            static_cast<Self*>(this)->view(node, self);
+        } else {
+            return std::apply(
+                [&](auto&&... fields) {
+                    return static_cast<Self*>(this)->view(node, self, do_view(fields)...);
+                },
+                Fields::get());
+        }
     }
 
     template <typename E>
@@ -297,6 +303,15 @@ class ScalarViewPass {
         return pass(*x);
     }
 
+    template <std::same_as<void> U = R>
+    void pass(const std::vector<ir::Scalar>& ag) {
+        for (auto&& a : ag) {
+            pass(a);
+        }
+    }
+
+    template <typename U = R>
+    requires (!std::same_as<U, void>)
     std::vector<R> pass(const std::vector<ir::Scalar>& ag) {
         std::vector<R> r;
         r.reserve(ag.size());
@@ -306,6 +321,15 @@ class ScalarViewPass {
         return r;
     }
 
+    template <std::same_as<void> U = R>
+    void pass(const std::vector<ir::Aggregate>& ag) {
+        for (auto&& a : ag) {
+            pass(a);
+        }
+    }
+
+    template <typename U = R>
+    requires (!std::same_as<U, void>)
     std::vector<R> pass(const std::vector<ir::Aggregate>& ag) {
         std::vector<R> r;
         r.reserve(ag.size());
@@ -315,6 +339,15 @@ class ScalarViewPass {
         return r;
     }
 
+    template <std::same_as<void> U = R>
+    void pass(const std::vector<ir::Projector>& ag) {
+        for (auto&& a : ag) {
+            pass(a);
+        }
+    }
+
+    template <typename U = R>
+    requires (!std::same_as<U, void>)
     std::vector<R> pass(const std::vector<ir::Projector>& ag) {
         std::vector<R> r;
         r.reserve(ag.size());
@@ -325,4 +358,4 @@ class ScalarViewPass {
     }
 };
 
-}  // namespace lsql::opt
+}  // namespace lsql::ir

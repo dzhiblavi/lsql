@@ -30,7 +30,7 @@ inline std::string explain(int max_phase, std::span<T> operations) {
             }
         }
 
-        b.item("phase {}", phase).child(ops);
+        b.item("phase {}", phase).child(explanation.render()).child(ops);
     }
 
     return b.render();

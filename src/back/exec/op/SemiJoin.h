@@ -86,7 +86,7 @@ class SemiJoin : public OperationBase<SemiJoin, SemiJoinMetrics> {
         if (match_phase_ == -1) {
             match_phase_ = out_phase - 1;
             match_source_->subscribe(
-                out_phase - 1, &sub_match_, FieldSet::withField(match_field_id_));
+                match_phase_, &sub_match_, FieldSet::withField(match_field_id_));
         }
 
         // this may be an incorrect expectation
