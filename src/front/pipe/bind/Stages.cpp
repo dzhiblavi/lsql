@@ -1,5 +1,7 @@
 #include "front/pipe/bind/Stages.h"
 
+#include "front/common/bind/helpers.h"
+
 #include "front/pipe/ast/Expressions.h"  // IWYU pragma: keep
 #include "front/pipe/ast/Sources.h"      // IWYU pragma: keep
 #include "front/pipe/ast/Stages.h"
@@ -15,6 +17,11 @@
 namespace lsql::front::pipe::bind {
 
 namespace {
+
+using common::bind::FieldSetChain;
+using common::bound::ExprKindLevel;
+using common::bound::FieldSetNode;
+using common::bound::FieldSetNodePtr;
 
 void bindProjector(ast::Projector p, std::vector<bound::Projector>& out, Context& ctx) {
     util::match(
@@ -35,15 +42,6 @@ void bindProjector(ast::Projector p, std::vector<bound::Projector>& out, Context
                     .expr = box(std::move(expr)),
                 });
         });
-}
-
-std::vector<bound::Projector> bindProjectors(std::vector<ast::Projector> projectors, Context& ctx) {
-    std::vector<bound::Projector> result;
-    result.reserve(projectors.size());
-    for (auto&& p : projectors) {
-        bindProjector(std::move(p), result, ctx);
-    }
-    return result;
 }
 
 }  // namespace
@@ -109,7 +107,7 @@ bound::Stage bindStage(ast::SortStage r, Context& ctx) {
 }
 
 bound::Stage bindStage(ast::SelectStage r, Context& ctx) {
-    auto projectors = bindProjectors(std::move(r.projectors), ctx);
+    auto projectors = bindProjectors<bound::Projector>(std::move(r.projectors), bindProjector, ctx);
     require(!projectors.empty(), "select requires at least one projector");
 
     bool has_aggregates = false;
@@ -134,11 +132,11 @@ bound::Stage bindStage(ast::SelectStage r, Context& ctx) {
 }
 
 bound::Stage bindStage(ast::GroupStage r, Context& ctx) {
-    auto group_list = bindProjectors(std::move(r.group_list), ctx);
+    auto group_list = bindProjectors<bound::Projector>(std::move(r.group_list), bindProjector, ctx);
     require(!group_list.empty(), "group list cannot be empty");
     auto group_list_fields = outputFieldsOf(group_list);
 
-    auto projectors = bindProjectors(std::move(r.projectors), ctx);
+    auto projectors = bindProjectors<bound::Projector>(std::move(r.projectors), bindProjector, ctx);
     require(!projectors.empty(), "group projectors are required");
     auto projectors_fields = outputFieldsOf(projectors);
 

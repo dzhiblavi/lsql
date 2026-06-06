@@ -23,7 +23,7 @@ ir::Relation lowerToIR(bound::AdhocSource s, auto& self, Context& /*ctx*/) {
 ir::Relation lowerToIR(bound::NamedPipelineReferenceSource s, auto& /*self*/, Context& ctx) {
     return {
         .node = ir::NamedRelationReferenceRelation{.name = s.name},
-        .fields_out = ctx.findRelation(s.name),
+        .fields_out = ctx.find(s.name),
     };
 }
 

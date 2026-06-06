@@ -1,5 +1,7 @@
 #pragma once
 
+#include "back/plan/TimeRange.h"
+
 #include "back/exec/op/Operation.h"
 #include "back/exec/op/Source.h"
 
@@ -15,6 +17,10 @@ struct Plan {
     ConstFieldBindingPtr field_binding;
 };
 
-Plan plan(ir::Program program);
+struct Settings {
+    std::optional<TimeRange> default_time_range;
+};
+
+Plan plan(ir::Program program, Settings settings);
 
 }  // namespace lsql::back::plan

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "front/ExprKindLevel.h"
+#include "front/common/bound/ExprKindLevel.h"
 #include "front/pipe/bound/Pipeline.h"
 #include "front/pipe/bound/fwd/Expr.h"
 
-#include "core/Value.h"
 #include "core/exprs/BinaryExpr.h"
 #include "core/exprs/UnaryAggregate.h"
 #include "core/exprs/UnaryExpr.h"
@@ -17,10 +16,6 @@ namespace lsql::front::pipe::bound {
 
 struct IdentifierExpr {
     FieldId field_id;
-};
-
-struct ValueExpr {
-    Value value;
 };
 
 struct CastExpr {
@@ -74,7 +69,7 @@ struct UnaryExpr {
 struct Expr {
     ExprNode node;
     ValueType value_type;
-    ExprKindLevel level;
+    common::bound::ExprKindLevel level;
     FieldSet required_fields;
 };
 

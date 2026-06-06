@@ -311,7 +311,7 @@ class ScalarViewPass {
     }
 
     template <typename U = R>
-    requires (!std::same_as<U, void>)
+    requires(!std::same_as<U, void>)
     std::vector<R> pass(const std::vector<ir::Scalar>& ag) {
         std::vector<R> r;
         r.reserve(ag.size());
@@ -329,7 +329,7 @@ class ScalarViewPass {
     }
 
     template <typename U = R>
-    requires (!std::same_as<U, void>)
+    requires(!std::same_as<U, void>)
     std::vector<R> pass(const std::vector<ir::Aggregate>& ag) {
         std::vector<R> r;
         r.reserve(ag.size());
@@ -347,7 +347,7 @@ class ScalarViewPass {
     }
 
     template <typename U = R>
-    requires (!std::same_as<U, void>)
+    requires(!std::same_as<U, void>)
     std::vector<R> pass(const std::vector<ir::Projector>& ag) {
         std::vector<R> r;
         r.reserve(ag.size());

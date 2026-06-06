@@ -36,10 +36,14 @@ SourcePtr getFileSourceRange(std::string path, TimeRange range, ConstFieldBindin
     auto file = back::storage::NativePagedFile::open(path);
     auto log_type = getLogType(*file);
     auto time_format = back::logfmt::timeFormat(log_type);
+
+    llog::trace("searching for {} in file {}", range.ts_from, file->path().c_str());
     auto from_pos = search::lowerBoundLine(*file, range.ts_from, time_format);
+
+    llog::trace("searching for {} in file {}", range.ts_to, file->path().c_str());
     auto to_pos = search::upperBoundLine(*file, range.ts_to, time_format);
 
-    if (from_pos == std::string::npos || to_pos <= from_pos) {
+    if (from_pos == std::string::npos || to_pos == std::string::npos || to_pos <= from_pos) {
         from_pos = to_pos = 0;
     }
 

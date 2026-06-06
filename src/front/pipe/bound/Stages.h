@@ -53,7 +53,7 @@ struct GroupStage {
 
 struct Stage {
     StageNode node;
-    FieldSetNodePtr fields_out;
+    common::bound::FieldSetNodePtr fields_out;
 };
 
 }  // namespace lsql::front::pipe::bound

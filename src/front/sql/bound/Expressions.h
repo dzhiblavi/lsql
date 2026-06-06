@@ -3,14 +3,13 @@
 #include "front/sql/bound/fwd/Expr.h"
 #include "front/sql/bound/fwd/Relation.h"
 
-#include "front/ExprKindLevel.h"
+#include "front/common/bound/ExprKindLevel.h"
 
 #include "core/exprs/BinaryExpr.h"
 #include "core/exprs/UnaryAggregate.h"
 #include "core/exprs/UnaryExpr.h"
 
 #include "core/Fields.h"
-#include "core/Value.h"
 #include "core/ValueType.h"
 #include "core/types.h"
 
@@ -21,10 +20,6 @@ namespace lsql::front::sql::bound {
 
 struct IdentifierExpr {
     FieldId field_id;
-};
-
-struct ValueExpr {
-    Value value;
 };
 
 struct CastExpr {
@@ -78,7 +73,7 @@ struct UnaryExpr {
 struct Expr {
     ExprNode node;
     ValueType value_type;
-    ExprKindLevel level;
+    common::bound::ExprKindLevel level;
     FieldSet required_fields;
 };
 

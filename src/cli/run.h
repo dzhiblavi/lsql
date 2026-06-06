@@ -98,6 +98,7 @@ struct Settings {
     bool run;
     unsigned num_threads;
     output::Format out_format;
+    std::optional<back::plan::TimeRange> default_time_range;
 };
 
 inline void run(int max_phase, const auto& sources, util::ThreadPool& tp, const Settings& s) {
@@ -181,7 +182,11 @@ inline back::plan::Plan plan(ir::Program ir, const Settings& s) {
         std::cout << ir::Stringifier().print(ir).render() << std::endl;
     }
 
-    return back::plan::plan(std::move(ir));
+    return back::plan::plan(
+        std::move(ir),
+        {
+            .default_time_range = s.default_time_range,
+        });
 }
 
 inline void run(ir::Program ir, Settings s) {

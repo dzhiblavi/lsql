@@ -9,7 +9,7 @@
 
 #include <string>
 
-namespace lsql::front {
+namespace lsql::front::common::ast {
 
 struct Literal {
     ValueType type;
@@ -18,6 +18,7 @@ struct Literal {
 
 inline std::string removeQuotes(const std::string& s) {
     require(s.size() >= 2, "string literal is too small");
+    require(s.front() == '\'' && s.back() == '\'', "invalid string literal");
     return s.substr(1, s.size() - 2);
 }
 
@@ -47,4 +48,4 @@ inline Value parseLiteral(Literal literal) {
     }
 }
 
-}  // namespace lsql::front
+}  // namespace lsql::front::common::ast

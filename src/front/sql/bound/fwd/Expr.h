@@ -1,11 +1,14 @@
 #pragma once
 
+#include "front/common/bound/Expressions.h"
+
 #include <variant>
 
 namespace lsql::front::sql::bound {
 
+using common::bound::ValueExpr;
+
 struct IdentifierExpr;
-struct ValueExpr;
 struct CastExpr;
 struct InExpr;
 struct LikeExpr;

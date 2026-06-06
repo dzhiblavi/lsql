@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace lsql::front {
+namespace lsql::front::common::bound {
 
 enum class ExprKindLevel {
     Const,
@@ -26,4 +26,4 @@ inline ExprKindLevel composed(ExprKindLevel a, ExprKindLevel b) {
     return a == ExprKindLevel::Const ? b : a;
 }
 
-}  // namespace lsql::front
+}  // namespace lsql::front::common::bound

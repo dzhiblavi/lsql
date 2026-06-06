@@ -6,6 +6,7 @@
 #include "front/sql/ast/Relations.h"    // IWYU pragma: keep
 #include "front/sql/ast/Statement.h"
 
+#include "front/sql/bound/Expressions.h"  // IWYU pragma: keep
 #include "front/sql/bound/Statement.h"
 
 namespace lsql::front::sql::bind {
@@ -18,7 +19,7 @@ bound::Statement bindStatement(ast::QueryStatement s, Context& ctx) {
 
 bound::Statement bindStatement(ast::NamedRelationStatement s, Context& ctx) {
     auto relation = box(bindRelation(std::move(*s.relation), ctx));
-    ctx.insertRelation(s.name, relation->fields_out);
+    ctx.insert(s.name, relation->fields_out);
 
     return bound::NamedRelationStatement{
         .name = s.name,

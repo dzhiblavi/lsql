@@ -39,6 +39,8 @@ using namespace exec;
 
 class Planner {
  public:
+    explicit Planner(Settings settings) : settings_(std::move(settings)) {}
+
     Plan plan(ir::Program program) && {
         binding_ = program.field_binding;
         plan_.field_binding = binding_;
@@ -169,7 +171,7 @@ class Planner {
     }
 
     OperationPtr planRelation(ir::FileRelation r, auto& /*info*/) {
-        auto src = file_source_func_(r.path, binding_, std::nullopt);
+        auto src = file_source_func_(r.path, binding_, settings_.default_time_range);
         plan_.sources.push_back(src);
         return src;
     }
@@ -364,6 +366,7 @@ class Planner {
         return proj;
     }
 
+    Settings settings_;
     Plan plan_;
     std::unordered_map<std::string, OperationPtr> named_ops;
     ConstFieldBindingPtr binding_;
@@ -372,8 +375,8 @@ class Planner {
 
 }  // namespace
 
-Plan plan(ir::Program program) {
-    return Planner().plan(std::move(program));
+Plan plan(ir::Program program, Settings settings) {
+    return Planner(std::move(settings)).plan(std::move(program));
 }
 
 }  // namespace lsql::back::plan

@@ -11,5 +11,6 @@ target_sources(
 
 target_link_libraries(
     lsql-front-pipe-bind PUBLIC
+    lsql-front-common-bind
     lsql-core
 )

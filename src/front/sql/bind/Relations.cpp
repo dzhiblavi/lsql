@@ -9,11 +9,18 @@
 #include "front/sql/bound/Expressions.h"
 #include "front/sql/bound/Relations.h"
 
+#include "front/common/bind/helpers.h"
+
 #include "core/time_formats.h"
 
 namespace lsql::front::sql::bind {
 
 namespace {
+
+using common::bind::FieldSetChain;
+using common::bound::ExprKindLevel;
+using common::bound::FieldSetNode;
+using common::bound::FieldSetNodePtr;
 
 void bindProjector(ast::Projector p, std::vector<bound::Projector>& out, Context& ctx) {
     util::match(
@@ -33,15 +40,6 @@ void bindProjector(ast::Projector p, std::vector<bound::Projector>& out, Context
                     .expr = box(std::move(expr)),
                 });
         });
-}
-
-std::vector<bound::Projector> bindProjectors(std::vector<ast::Projector> projectors, Context& ctx) {
-    std::vector<bound::Projector> result;
-    result.reserve(projectors.size());
-    for (auto&& p : projectors) {
-        bindProjector(std::move(p), result, ctx);
-    }
-    return result;
 }
 
 }  // namespace
@@ -73,16 +71,19 @@ bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
     auto source = bindRelation(std::move(*r.source), ctx);
     auto source_field_set_node = source.fields_out;
 
-    auto generated_visible_fields = FieldSetNode::emptySet();
-    auto source_visible_fields = FieldSetChain(source_field_set_node, nullptr);
-    auto visible_fields = FieldSetChain(generated_visible_fields, &source_visible_fields);
+    auto generated_visible_fields = common::bound::FieldSetNode::emptySet();
+    auto source_visible_fields = common::bind::FieldSetChain(source_field_set_node, nullptr);
+    auto visible_fields =
+        common::bind::FieldSetChain(generated_visible_fields, &source_visible_fields);
     auto _ = ctx.scopedFieldSet(&visible_fields);
 
     std::optional<bound::Where> where;
     if (r.where) {
         auto cond = bindExpr(std::move(*r.where->condition), ctx);
         require(cond.value_type == ValueType::Boolean, "WHERE condition must be boolean");
-        require(cond.level != ExprKindLevel::Group, "WHERE condition cannot be aggregate");
+        require(
+            cond.level != common::bound::ExprKindLevel::Group,
+            "WHERE condition cannot be aggregate");
         where = bound::Where{.condition = box<bound::Expr>(std::move(cond))};
     }
 
@@ -92,7 +93,7 @@ bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
         limit = bound::Limit{.limit = r.limit->limit};
     }
 
-    auto projectors = bindProjectors(std::move(r.projectors), ctx);
+    auto projectors = bindProjectors<bound::Projector>(std::move(r.projectors), bindProjector, ctx);
     require(!projectors.empty(), "SELECT requires at least one projector");
     auto output_fields = outputFieldsOf(projectors);
     FieldSetNodePtr fields_out;
@@ -112,7 +113,8 @@ bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
     std::optional<bound::GroupBy> group_by;
     if (has_group_by) {
         // Group by
-        auto group_key = bindProjectors(std::move(r.group_by->group_list), ctx);
+        auto group_key =
+            bindProjectors<bound::Projector>(std::move(r.group_by->group_list), bindProjector, ctx);
 
         for (auto&& p : group_key) {
             util::matchPartial(p, [](const bound::StarProjector&) {
@@ -271,7 +273,7 @@ bound::Relation bindRelation(ast::FileIntervalRelation r, Context& /*ctx*/) {
 }
 
 bound::Relation bindRelation(ast::NamedRelationReferenceRelation r, Context& ctx) {
-    auto child_node_ptr = ctx.findRelation(r.name);
+    auto child_node_ptr = ctx.find(r.name);
 
     return {
         .node = bound::NamedRelationReferenceRelation{.name = std::move(r.name)},

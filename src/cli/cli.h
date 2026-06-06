@@ -5,6 +5,7 @@
 #include "ir/Scalars.h"    // IWYU pragma: keep
 #include "ir/Statement.h"  // IWYU pragma: keep
 
+#include "core/time_formats.h"
 #include "util/build_info.h"
 #include "util/require.h"
 
@@ -53,6 +54,24 @@ TCLAP::ValueArg<unsigned> threads_arg{
     false,
     1,
     "unsigned",
+};
+
+TCLAP::ValueArg<std::string> time_from_arg{
+    "",
+    "time-from",
+    "default lower timestamp",
+    false,
+    "",
+    "ISO8601 timestamp",
+};
+
+TCLAP::ValueArg<std::string> time_to_arg{
+    "",
+    "time-to",
+    "default upper timestamp",
+    false,
+    "",
+    "ISO8601 timestamp",
 };
 
 TCLAP::ValueArg<unsigned> optimize_passes_arg{
@@ -141,6 +160,8 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&print_optimization_report_arg);
     cmd.add(&print_ir_optimized_arg);
     cmd.add(&threads_arg);
+    cmd.add(&time_from_arg);
+    cmd.add(&time_to_arg);
     cmd.add(&optimize_passes_arg);
     cmd.add(&profile_arg);
     cmd.add(&flamegraph_arg);
@@ -163,6 +184,29 @@ bool parseArgs(std::span<const char*> argv) {
 
     any_profile_enabled = profile_arg || flamegraph_arg || dot_graph_arg;
     return true;
+}
+
+std::optional<back::plan::TimeRange> defaultTimeRange() {
+    std::string time_from_s = time_from_arg.getValue();
+    std::string time_to_s = time_to_arg.getValue();
+
+    if (time_from_s.empty() && time_to_s.empty()) {
+        return std::nullopt;
+    }
+
+    back::plan::TimeRange range{
+        .ts_from = 0,
+        .ts_to = std::numeric_limits<timestamp_t>::max(),
+    };
+
+    if (!time_from_s.empty()) {
+        range.ts_from = timestampFromString(time_from_s, TimeFormat::ISO8601);
+    }
+    if (!time_to_s.empty()) {
+        range.ts_to = timestampFromString(time_to_s, TimeFormat::ISO8601);
+    }
+
+    return range;
 }
 
 void cliMain(std::span<const char*> argv) {
@@ -190,6 +234,7 @@ void cliMain(std::span<const char*> argv) {
         .run = run_query,
         .num_threads = threads_arg,
         .out_format = *format,
+        .default_time_range = defaultTimeRange(),
     };
 
     run(parseQuery(query_file_arg), settings);

@@ -3,6 +3,9 @@
 #include "front/sql/ast/Expressions.h"  // IWYU pragma: keep
 #include "front/sql/ast/Relations.h"    // IWYU pragma: keep
 
+#include "front/sql/bound/Expressions.h"  // IWYU pragma: keep
+#include "front/sql/bound/Relations.h"    // IWYU pragma: keep
+
 #include "front/sql/bind/Statements.h"
 
 namespace lsql::front::sql::bind {

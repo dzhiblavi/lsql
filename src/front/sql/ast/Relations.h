@@ -3,7 +3,7 @@
 #include "front/sql/ast/fwd/Expr.h"
 #include "front/sql/ast/fwd/Relation.h"
 
-#include "front/Literal.h"
+#include "front/common/ast/Literal.h"
 
 #include "core/types.h"
 
@@ -13,7 +13,7 @@
 namespace lsql::front::sql::ast {
 
 struct AdhocRelation {
-    std::vector<Literal> literals;
+    std::vector<common::ast::Literal> literals;
 };
 
 struct StarProjector;

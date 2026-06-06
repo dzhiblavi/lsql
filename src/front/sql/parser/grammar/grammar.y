@@ -19,9 +19,11 @@
     #include <vector>
 
     namespace ast = lsql::front::sql::ast;
+    namespace common = lsql::front::common;
+
     using lsql::Box;
     using lsql::ValueType;
-    using lsql::front::Literal;
+    using lsql::front::common::ast::Literal;
 }
 
 %token TOKEN_SELECT.
@@ -401,14 +403,14 @@ expression(E) ::= TOKEN_BOOL TOKEN_LPAREN expression(S) TOKEN_RPAREN. {
 
 expression(E) ::= TOKEN_EXCLAMATION expression(S). {
     E = new ast::Expr(ast::UnaryExpr{
-        .type = ast::UnaryExprType::Not,
+        .type = common::ast::UnaryExprType::Not,
         .expr = Box<ast::Expr>(S),
     });
 }
 
 expression(E) ::= TOKEN_NOT expression(S). {
     E = new ast::Expr(ast::UnaryExpr{
-        .type = ast::UnaryExprType::Not,
+        .type = common::ast::UnaryExprType::Not,
         .expr = Box<ast::Expr>(S),
     });
 }
@@ -475,7 +477,7 @@ expression(E) ::= expression(L) TOKEN_LIKE TOKEN_STR(R). {
 
 expression(E) ::= expression(L) TOKEN_EQ expression(R). {
     E = new ast::Expr(ast::BinaryExpr{
-        .type = ast::BinaryExprType::Equal,
+        .type = common::ast::BinaryExprType::Equal,
         .left = Box<ast::Expr>(L),
         .right = Box<ast::Expr>(R),
     });
@@ -483,7 +485,7 @@ expression(E) ::= expression(L) TOKEN_EQ expression(R). {
 
 expression(E) ::= expression(L) TOKEN_NEQ expression(R). {
     E = new ast::Expr(ast::BinaryExpr{
-        .type = ast::BinaryExprType::NotEqual,
+        .type = common::ast::BinaryExprType::NotEqual,
         .left = Box<ast::Expr>(L),
         .right = Box<ast::Expr>(R),
     });
@@ -491,7 +493,7 @@ expression(E) ::= expression(L) TOKEN_NEQ expression(R). {
 
 expression(E) ::= expression(L) TOKEN_AND expression(R). {
     E = new ast::Expr(ast::BinaryExpr{
-        .type = ast::BinaryExprType::And,
+        .type = common::ast::BinaryExprType::And,
         .left = Box<ast::Expr>(L),
         .right = Box<ast::Expr>(R),
     });
@@ -499,7 +501,7 @@ expression(E) ::= expression(L) TOKEN_AND expression(R). {
 
 expression(E) ::= expression(L) TOKEN_OR expression(R). {
     E = new ast::Expr(ast::BinaryExpr{
-        .type = ast::BinaryExprType::Or,
+        .type = common::ast::BinaryExprType::Or,
         .left = Box<ast::Expr>(L),
         .right = Box<ast::Expr>(R),
     });
@@ -507,7 +509,7 @@ expression(E) ::= expression(L) TOKEN_OR expression(R). {
 
 expression(E) ::= expression(L) TOKEN_DIVIDE expression(R). {
     E = new ast::Expr(ast::BinaryExpr{
-        .type = ast::BinaryExprType::Divide,
+        .type = common::ast::BinaryExprType::Divide,
         .left = Box<ast::Expr>(L),
         .right = Box<ast::Expr>(R),
     });
@@ -515,7 +517,7 @@ expression(E) ::= expression(L) TOKEN_DIVIDE expression(R). {
 
 expression(E) ::= expression(L) TOKEN_PLUS expression(R). {
     E = new ast::Expr(ast::BinaryExpr{
-        .type = ast::BinaryExprType::Plus,
+        .type = common::ast::BinaryExprType::Plus,
         .left = Box<ast::Expr>(L),
         .right = Box<ast::Expr>(R),
     });
@@ -523,7 +525,7 @@ expression(E) ::= expression(L) TOKEN_PLUS expression(R). {
 
 expression(E) ::= expression(L) TOKEN_MINUS expression(R). {
     E = new ast::Expr(ast::BinaryExpr{
-        .type = ast::BinaryExprType::Minus,
+        .type = common::ast::BinaryExprType::Minus,
         .left = Box<ast::Expr>(L),
         .right = Box<ast::Expr>(R),
     });

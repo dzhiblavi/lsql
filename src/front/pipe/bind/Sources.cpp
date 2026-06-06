@@ -16,6 +16,9 @@ namespace lsql::front::pipe::bind {
 
 namespace {
 
+using common::bind::FieldSetChain;
+using common::bound::FieldSetNode;
+
 bound::Source bindSource(ast::AdhocSource s, Context& ctx) {
     std::vector<Value> values;
     values.reserve(s.literals.size());
@@ -42,7 +45,7 @@ bound::Source bindSource(ast::AdhocSource s, Context& ctx) {
 bound::Source bindSource(ast::NamedPipelineReferenceSource s, Context& ctx) {
     return {
         .node = bound::NamedPipelineReferenceSource{.name = s.name},
-        .fields_out = FieldSetNode::proxy(ctx.findPipeline(s.name)),
+        .fields_out = FieldSetNode::proxy(ctx.find(s.name)),
     };
 }
 

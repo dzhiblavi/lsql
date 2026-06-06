@@ -23,14 +23,6 @@ inline FieldSet requiredFieldsOf(const std::vector<bound::Projector>& ps) {
     return fields;
 }
 
-inline FieldSet requiredFieldsOf(const std::vector<bound::Expr>& ps) {
-    auto fields = FieldSet::emptySet();
-    for (auto&& p : ps) {
-        fields.merge(p.required_fields);
-    }
-    return fields;
-}
-
 inline FieldSet outputFieldsOf(const bound::Projector& p) {
     return util::match(
         p,

@@ -65,12 +65,12 @@ class Context {
         return *curr_field_set_slot_;
     }
 
-    void insertRelation(const std::string& name, FieldSet rel) {
+    void insert(const std::string& name, FieldSet rel) {
         require(!named_relations_.contains(name), "duplicate named relation '{}", name);
         named_relations_[name] = rel;
     }
 
-    FieldSet findRelation(const std::string& name) {
+    FieldSet find(const std::string& name) {
         auto it = named_relations_.find(name);
         require(it != named_relations_.end(), "unknown named relation '{}'", name);
         return it->second;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "front/FieldSetNode.h"
+#include "front/common/bound/FieldSetNode.h"
 #include "front/sql/bound/fwd/Expr.h"
 #include "front/sql/bound/fwd/Relation.h"
 
@@ -87,6 +87,8 @@ struct NamedRelationReferenceRelation {
 struct MaterializeRelation {
     Box<Relation> relation;
 };
+
+using common::bound::FieldSetNodePtr;
 
 struct Relation {
     RelationNode node;

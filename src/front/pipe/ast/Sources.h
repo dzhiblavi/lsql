@@ -1,8 +1,9 @@
 #pragma once
 
-#include "front/Literal.h"
 #include "front/pipe/ast/Pipeline.h"
 #include "front/pipe/ast/fwd/Expr.h"
+
+#include "front/common/ast/Literal.h"
 
 #include <string>
 #include <vector>
@@ -10,7 +11,7 @@
 namespace lsql::front::pipe::ast {
 
 struct AdhocSource {
-    std::vector<Literal> literals;
+    std::vector<common::ast::Literal> literals;
 };
 
 struct NamedPipelineReferenceSource {

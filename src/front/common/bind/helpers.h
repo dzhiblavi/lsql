@@ -1,0 +1,20 @@
+#pragma once
+
+#include "front/common/bind/Context.h"
+
+#include <vector>
+
+namespace lsql::front::common::bind {
+
+template <typename BoundProjector, typename AstProjector>
+std::vector<BoundProjector> bindProjectors(
+    std::vector<AstProjector> projectors, auto& binder, Context& ctx) {
+    std::vector<BoundProjector> result;
+    result.reserve(projectors.size());
+    for (auto&& p : projectors) {
+        binder(std::move(p), result, ctx);
+    }
+    return result;
+}
+
+}  // namespace lsql::front::common::bind

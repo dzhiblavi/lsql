@@ -1,12 +1,13 @@
 #pragma once
 
-#include "core/ValueType.h"
-#include "core/types.h"
-
 #include "front/sql/ast/fwd/Expr.h"
 #include "front/sql/ast/fwd/Relation.h"
 
-#include "front/Literal.h"
+#include "front/common/ast/Expressions.h"
+#include "front/common/ast/Literal.h"
+
+#include "core/ValueType.h"
+#include "core/types.h"
 
 #include <string>
 #include <vector>
@@ -18,7 +19,7 @@ struct IdentifierExpr {
 };
 
 struct LiteralExpr {
-    Literal literal;
+    common::ast::Literal literal;
 };
 
 struct CastExpr {
@@ -41,28 +42,14 @@ struct FnCallExpr {
     std::vector<Expr> args;
 };
 
-enum class BinaryExprType {
-    Equal,
-    NotEqual,
-    And,
-    Or,
-    Divide,
-    Plus,
-    Minus,
-};
-
 struct BinaryExpr {
-    BinaryExprType type;
+    common::ast::BinaryExprType type;
     Box<Expr> left;
     Box<Expr> right;
 };
 
-enum class UnaryExprType {
-    Not,
-};
-
 struct UnaryExpr {
-    UnaryExprType type;
+    common::ast::UnaryExprType type;
     Box<Expr> expr;
 };
 

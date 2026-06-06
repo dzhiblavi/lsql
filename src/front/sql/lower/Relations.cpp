@@ -400,7 +400,7 @@ ir::Relation lowerToIR(bound::FileIntervalRelation r, auto& info, Context& ctx) 
 }
 
 ir::Relation lowerToIR(bound::NamedRelationReferenceRelation r, auto& /*info*/, Context& ctx) {
-    auto fields = ctx.findRelation(r.name);
+    auto fields = ctx.find(r.name);
 
     return {
         .node = ir::NamedRelationReferenceRelation{.name = std::move(r.name)},

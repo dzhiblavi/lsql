@@ -14,6 +14,9 @@
 
 namespace lsql::front::pipe::bind {
 
+using common::bind::FieldSetChain;
+using common::bound::FieldSetNode;
+
 bound::Pipeline bindPipeline(ast::Pipeline st, Context& ctx) {
     auto source = box([&] {
         // Clear current field set so nothing leaks from outside
