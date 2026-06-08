@@ -40,4 +40,9 @@ struct UnionAllSortedBySource {
     bool desc;
 };
 
+struct Source {
+    SourceNode node;
+    SourceSpan span;
+};
+
 }  // namespace lsql::front::pipe::ast

@@ -11,7 +11,7 @@ struct SortStage;
 struct GroupStage;
 struct SelectStage;
 
-using Stage = std::variant< //
+using StageNode = std::variant< //
     TakeStage, //
     FilterStage, //
     WhereInStage, //
@@ -19,5 +19,7 @@ using Stage = std::variant< //
     GroupStage, //
     SelectStage //
 >;
+
+struct Stage;
 
 }  // namespace lsql::front::pipe::ast

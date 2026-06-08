@@ -32,12 +32,13 @@ bound::Expr bindExpr(ast::IdentifierExpr e, ast::Expr& self, Context& ctx) {
     };
 }
 
-bound::Expr bindExpr(ast::LiteralExpr e, auto&& /*self*/, Context& /*ctx*/) {
+bound::Expr bindExpr(ast::LiteralExpr e, auto&& self, Context& /*ctx*/) {
     auto value = parseLiteral(e.literal);
+    requireAt(value.has_value(), self.span, "invalid literal '{}'", e.literal.value_str);
 
     return {
-        .node = bound::ValueExpr{.value = value},
-        .value_type = value.type(),
+        .node = bound::ValueExpr{.value = *value},
+        .value_type = value->type(),
         .level = common::bound::ExprKindLevel::Const,
         .required_fields = FieldSet::emptySet(),
     };
@@ -81,8 +82,9 @@ bound::Expr bindExpr(ast::InExpr e, auto&& /*self*/, Context& ctx) {
 }
 
 bound::Expr bindExpr(ast::LikeExpr e, auto&& /*self*/, Context& ctx) {
+    auto arg_span = e.expr->span;
     auto arg = bindExpr(std::move(*e.expr), ctx);
-    auto info = common::bind::bindLikeExpr(arg);
+    auto info = common::bind::bindLikeExpr(arg, arg_span);
 
     return {
         .node =

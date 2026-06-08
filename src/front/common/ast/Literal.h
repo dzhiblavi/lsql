@@ -29,7 +29,7 @@ inline std::string to_string(const Literal& v) {
     return std::format("{}({})", magic_enum::enum_name(v.type), v.value_str);
 }
 
-inline Value parseLiteral(Literal literal) {
+inline std::optional<Value> parseLiteral(Literal literal) {
     switch (literal.type) {
         case ValueType::Null:
             return null;
@@ -44,9 +44,9 @@ inline Value parseLiteral(Literal literal) {
             return float(std::strtof(literal.value_str.data(), nullptr));
 
         case ValueType::Boolean:
-            require(
-                literal.value_str == "true" || literal.value_str == "false",
-                "invalid boolean literal");
+            if (literal.value_str != "true" && literal.value_str != "false") {
+                return std::nullopt;
+            }
             return literal.value_str == "true";
     }
 }

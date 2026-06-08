@@ -60,11 +60,7 @@ FieldSet requiredFieldsOf(const std::vector<E>& exprs) {
 
 template <BoundExpr Arg, BoundRel Match>
 std::pair<BoundExprInfo, FieldId> bindInExpr(
-    const Arg& arg,
-    const Match& match,
-    auto& ctx,
-    SourceSpan arg_span = {},
-    SourceSpan match_span = {}) {
+    const Arg& arg, const Match& match, auto& ctx, SourceSpan arg_span, SourceSpan match_span) {
     requireAt(
         arg.level != common::bound::ExprKindLevel::Group,
         arg_span,
@@ -89,7 +85,7 @@ std::pair<BoundExprInfo, FieldId> bindInExpr(
 }
 
 template <BoundExpr Arg>
-BoundExprInfo bindLikeExpr(const Arg& arg, SourceSpan arg_span = {}) {
+BoundExprInfo bindLikeExpr(const Arg& arg, SourceSpan arg_span) {
     requireAt(arg.value_type == ValueType::String, arg_span, "like argument should be String");
 
     return {
@@ -101,7 +97,7 @@ BoundExprInfo bindLikeExpr(const Arg& arg, SourceSpan arg_span = {}) {
 
 template <BoundExpr Arg>
 std::pair<BoundExprInfo, std::string> bindRsubstr(
-    const std::vector<Arg>& args, SourceSpan args_span = {}) {
+    const std::vector<Arg>& args, SourceSpan args_span) {
     requireAt(args.size() == 2, args_span, "rsubstr expects exactly 2 arguments");
     requireAt(
         args[0].value_type == ValueType::String,
@@ -149,7 +145,7 @@ std::pair<BoundExprInfo, UnaryExprType> bindUnaryExpr(const Arg& arg, ast::Unary
 
 template <BoundExpr L, BoundExpr R>
 std::pair<BoundExprInfo, BinaryExprType> bindBinaryExpr(
-    const L& l, const R& r, ast::BinaryExprType type, SourceSpan span = {}) {
+    const L& l, const R& r, ast::BinaryExprType type, SourceSpan span) {
     auto bound_type = common::bind::exprType(type);
     auto value_type = common::bind::valueType(l.value_type, r.value_type, bound_type);
 
@@ -173,7 +169,7 @@ std::pair<BoundExprInfo, BinaryExprType> bindBinaryExpr(
 
 template <BoundExpr Arg>
 BoundExprInfo bindUnaryAggregate(
-    const std::vector<Arg>& args, UnaryAggregateType type, SourceSpan args_span = {}) {
+    const std::vector<Arg>& args, UnaryAggregateType type, SourceSpan args_span) {
     requireAt(args.size() == 1, args_span, "function expects 1 argument");
     requireAt(
         args[0].level != common::bound::ExprKindLevel::Group,
@@ -197,7 +193,7 @@ BoundExprInfo bindCast(const Arg& arg, ValueType cast_to) {
 }
 
 template <BoundExpr Arg>
-BoundExprInfo bindCountAll(const std::vector<Arg>& args, SourceSpan args_span = {}) {
+BoundExprInfo bindCountAll(const std::vector<Arg>& args, SourceSpan args_span) {
     requireAt(args.empty(), args_span, "no arguments expected for COUNT(*)");
 
     return {
@@ -208,7 +204,7 @@ BoundExprInfo bindCountAll(const std::vector<Arg>& args, SourceSpan args_span = 
 }
 
 template <BoundExpr Arg>
-BoundExprInfo bindCoalesce(const std::vector<Arg>& args, SourceSpan args_span = {}) {
+BoundExprInfo bindCoalesce(const std::vector<Arg>& args, SourceSpan args_span) {
     requireAt(args.size() >= 1, args_span, "at least one argument required for coalesce");
 
     auto level = common::bound::ExprKindLevel::Const;
@@ -238,7 +234,7 @@ BoundExprInfo bindCoalesce(const std::vector<Arg>& args, SourceSpan args_span = 
 
 template <BoundExpr Arg>
 std::pair<BoundExprInfo, std::vector<float>> bindPercentile(
-    const std::vector<Arg>& args, SourceSpan args_span = {}) {
+    const std::vector<Arg>& args, SourceSpan args_span) {
     requireAt(args.size() > 1, args_span, "percentile must be given at least one percentile");
     requireAt(
         args[0].level != common::bound::ExprKindLevel::Group,

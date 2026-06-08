@@ -12,6 +12,7 @@
 #include "front/pipe/bound/Stages.h"   // IWYU pragma: keep
 
 #include "front/common/bind/Expressions.h"
+#include "front/common/bind/helpers.h"
 
 namespace lsql::front::pipe::bind {
 
@@ -35,10 +36,10 @@ std::vector<bound::Expr> bindExprs(std::vector<ast::Expr> exprs, Context& ctx) {
     return common::bind::bindExprs<bound::Expr>(std::move(exprs), bindExpr, ctx);
 }
 
-bound::Expr bindExpr(ast::IdentifierExpr e, Context& ctx) {
+bound::Expr bindExpr(ast::IdentifierExpr e, auto&& self, Context& ctx) {
     auto name = e.identifier.substr(1);
     auto maybe_type = ctx.currFieldSet().typeOfSourceField(name, ctx.binding());
-    require(maybe_type.has_value(), "unknown field name '{}'", name);
+    requireAt(maybe_type.has_value(), self.span, "unknown field name '{}'", name);
     auto id = ctx.binding()->getOrAdd(name, *maybe_type);
 
     return {
@@ -49,21 +50,25 @@ bound::Expr bindExpr(ast::IdentifierExpr e, Context& ctx) {
     };
 }
 
-bound::Expr bindExpr(ast::LiteralExpr e, Context& /*ctx*/) {
+bound::Expr bindExpr(ast::LiteralExpr e, auto&& /*self*/, Context& /*ctx*/) {
     auto value = parseLiteral(e.literal);
+    requireAt(
+        value.has_value(), e.literal.span, "invalid literal expression '{}'", e.literal.value_str);
 
     return {
-        .node = bound::ValueExpr{.value = value},
-        .value_type = value.type(),
+        .node = bound::ValueExpr{.value = *value},
+        .value_type = value->type(),
         .level = common::bound::ExprKindLevel::Const,
         .required_fields = FieldSet::emptySet(),
     };
 }
 
-bound::Expr bindExpr(ast::InExpr e, Context& ctx) {
+bound::Expr bindExpr(ast::InExpr e, auto&& /*self*/, Context& ctx) {
+    auto expr_span = e.expr->span;
     auto expr = bindExpr(std::move(*e.expr), ctx);
+    auto match_span = e.match->span;
     auto match = bindPipeline(std::move(*e.match), ctx);
-    auto [info, match_field_id] = common::bind::bindInExpr(expr, match, ctx);
+    auto [info, match_field_id] = common::bind::bindInExpr(expr, match, ctx, expr_span, match_span);
 
     return {
         .node =
@@ -78,9 +83,10 @@ bound::Expr bindExpr(ast::InExpr e, Context& ctx) {
     };
 }
 
-bound::Expr bindExpr(ast::LikeExpr e, Context& ctx) {
+bound::Expr bindExpr(ast::LikeExpr e, auto&& /*self*/, Context& ctx) {
+    auto arg_span = e.expr->span;
     auto arg = bindExpr(std::move(*e.expr), ctx);
-    auto info = common::bind::bindLikeExpr(arg);
+    auto info = common::bind::bindLikeExpr(arg, arg_span);
 
     return {
         .node =
@@ -94,12 +100,13 @@ bound::Expr bindExpr(ast::LikeExpr e, Context& ctx) {
     };
 }
 
-bound::Expr bindExpr(ast::FnCallExpr e, Context& ctx) {
+bound::Expr bindExpr(ast::FnCallExpr e, auto&& /*self*/, Context& ctx) {
+    auto args_span = spanOf(e.args);
     auto args = bindExprs(std::move(e.args), ctx);
     auto fields = common::bind::requiredFieldsOf(args);
 
     if (auto un_aggr_type = common::bind::unaryAggregateType(e.func)) {
-        auto info = common::bind::bindUnaryAggregate(args, *un_aggr_type);
+        auto info = common::bind::bindUnaryAggregate(args, *un_aggr_type, args_span);
 
         return {
             .node =
@@ -114,7 +121,7 @@ bound::Expr bindExpr(ast::FnCallExpr e, Context& ctx) {
     }
 
     if (auto cast_to_type = castToType(e.func)) {
-        require(args.size() == 1, "function expected 1 argument");
+        requireAt(args.size() == 1, args_span, "function expected 1 argument");
         auto info = common::bind::bindCast(args[0], *cast_to_type);
 
         return {
@@ -130,7 +137,7 @@ bound::Expr bindExpr(ast::FnCallExpr e, Context& ctx) {
     }
 
     if (e.func == "builtin_count_all") {
-        auto info = common::bind::bindCountAll(args);
+        auto info = common::bind::bindCountAll(args, args_span);
 
         return {
             .node = bound::CountAllExpr{},
@@ -141,7 +148,7 @@ bound::Expr bindExpr(ast::FnCallExpr e, Context& ctx) {
     }
 
     if (e.func == "builtin_coalesce") {
-        auto info = common::bind::bindCoalesce(args);
+        auto info = common::bind::bindCoalesce(args, args_span);
 
         return {
             .node = bound::CoalesceExpr{.args = std::move(args)},
@@ -152,7 +159,7 @@ bound::Expr bindExpr(ast::FnCallExpr e, Context& ctx) {
     }
 
     if (e.func == "builtin_percentile") {
-        auto [info, percentiles] = common::bind::bindPercentile(args);
+        auto [info, percentiles] = common::bind::bindPercentile(args, args_span);
 
         return {
             .node =
@@ -167,7 +174,7 @@ bound::Expr bindExpr(ast::FnCallExpr e, Context& ctx) {
     }
 
     if (e.func == "builtin_rsubstr") {
-        auto [info, regex] = common::bind::bindRsubstr(args);
+        auto [info, regex] = common::bind::bindRsubstr(args, args_span);
 
         return {
             .node =
@@ -184,10 +191,10 @@ bound::Expr bindExpr(ast::FnCallExpr e, Context& ctx) {
     throwError("unknown function name: {}", e.func);
 }
 
-bound::Expr bindExpr(ast::BinaryExpr e, Context& ctx) {
+bound::Expr bindExpr(ast::BinaryExpr e, auto&& self, Context& ctx) {
     auto left = bindExpr(std::move(*e.left), ctx);
     auto right = bindExpr(std::move(*e.right), ctx);
-    auto [info, type] = common::bind::bindBinaryExpr(left, right, e.type);
+    auto [info, type] = common::bind::bindBinaryExpr(left, right, e.type, self.span);
 
     return {
         .node =
@@ -202,7 +209,7 @@ bound::Expr bindExpr(ast::BinaryExpr e, Context& ctx) {
     };
 }
 
-bound::Expr bindExpr(ast::UnaryExpr e, Context& ctx) {
+bound::Expr bindExpr(ast::UnaryExpr e, auto&& /*self*/, Context& ctx) {
     auto arg = bindExpr(std::move(*e.expr), ctx);
     auto [info, type] = common::bind::bindUnaryExpr(arg, e.type);
 
@@ -219,7 +226,8 @@ bound::Expr bindExpr(ast::UnaryExpr e, Context& ctx) {
 }
 
 bound::Expr bindExpr(ast::Expr expr, Context& ctx) {
-    return util::match(std::move(expr), [&](auto e) { return bindExpr(std::move(e), ctx); });
+    return util::match(
+        std::move(expr.node), [&](auto node) { return bindExpr(std::move(node), expr, ctx); });
 }
 
 }  // namespace lsql::front::pipe::bind

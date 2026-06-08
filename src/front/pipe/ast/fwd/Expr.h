@@ -12,7 +12,7 @@ struct FnCallExpr;
 struct BinaryExpr;
 struct UnaryExpr;
 
-using Expr = std::variant< //
+using ExprNode = std::variant< //
     IdentifierExpr, //
     LiteralExpr, //
     InExpr, //
@@ -21,5 +21,7 @@ using Expr = std::variant< //
     BinaryExpr, //
     UnaryExpr //
 >;
+
+struct Expr;
 
 }  // namespace lsql::front::pipe::ast

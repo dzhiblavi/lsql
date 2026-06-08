@@ -11,7 +11,7 @@ struct FileIntervalSource;
 struct UnionAllSource;
 struct UnionAllSortedBySource;
 
-using Source = std::variant< //
+using SourceNode = std::variant< //
     AdhocSource, //
     NamedPipelineReferenceSource, //
     FileSource, //
@@ -19,5 +19,7 @@ using Source = std::variant< //
     UnionAllSource, //
     UnionAllSortedBySource //
 >;
+
+struct Source;
 
 }  // namespace lsql::front::pipe::ast

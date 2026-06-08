@@ -47,4 +47,9 @@ struct UnaryExpr {
     Box<Expr> expr;
 };
 
+struct Expr {
+    ExprNode node;
+    SourceSpan span;
+};
+
 }  // namespace lsql::front::pipe::ast

@@ -25,6 +25,8 @@
     using lsql::Box;
     using lsql::ValueType;
     using lsql::front::common::ast::Literal;
+    using lsql::front::pipe::parse::Token;
+    using lsql::front::spanOf;
 
     static std::string unquote(std::string s) {
         if (s.size() >= 2 && s.front() == '\'' && s.back() == '\'') {
@@ -96,7 +98,7 @@
 %left TOKEN_DIVIDE.
 %right TOKEN_EXCLAMATION.
 
-%type alias           {std::string*}
+%type alias           {Token*}
 %type statement       {ast::Statement*}
 %type statements      {std::vector<ast::Statement>*}
 %type pipeline        {ast::Pipeline*}
@@ -132,22 +134,31 @@ statements(Os) ::= statements(Ps) statement(P). {
 }
 
 statement(S) ::= pipeline(P). {
-    S = new ast::Statement(ast::QueryStatement{
-        .pipeline = Box<ast::Pipeline>(P),
-    });
+    S = new ast::Statement{
+        .node = ast::QueryStatement{
+            .pipeline = Box<ast::Pipeline>(P),
+        },
+        .span = P->span,
+    };
 }
 
 statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ pipeline(P). {
-    S = new ast::Statement(ast::NamedPipelineStatement{
-        .name = Name.text,
-        .pipeline = Box<ast::Pipeline>(P),
-    });
+    S = new ast::Statement{
+        .node = ast::NamedPipelineStatement{
+            .name = Name.text,
+            .pipeline = Box<ast::Pipeline>(P),
+        },
+        .span  = merge(Name.span, P->span),
+    };
 }
 
 pipeline(P) ::= source(S) stage_list(L). {
+    auto span = merge(S->span, spanOf(*L));
+
     P = new ast::Pipeline{
         .source = Box<ast::Source>(S),
         .stages = std::move(*L),
+        .span = span,
     };
     delete L;
 }
@@ -162,92 +173,120 @@ stage_list(L) ::= stage_list(LS) TOKEN_PIPE stage(S). {
     delete S;
 }
 
-source(S) ::= TOKEN_DOLLAR TOKEN_IDENTIFIER(Name). {
-    S = new ast::Source(ast::NamedPipelineReferenceSource{
-        .name = Name.text,
-    });
+source(S) ::= TOKEN_DOLLAR(D) TOKEN_IDENTIFIER(Name). {
+    S = new ast::Source{
+        .node = ast::NamedPipelineReferenceSource{ .name = Name.text },
+        .span = merge(D.span, Name.span),
+    };
 }
 
-source(S) ::= TOKEN_FILE TOKEN_PATH(P). {
-    S = new ast::Source(ast::FileSource{
-        .path = P.text,
-    });
+source(S) ::= TOKEN_FILE(F) TOKEN_PATH(P). {
+    S = new ast::Source{
+        .node = ast::FileSource{ .path = P.text },
+        .span = merge(F.span, P.span),
+    };
 }
 
-source(S) ::= TOKEN_FILE TOKEN_PATH(P) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKEN_INTEGER(I). {
-    S = new ast::Source(ast::FileIntervalSource{
-        .path = P.text,
-        .ts_from = Ts.text,
-        .interval_s = std::stoi(I.text),
-    });
+source(S) ::= TOKEN_FILE(F) TOKEN_PATH(P) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKEN_INTEGER(I). {
+    S = new ast::Source{
+        .node = ast::FileIntervalSource{
+            .path = P.text,
+            .ts_from = Ts.text,
+            .interval_s = std::stoi(I.text),
+        },
+        .span = merge(F.span, I.span),
+    };
 }
 
-source(S) ::= TOKEN_VALUES TOKEN_LPAREN value_list(V) TOKEN_RPAREN. {
-    S = new ast::Source(ast::AdhocSource{
-        .literals = std::move(*V),
-    });
+source(S) ::= TOKEN_VALUES(Vs) TOKEN_LPAREN value_list(V) TOKEN_RPAREN(RP). {
+    auto span = merge(Vs.span, RP.span);
+    S = new ast::Source{
+        .node = ast::AdhocSource{ .literals = std::move(*V) },
+        .span = span,
+    };
     delete V;
 }
 
-source(S) ::= TOKEN_UNION TOKEN_LPAREN pipeline(L) TOKEN_RPAREN TOKEN_LPAREN pipeline(R) TOKEN_RPAREN. {
-    S = new ast::Source(ast::UnionAllSource{
-        .left = Box<ast::Pipeline>(L),
-        .right = Box<ast::Pipeline>(R),
-    });
+source(S) ::= TOKEN_UNION(U) TOKEN_LPAREN pipeline(L) TOKEN_RPAREN TOKEN_LPAREN pipeline(R) TOKEN_RPAREN(RP). {
+    S = new ast::Source{
+        .node = ast::UnionAllSource{
+            .left = Box<ast::Pipeline>(L),
+            .right = Box<ast::Pipeline>(R),
+        },
+        .span = merge(U.span, RP.span),
+    };
 }
 
-source(S) ::= TOKEN_MERGE TOKEN_BY expression_list(E) desc_opt(D)
+source(S) ::= TOKEN_MERGE(M) TOKEN_BY expression_list(E) desc_opt(D)
               TOKEN_LPAREN pipeline(L) TOKEN_RPAREN
-              TOKEN_LPAREN pipeline(R) TOKEN_RPAREN. {
-    S = new ast::Source(ast::UnionAllSortedBySource{
-        .left = Box<ast::Pipeline>(L),
-        .right = Box<ast::Pipeline>(R),
-        .order_list = std::move(*E),
-        .desc = D,
-    });
+              TOKEN_LPAREN pipeline(R) TOKEN_RPAREN(RP). {
+    S = new ast::Source{
+        .node = ast::UnionAllSortedBySource{
+            .left = Box<ast::Pipeline>(L),
+            .right = Box<ast::Pipeline>(R),
+            .order_list = std::move(*E),
+            .desc = D,
+        },
+        .span = merge(M.span, RP.span),
+    };
     delete E;
 }
 
-stage(S) ::= TOKEN_WHERE expression(E). {
-    S = new ast::Stage(ast::FilterStage{
-        .condition = Box<ast::Expr>(E),
-    });
+stage(S) ::= TOKEN_WHERE(W) expression(E). {
+    S = new ast::Stage{
+        .node = ast::FilterStage{ .condition = Box<ast::Expr>(E) },
+        .span = merge(W.span, E->span),
+    };
 }
 
-stage(S) ::= TOKEN_WHERE expression(E) TOKEN_IN TOKEN_LPAREN pipeline(P) TOKEN_RPAREN. {
-    S = new ast::Stage(ast::WhereInStage{
-        .expr = Box<ast::Expr>(E),
-        .match = Box<ast::Pipeline>(P),
-    });
+stage(S) ::= TOKEN_WHERE(W) expression(E) TOKEN_IN TOKEN_LPAREN pipeline(P) TOKEN_RPAREN(RP). {
+    S = new ast::Stage{
+        .node = ast::WhereInStage{
+            .expr = Box<ast::Expr>(E),
+            .match = Box<ast::Pipeline>(P),
+        },
+        .span = merge(W.span, RP.span),
+    };
 }
 
-stage(S) ::= TOKEN_TAKE TOKEN_INTEGER(N). {
-    S = new ast::Stage(ast::TakeStage{
-        .count = std::stoi(N.text),
-    });
+stage(S) ::= TOKEN_TAKE(T) TOKEN_INTEGER(N). {
+    S = new ast::Stage{
+        .node = ast::TakeStage{ .count = std::stoi(N.text) },
+        .span = merge(T.span, N.span),
+    };
 }
 
-stage(S) ::= TOKEN_SORT TOKEN_BY expression_list(L) desc_opt(D). {
-    S = new ast::Stage(ast::SortStage{
-        .order_list = std::move(*L),
-        .desc = D,
-    });
+stage(S) ::= TOKEN_SORT(ST) TOKEN_BY expression_list(L) desc_opt(D). {
+    auto span = merge(ST.span, spanOf(*L));
+    S = new ast::Stage{
+        .node = ast::SortStage{
+            .order_list = std::move(*L),
+            .desc = D,
+        },
+        .span = span,
+    };
     delete L;
 }
 
-stage(S) ::= TOKEN_SELECT projector_list(P) TOKEN_GROUP TOKEN_BY projector_list(G). {
-    S = new ast::Stage(ast::GroupStage{
-        .projectors = std::move(*P),
-        .group_list = std::move(*G),
-    });
+stage(S) ::= TOKEN_SELECT(SE) projector_list(P) TOKEN_GROUP TOKEN_BY projector_list(G). {
+    auto span = merge(SE.span, spanOf(*G));
+    S = new ast::Stage{
+        .node = ast::GroupStage{
+            .projectors = std::move(*P),
+            .group_list = std::move(*G),
+        },
+        .span = span,
+    };
     delete P;
     delete G;
 }
 
-stage(S) ::= TOKEN_SELECT projector_list(L). {
-    S = new ast::Stage(ast::SelectStage{
-        .projectors = std::move(*L),
-    });
+stage(S) ::= TOKEN_SELECT(SE) projector_list(L). {
+    auto span = merge(SE.span, spanOf(*L));
+    S = new ast::Stage{
+        .node = ast::SelectStage{ .projectors = std::move(*L) },
+        .span = span,
+    };
     delete L;
 }
 
@@ -267,27 +306,35 @@ projector_list(L) ::= projector_list(PL) TOKEN_COMMA projector(P). {
     delete P;
 }
 
-projector(P) ::= TOKEN_STAR. {
-    P = new ast::Projector(ast::StarProjector{});
+projector(P) ::= TOKEN_STAR(S). {
+    P = new ast::Projector{
+        .node = ast::StarProjector{},
+        .span = S.span,
+    };
 }
 
 projector(P) ::= TOKEN_IDENTIFIER(Id). {
-    P = new ast::Projector(ast::IdentifierProjector{
-        .identifier = Id.text,
-    });
+    P = new ast::Projector{
+        .node = ast::IdentifierProjector{ .identifier = Id.text },
+        .span = Id.span,
+    };
 }
 
 projector(P) ::= expression(E) TOKEN_AS alias(A). {
-    P = new ast::Projector(ast::ExprProjector{
-        .alias = std::move(*A),
-        .expr = Box<ast::Expr>(E),
-    });
+    auto span = merge(E->span, A->span);
+    P = new ast::Projector{
+        .node = ast::ExprProjector{
+            .alias = std::move(A->text),
+            .expr = Box<ast::Expr>(E),
+        },
+        .span = span,
+    };
     delete A;
 }
 
-alias(A) ::= TOKEN_IDENTIFIER(Id). { A = new std::string(Id.text); }
-alias(A) ::= TOKEN_COUNT. { A = new std::string("count"); }
-alias(A) ::= TOKEN_GROUP. { A = new std::string("group"); }
+alias(A) ::= TOKEN_IDENTIFIER(Id). { A = new Token(Id); }
+alias(A) ::= TOKEN_COUNT(T). { A = new Token(T); }
+alias(A) ::= TOKEN_GROUP(T). { A = new Token(T); }
 
 expression_list(L) ::= expression(E). {
     L = new std::vector<ast::Expr>();
@@ -302,168 +349,280 @@ expression_list(L) ::= expression_list(EL) TOKEN_COMMA expression(E). {
 }
 
 expression(E) ::= value(V). {
-    E = new ast::Expr(ast::LiteralExpr{
-        .literal = std::move(*V),
-    });
+    auto span = V->span;
+    E = new ast::Expr{
+        .node = ast::LiteralExpr{ .literal = std::move(*V) },
+        .span = span,
+    };
     delete V;
 }
 
 expression(E) ::= TOKEN_IDENTIFIER(Id). {
-    E = new ast::Expr(ast::IdentifierExpr{
-        .identifier = Id.text,
-    });
+    E = new ast::Expr{
+        .node = ast::IdentifierExpr{ .identifier = Id.text },
+        .span = Id.span,
+    };
 }
 
-expression(E) ::= TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_LPAREN(LP) expression(X) TOKEN_RPAREN(RP). {
     E = X;
+    E->span = merge(LP.span, RP.span);
 }
 
-expression(E) ::= TOKEN_EXCLAMATION expression(X). {
-    E = new ast::Expr(ast::UnaryExpr{
-        .type = common::ast::UnaryExprType::Not,
-        .expr = Box<ast::Expr>(X),
-    });
+expression(E) ::= TOKEN_EXCLAMATION(Ex) expression(X). {
+    auto span = merge(Ex.span, X->span);
+    E = new ast::Expr{
+        .node = ast::UnaryExpr{
+            .type = common::ast::UnaryExprType::Not,
+            .expr = Box<ast::Expr>(X),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= TOKEN_NOT expression(X). {
-    E = new ast::Expr(ast::UnaryExpr{
-        .type = common::ast::UnaryExprType::Not,
-        .expr = Box<ast::Expr>(X),
-    });
+expression(E) ::= TOKEN_NOT(N) expression(X). {
+    auto span = merge(N.span, X->span);
+    E = new ast::Expr{
+        .node = ast::UnaryExpr{
+            .type = common::ast::UnaryExprType::Not,
+            .expr = Box<ast::Expr>(X),
+        },
+        .span = span,
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_EQ expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::Equal,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    auto span = merge(L->span, R->span);
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Equal,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = span,
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_NEQ expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::NotEqual,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    auto span = merge(L->span, R->span);
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::NotEqual,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = span,
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_AND expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::And,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    auto span = merge(L->span, R->span);
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::And,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = span,
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_OR expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::Or,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    auto span = merge(L->span, R->span);
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Or,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = span,
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_DIVIDE expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::Divide,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    auto span = merge(L->span, R->span);
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Divide,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = span,
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_PLUS expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::Plus,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    auto span = merge(L->span, R->span);
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Plus,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = span,
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_MINUS expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::Minus,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    auto span = merge(L->span, R->span);
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Minus,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = span,
+    };
 }
 
 expression(E) ::= expression(X) TOKEN_LIKE TOKEN_STR(R). {
+    auto span = merge(X->span, R.span);
     auto str = std::string(R.text);
-    E = new ast::Expr(ast::LikeExpr{
-        .expr = Box<ast::Expr>(X),
-        .regex = str.substr(1, str.size() - 2),
-    });
+    E = new ast::Expr{
+        .node = ast::LikeExpr{
+            .expr = Box<ast::Expr>(X),
+            .regex = str.substr(1, str.size() - 2),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= expression(X) TOKEN_IN TOKEN_LPAREN pipeline(P) TOKEN_RPAREN. {
-    E = new ast::Expr(ast::InExpr{
-        .expr = Box<ast::Expr>(X),
-        .match = Box<ast::Pipeline>(P),
-    });
+expression(E) ::= expression(X) TOKEN_IN TOKEN_LPAREN pipeline(P) TOKEN_RPAREN(RP). {
+    auto span = merge(X->span, RP.span);
+    E = new ast::Expr{
+        .node = ast::InExpr{
+            .expr = Box<ast::Expr>(X),
+            .match = Box<ast::Pipeline>(P),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= TOKEN_STRING TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_STRING(Str) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
+    auto span = merge(Str.span, RP.span);
     std::vector<ast::Expr> args;
     args.push_back(std::move(*X));
     delete X;
-    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_string", .args = std::move(args)});
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_string",
+            .args = std::move(args),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= TOKEN_INT TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_INT(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
+    auto span = merge(I.span, RP.span);
     std::vector<ast::Expr> args;
     args.push_back(std::move(*X));
     delete X;
-    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_int", .args = std::move(args)});
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_int",
+            .args = std::move(args),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= TOKEN_FLOAT TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_FLOAT(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
+    auto span = merge(I.span, RP.span);
     std::vector<ast::Expr> args;
     args.push_back(std::move(*X));
     delete X;
-    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_float", .args = std::move(args)});
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_float",
+            .args = std::move(args),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= TOKEN_BOOL TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_BOOL(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
+    auto span = merge(I.span, RP.span);
     std::vector<ast::Expr> args;
     args.push_back(std::move(*X));
     delete X;
-    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_bool", .args = std::move(args)});
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_bool",
+            .args = std::move(args),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= TOKEN_COUNT TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_COUNT(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
+    auto span = merge(I.span, RP.span);
     std::vector<ast::Expr> args;
     args.push_back(std::move(*X));
     delete X;
-    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_count_nonnull", .args = std::move(args)});
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_count_nonnull",
+            .args = std::move(args),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= TOKEN_COUNT TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN. {
-    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_count_all", .args = {}});
+expression(E) ::= TOKEN_COUNT(I) TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_count_all",
+            .args = {},
+        },
+        .span = merge(I.span, RP.span),
+    };
 }
 
-expression(E) ::= TOKEN_MIN TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_MIN(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
+    auto span = merge(I.span, RP.span);
     std::vector<ast::Expr> args;
     args.push_back(std::move(*X));
     delete X;
-    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_min", .args = std::move(args)});
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_min",
+            .args = std::move(args),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= TOKEN_MAX TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_MAX(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
+    auto span = merge(I.span, RP.span);
     std::vector<ast::Expr> args;
     args.push_back(std::move(*X));
     delete X;
-    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_max", .args = std::move(args)});
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_max",
+            .args = std::move(args),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= TOKEN_SUM TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_SUM(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
+    auto span = merge(I.span, RP.span);
     std::vector<ast::Expr> args;
     args.push_back(std::move(*X));
     delete X;
-    E = new ast::Expr(ast::FnCallExpr{.func = "builtin_sum", .args = std::move(args)});
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_sum",
+            .args = std::move(args),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= TOKEN_PERCENTILE TOKEN_LPAREN expression(X) TOKEN_COMMA expression_list(L) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_PERCENTILE(Perc) TOKEN_LPAREN expression(X) TOKEN_COMMA expression_list(L) TOKEN_RPAREN(RP). {
+    auto span = merge(Perc.span, RP.span);
+
     std::vector<ast::Expr> args;
     args.push_back(std::move(*X));
     delete X;
@@ -473,21 +632,28 @@ expression(E) ::= TOKEN_PERCENTILE TOKEN_LPAREN expression(X) TOKEN_COMMA expres
     }
     delete L;
 
-    E = new ast::Expr(ast::FnCallExpr{
-        .func = "builtin_percentile",
-        .args = std::move(args),
-    });
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_percentile",
+            .args = std::move(args),
+        },
+        .span = span,
+    };
 }
 
-expression(E) ::= TOKEN_COALESCE TOKEN_LPAREN expression_list(L) TOKEN_RPAREN. {
-    E = new ast::Expr(ast::FnCallExpr{
-        .func = "builtin_coalesce",
-        .args = std::move(*L),
-    });
+expression(E) ::= TOKEN_COALESCE(C) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_coalesce",
+            .args = std::move(*L),
+        },
+        .span = merge(C.span, RP.span),
+    };
     delete L;
 }
 
-expression(E) ::= TOKEN_RSUBSTR TOKEN_LPAREN expression(X) TOKEN_COMMA TOKEN_STR(P) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_RSUBSTR(Rs) TOKEN_LPAREN expression(X) TOKEN_COMMA TOKEN_STR(P) TOKEN_RPAREN(RP). {
+    auto span = merge(Rs.span, RP.span);
     std::vector<ast::Expr> args;
     args.push_back(std::move(*X));
     delete X;
@@ -496,13 +662,17 @@ expression(E) ::= TOKEN_RSUBSTR TOKEN_LPAREN expression(X) TOKEN_COMMA TOKEN_STR
         .literal = Literal{
             .type = ValueType::String,
             .value_str = P.text,
+            .span = P.span,
         },
     });
 
-    E = new ast::Expr(ast::FnCallExpr{
-        .func = "builtin_rsubstr",
-        .args = std::move(args),
-    });
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_rsubstr",
+            .args = std::move(args),
+        },
+        .span = span,
+    };
 }
 
 value_list(L) ::= value(V). {
@@ -521,6 +691,7 @@ value(V) ::= TOKEN_STR(S). {
     V = new Literal{
         .type = ValueType::String,
         .value_str = S.text,
+        .span = S.span,
     };
 }
 
@@ -528,6 +699,7 @@ value(V) ::= TOKEN_INTEGER(I). {
     V = new Literal{
         .type = ValueType::Integer,
         .value_str = I.text,
+        .span = I.span,
     };
 }
 
@@ -535,6 +707,7 @@ value(V) ::= TOKEN_FLOATING(F). {
     V = new Literal{
         .type = ValueType::Floating,
         .value_str = F.text,
+        .span = F.span,
     };
 }
 
@@ -542,6 +715,7 @@ value(V) ::= TOKEN_TRUE(T). {
     V = new Literal{
         .type = ValueType::Boolean,
         .value_str = T.text,
+        .span = T.span,
     };
 }
 
@@ -549,19 +723,19 @@ value(V) ::= TOKEN_FALSE(T). {
     V = new Literal{
         .type = ValueType::Boolean,
         .value_str = T.text,
+        .span = T.span,
     };
 }
 
-value(V) ::= TOKEN_NULL. {
+value(V) ::= TOKEN_NULL(N). {
     V = new Literal{
         .type = ValueType::Null,
-        .value_str = "",
+        .value_str = N.text,
+        .span = N.span,
     };
 }
 
 %syntax_error {
-    const char* token_text = TOKEN.text;
-    int token_code = TOKEN.code;
-    fprintf(stderr, "Pipe syntax error near token: '%s' (code %d)\n", token_text, token_code);
     pCtx->has_error = true;
+    pCtx->error_span = TOKEN.span;
 }

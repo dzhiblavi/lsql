@@ -15,10 +15,15 @@ struct NamedPipelineStatement {
     Box<Pipeline> pipeline;
 };
 
-using Statement = std::variant< //
+using StatementNode = std::variant< //
     QueryStatement, //
     NamedPipelineStatement //
 >;
+
+struct Statement {
+    StatementNode node;
+    SourceSpan span;
+};
 
 struct Program {
     std::vector<Statement> statements;

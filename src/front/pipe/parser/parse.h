@@ -2,10 +2,10 @@
 
 #include "front/pipe/ast/Statements.h"
 
-#include <istream>
+#include <string>
 
 namespace lsql::front::pipe::parse {
 
-ast::Program parse(std::istream& is);
+ast::Program parse(std::string query);
 
 }  // namespace lsql::front::pipe::parse

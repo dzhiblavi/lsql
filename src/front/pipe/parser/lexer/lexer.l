@@ -3,8 +3,35 @@
 %option never-interactive
 %option prefix="pipe_"
 
+%top {
+#include "front/common/source/SourceSpan.h"
+void pipeSetLocPtr(lsql::front::SourceSpan* ptr);
+}
+
 %{
+
 #include "front/pipe/parser/grammar/grammar.h"
+
+static lsql::front::SourcePos current_pos;
+static lsql::front::SourceSpan* yylloc;
+
+void pipeSetLocPtr(lsql::front::SourceSpan* ptr) {
+    yylloc = ptr;
+}
+
+#define YY_USER_ACTION                                     \
+    yylloc->begin = current_pos;                           \
+    for (int i = 0; i < yyleng; ++i) {                     \
+        if (yytext[i] == '\n') {                           \
+            ++current_pos.line;                            \
+            current_pos.column = 1;                        \
+        } else {                                           \
+            ++current_pos.column;                          \
+        }                                                  \
+        ++current_pos.offset;                              \
+    }                                                      \
+    yylloc->end = current_pos;
+
 %}
 
 WHITESPACE       [ \t\n]+
@@ -84,9 +111,6 @@ rsubstr          { return TOKEN_RSUBSTR; }
 
 <<EOF>>          { return TOKEN_EOF; }
 
-.                {
-                     fprintf(stderr, "pipe lexer error: unknown character: '%s' (ASCII %d)\n", yytext, yytext[0]);
-                     return -1;
-                 }
+.                { return -1; }
 
 %%

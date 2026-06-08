@@ -1,6 +1,5 @@
 #include "front/pipe/bind/Sources.h"
 
-#include "core/time_formats.h"
 #include "front/pipe/ast/Expressions.h"  // IWYU pragma: keep
 #include "front/pipe/ast/Sources.h"      // IWYU pragma: keep
 #include "front/pipe/ast/Stages.h"       // IWYU pragma: keep
@@ -12,6 +11,10 @@
 #include "front/pipe/bound/Sources.h"      // IWYU pragma: keep
 #include "front/pipe/bound/Stages.h"       // IWYU pragma: keep
 
+#include "front/common/source/require_at.h"
+
+#include "core/time_formats.h"
+
 namespace lsql::front::pipe::bind {
 
 namespace {
@@ -19,13 +22,17 @@ namespace {
 using common::bind::FieldSetChain;
 using common::bound::FieldSetNode;
 
-bound::Source bindSource(ast::AdhocSource s, Context& ctx) {
+bound::Source bindSource(ast::AdhocSource s, auto&& self, Context& ctx) {
     std::vector<Value> values;
     values.reserve(s.literals.size());
     for (auto&& literal : s.literals) {
-        values.push_back(parseLiteral(literal));
-        require(
+        auto value = parseLiteral(literal);
+        requireAt(value.has_value(), literal.span, "invalid literal '{}'", literal.value_str);
+
+        values.push_back(*value);
+        requireAt(
             values.back().type() == values.front().type(),
+            self.span,
             "Ad hoc relation should contain entries of the same type");
     }
 
@@ -42,21 +49,21 @@ bound::Source bindSource(ast::AdhocSource s, Context& ctx) {
     };
 }
 
-bound::Source bindSource(ast::NamedPipelineReferenceSource s, Context& ctx) {
+bound::Source bindSource(ast::NamedPipelineReferenceSource s, auto&& /*self*/, Context& ctx) {
     return {
         .node = bound::NamedPipelineReferenceSource{.name = s.name},
         .fields_out = FieldSetNode::proxy(ctx.find(s.name)),
     };
 }
 
-bound::Source bindSource(ast::FileSource s, Context& /*ctx*/) {
+bound::Source bindSource(ast::FileSource s, auto&& /*self*/, Context& /*ctx*/) {
     return {
         .node = bound::FileSource{.path = std::move(s.path)},
         .fields_out = FieldSetNode::unknownSet(),
     };
 }
 
-bound::Source bindSource(ast::FileIntervalSource s, Context& /*ctx*/) {
+bound::Source bindSource(ast::FileIntervalSource s, auto&& /*self*/, Context& /*ctx*/) {
     constexpr auto format = TimeFormat::ISO8601;
     auto ts_from = timestampFromString(s.ts_from, format);
 
@@ -71,7 +78,7 @@ bound::Source bindSource(ast::FileIntervalSource s, Context& /*ctx*/) {
     };
 }
 
-bound::Source bindSource(ast::UnionAllSource s, Context& ctx) {
+bound::Source bindSource(ast::UnionAllSource s, auto&& /*self*/, Context& ctx) {
     auto left = bindPipeline(std::move(*s.left), ctx);
     auto right = bindPipeline(std::move(*s.right), ctx);
     auto fields = FieldSetNode::proxy(left.fields_out, right.fields_out);
@@ -86,7 +93,7 @@ bound::Source bindSource(ast::UnionAllSource s, Context& ctx) {
     };
 }
 
-bound::Source bindSource(ast::UnionAllSortedBySource s, Context& ctx) {
+bound::Source bindSource(ast::UnionAllSortedBySource s, auto&& self, Context& ctx) {
     auto left = bindPipeline(std::move(*s.left), ctx);
     auto right = bindPipeline(std::move(*s.right), ctx);
     auto fields = FieldSetNode::proxy(left.fields_out, right.fields_out);
@@ -95,7 +102,7 @@ bound::Source bindSource(ast::UnionAllSortedBySource s, Context& ctx) {
     auto _ = ctx.scopedFieldSet(&visible_fields);
 
     auto order_list = bindExprs(std::move(s.order_list), ctx);
-    require(!order_list.empty(), "order list cannot be empty");
+    requireAt(!order_list.empty(), self.span, "order list cannot be empty");
 
     return {
         .node =
@@ -112,7 +119,8 @@ bound::Source bindSource(ast::UnionAllSortedBySource s, Context& ctx) {
 }  // namespace
 
 bound::Source bindSource(ast::Source s, Context& ctx) {
-    return util::match(std::move(s), [&](auto r) { return bindSource(std::move(r), ctx); });
+    return util::match(
+        std::move(s.node), [&](auto node) { return bindSource(std::move(node), s, ctx); });
 }
 
 }  // namespace lsql::front::pipe::bind

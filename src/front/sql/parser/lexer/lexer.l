@@ -99,9 +99,6 @@ RSUBSTR          { return TOKEN_RSUBSTR; }
 {QUOTED_STRING}  { return TOKEN_STR; }
 {TIMESTAMP}      { return TOKEN_TIMESTAMP; }
 <<EOF>>          { return TOKEN_EOF; }
-.                {
-                     fprintf(stderr, "lexer error: unknown character: '%s' (ASCII %d)\n", yytext, yytext[0]);
-                     return -1;
-                 }
+.                { return -1; }
 
 %%

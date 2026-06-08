@@ -50,7 +50,10 @@ bound::Relation bindRelation(ast::AdhocRelation r, auto&& self, Context& ctx) {
     std::vector<Value> values;
     values.reserve(r.literals.size());
     for (auto&& literal : r.literals) {
-        values.push_back(parseLiteral(literal));
+        auto value = parseLiteral(literal);
+        requireAt(value.has_value(), literal.span, "invalid literal '{}'", literal.value_str);
+
+        values.push_back(*value);
         requireAt(
             values.back().type() == values.front().type(),
             self.span,
@@ -100,7 +103,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& self, Context& ctx) {
         limit = bound::Limit{.limit = r.limit->limit};
     }
 
-    auto projectors_span = common::bind::spanOf(r.projectors);
+    auto projectors_span = spanOf(r.projectors);
     auto projectors = bindProjectors<bound::Projector>(std::move(r.projectors), bindProjector, ctx);
     requireAt(!projectors.empty(), projectors_span, "SELECT requires at least one projector");
     auto output_fields = outputFieldsOf(projectors);
@@ -121,7 +124,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& self, Context& ctx) {
     std::optional<bound::GroupBy> group_by;
     if (has_group_by) {
         // Group by
-        auto group_key_span = common::bind::spanOf(r.group_by->group_list);
+        auto group_key_span = spanOf(r.group_by->group_list);
         auto group_key =
             bindProjectors<bound::Projector>(std::move(r.group_by->group_list), bindProjector, ctx);
 
@@ -197,7 +200,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& self, Context& ctx) {
     if (r.order_by) {
         generated_visible_fields->merge(output_fields);
 
-        auto order_list_span = common::bind::spanOf(r.order_by->order_list);
+        auto order_list_span = spanOf(r.order_by->order_list);
         auto order_list = bindExprs(std::move(r.order_by->order_list), ctx);
         for (auto&& e : order_list) {
             requireAt(
@@ -242,7 +245,7 @@ bound::Relation bindRelation(ast::UnionAllRelation r, auto&& /*self*/, Context& 
     };
 }
 
-bound::Relation bindRelation(ast::UnionAllSortedByRelation r, auto&& /*self*/, Context& ctx) {
+bound::Relation bindRelation(ast::UnionAllSortedByRelation r, auto&& self, Context& ctx) {
     auto left = bindRelation(std::move(*r.left), ctx);
     auto right = bindRelation(std::move(*r.right), ctx);
     auto fields = FieldSetNode::proxy(left.fields_out, right.fields_out);
@@ -250,9 +253,8 @@ bound::Relation bindRelation(ast::UnionAllSortedByRelation r, auto&& /*self*/, C
     FieldSetChain fields_set(fields, nullptr);
     auto _ = ctx.scopedFieldSet(&fields_set);
 
-    auto order_list_span = common::bind::spanOf(r.order_by.order_list);
     auto order_list = bindExprs(std::move(r.order_by.order_list), ctx);
-    requireAt(!order_list.empty(), order_list_span, "order list cannot be empty");
+    requireAt(!order_list.empty(), self.span, "order list cannot be empty");
 
     return {
         .node =

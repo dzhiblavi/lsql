@@ -8,4 +8,4 @@ struct ValueExpr {
     Value value;
 };
 
-}  // namespace lsql::front::pipe::bound
+}  // namespace lsql::front::common::bound

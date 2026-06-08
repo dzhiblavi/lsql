@@ -20,7 +20,12 @@ struct ExprProjector {
     Box<Expr> expr;
 };
 
-using Projector = std::variant<StarProjector, IdentifierProjector, ExprProjector>;
+using ProjectorNode = std::variant<StarProjector, IdentifierProjector, ExprProjector>;
+
+struct Projector {
+    ProjectorNode node;
+    SourceSpan span;
+};
 
 struct TakeStage {
     int count;
@@ -47,6 +52,11 @@ struct GroupStage {
 
 struct SelectStage {
     std::vector<Projector> projectors;
+};
+
+struct Stage {
+    StageNode node;
+    SourceSpan span;
 };
 
 }  // namespace lsql::front::pipe::ast

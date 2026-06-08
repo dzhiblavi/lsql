@@ -7,6 +7,9 @@
 #include "front/pipe/lower/Statements.h"
 #include "front/pipe/parser/parse.h"
 
+#include "front/common/source/format.h"
+#include "front/common/source/require_at.h"
+
 #include "util/require.h"
 
 #include <fstream>
@@ -29,19 +32,25 @@ ir::Program parseQuery(std::string maybe_path) {
         }
     }();
 
-    auto ast = front::pipe::parse::parse(*is);
-    if (print_ast_arg) {
-        std::cout << "AST dump:" << std::endl;
-        std::cout << front::pipe::ast::Stringifier().print(ast) << std::endl;
-    }
+    auto query = std::string(std::istreambuf_iterator<char>(*is), std::istreambuf_iterator<char>());
 
-    auto bound_ast = front::pipe::bind::bindProgram(std::move(ast));
-    if (print_bound_arg) {
-        std::cout << "Bound AST dump:" << std::endl;
-        std::cout << front::pipe::bound::Stringifier().print(bound_ast) << std::endl;
-    }
+    try {
+        auto ast = front::pipe::parse::parse(query);
+        if (print_ast_arg) {
+            std::cout << "AST dump:" << std::endl;
+            std::cout << front::pipe::ast::Stringifier().print(ast) << std::endl;
+        }
 
-    return front::pipe::lower::lowerToIR(std::move(bound_ast));
+        auto bound_ast = front::pipe::bind::bindProgram(std::move(ast));
+        if (print_bound_arg) {
+            std::cout << "Bound AST dump:" << std::endl;
+            std::cout << front::pipe::bound::Stringifier().print(bound_ast) << std::endl;
+        }
+
+        return front::pipe::lower::lowerToIR(std::move(bound_ast));
+    } catch (const front::SpanRuntimeError& err) {
+        throwError("{}, at: {}", err.message(), format(front::RichSourceSpan{query, err.span()}));
+    }
 }
 
 }  // namespace lsql

@@ -39,7 +39,7 @@ class Stringifier {
 
  private:
     StrBuilder print(const Statement& s) {
-        return std::visit([this](auto&& arg) { return this->print(arg); }, s);
+        return std::visit([this](auto&& arg) { return this->print(arg); }, s.node);
     }
 
     StrBuilder print(const QueryStatement& s) {
@@ -51,7 +51,7 @@ class Stringifier {
     }
 
     StrBuilder print(const Source& s) {
-        return std::visit([this](auto&& arg) { return this->print(arg); }, s);
+        return std::visit([this](auto&& arg) { return this->print(arg); }, s.node);
     }
 
     StrBuilder print(const AdhocSource& r) {
@@ -89,7 +89,7 @@ class Stringifier {
     }
 
     StrBuilder print(const Stage& st) {
-        return std::visit([this](auto&& arg) { return this->print(arg); }, st);
+        return std::visit([this](auto&& arg) { return this->print(arg); }, st.node);
     }
 
     StrBuilder print(const FilterStage& f) {
@@ -133,7 +133,7 @@ class Stringifier {
     }
 
     StrBuilder print(const Projector& p) {
-        return std::visit([this](auto&& p) { return print(p); }, p);
+        return std::visit([this](auto&& p) { return print(p); }, p.node);
     }
 
     StrBuilder print(const StarProjector& /*p*/) { return StrBuilder("StarProjector"); }
@@ -147,7 +147,7 @@ class Stringifier {
     }
 
     StrBuilder print(const Expr& e) {
-        return std::visit([this](auto&& arg) { return this->print(arg); }, e);
+        return std::visit([this](auto&& arg) { return this->print(arg); }, e.node);
     }
 
     StrBuilder print(const IdentifierExpr& e) {
