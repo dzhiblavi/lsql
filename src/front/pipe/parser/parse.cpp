@@ -11,6 +11,8 @@
 
 #include "util/verify.h"
 
+#include <cpptrace/exceptions.hpp>
+
 namespace lsql::front::pipe::parse {
 
 namespace {
@@ -69,7 +71,7 @@ ast::Program parse(std::istream& is) {
     PipeParserFree(parser, free);
 
     if (ctx.has_error) {
-        throw std::runtime_error("parsing failed");
+        throw cpptrace::runtime_error("parsing failed");
     }
 
     return std::move(ctx.program);

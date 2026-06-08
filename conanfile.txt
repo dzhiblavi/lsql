@@ -4,6 +4,7 @@ tclap/1.2.5
 magic_enum/0.9.6
 spdlog/1.16.0
 abseil/20260107.1
+cpptrace/1.0.4
 
 [generators]
 CMakeDeps

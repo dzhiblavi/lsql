@@ -67,7 +67,7 @@ ast::Program parse(std::istream& is) {
     SqlParserFree(parser, free);
 
     if (ctx.has_error) {
-        throw std::runtime_error("parsing failed");
+        throw cpptrace::runtime_error("parsing failed");
     }
 
     return std::move(ctx.program);

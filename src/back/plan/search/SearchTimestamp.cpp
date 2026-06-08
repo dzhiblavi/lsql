@@ -3,6 +3,8 @@
 
 #include "util/PageSize.h"
 
+#include <cpptrace/exceptions.hpp>
+
 #include <cassert>
 
 namespace lsql::back::plan::search {
@@ -33,7 +35,7 @@ size_t lowerBoundPageImpl(
             }
 
             if (++mid >= file.pageCount()) {
-                throw std::runtime_error("fix me if I fire (1) {}");
+                throw cpptrace::runtime_error("fix me if I fire (1) {}");
             }
         }
 
@@ -56,7 +58,7 @@ size_t lowerBoundPageImpl(
             }
 
             if (--mid == 0) {
-                throw std::runtime_error("fix me if I fire (2)");
+                throw cpptrace::runtime_error("fix me if I fire (2)");
             }
         }
 
@@ -75,7 +77,7 @@ size_t lowerBoundPageImpl(
     auto page = get_page(begin);
     auto maybe_upper_ts = last(page->data());
     if (!maybe_upper_ts) {
-        throw std::runtime_error("fix me pls");
+        throw cpptrace::runtime_error("fix me pls");
     }
 
     auto upper_ts = *maybe_upper_ts;

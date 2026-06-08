@@ -12,6 +12,9 @@
 #include <llog/load.h>
 #include <llog/log.h>
 
+#include <cpptrace/cpptrace.hpp>
+#include <cpptrace/formatting.hpp>
+#include <cpptrace/from_current.hpp>
 #include <magic_enum/magic_enum.hpp>
 #include <tclap/CmdLine.h>
 
@@ -171,7 +174,8 @@ bool parseArgs(std::span<const char*> argv) {
     try {
         cmd.parse(static_cast<int>(argv.size()), argv.data());
     } catch (const TCLAP::ArgException& e) {
-        throw std::runtime_error(std::format("error for argument '{}': {}", e.argId(), e.error()));
+        throw cpptrace::runtime_error(
+            std::format("error for argument '{}': {}", e.argId(), e.error()));
     } catch (const TCLAP::ExitException& e) {
         return false;
     }
@@ -210,6 +214,9 @@ std::optional<back::plan::TimeRange> defaultTimeRange() {
 }
 
 void cliMain(std::span<const char*> argv) {
+    cpptrace::register_terminate_handler();
+    cpptrace::use_default_stderr_logger();
+
     if (!parseArgs(argv)) {
         return;
     }

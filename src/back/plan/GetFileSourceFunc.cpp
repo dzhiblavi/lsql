@@ -9,6 +9,8 @@
 
 #include "back/exec/op/Log.h"
 
+#include <cpptrace/exceptions.hpp>
+
 namespace lsql::back::plan {
 
 namespace {
@@ -21,7 +23,7 @@ back::logfmt::LogType getLogType(const back::storage::PagedFile& file) {
         return *type;
     }
 
-    throw std::runtime_error("failed to detect log type");
+    throw cpptrace::runtime_error("failed to detect log type");
 }
 
 SourcePtr getFileSourceWhole(std::string path, ConstFieldBindingPtr binding) {

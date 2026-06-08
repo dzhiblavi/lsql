@@ -2,6 +2,8 @@
 #include "util/PageSize.h"
 #include "util/verify.h"
 
+#include <cpptrace/exceptions.hpp>
+
 #include <fcntl.h>
 #include <format>
 #include <sys/mman.h>
@@ -47,7 +49,7 @@ size_t NativePagedFile::size() const {
 std::shared_ptr<NativePagedFile> NativePagedFile::open(std::filesystem::path path) {
     int fd = ::open(path.c_str(), O_RDONLY);
     if (fd == -1) {
-        throw std::runtime_error(
+        throw cpptrace::runtime_error(
             std::format(
                 "failed to open file '{}': errno={}, error={}",
                 path.c_str(),
@@ -71,7 +73,7 @@ std::shared_ptr<Page> NativePagedFile::page(size_t index) const {
     void* addr = ::mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd_,
                         offset);                // NOLINT
     if (addr == reinterpret_cast<void*>(-1)) {  // NOLINT
-        throw std::runtime_error(
+        throw cpptrace::runtime_error(
             std::format(
                 "failed to map a page {}: errno={}, error={}", index, errno, strerror(errno)));
     }
@@ -84,13 +86,13 @@ size_t NativePagedFile::read(size_t offset, std::span<char> dest) const {
     verify(offset < size());
 
     if (lseek(fd_, offset, SEEK_SET) == -1) {  // NOLINT
-        throw std::runtime_error(
+        throw cpptrace::runtime_error(
             std::format("lseek failed: errno={}, error={}", errno, strerror(errno)));
     }
 
     size_t read = ::read(fd_, dest.data(), dest.size());
     if (read == static_cast<size_t>(-1)) {
-        throw std::runtime_error(
+        throw cpptrace::runtime_error(
             std::format("read failed: errno={}, error={}", errno, strerror(errno)));
     }
 

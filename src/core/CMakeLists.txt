@@ -1,5 +1,6 @@
 find_package(magic_enum REQUIRED)
 find_package(absl REQUIRED)
+find_package(cpptrace REQUIRED)
 
 add_library(
     lsql-core STATIC
@@ -16,4 +17,5 @@ target_link_libraries(
     magic_enum::magic_enum
     llog
     abseil::abseil
+    cpptrace::cpptrace
 )
