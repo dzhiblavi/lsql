@@ -99,7 +99,7 @@ bound::Expr bindExpr(ast::LikeExpr e, auto&& /*self*/, Context& ctx) {
 }
 
 bound::Expr bindExpr(ast::FnCallExpr e, auto&& self, Context& ctx) {
-    auto args_span = e.args.empty() ? SourceSpan{} : merge(e.args.front().span, e.args.back().span);
+    auto args_span = spanOf(e.args);
     auto args = bindExprs(std::move(e.args), ctx);
 
     if (auto un_aggr_type = common::bind::unaryAggregateType(e.func)) {

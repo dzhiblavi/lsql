@@ -135,9 +135,7 @@ statements(Os) ::= statements(Ps) statement(P). {
 
 statement(S) ::= pipeline(P). {
     S = new ast::Statement{
-        .node = ast::QueryStatement{
-            .pipeline = Box<ast::Pipeline>(P),
-        },
+        .node = ast::QueryStatement{ .pipeline = Box<ast::Pipeline>(P) },
         .span = P->span,
     };
 }
@@ -658,12 +656,15 @@ expression(E) ::= TOKEN_RSUBSTR(Rs) TOKEN_LPAREN expression(X) TOKEN_COMMA TOKEN
     args.push_back(std::move(*X));
     delete X;
 
-    args.emplace_back(ast::LiteralExpr{
-        .literal = Literal{
-            .type = ValueType::String,
-            .value_str = P.text,
-            .span = P.span,
+    args.push_back(ast::Expr{
+        .node = ast::LiteralExpr{
+            .literal = Literal{
+                .type = ValueType::String,
+                .value_str = P.text,
+                .span = P.span,
+            },
         },
+        .span = P.span,
     });
 
     E = new ast::Expr{

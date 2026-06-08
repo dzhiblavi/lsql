@@ -28,7 +28,6 @@ void pipeSetLocPtr(lsql::front::SourceSpan* ptr) {
         } else {                                           \
             ++current_pos.column;                          \
         }                                                  \
-        ++current_pos.offset;                              \
     }                                                      \
     yylloc->end = current_pos;
 

@@ -8,12 +8,19 @@ namespace lsql::front {
 struct SourcePos {
     int line;
     int column;
-    int offset;
+
+    bool empty() const { return line == -1 && column == -1; }
+
+    bool operator<(const SourcePos& o) const {
+        return line != o.line ? line < o.line : column < o.column;
+    }
 };
 
 struct SourceSpan {
     SourcePos begin;
     SourcePos end;
+
+    bool empty() const { return begin.empty() || end.empty(); }
 };
 
 struct RichSourceSpan {
@@ -22,19 +29,26 @@ struct RichSourceSpan {
 };
 
 inline SourceSpan merge(SourceSpan a, SourceSpan b) {
+    if (a.empty()) {
+        return b;
+    }
+    if (b.empty()) {
+        return a;
+    }
+
     return {
-        .begin = a.begin,
-        .end = b.end,
+        .begin = std::min(a.begin, b.begin),
+        .end = std::max(a.end, b.end),
     };
 }
 
 template <typename T>
 SourceSpan spanOf(const std::vector<T>& args) {
-    if (args.empty()) {
-        return SourceSpan{};
+    auto span = SourceSpan({-1, -1}, {-1, -1});
+    for (auto&& a : args) {
+        span = merge(span, a.span);
     }
-
-    return merge(args.front().span, args.back().span);
+    return span;
 }
 
 }  // namespace lsql::front

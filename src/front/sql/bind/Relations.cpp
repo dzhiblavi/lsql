@@ -94,7 +94,8 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& self, Context& ctx) {
             cond.level != common::bound::ExprKindLevel::Group,
             r.where->span,
             "WHERE condition cannot be aggregate");
-        where = bound::Where{.condition = box<bound::Expr>(std::move(cond))};
+
+        where = bound::Where{.condition = box(std::move(cond))};
     }
 
     std::optional<bound::Limit> limit;

@@ -253,6 +253,8 @@ int main(int argc, const char** argv) {
     try {
         lsql::cliMain(std::span<const char*>(argv, argc));
         return 0;
+    } catch (const cpptrace::exception& e) {
+        llog::err("error: {}", e.message());
     } catch (const std::exception& e) {
         llog::err("error: {}", e.what());
         return 1;

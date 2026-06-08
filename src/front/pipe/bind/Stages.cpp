@@ -165,8 +165,8 @@ bound::Stage bindStage(ast::GroupStage r, auto&& /*self*/, Context& ctx) {
                 requireAt(
                     group_list_map.contains(p.field_id),
                     projectors_span,
-                    "group by: unknown field id {}",
-                    p.field_id);
+                    "group by: unknown field '{}'",
+                    to_string(p.field_id, *ctx.binding()));
             },
             [&](const bound::ExprProjector& p) {
                 if (p.expr->level != ExprKindLevel::Row) {
@@ -177,8 +177,8 @@ bound::Stage bindStage(ast::GroupStage r, auto&& /*self*/, Context& ctx) {
                     requireAt(
                         group_list_map.contains(id),
                         projectors_span,
-                        "group by: unknown field id {} required by expression",
-                        id);
+                        "group by: unknown field '{}'",
+                        to_string(id, *ctx.binding()));
                 }
             });
     }
@@ -189,7 +189,7 @@ bound::Stage bindStage(ast::GroupStage r, auto&& /*self*/, Context& ctx) {
                 .projectors = std::move(projectors),
                 .group_list = std::move(group_list),
             },
-        .fields_out = FieldSetNode::make(projectors_fields, ctx.currFieldSet().top()),
+        .fields_out = FieldSetNode::make(projectors_fields),
     };
 }
 
