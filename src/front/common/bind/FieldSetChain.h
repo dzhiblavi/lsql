@@ -2,8 +2,6 @@
 
 #include "front/common/bound/FieldSetNode.h"
 
-#include "util/require.h"
-
 namespace lsql::front::common::bind {
 
 struct FieldSetChain {
@@ -13,9 +11,9 @@ struct FieldSetChain {
 
     bound::FieldSetNodePtr top() { return current_; }
 
-    ValueType typeOfSourceField(std::string_view name, FieldBindingPtr binding) {
+    std::optional<ValueType> typeOfSourceField(std::string_view name, FieldBindingPtr binding) {
         if (current_ == nullptr) {
-            throwError("unknown field {}", name);
+            return std::nullopt;
         }
 
         for (auto id : current_->fieldSet().fieldIds()) {
@@ -31,7 +29,10 @@ struct FieldSetChain {
             return ValueType::String;
         }
 
-        require(parent_ != nullptr, "unknown field: {}", name);
+        if (parent_ == nullptr) {
+            return std::nullopt;
+        }
+
         return parent_->typeOfSourceField(name, binding);
     }
 

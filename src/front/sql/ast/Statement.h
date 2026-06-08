@@ -2,6 +2,8 @@
 
 #include "front/sql/ast/fwd/Relation.h"
 
+#include "front/common/source/SourceSpan.h"
+
 #include "core/types.h"
 
 #include <variant>
@@ -12,12 +14,10 @@ namespace lsql::front::sql::ast {
 struct NamedRelationStatement;
 struct QueryStatement;
 
-using Statement = std::variant<  //
+using StatementNode = std::variant<  //
     NamedRelationStatement,
     QueryStatement //
 >;
-
-using Program = std::vector<Statement>;
 
 struct NamedRelationStatement {
     std::string name;
@@ -27,5 +27,12 @@ struct NamedRelationStatement {
 struct QueryStatement {
     Box<Relation> relation;
 };
+
+struct Statement {
+    StatementNode node;
+    SourceSpan span;
+};
+
+using Program = std::vector<Statement>;
 
 }  // namespace lsql::front::sql::ast

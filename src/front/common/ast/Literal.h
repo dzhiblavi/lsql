@@ -1,5 +1,7 @@
 #pragma once
 
+#include "front/common/source/SourceSpan.h"
+
 #include "core/Value.h"
 #include "core/ValueType.h"
 
@@ -14,6 +16,7 @@ namespace lsql::front::common::ast {
 struct Literal {
     ValueType type;
     std::string value_str;
+    SourceSpan span;
 };
 
 inline std::string removeQuotes(const std::string& s) {

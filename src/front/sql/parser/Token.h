@@ -1,12 +1,15 @@
 #pragma once
 
+#include "front/common/source/SourceSpan.h"
+
 #include <cstddef>
 
 namespace lsql::front::sql::parse {
 
-struct Token {
+struct Token {  // NOLINT
     int code;
     const char* text;
+    SourceSpan span;
 };
 
 }  // namespace lsql::front::sql::parse

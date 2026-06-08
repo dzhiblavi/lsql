@@ -5,6 +5,8 @@
 
 #include "front/common/ast/Literal.h"
 
+#include "front/common/source/SourceSpan.h"
+
 #include "core/types.h"
 
 #include <optional>
@@ -15,12 +17,6 @@ namespace lsql::front::sql::ast {
 struct AdhocRelation {
     std::vector<common::ast::Literal> literals;
 };
-
-struct StarProjector;
-struct IdentifierProjector;
-struct ExprProjector;
-
-using Projector = std::variant<StarProjector, IdentifierProjector, ExprProjector>;
 
 struct StarProjector {};
 
@@ -33,21 +29,36 @@ struct ExprProjector {
     Box<Expr> expr;
 };
 
+struct StarProjector;
+struct IdentifierProjector;
+struct ExprProjector;
+
+using ProjectorNode = std::variant<StarProjector, IdentifierProjector, ExprProjector>;
+
+struct Projector {
+    ProjectorNode node;
+    SourceSpan span;
+};
+
 struct Limit {
     int limit;
+    SourceSpan span;
 };
 
 struct Where {
     Box<Expr> condition;
+    SourceSpan span;
 };
 
 struct OrderBy {
     std::vector<Expr> order_list;
     bool desc;
+    SourceSpan span;
 };
 
 struct GroupBy {
     std::vector<Projector> group_list;
+    SourceSpan span;
 };
 
 struct SelectRelation {
@@ -87,6 +98,11 @@ struct NamedRelationReferenceRelation {
 
 struct MaterializeRelation {
     Box<Relation> relation;
+};
+
+struct Relation {
+    RelationNode node;
+    SourceSpan span;
 };
 
 }  // namespace lsql::front::sql::ast

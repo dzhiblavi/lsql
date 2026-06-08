@@ -31,15 +31,17 @@ class Context {
         };
     }
 
-    void insert(const std::string& name, bound::FieldSetNodePtr p) {
-        require(!named_.contains(name), "duplicate named pipeline '{}'", name);
+    [[nodiscard]] bool insert(const std::string& name, bound::FieldSetNodePtr p) {
+        if (named_.contains(name)) {
+            return false;
+        }
         named_[name] = p;
+        return true;
     }
 
     bound::FieldSetNodePtr find(const std::string& name) {
         auto it = named_.find(name);
-        require(it != named_.end(), "unknown named pipeline '{}'", name);
-        return it->second;
+        return it == named_.end() ? nullptr : it->second;
     }
 
  private:

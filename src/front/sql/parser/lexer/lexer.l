@@ -3,9 +3,34 @@
 %option never-interactive
 %option prefix="sql_"
 
+%top {
+#include "front/common/source/SourceSpan.h"
+void sqlSetLocPtr(lsql::front::SourceSpan* ptr);
+}
+
 %{
 
 #include "front/sql/parser/grammar/grammar.h"
+
+static lsql::front::SourcePos current_pos;
+static lsql::front::SourceSpan* yylloc;
+
+void sqlSetLocPtr(lsql::front::SourceSpan* ptr) {
+    yylloc = ptr;
+}
+
+#define YY_USER_ACTION                                     \
+    yylloc->begin = current_pos;                           \
+    for (int i = 0; i < yyleng; ++i) {                     \
+        if (yytext[i] == '\n') {                           \
+            ++current_pos.line;                            \
+            current_pos.column = 1;                        \
+        } else {                                           \
+            ++current_pos.column;                          \
+        }                                                  \
+        ++current_pos.offset;                              \
+    }                                                      \
+    yylloc->end = current_pos;
 
 %}
 

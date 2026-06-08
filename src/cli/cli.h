@@ -254,10 +254,10 @@ int main(int argc, const char** argv) {
         lsql::cliMain(std::span<const char*>(argv, argc));
         return 0;
     } catch (const std::exception& e) {
-        llog::critical("error: {}", e.what());
+        llog::err("error: {}", e.what());
         return 1;
     } catch (...) {
-        llog::critical("unknown error");
+        llog::err("unknown error");
         return 2;
     }
 }

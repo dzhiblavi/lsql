@@ -130,16 +130,22 @@ statement_list(S) ::= statement_list(SL) statement(S1). {
 }
 
 statement(S) ::= relation(R). {
-    S = new ast::Statement(ast::QueryStatement{
-        .relation = Box<ast::Relation>(R),
-    });
+    S = new ast::Statement{
+        .node = ast::QueryStatement{
+            .relation = Box<ast::Relation>(R),
+        },
+        .span = R->span,
+    };
 }
 
 statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ select_source(R). {
-    S = new ast::Statement(ast::NamedRelationStatement{
-        .name = Name.text,
-        .relation = Box<ast::Relation>(R),
-    });
+    S = new ast::Statement{
+        .node = ast::NamedRelationStatement{
+            .name = Name.text,
+            .relation = Box<ast::Relation>(R),
+        },
+        .span = merge(Name.span, R->span),
+    };
 }
 
 // immediate = does not require parentheses in SELECT FROM <here>
@@ -147,15 +153,21 @@ immediate_relation(R) ::= adhoc_relation(A). { R = A; }
 immediate_relation(R) ::= file_source(F). { R = F; }
 
 immediate_relation(R) ::= TOKEN_DOLLAR TOKEN_IDENTIFIER(Name). {
-    R = new ast::Relation(ast::NamedRelationReferenceRelation{
-        .name = Name.text,
-    });
+    R = new ast::Relation{
+        .node = ast::NamedRelationReferenceRelation{
+            .name = Name.text,
+        },
+        .span = Name.span,
+    };
 }
 
-immediate_relation(R) ::= TOKEN_MATERIALIZE TOKEN_LPAREN relation(S) TOKEN_RPAREN. {
-    R = new ast::Relation(ast::MaterializeRelation{
-        .relation = Box<ast::Relation>(S),
-    });
+immediate_relation(R) ::= TOKEN_MATERIALIZE(m) TOKEN_LPAREN relation(S) TOKEN_RPAREN(r). {
+    R = new ast::Relation{
+        .node = ast::MaterializeRelation{
+            .relation = Box<ast::Relation>(S),
+        },
+        .span = merge(m.span, r.span),
+    };
 }
 
 // all kinds of relations that can be used on top level
@@ -163,61 +175,82 @@ relation(R) ::= immediate_relation(A). { R = A; }
 relation(R) ::= select_statement(A). { R = A; }
 
 relation(A) ::= relation(L) TOKEN_UNION_ALL relation(R). {
-    A = new ast::Relation(ast::UnionAllRelation{
-        .left = Box<ast::Relation>(L),
-        .right = Box<ast::Relation>(R),
-    });
+    A = new ast::Relation{
+        .node = ast::UnionAllRelation{
+            .left = Box<ast::Relation>(L),
+            .right = Box<ast::Relation>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
 }
 
 relation(A) ::= relation(L) TOKEN_UNION_ALL_SORTED_BY expression_list(S) relation(R). {
-    A = new ast::Relation(ast::UnionAllSortedByRelation{
-        .left = Box<ast::Relation>(L),
-        .right = Box<ast::Relation>(R),
-        .order_by = {
-            .order_list = std::move(*S),
-            .desc = false,
+    A = new ast::Relation{
+        .node = ast::UnionAllSortedByRelation{
+            .left = Box<ast::Relation>(L),
+            .right = Box<ast::Relation>(R),
+            .order_by = {
+                .order_list = std::move(*S),
+                .desc = false,
+            },
         },
-    });
+        .span = merge(L->span, R->span),
+    };
 
     delete S;
 }
 
 relation(A) ::= relation(L) TOKEN_UNION_ALL_SORTED_BY expression_list(S) TOKEN_DESC relation(R). {
-    A = new ast::Relation(ast::UnionAllSortedByRelation{
-        .left = Box<ast::Relation>(L),
-        .right = Box<ast::Relation>(R),
-        .order_by = {
-            .order_list = std::move(*S),
-            .desc = true,
+    A = new ast::Relation{
+        .node = ast::UnionAllSortedByRelation{
+            .left = Box<ast::Relation>(L),
+            .right = Box<ast::Relation>(R),
+            .order_by = {
+                .order_list = std::move(*S),
+                .desc = true,
+            },
         },
-    });
+        .span = merge(L->span, R->span),
+    };
 
     delete S;
 }
 
-adhoc_relation(A) ::= TOKEN_LPAREN value_list(L) TOKEN_RPAREN. {
-    A = new ast::Relation(ast::AdhocRelation{
-        .literals = std::move(*L),
-    });
+adhoc_relation(A) ::= TOKEN_LPAREN(LP) value_list(L) TOKEN_RPAREN(RP). {
+    A = new ast::Relation{
+        .node = ast::AdhocRelation{
+            .literals = std::move(*L),
+        },
+        .span = merge(LP.span, RP.span),
+    };
 
     delete L;
 }
 
-select_statement(A) ::= TOKEN_SELECT select_list(L)
+select_statement(A) ::= TOKEN_SELECT(S) select_list(L)
                         TOKEN_FROM select_source(F)
                         where_opt(Wh)
                         group_by_opt(Gr)
                         order_by_opt(Ord)
                         limit_opt(Lim).
 {
-    A = new ast::Relation(ast::SelectRelation{
-        .projectors = std::move(*L),
-        .source = Box<ast::Relation>(F),
-        .limit = std::move(*Lim),
-        .where = std::move(*Wh),
-        .order_by = std::move(*Ord),
-        .group_by = std::move(*Gr),
-    });
+    auto end_span = Lim->has_value() ? (*Lim)->span
+        : Ord->has_value() ? (*Ord)->span
+        : Gr->has_value() ? (*Gr)->span
+        : Wh->has_value() ? (*Wh)->span
+        : F->span;
+
+    A = new ast::Relation{
+        .node = ast::SelectRelation{
+            .projectors = std::move(*L),
+            .source = Box<ast::Relation>(F),
+            .limit = std::move(*Lim),
+            .where = std::move(*Wh),
+            .order_by = std::move(*Ord),
+            .group_by = std::move(*Gr),
+        },
+        .span = merge(S.span, end_span),
+    };
 
     delete L;
     delete Lim;
@@ -227,37 +260,54 @@ select_statement(A) ::= TOKEN_SELECT select_list(L)
 }
 
 // all relations in parentheses
-select_source(S) ::= TOKEN_LPAREN relation(R) TOKEN_RPAREN. { S = R; }
+select_source(S) ::= TOKEN_LPAREN(LP) relation(R) TOKEN_RPAREN(RP). {
+    S = R;
+    S->span = merge(LP.span, RP.span);
+}
+
 // immediate relations as is
 select_source(S) ::= immediate_relation(R). { S = R; }
 
 file_source(F) ::= TOKEN_PATH(File). {
-    F = new ast::Relation(ast::FileRelation{
-        .path = File.text,
-    });
+    F = new ast::Relation{
+        .node = ast::FileRelation{
+            .path = File.text,
+        },
+        .span = File.span,
+    };
 }
 
 file_source(F) ::= TOKEN_PATH(File) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKEN_INTEGER(Interval). {
-    F = new ast::Relation(ast::FileIntervalRelation{
-        .path = File.text,
-        .ts_from = Ts.text,
-        .interval_s = std::stoi(Interval.text),
-    });
+    F = new ast::Relation{
+        .node = ast::FileIntervalRelation{
+            .path = File.text,
+            .ts_from = Ts.text,
+            .interval_s = std::stoi(Interval.text),
+        },
+        .span = merge(File.span, Interval.span),
+    };
 }
 
 where_opt(A) ::= . { A = new std::optional<ast::Where>(); }
 
-where_opt(A) ::= TOKEN_WHERE condition(C). {
+where_opt(A) ::= TOKEN_WHERE(W) condition(C). {
     A = new std::optional<ast::Where>(ast::Where{
         .condition = Box<ast::Expr>(C),
+        .span = merge(W.span, C->span),
     });
 }
 
 group_by_opt(G) ::= . { G = new std::optional<ast::GroupBy>(); }
 
-group_by_opt(G) ::= TOKEN_GROUP_BY group_by_list(L). {
+group_by_opt(G) ::= TOKEN_GROUP_BY(GB) group_by_list(L). {
+    auto end_span = GB.span;
+    if (!L->empty()) {
+        end_span = L->back().span;
+    }
+
     G = new std::optional<ast::GroupBy>(ast::GroupBy{
         .group_list = std::move(*L),
+        .span = merge(GB.span, end_span),
     });
 
     delete L;
@@ -265,28 +315,36 @@ group_by_opt(G) ::= TOKEN_GROUP_BY group_by_list(L). {
 
 order_by_opt(G) ::= . { G = new std::optional<ast::OrderBy>(); }
 
-order_by_opt(G) ::= TOKEN_ORDER_BY expression_list(L). {
+order_by_opt(G) ::= TOKEN_ORDER_BY(OB) expression_list(L). {
+    auto end_span = OB.span;
+    if (!L->empty()) {
+        end_span = L->back().span;
+    }
+
     G = new std::optional<ast::OrderBy>(ast::OrderBy{
         .order_list = std::move(*L),
         .desc = false,
+        .span = merge(OB.span, end_span),
     });
 
     delete L;
 }
 
-order_by_opt(G) ::= TOKEN_ORDER_BY expression_list(L) TOKEN_ASC. {
+order_by_opt(G) ::= TOKEN_ORDER_BY(OB) expression_list(L) TOKEN_ASC(A). {
     G = new std::optional<ast::OrderBy>(ast::OrderBy{
         .order_list = std::move(*L),
         .desc = false,
+        .span = merge(OB.span, A.span),
     });
 
     delete L;
 }
 
-order_by_opt(G) ::= TOKEN_ORDER_BY expression_list(L) TOKEN_DESC. {
+order_by_opt(G) ::= TOKEN_ORDER_BY(OB) expression_list(L) TOKEN_DESC(D). {
     G = new std::optional<ast::OrderBy>(ast::OrderBy{
         .order_list = std::move(*L),
         .desc = true,
+        .span = merge(OB.span, D.span),
     });
 
     delete L;
@@ -296,9 +354,10 @@ condition(C) ::= expression(E). { C = E; }
 
 limit_opt(A) ::= . { A = new std::optional<ast::Limit>(); }
 
-limit_opt(A) ::= TOKEN_LIMIT TOKEN_INTEGER(N). {
+limit_opt(A) ::= TOKEN_LIMIT(L) TOKEN_INTEGER(N). {
     A = new std::optional<ast::Limit>(ast::Limit{
         .limit = std::stoi(N.text),
+        .span = merge(L.span, N.span),
     });
 }
 
@@ -314,21 +373,28 @@ select_list(A) ::= select_list(B) TOKEN_COMMA select_item(C). {
     delete C;
 }
 
-select_item(A) ::= TOKEN_STAR. {
-    A = new ast::Projector(ast::StarProjector());
+select_item(A) ::= TOKEN_STAR(S). {
+    A = new ast::Projector{
+        .node = ast::StarProjector(),
+        .span = S.span,
+    };
 }
 
 select_item(A) ::= TOKEN_IDENTIFIER(Id). {
-    A = new ast::Projector(ast::IdentifierProjector{
-        .identifier = Id.text,
-    });
+    A = new ast::Projector{
+        .node = ast::IdentifierProjector{ .identifier = Id.text },
+        .span = Id.span,
+    };
 }
 
 select_item(A) ::= expression(E) TOKEN_AS TOKEN_IDENTIFIER(Id). {
-    A = new ast::Projector(ast::ExprProjector{
-        .alias = Id.text,
-        .expr = Box<ast::Expr>(E),
-    });
+    A = new ast::Projector{
+        .node = ast::ExprProjector{
+            .alias = Id.text,
+            .expr = Box<ast::Expr>(E),
+        },
+        .span = merge(E->span, Id.span),
+    };
 }
 
 group_by_list(A) ::= select_item(B). {
@@ -356,191 +422,254 @@ expression_list(A) ::= expression_list(B) TOKEN_COMMA expression(C). {
 }
 
 expression(E) ::= value(V). {
-    E = new ast::Expr(ast::LiteralExpr{
-        .literal = std::move(*V),
-    });
+    E = new ast::Expr{
+        .node = ast::LiteralExpr{ .literal = std::move(*V) },
+        .span = V->span,
+    };
 
     delete V;
 }
 
-expression(E) ::= TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_LPAREN(LP) expression(X) TOKEN_RPAREN(RP). {
     E = X;
+    E->span = merge(LP.span, RP.span);
 }
 
 expression(E) ::= TOKEN_IDENTIFIER(Id). {
-    E = new ast::Expr(ast::IdentifierExpr{
-        .identifier = Id.text,
-    });
+    E = new ast::Expr{
+        .node = ast::IdentifierExpr{ .identifier = Id.text },
+        .span = Id.span,
+    };
 }
 
-expression(E) ::= TOKEN_STRING TOKEN_LPAREN expression(S) TOKEN_RPAREN. {
-    E = new ast::Expr(ast::CastExpr{
-        .cast_to = ValueType::String,
-        .expr = Box<ast::Expr>(S),
-    });
+expression(E) ::= TOKEN_STRING(Str) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::CastExpr{
+            .cast_to = ValueType::String,
+            .expr = Box<ast::Expr>(S),
+        },
+        .span = merge(Str.span, RP.span),
+    };
 }
 
-expression(E) ::= TOKEN_INT TOKEN_LPAREN expression(S) TOKEN_RPAREN. {
-    E = new ast::Expr(ast::CastExpr{
-        .cast_to = ValueType::Integer,
-        .expr = Box<ast::Expr>(S),
-    });
+expression(E) ::= TOKEN_INT(I) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::CastExpr{
+            .cast_to = ValueType::Integer,
+            .expr = Box<ast::Expr>(S),
+        },
+        .span = merge(I.span, RP.span),
+    };
 }
 
-expression(E) ::= TOKEN_FLOAT TOKEN_LPAREN expression(S) TOKEN_RPAREN. {
-    E = new ast::Expr(ast::CastExpr{
-        .cast_to = ValueType::Floating,
-        .expr = Box<ast::Expr>(S),
-    });
+expression(E) ::= TOKEN_FLOAT(F) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::CastExpr{
+            .cast_to = ValueType::Floating,
+            .expr = Box<ast::Expr>(S),
+        },
+        .span = merge(F.span, RP.span),
+    };
 }
 
-expression(E) ::= TOKEN_BOOL TOKEN_LPAREN expression(S) TOKEN_RPAREN. {
-    E = new ast::Expr(ast::CastExpr{
-        .cast_to = ValueType::Boolean,
-        .expr = Box<ast::Expr>(S),
-    });
+expression(E) ::= TOKEN_BOOL(B) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::CastExpr{
+            .cast_to = ValueType::Boolean,
+            .expr = Box<ast::Expr>(S),
+        },
+        .span = merge(B.span, RP.span),
+    };
 }
 
-expression(E) ::= TOKEN_EXCLAMATION expression(S). {
-    E = new ast::Expr(ast::UnaryExpr{
-        .type = common::ast::UnaryExprType::Not,
-        .expr = Box<ast::Expr>(S),
-    });
+expression(E) ::= TOKEN_EXCLAMATION(Ex) expression(S). {
+    E = new ast::Expr{
+        .node = ast::UnaryExpr{
+            .type = common::ast::UnaryExprType::Not,
+            .expr = Box<ast::Expr>(S),
+        },
+        .span = merge(Ex.span, S->span),
+    };
 }
 
-expression(E) ::= TOKEN_NOT expression(S). {
-    E = new ast::Expr(ast::UnaryExpr{
-        .type = common::ast::UnaryExprType::Not,
-        .expr = Box<ast::Expr>(S),
-    });
+expression(E) ::= TOKEN_NOT(N) expression(S). {
+    E = new ast::Expr{
+        .node = ast::UnaryExpr{
+            .type = common::ast::UnaryExprType::Not,
+            .expr = Box<ast::Expr>(S),
+        },
+        .span = merge(N.span, S->span),
+    };
 }
 
-expression(E) ::= TOKEN_COUNT TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
     auto args = std::vector<ast::Expr>();
     args.push_back(std::move(*X));
     delete X;
 
-    E = new ast::Expr(ast::FnCallExpr{
-        .func = "builtin_count_nonnull",
-        .args = std::move(args),
-    });
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_count_nonnull",
+            .args = std::move(args),
+        },
+        .span = merge(C.span, RP.span),
+    };
 }
 
-expression(E) ::= TOKEN_COUNT TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN. {
-    E = new ast::Expr(ast::FnCallExpr{
-        .func = "builtin_count_all",
-        .args = {},
-    });
+expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_count_all",
+            .args = {},
+        },
+        .span = merge(C.span, RP.span),
+    };
 }
 
-expression(E) ::= TOKEN_MIN TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_MIN(M) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
     auto args = std::vector<ast::Expr>();
     args.push_back(std::move(*X));
     delete X;
 
-    E = new ast::Expr(ast::FnCallExpr{
-        .func = "builtin_min",
-        .args = std::move(args),
-    });
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_min",
+            .args = std::move(args),
+        },
+        .span = merge(M.span, RP.span),
+    };
 }
 
-expression(E) ::= TOKEN_MAX TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_MAX(M) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
     auto args = std::vector<ast::Expr>();
     args.push_back(std::move(*X));
     delete X;
 
-    E = new ast::Expr(ast::FnCallExpr{
-        .func = "builtin_max",
-        .args = std::move(args),
-    });
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_max",
+            .args = std::move(args),
+        },
+        .span = merge(M.span, RP.span),
+    };
 }
 
-expression(E) ::= TOKEN_SUM TOKEN_LPAREN expression(X) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_SUM(S) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
     auto args = std::vector<ast::Expr>();
     args.push_back(std::move(*X));
     delete X;
 
-    E = new ast::Expr(ast::FnCallExpr{
-        .func = "builtin_sum",
-        .args = std::move(args),
-    });
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_sum",
+            .args = std::move(args),
+        },
+        .span = merge(S.span, RP.span),
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_LIKE TOKEN_STR(R). {
     auto str = std::string(R.text);
 
-    E = new ast::Expr(ast::LikeExpr{
-        .expr = Box<ast::Expr>(L),
-        .regex = str.substr(1, str.size() - 2),
-    });
+    E = new ast::Expr{
+        .node = ast::LikeExpr{
+            .expr = Box<ast::Expr>(L),
+            .regex = str.substr(1, str.size() - 2),
+        },
+        .span = merge(L->span, R.span),
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_EQ expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::Equal,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Equal,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_NEQ expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::NotEqual,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::NotEqual,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_AND expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::And,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::And,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_OR expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::Or,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Or,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_DIVIDE expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::Divide,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Divide,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_PLUS expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::Plus,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Plus,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_MINUS expression(R). {
-    E = new ast::Expr(ast::BinaryExpr{
-        .type = common::ast::BinaryExprType::Minus,
-        .left = Box<ast::Expr>(L),
-        .right = Box<ast::Expr>(R),
-    });
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Minus,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
 }
 
-expression(E) ::= TOKEN_COALESCE TOKEN_LPAREN expression_list(L) TOKEN_RPAREN. {
-    E = new ast::Expr(ast::FnCallExpr{
-        .func = "builtin_coalesce",
-        .args = std::move(*L),
-    });
+expression(E) ::= TOKEN_COALESCE(C) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_coalesce",
+            .args = std::move(*L),
+        },
+        .span = merge(C.span, RP.span),
+    };
 
     delete L;
 }
 
-expression(E) ::= TOKEN_PERCENTILE TOKEN_LPAREN expression(X) TOKEN_COMMA value_list(P) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_PERCENTILE(Pe) TOKEN_LPAREN expression(X) TOKEN_COMMA value_list(P) TOKEN_RPAREN(RP). {
     auto args = std::vector<ast::Expr>();
     args.reserve(P->size() + 1);
 
@@ -548,45 +677,59 @@ expression(E) ::= TOKEN_PERCENTILE TOKEN_LPAREN expression(X) TOKEN_COMMA value_
     delete X;
 
     for (auto&& literal : *P) {
-        args.push_back(ast::Expr(ast::LiteralExpr{
-            .literal = std::move(literal),
-        }));
+        auto span = literal.span;
+        args.push_back(ast::Expr{
+            .node = ast::LiteralExpr{ .literal = std::move(literal) },
+            .span = span,
+        });
     }
 
     delete P;
 
-    E = new ast::Expr(ast::FnCallExpr{
-        .func = "builtin_percentile",
-        .args = std::move(args),
-    });
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_percentile",
+            .args = std::move(args),
+        },
+        .span = merge(Pe.span, RP.span),
+    };
 }
 
-expression(E) ::= TOKEN_RSUBSTR TOKEN_LPAREN expression(A) TOKEN_COMMA TOKEN_STR(P) TOKEN_RPAREN. {
+expression(E) ::= TOKEN_RSUBSTR(Rs) TOKEN_LPAREN expression(A) TOKEN_COMMA TOKEN_STR(P) TOKEN_RPAREN(RP). {
     auto args = std::vector<ast::Expr>();
     args.reserve(2);
 
     args.push_back(std::move(*A));
-
-    args.emplace_back(ast::LiteralExpr{
-        .literal = Literal{
-            .type = ValueType::String,
-            .value_str = P.text,
+    args.push_back(ast::Expr{
+        .node = ast::LiteralExpr{
+            .literal = Literal{
+                .type = ValueType::String,
+                .value_str = P.text,
+                .span = P.span,
+            },
         },
+        .span = P.span,
     });
 
     delete A;
 
-    E = new ast::Expr(ast::FnCallExpr{
-        .func = "builtin_rsubstr",
-        .args = std::move(args),
-    });
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = "builtin_rsubstr",
+            .args = std::move(args),
+        },
+        .span = merge(Rs.span, RP.span),
+    };
 }
 
 expression(E) ::= expression(L) TOKEN_IN select_source(S). {
-    E = new ast::Expr(ast::InExpr{
-        .expr = Box<ast::Expr>(L),
-        .match = Box<ast::Relation>(S),
-    });
+    E = new ast::Expr{
+        .node = ast::InExpr{
+            .expr = Box<ast::Expr>(L),
+            .match = Box<ast::Relation>(S),
+        },
+        .span = merge(L->span, S->span),
+    };
 }
 
 value_list(L) ::= value(V). {
@@ -605,6 +748,7 @@ value(E) ::= TOKEN_STR(S). {
     E = new Literal{
         .type = ValueType::String,
         .value_str = S.text,
+        .span = S.span,
     };
 }
 
@@ -612,6 +756,7 @@ value(E) ::= TOKEN_INTEGER(I). {
     E = new Literal{
         .type = ValueType::Integer,
         .value_str = I.text,
+        .span = I.span,
     };
 }
 
@@ -619,6 +764,7 @@ value(E) ::= TOKEN_FLOATING(I). {
     E = new Literal{
         .type = ValueType::Floating,
         .value_str = I.text,
+        .span = I.span,
     };
 }
 
@@ -626,6 +772,7 @@ value(E) ::= TOKEN_TRUE(S). {
     E = new Literal{
         .type = ValueType::Boolean,
         .value_str = S.text,
+        .span = S.span,
     };
 }
 
@@ -633,18 +780,19 @@ value(E) ::= TOKEN_FALSE(S). {
     E = new Literal{
         .type = ValueType::Boolean,
         .value_str = S.text,
+        .span = S.span,
     };
 }
 
-value(E) ::= TOKEN_NULL. {
+value(E) ::= TOKEN_NULL(N). {
     E = new Literal{
         .type = ValueType::Null,
-        .value_str = "",
+        .value_str = N.text,
+        .span = N.span,
     };
 }
 
 %syntax_error {
-    const char* token_text = TOKEN.text;
-    fprintf(stderr, "Syntax error at line near token: '%s'\n", token_text);
     pCtx->has_error = true;
+    pCtx->error_span = TOKEN.span;
 }

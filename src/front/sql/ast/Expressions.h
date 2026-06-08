@@ -6,6 +6,8 @@
 #include "front/common/ast/Expressions.h"
 #include "front/common/ast/Literal.h"
 
+#include "front/common/source/SourceSpan.h"
+
 #include "core/ValueType.h"
 #include "core/types.h"
 
@@ -51,6 +53,11 @@ struct BinaryExpr {
 struct UnaryExpr {
     common::ast::UnaryExprType type;
     Box<Expr> expr;
+};
+
+struct Expr {
+    ExprNode node;
+    SourceSpan span;
 };
 
 }  // namespace lsql::front::sql::ast

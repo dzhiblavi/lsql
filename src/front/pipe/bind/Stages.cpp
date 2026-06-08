@@ -29,8 +29,9 @@ void bindProjector(ast::Projector p, std::vector<bound::Projector>& out, Context
         [&](ast::StarProjector) { out.emplace_back(bound::StarProjector{}); },
         [&](ast::IdentifierProjector p) {
             auto name = p.identifier.substr(1);
-            auto type = ctx.currFieldSet().typeOfSourceField(name, ctx.binding());
-            auto id = ctx.binding()->getOrAdd(name, type);
+            auto maybe_type = ctx.currFieldSet().typeOfSourceField(name, ctx.binding());
+            require(maybe_type.has_value(), "unknown field '{}'", name);
+            auto id = ctx.binding()->getOrAdd(name, *maybe_type);
             out.emplace_back(bound::IdentifierProjector{.field_id = id});
         },
         [&](ast::ExprProjector p) {

@@ -10,6 +10,7 @@
 #include "front/sql/bound/Relations.h"
 
 #include "front/common/bind/helpers.h"
+#include "front/common/source/require_at.h"
 
 #include "core/time_formats.h"
 
@@ -22,13 +23,14 @@ using common::bound::ExprKindLevel;
 using common::bound::FieldSetNode;
 using common::bound::FieldSetNodePtr;
 
-void bindProjector(ast::Projector p, std::vector<bound::Projector>& out, Context& ctx) {
+void bindProjector(ast::Projector pp, std::vector<bound::Projector>& out, Context& ctx) {
     util::match(
-        std::move(p),
+        std::move(pp.node),
         [&](ast::StarProjector) { out.emplace_back(bound::StarProjector{}); },
         [&](ast::IdentifierProjector p) {
-            auto type = ctx.currFieldSet().typeOfSourceField(p.identifier, ctx.binding());
-            auto id = ctx.binding()->getOrAdd(p.identifier, type);
+            auto maybe_type = ctx.currFieldSet().typeOfSourceField(p.identifier, ctx.binding());
+            requireAt(maybe_type.has_value(), pp.span, "unknown identifier '{}'", p.identifier);
+            auto id = ctx.binding()->getOrAdd(p.identifier, *maybe_type);
             out.emplace_back(bound::IdentifierProjector{.field_id = id});
         },
         [&](ast::ExprProjector p) {
@@ -44,13 +46,14 @@ void bindProjector(ast::Projector p, std::vector<bound::Projector>& out, Context
 
 }  // namespace
 
-bound::Relation bindRelation(ast::AdhocRelation r, Context& ctx) {
+bound::Relation bindRelation(ast::AdhocRelation r, auto&& self, Context& ctx) {
     std::vector<Value> values;
     values.reserve(r.literals.size());
     for (auto&& literal : r.literals) {
         values.push_back(parseLiteral(literal));
-        require(
+        requireAt(
             values.back().type() == values.front().type(),
+            self.span,
             "Ad hoc relation should contain entries of the same type");
     }
 
@@ -67,7 +70,7 @@ bound::Relation bindRelation(ast::AdhocRelation r, Context& ctx) {
     };
 }
 
-bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
+bound::Relation bindRelation(ast::SelectRelation r, auto&& self, Context& ctx) {
     auto source = bindRelation(std::move(*r.source), ctx);
     auto source_field_set_node = source.fields_out;
 
@@ -80,21 +83,26 @@ bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
     std::optional<bound::Where> where;
     if (r.where) {
         auto cond = bindExpr(std::move(*r.where->condition), ctx);
-        require(cond.value_type == ValueType::Boolean, "WHERE condition must be boolean");
-        require(
+        requireAt(
+            cond.value_type == ValueType::Boolean,
+            r.where->span,
+            "WHERE condition must be boolean");
+        requireAt(
             cond.level != common::bound::ExprKindLevel::Group,
+            r.where->span,
             "WHERE condition cannot be aggregate");
         where = bound::Where{.condition = box<bound::Expr>(std::move(cond))};
     }
 
     std::optional<bound::Limit> limit;
     if (r.limit) {
-        require(r.limit->limit > 0, "limit cannot be negative");
+        requireAt(r.limit->limit > 0, r.limit->span, "limit cannot be negative");
         limit = bound::Limit{.limit = r.limit->limit};
     }
 
+    auto projectors_span = common::bind::spanOf(r.projectors);
     auto projectors = bindProjectors<bound::Projector>(std::move(r.projectors), bindProjector, ctx);
-    require(!projectors.empty(), "SELECT requires at least one projector");
+    requireAt(!projectors.empty(), projectors_span, "SELECT requires at least one projector");
     auto output_fields = outputFieldsOf(projectors);
     FieldSetNodePtr fields_out;
 
@@ -113,13 +121,17 @@ bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
     std::optional<bound::GroupBy> group_by;
     if (has_group_by) {
         // Group by
+        auto group_key_span = common::bind::spanOf(r.group_by->group_list);
         auto group_key =
             bindProjectors<bound::Projector>(std::move(r.group_by->group_list), bindProjector, ctx);
 
         for (auto&& p : group_key) {
-            util::matchPartial(p, [](const bound::StarProjector&) {
-                throwError("Star projectors are not allowed in GROUP BY");
-            });
+            util::match(
+                p,
+                [&](bound::StarProjector&) {
+                    throwAt(group_key_span, "Star projectors are not allowed in GROUP BY");
+                },
+                [](auto&&) {});
         }
 
         auto group_key_map = buildMap(group_key);
@@ -129,10 +141,11 @@ bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
                 p,
                 [](const bound::StarProjector&) { /* ok, all group keys */ },
                 [&](const bound::IdentifierProjector& p) {
-                    require(
+                    requireAt(
                         group_key_map.contains(p.field_id),
-                        "GROUP BY: unknown field id {}",
-                        p.field_id);
+                        projectors_span,
+                        "GROUP BY: unknown field {}",
+                        to_string(p.field_id, *ctx.binding()));
                 },
                 [&](const bound::ExprProjector& p) {
                     if (p.expr->level != ExprKindLevel::Row) {
@@ -140,10 +153,11 @@ bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
                         return;
                     }
                     for (auto id : p.expr->required_fields.fieldIds()) {
-                        require(
+                        requireAt(
                             group_key_map.contains(id),
-                            "GROUP BY: unknown field id {} required by expression",
-                            id);
+                            projectors_span,
+                            "GROUP BY: unknown field {}",
+                            to_string(id, *ctx.binding()));
                     }
                 });
         }
@@ -155,20 +169,21 @@ bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
         fields_out = FieldSetNode::make(output_fields);
     } else if (has_group_projector) {
         // Aggregate
-        require(!r.order_by, "ORDER BY does not make much sense with aggregates");
+        requireAt(!r.order_by, self.span, "ORDER BY does not make much sense with aggregates");
 
         for (auto&& p : projectors) {
             util::match(
                 p,
-                [](const bound::StarProjector&) {
-                    throwError("Star projectors are not allowed in aggregates");
+                [&](const bound::StarProjector&) {
+                    throwAt(projectors_span, "Star projectors are not allowed in aggregates");
                 },
-                [](const bound::IdentifierProjector&) {
-                    throwError("Identifier projectors are not allowed in aggregates");
+                [&](const bound::IdentifierProjector&) {
+                    throwAt(projectors_span, "Identifier projectors are not allowed in aggregates");
                 },
-                [](const bound::ExprProjector& p) {
-                    require(
+                [&](const bound::ExprProjector& p) {
+                    requireAt(
                         p.expr->level != ExprKindLevel::Row,
+                        projectors_span,
                         "Row projectors are not allowed in aggregates");
                 });
         }
@@ -182,10 +197,13 @@ bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
     if (r.order_by) {
         generated_visible_fields->merge(output_fields);
 
+        auto order_list_span = common::bind::spanOf(r.order_by->order_list);
         auto order_list = bindExprs(std::move(r.order_by->order_list), ctx);
         for (auto&& e : order_list) {
-            require(
-                e.level != ExprKindLevel::Group, "ORDER BY cannot use aggregate expression here");
+            requireAt(
+                e.level != ExprKindLevel::Group,
+                order_list_span,
+                "ORDER BY cannot use aggregate expression here");
         }
 
         order_by = bound::OrderBy{
@@ -209,7 +227,7 @@ bound::Relation bindRelation(ast::SelectRelation r, Context& ctx) {
     };
 }
 
-bound::Relation bindRelation(ast::UnionAllRelation r, Context& ctx) {
+bound::Relation bindRelation(ast::UnionAllRelation r, auto&& /*self*/, Context& ctx) {
     auto left = bindRelation(std::move(*r.left), ctx);
     auto right = bindRelation(std::move(*r.right), ctx);
     auto fields = FieldSetNode::proxy(left.fields_out, right.fields_out);
@@ -224,7 +242,7 @@ bound::Relation bindRelation(ast::UnionAllRelation r, Context& ctx) {
     };
 }
 
-bound::Relation bindRelation(ast::UnionAllSortedByRelation r, Context& ctx) {
+bound::Relation bindRelation(ast::UnionAllSortedByRelation r, auto&& /*self*/, Context& ctx) {
     auto left = bindRelation(std::move(*r.left), ctx);
     auto right = bindRelation(std::move(*r.right), ctx);
     auto fields = FieldSetNode::proxy(left.fields_out, right.fields_out);
@@ -232,8 +250,9 @@ bound::Relation bindRelation(ast::UnionAllSortedByRelation r, Context& ctx) {
     FieldSetChain fields_set(fields, nullptr);
     auto _ = ctx.scopedFieldSet(&fields_set);
 
+    auto order_list_span = common::bind::spanOf(r.order_by.order_list);
     auto order_list = bindExprs(std::move(r.order_by.order_list), ctx);
-    require(!order_list.empty(), "order list cannot be empty");
+    requireAt(!order_list.empty(), order_list_span, "order list cannot be empty");
 
     return {
         .node =
@@ -250,14 +269,14 @@ bound::Relation bindRelation(ast::UnionAllSortedByRelation r, Context& ctx) {
     };
 }
 
-bound::Relation bindRelation(ast::FileRelation r, Context& /*ctx*/) {
+bound::Relation bindRelation(ast::FileRelation r, auto&& /*self*/, Context& /*ctx*/) {
     return {
         .node = bound::FileRelation{.path = std::move(r.path)},
         .fields_out = FieldSetNode::unknownSet(),
     };
 }
 
-bound::Relation bindRelation(ast::FileIntervalRelation r, Context& /*ctx*/) {
+bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& /*self*/, Context& /*ctx*/) {
     constexpr auto format = TimeFormat::ISO8601;
     auto ts_from = timestampFromString(r.ts_from, format);
 
@@ -272,8 +291,9 @@ bound::Relation bindRelation(ast::FileIntervalRelation r, Context& /*ctx*/) {
     };
 }
 
-bound::Relation bindRelation(ast::NamedRelationReferenceRelation r, Context& ctx) {
+bound::Relation bindRelation(ast::NamedRelationReferenceRelation r, auto&& self, Context& ctx) {
     auto child_node_ptr = ctx.find(r.name);
+    requireAt(child_node_ptr != nullptr, self.span, "unknown named relation '{}'", r.name);
 
     return {
         .node = bound::NamedRelationReferenceRelation{.name = std::move(r.name)},
@@ -281,7 +301,7 @@ bound::Relation bindRelation(ast::NamedRelationReferenceRelation r, Context& ctx
     };
 }
 
-bound::Relation bindRelation(ast::MaterializeRelation r, Context& ctx) {
+bound::Relation bindRelation(ast::MaterializeRelation r, auto&& /*self*/, Context& ctx) {
     auto arg = bindRelation(std::move(*r.relation), ctx);
     auto fields = FieldSetNode::proxy(arg.fields_out);
 
@@ -292,7 +312,8 @@ bound::Relation bindRelation(ast::MaterializeRelation r, Context& ctx) {
 }
 
 bound::Relation bindRelation(ast::Relation rel, Context& ctx) {
-    return util::match(std::move(rel), [&](auto r) { return bindRelation(std::move(r), ctx); });
+    return util::match(
+        std::move(rel.node), [&](auto node) { return bindRelation(std::move(node), rel, ctx); });
 }
 
 }  // namespace lsql::front::sql::bind

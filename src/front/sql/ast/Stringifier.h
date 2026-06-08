@@ -29,7 +29,7 @@ class Stringifier {
 
  private:
     StrBuilder print(const Statement& st) {
-        return std::visit([this](auto&& arg) { return this->print(arg); }, st);
+        return std::visit([this](auto&& arg) { return this->print(arg); }, st.node);
     }
 
     StrBuilder print(const QueryStatement& s) {
@@ -41,7 +41,7 @@ class Stringifier {
     }
 
     StrBuilder print(const Relation& r) {
-        return std::visit([this](auto&& arg) { return this->print(arg); }, r);
+        return std::visit([this](auto&& arg) { return this->print(arg); }, r.node);
     }
 
     StrBuilder print(const AdhocRelation& r) {
@@ -76,7 +76,7 @@ class Stringifier {
     }
 
     StrBuilder print(const Projector& p) {
-        return std::visit([this](auto&& p) { return print(p); }, p);
+        return std::visit([this](auto&& p) { return print(p); }, p.node);
     }
 
     StrBuilder print(const StarProjector&) { return StrBuilder("*-projector"); }
@@ -146,7 +146,7 @@ class Stringifier {
     }
 
     StrBuilder print(const Expr& e) {
-        return std::visit([this](auto&& arg) { return this->print(arg); }, e);
+        return std::visit([this](auto&& arg) { return this->print(arg); }, e.node);
     }
 
     StrBuilder print(const IdentifierExpr& e) {

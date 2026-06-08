@@ -22,7 +22,7 @@ bound::Statement bindStatement(ast::QueryStatement s, Context& ctx) {
 
 bound::Statement bindStatement(ast::NamedPipelineStatement s, Context& ctx) {
     auto pipeline = box(bindPipeline(std::move(*s.pipeline), ctx));
-    ctx.insert(s.name, pipeline->fields_out);
+    require(ctx.insert(s.name, pipeline->fields_out), "duplicate named relation '{}'", s.name);
 
     return bound::NamedPipelineStatement{
         .name = std::move(s.name),

@@ -4,6 +4,8 @@
 #include "front/common/bind/Context.h"
 #include "front/common/bound/ExprKindLevel.h"
 #include "front/common/bound/Expressions.h"
+#include "front/common/source/SourceSpan.h"
+#include "front/common/source/require_at.h"
 
 #include "core/exprs/BinaryExpr.h"
 #include "core/exprs/Percentile.h"
@@ -57,16 +59,24 @@ FieldSet requiredFieldsOf(const std::vector<E>& exprs) {
 }
 
 template <BoundExpr Arg, BoundRel Match>
-std::pair<BoundExprInfo, FieldId> bindInExpr(const Arg& arg, const Match& match, auto& ctx) {
-    require(
-        arg.level != common::bound::ExprKindLevel::Group, "in key expression cannot be aggregate");
+std::pair<BoundExprInfo, FieldId> bindInExpr(
+    const Arg& arg,
+    const Match& match,
+    auto& ctx,
+    SourceSpan arg_span = {},
+    SourceSpan match_span = {}) {
+    requireAt(
+        arg.level != common::bound::ExprKindLevel::Group,
+        arg_span,
+        "in key expression cannot be aggregate");
     auto req_fields = arg.required_fields;
 
     auto count = match.fields_out->fieldSet().fieldIds().size();
-    require(count == 1, "in match should contain one column, got {}", count);
+    requireAt(count == 1, match_span, "in match should contain one column, got {}", count);
 
     auto match_field_id = *match.fields_out->fieldSet().fieldIds().begin();
-    require(arg.value_type == ctx.binding()->type(match_field_id), "in key type mismatch");
+    requireAt(
+        arg.value_type == ctx.binding()->type(match_field_id), arg_span, "in key type mismatch");
 
     return {
         BoundExprInfo{
@@ -79,8 +89,8 @@ std::pair<BoundExprInfo, FieldId> bindInExpr(const Arg& arg, const Match& match,
 }
 
 template <BoundExpr Arg>
-BoundExprInfo bindLikeExpr(const Arg& arg) {
-    require(arg.value_type == ValueType::String, "like argument should be String");
+BoundExprInfo bindLikeExpr(const Arg& arg, SourceSpan arg_span = {}) {
+    requireAt(arg.value_type == ValueType::String, arg_span, "like argument should be String");
 
     return {
         .value_type = ValueType::Boolean,
@@ -90,18 +100,28 @@ BoundExprInfo bindLikeExpr(const Arg& arg) {
 }
 
 template <BoundExpr Arg>
-std::pair<BoundExprInfo, std::string> bindRsubstr(const std::vector<Arg>& args) {
-    require(args.size() == 2, "rsubstr expects exactly 2 arguments");
-    require(args[0].value_type == ValueType::String, "rsubstr's first argument should be String");
-    require(
+std::pair<BoundExprInfo, std::string> bindRsubstr(
+    const std::vector<Arg>& args, SourceSpan args_span = {}) {
+    requireAt(args.size() == 2, args_span, "rsubstr expects exactly 2 arguments");
+    requireAt(
+        args[0].value_type == ValueType::String,
+        args_span,
+        "rsubstr's first argument should be String");
+    requireAt(
         args[1].level == common::bound::ExprKindLevel::Const,
+        args_span,
         "rsubstr's second argument should be a constant");
-    require(args[1].value_type == ValueType::String, "rsubstr's second argument should be String");
+    requireAt(
+        args[1].value_type == ValueType::String,
+        args_span,
+        "rsubstr's second argument should be String");
 
     std::string regex = util::match(
         args[1].node,
         [](bound::ValueExpr e) { return e.value.get<std::string>(); },
-        [](auto&&) -> std::string { throwError("rsubstr's second argument should be literal"); });
+        [&](auto&&) -> std::string {
+            throwAt(args_span, "rsubstr's second argument should be literal");
+        });
 
     return {
         BoundExprInfo{
@@ -129,12 +149,13 @@ std::pair<BoundExprInfo, UnaryExprType> bindUnaryExpr(const Arg& arg, ast::Unary
 
 template <BoundExpr L, BoundExpr R>
 std::pair<BoundExprInfo, BinaryExprType> bindBinaryExpr(
-    const L& l, const R& r, ast::BinaryExprType type) {
+    const L& l, const R& r, ast::BinaryExprType type, SourceSpan span = {}) {
     auto bound_type = common::bind::exprType(type);
     auto value_type = common::bind::valueType(l.value_type, r.value_type, bound_type);
 
-    require(
+    requireAt(
         composable(l.level, r.level),
+        span,
         "binary operations require same expression level on both sides");
 
     auto level = composed(l.level, r.level);
@@ -151,10 +172,12 @@ std::pair<BoundExprInfo, BinaryExprType> bindBinaryExpr(
 }
 
 template <BoundExpr Arg>
-BoundExprInfo bindUnaryAggregate(const std::vector<Arg>& args, UnaryAggregateType type) {
-    require(args.size() == 1, "function expects 1 argument");
-    require(
+BoundExprInfo bindUnaryAggregate(
+    const std::vector<Arg>& args, UnaryAggregateType type, SourceSpan args_span = {}) {
+    requireAt(args.size() == 1, args_span, "function expects 1 argument");
+    requireAt(
         args[0].level != common::bound::ExprKindLevel::Group,
+        args_span,
         "grouping operations do not accept aggregates");
 
     return {
@@ -174,8 +197,8 @@ BoundExprInfo bindCast(const Arg& arg, ValueType cast_to) {
 }
 
 template <BoundExpr Arg>
-BoundExprInfo bindCountAll(const std::vector<Arg>& args) {
-    require(args.empty(), "no arguments expected for COUNT(*)");
+BoundExprInfo bindCountAll(const std::vector<Arg>& args, SourceSpan args_span = {}) {
+    requireAt(args.empty(), args_span, "no arguments expected for COUNT(*)");
 
     return {
         .value_type = ValueType::Integer,
@@ -185,13 +208,14 @@ BoundExprInfo bindCountAll(const std::vector<Arg>& args) {
 }
 
 template <BoundExpr Arg>
-BoundExprInfo bindCoalesce(const std::vector<Arg>& args) {
-    require(args.size() >= 1, "at least one argument required for coalesce");
+BoundExprInfo bindCoalesce(const std::vector<Arg>& args, SourceSpan args_span = {}) {
+    requireAt(args.size() >= 1, args_span, "at least one argument required for coalesce");
 
     auto level = common::bound::ExprKindLevel::Const;
     for (auto&& arg : args) {
-        require(
+        requireAt(
             composable(level, arg.level),
+            args_span,
             "different expression kinds not allowed in function calls");
         level = composed(level, arg.level);
     }
@@ -203,7 +227,7 @@ BoundExprInfo bindCoalesce(const std::vector<Arg>& args) {
         }
     }
 
-    require(types.size() <= 1, "coalesce arguments must have the same type");
+    requireAt(types.size() <= 1, args_span, "coalesce arguments must have the same type");
 
     return {
         .value_type = types.empty() ? ValueType::Null : *types.begin(),
@@ -213,33 +237,37 @@ BoundExprInfo bindCoalesce(const std::vector<Arg>& args) {
 }
 
 template <BoundExpr Arg>
-std::pair<BoundExprInfo, std::vector<float>> bindPercentile(const std::vector<Arg>& args) {
-    require(args.size() > 1, "percentile must be given at least one percentile");
-    require(
+std::pair<BoundExprInfo, std::vector<float>> bindPercentile(
+    const std::vector<Arg>& args, SourceSpan args_span = {}) {
+    requireAt(args.size() > 1, args_span, "percentile must be given at least one percentile");
+    requireAt(
         args[0].level != common::bound::ExprKindLevel::Group,
+        args_span,
         "percentile does not accept aggregates");
-    require(
+    requireAt(
         dispatch<bool>(
             []<typename T>(std::type_identity<T>) {
                 return PercentileTraits::template allowed<T>();
             },
             args[0].value_type),
+        args_span,
         "unsupported argument type for percentile");
 
     std::vector<float> percentiles;
     percentiles.reserve(args.size() - 1);
     for (size_t i = 1; i < args.size(); ++i) {
-        require(
+        requireAt(
             args[i].value_type == ValueType::Floating,
+            args_span,
             "percentile's arguments in positions >=1 must be floating");
 
         auto* value = std::get_if<bound::ValueExpr>(&args[i].node);
         if (!value) {
-            throwError("percentile's arguments in positions >=1 must be literals");
+            throwAt(args_span, "percentile's arguments in positions >=1 must be literals");
         }
 
         auto p = value->value.template get<float>();
-        require(p >= 0.0f && p <= 1.0f, "percentile value must be in [0, 1]");
+        requireAt(p >= 0.0f && p <= 1.0f, args_span, "percentile value must be in [0, 1]");
         percentiles.push_back(p);
     }
 
