@@ -20,7 +20,11 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         }
 
         ctx.setChanges().note("CastScalar const propagation");
-        self.node = ir::ValueScalar{.value = valueCast(std::move(v->value), s.cast_to)};
+
+        auto val = valueCast(std::move(v->value), s.cast_to);
+        verify(val.has_value());
+
+        self.node = ir::ValueScalar{.value = *std::move(val)};
         return std::move(self);
     }
 

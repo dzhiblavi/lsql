@@ -81,7 +81,7 @@ struct RSubstrOp {
 struct CastOp {
     ValueType valueType() const { return to; }
     ValueType argType() const { return from; }
-    Value apply(Value val) const { return valueCast(std::move(val), to); }
+    Value apply(Value val) const { return valueCast(std::move(val), to).value_or(null); }
 
     ValueType from, to;
 };

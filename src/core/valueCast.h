@@ -1,28 +1,31 @@
 #pragma once
 
 #include "core/Value.h"
+#include "util/string_cast.h"
 
 namespace lsql {
 
-inline Value valueCast(Value val, ValueType to) {
+inline std::optional<Value> valueCast(Value val, ValueType to) {
+    static constexpr auto make_value = [](auto x) { return Value(std::move(x)); };
+
     return std::visit(
         util::Overloaded{
-            [](null_t) -> Value { return null; },
-            [&](const std::string& s) -> Value {
+            [](null_t) -> std::optional<Value> { return null; },
+            [&](std::string s) -> std::optional<Value> {
                 switch (to) {
                     case ValueType::String:
                         return s;
                     case ValueType::Integer:
-                        return int64_t(std::stoll(s));
+                        return util::parseInt64Strict(s).transform(make_value);
                     case ValueType::Boolean:
                         return !s.empty();
                     case ValueType::Floating:
-                        return float(std::strtof(s.data(), nullptr));
+                        return util::parseFloatStrict(s).transform(make_value);
                     case ValueType::Null:
                         return null;
                 };
             },
-            [&](int64_t x) -> Value {
+            [&](int64_t x) -> std::optional<Value> {
                 switch (to) {
                     case ValueType::String:
                         return std::to_string(x);
@@ -36,7 +39,7 @@ inline Value valueCast(Value val, ValueType to) {
                         return null;
                 };
             },
-            [&](float x) -> Value {
+            [&](float x) -> std::optional<Value> {
                 switch (to) {
                     case ValueType::String:
                         return std::to_string(x);
@@ -50,7 +53,7 @@ inline Value valueCast(Value val, ValueType to) {
                         return null;
                 };
             },
-            [&](bool x) -> Value {
+            [&](bool x) -> std::optional<Value> {
                 switch (to) {
                     case ValueType::String:
                         return x ? "true" : "false";
