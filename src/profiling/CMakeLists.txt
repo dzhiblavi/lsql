@@ -3,7 +3,7 @@ find_package(absl REQUIRED)
 add_library(
     lsql-profiling STATIC
     global.cpp
-    Scope.cpp
+    ScopeBase.cpp
     presentation.cpp
     Profiler.cpp
 )

@@ -1,4 +1,4 @@
-#include "profiling/Scope.h"
+#include "profiling/ScopeBase.h"
 
 #include "util/verify.h"
 
