@@ -16,10 +16,10 @@ namespace lsql::front::common::bind {
 
 UnaryExprType exprType(ast::UnaryExprType ast);
 BinaryExprType exprType(ast::BinaryExprType ast);
-ValueType valueType(ValueType arg, UnaryExprType type);
-ValueType valueType(ValueType l, ValueType r, BinaryExprType type);
 std::optional<UnaryAggregateType> unaryAggregateType(std::string_view fn_name);
-ValueType unaryAggregateValueType(UnaryAggregateType type, ValueType arg);
+ValueType valueType(ValueType arg, UnaryExprType type, SourceSpan span);
+ValueType valueType(ValueType l, ValueType r, BinaryExprType type, SourceSpan span);
+ValueType unaryAggregateValueType(UnaryAggregateType type, ValueType arg, SourceSpan span);
 
 template <typename BoundExpr, typename AstExpr>
 std::vector<BoundExpr> bindExprs(std::vector<AstExpr> exprs, auto& binder, Context& ctx) {
@@ -130,12 +130,13 @@ std::pair<BoundExprInfo, std::string> bindRsubstr(
 }
 
 template <BoundExpr Arg>
-std::pair<BoundExprInfo, UnaryExprType> bindUnaryExpr(const Arg& arg, ast::UnaryExprType type) {
-    auto bound_type = common::bind::exprType(type);
+std::pair<BoundExprInfo, UnaryExprType> bindUnaryExpr(
+    const Arg& arg, ast::UnaryExprType type, SourceSpan span) {
+    auto bound_type = exprType(type);
 
     return {
         BoundExprInfo{
-            .value_type = common::bind::valueType(arg.value_type, bound_type),
+            .value_type = valueType(arg.value_type, bound_type, span),
             .level = arg.level,
             .required_fields = arg.required_fields,
         },
@@ -146,8 +147,8 @@ std::pair<BoundExprInfo, UnaryExprType> bindUnaryExpr(const Arg& arg, ast::Unary
 template <BoundExpr L, BoundExpr R>
 std::pair<BoundExprInfo, BinaryExprType> bindBinaryExpr(
     const L& l, const R& r, ast::BinaryExprType type, SourceSpan span) {
-    auto bound_type = common::bind::exprType(type);
-    auto value_type = common::bind::valueType(l.value_type, r.value_type, bound_type);
+    auto bound_type = exprType(type);
+    auto value_type = valueType(l.value_type, r.value_type, bound_type, span);
 
     requireAt(
         composable(l.level, r.level),
@@ -169,7 +170,7 @@ std::pair<BoundExprInfo, BinaryExprType> bindBinaryExpr(
 
 template <BoundExpr Arg>
 BoundExprInfo bindUnaryAggregate(
-    const std::vector<Arg>& args, UnaryAggregateType type, SourceSpan args_span) {
+    const std::vector<Arg>& args, UnaryAggregateType type, SourceSpan span, SourceSpan args_span) {
     requireAt(args.size() == 1, args_span, "function expects 1 argument");
     requireAt(
         args[0].level != common::bound::ExprKindLevel::Group,
@@ -177,7 +178,7 @@ BoundExprInfo bindUnaryAggregate(
         "grouping operations do not accept aggregates");
 
     return {
-        .value_type = common::bind::unaryAggregateValueType(type, args[0].value_type),
+        .value_type = unaryAggregateValueType(type, args[0].value_type, span),
         .level = bound::ExprKindLevel::Group,
         .required_fields = args[0].required_fields,
     };

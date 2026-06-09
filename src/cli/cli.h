@@ -5,6 +5,9 @@
 #include "ir/Scalars.h"    // IWYU pragma: keep
 #include "ir/Statement.h"  // IWYU pragma: keep
 
+#include "front/common/source/format.h"
+#include "front/common/source/require_at.h"
+
 #include "core/time_formats.h"
 #include "util/build_info.h"
 #include "util/require.h"
@@ -150,6 +153,12 @@ TCLAP::SwitchArg dot_graph_arg{
     "build .dot graph (dumped to prof.dot)",
 };
 
+TCLAP::SwitchArg stacktrace_arg{
+    "",
+    "print-stacktrace",
+    "print stacktrace on error",
+};
+
 bool parseArgs(std::span<const char*> argv) {
     TCLAP::CmdLine cmd{"tsql", ' ', std::format("{} syntax: {}", formatBuildInfo(), syntaxName())};
     cmd.add(&query_file_arg);
@@ -169,6 +178,7 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&profile_arg);
     cmd.add(&flamegraph_arg);
     cmd.add(&dot_graph_arg);
+    cmd.add(&stacktrace_arg);
     cmd.setExceptionHandling(false);
 
     try {
@@ -188,6 +198,38 @@ bool parseArgs(std::span<const char*> argv) {
 
     any_profile_enabled = profile_arg || flamegraph_arg || dot_graph_arg;
     return true;
+}
+
+std::string readQuery(std::string_view maybe_path) {
+    std::ifstream ifs;
+    auto* is = [&] -> std::istream* {
+        if (maybe_path.empty()) {
+            return &std::cin;
+        }
+
+        ifs.open(maybe_path.data());
+        require(ifs.is_open(), "cannot open query file '{}'", maybe_path);
+        return &ifs;
+    }();
+
+    return std::string(std::istreambuf_iterator<char>(*is), std::istreambuf_iterator<char>());
+}
+
+[[noreturn]] void reportSpanError(std::string_view query, const front::SpanRuntimeError& err) {
+    if (stacktrace_arg) {
+        auto formatter = cpptrace::get_default_formatter();
+        formatter.header("Stack trace:")
+            .addresses(cpptrace::formatter::address_mode::object)
+            .break_before_filename()
+            .colors(cpptrace::formatter::color_mode::automatic)
+            .hide_exception_machinery()
+            .symbols(cpptrace::formatter::symbol_mode::pruned)
+            .snippets(true);
+
+        formatter.print(std::cerr, err.trace());
+    }
+
+    throwError("{}, at {}", err.message(), format(front::RichSourceSpan{query, err.span()}));
 }
 
 std::optional<back::plan::TimeRange> defaultTimeRange() {
@@ -214,6 +256,7 @@ std::optional<back::plan::TimeRange> defaultTimeRange() {
 }
 
 void cliMain(std::span<const char*> argv) {
+    cpptrace::enable_inlined_call_resolution(true);
     cpptrace::register_terminate_handler();
     cpptrace::use_default_stderr_logger();
 
@@ -244,7 +287,13 @@ void cliMain(std::span<const char*> argv) {
         .default_time_range = defaultTimeRange(),
     };
 
-    run(parseQuery(query_file_arg), settings);
+    auto query = readQuery(query_file_arg.getValue());
+
+    try {
+        run(parseQuery(query), settings);
+    } catch (const front::SpanRuntimeError& err) {
+        reportSpanError(query, err);
+    }
 }
 
 }  // namespace lsql
@@ -254,9 +303,10 @@ int main(int argc, const char** argv) {
         lsql::cliMain(std::span<const char*>(argv, argc));
         return 0;
     } catch (const cpptrace::exception& e) {
-        llog::err("error: {}", e.message());
+        llog::err("{}", e.message());
+        return 1;
     } catch (const std::exception& e) {
-        llog::err("error: {}", e.what());
+        llog::err("{}", e.what());
         return 1;
     } catch (...) {
         llog::err("unknown error");

@@ -1,9 +1,7 @@
 #include "front/common/bind/Expressions.h"
 
 #include "core/ValueType.h"
-
 #include "util/enum.h"
-#include "util/require.h"
 
 #include <algorithm>
 #include <magic_enum/magic_enum.hpp>
@@ -53,13 +51,14 @@ std::optional<UnaryAggregateType> unaryAggregateType(std::string_view fn_name) {
 }
 
 template <UnaryExprType Type>
-ValueType unaryExprResultType(ValueType value_type) {
+ValueType unaryExprResultType(ValueType value_type, SourceSpan span) {
     using Traits = UnaryExprTraits<Type>;
 
     return dispatch<ValueType>(
         [&]<typename T>(std::type_identity<T>) {
             if constexpr (!Traits::template allowed<T>()) {
-                throwError(
+                throwAt(
+                    span,
                     "unsupported operand type {} for unary operation {}",
                     magic_enum::enum_name(value_type),
                     magic_enum::enum_name(Type));
@@ -72,13 +71,14 @@ ValueType unaryExprResultType(ValueType value_type) {
 }
 
 template <BinaryExprType Type>
-ValueType binaryExprResultType(ValueType left, ValueType right) {
+ValueType binaryExprResultType(ValueType left, ValueType right, SourceSpan span) {
     using Traits = BinaryExprTraits<Type>;
 
     return dispatch<ValueType>(
         [&]<typename L, typename R>(std::type_identity<L>, std::type_identity<R>) {
             if constexpr (!Traits::template allowed<L, R>()) {
-                throwError(
+                throwAt(
+                    span,
                     "unsupported operand types {}, {} for binary operation {}",
                     magic_enum::enum_name(left),
                     magic_enum::enum_name(right),
@@ -93,13 +93,14 @@ ValueType binaryExprResultType(ValueType left, ValueType right) {
 }
 
 template <UnaryAggregateType Type>
-ValueType unaryAggregateResultType(ValueType value_type) {
+ValueType unaryAggregateResultType(ValueType value_type, SourceSpan span) {
     using Traits = UnaryAggregateTraits<Type>;
 
     return dispatch<ValueType>(
         [&]<typename T>(std::type_identity<T>) {
             if constexpr (!Traits::template allowed<T>()) {
-                throwError(
+                throwAt(
+                    span,
                     "unsupported operand type {} for unary aggregate {}",
                     magic_enum::enum_name(value_type),
                     magic_enum::enum_name(Type));
@@ -111,17 +112,19 @@ ValueType unaryAggregateResultType(ValueType value_type) {
         value_type);
 }
 
-ValueType valueType(ValueType arg, UnaryExprType type) {
-    return util::enum_dispatch([&]<auto Type>() { return unaryExprResultType<Type>(arg); }, type);
-}
-
-ValueType valueType(ValueType l, ValueType r, BinaryExprType type) {
-    return util::enum_dispatch([&]<auto Type>() { return binaryExprResultType<Type>(l, r); }, type);
-}
-
-ValueType unaryAggregateValueType(UnaryAggregateType type, ValueType arg) {
+ValueType valueType(ValueType arg, UnaryExprType type, SourceSpan span) {
     return util::enum_dispatch(
-        [&]<auto Type>() { return unaryAggregateResultType<Type>(arg); }, type);
+        [&]<auto Type>() { return unaryExprResultType<Type>(arg, span); }, type);
+}
+
+ValueType valueType(ValueType l, ValueType r, BinaryExprType type, SourceSpan span) {
+    return util::enum_dispatch(
+        [&]<auto Type>() { return binaryExprResultType<Type>(l, r, span); }, type);
+}
+
+ValueType unaryAggregateValueType(UnaryAggregateType type, ValueType arg, SourceSpan span) {
+    return util::enum_dispatch(
+        [&]<auto Type>() { return unaryAggregateResultType<Type>(arg, span); }, type);
 }
 
 }  // namespace lsql::front::common::bind

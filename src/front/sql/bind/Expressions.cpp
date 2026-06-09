@@ -103,7 +103,7 @@ bound::Expr bindExpr(ast::FnCallExpr e, auto&& self, Context& ctx) {
     auto args = bindExprs(std::move(e.args), ctx);
 
     if (auto un_aggr_type = common::bind::unaryAggregateType(e.func)) {
-        auto info = common::bind::bindUnaryAggregate(args, *un_aggr_type, args_span);
+        auto info = common::bind::bindUnaryAggregate(args, *un_aggr_type, self.span, args_span);
 
         return {
             .node =
@@ -190,9 +190,9 @@ bound::Expr bindExpr(ast::BinaryExpr e, auto&& self, Context& ctx) {
     };
 }
 
-bound::Expr bindExpr(ast::UnaryExpr e, auto&& /*self*/, Context& ctx) {
+bound::Expr bindExpr(ast::UnaryExpr e, auto&& self, Context& ctx) {
     auto arg = bindExpr(std::move(*e.expr), ctx);
-    auto [info, type] = common::bind::bindUnaryExpr(arg, e.type);
+    auto [info, type] = common::bind::bindUnaryExpr(arg, e.type, self.span);
 
     return {
         .node =
