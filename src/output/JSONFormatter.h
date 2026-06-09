@@ -73,6 +73,7 @@ class JSONFormatter : public Consumer {
     void consume(Record& r) override {
         if (r.empty()) {
             sink_.push("{}");
+            return;
         }
 
         std::stringstream ss;

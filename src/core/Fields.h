@@ -90,7 +90,7 @@ class FieldSet {
     }
 
     static FieldSet withField(FieldId id) { return FieldSet({id}); }
-    static FieldSet emptySet() { return FieldSet{{}}; }
+    static FieldSet emptySet() { return FieldSet(); }
 
     static FieldSet merge(FieldSet a, const FieldSet& b) {
         a.merge(b);

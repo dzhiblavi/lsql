@@ -29,7 +29,7 @@ class Value {
     template <typename T>
     const T& get() const {
         const T* val = std::get_if<T>(&val_);
-        verify_dbg(val != nullptr, "type mismatch");
+        verify(val != nullptr, "type mismatch");
         return *val;
     }
 

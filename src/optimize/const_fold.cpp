@@ -62,7 +62,9 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
                 case BinaryExprType::Divide:
                     return std::visit(
                         util::Overloaded{
-                            []<Dividable T>(T& l, T& r) -> Value { return r == 0 ? 0 : l / r; },
+                            []<Dividable T>(T& l, T& r) -> Value {
+                                return r == 0 ? null : Value(l / r);
+                            },
                             [](auto&&...) -> Value { panic(); },
                         },
                         vl->value.variant(),

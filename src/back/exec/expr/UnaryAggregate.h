@@ -64,8 +64,10 @@ struct CountNonNullOp {
     }
 
     Value result(const State* state) const { return *state; }
-    ValueType argType() const { return ValueType::Boolean; }
+    ValueType argType() const { return arg_type; }
     ValueType valueType() const { return ValueType::Integer; }
+
+    ValueType arg_type;
 };
 
 template <Comparable T>
@@ -73,6 +75,10 @@ struct MinOp {
     using State = std::optional<T>;
 
     void update(State* curr, const Value& value) const {
+        if (value == null) {
+            return;
+        }
+
         auto&& next = value.get<T>();
         if (curr->has_value()) {
             *curr = std::min(**curr, next);
@@ -100,6 +106,10 @@ struct MaxOp {
     using State = std::optional<T>;
 
     void update(State* curr, const Value& value) const {
+        if (value == null) {
+            return;
+        }
+
         auto&& next = value.get<T>();
         if (curr->has_value()) {
             *curr = std::max(**curr, next);
@@ -126,7 +136,12 @@ template <Addable T>
 struct SumOp {
     using State = T;
 
-    void update(State* curr, const Value& value) const { *curr += value.get<T>(); }
+    void update(State* curr, const Value& value) const {
+        if (value != null) {
+            *curr += value.get<T>();
+        }
+    }
+
     Value result(const State* state) const { return *state; }
     ValueType argType() const { return type; }
     ValueType valueType() const { return type; }
@@ -147,7 +162,11 @@ struct PercentileOp {
         }(std::move(perc)))
         , type(type) {}
 
-    void update(State* curr, const Value& value) const { curr->values.push_back(value.get<T>()); }
+    void update(State* curr, const Value& value) const {
+        if (value != null) {
+            curr->values.push_back(value.get<T>());
+        }
+    }
 
     Value result(State* state) const {
         std::vector<T> result;

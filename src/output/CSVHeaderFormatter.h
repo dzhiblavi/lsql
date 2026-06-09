@@ -18,8 +18,12 @@ class CSVHeaderFormatter : public Consumer {
             header_written_ = true;
         }
 
-        std::stringstream ss;
+        if (r.empty()) {
+            sink_.push("");
+            return;
+        }
 
+        std::stringstream ss;
         for (auto&& [id, value] : r) {
             ss << to_string(std::move(value)) << ',';
         }
@@ -32,8 +36,12 @@ class CSVHeaderFormatter : public Consumer {
 
  private:
     void writeHeader(const Record& r) {
-        std::stringstream ss;
+        if (r.empty()) {
+            sink_.push("");
+            return;
+        }
 
+        std::stringstream ss;
         for (auto&& [id, _] : r) {
             ss << binding_->name(id) << ',';
         }

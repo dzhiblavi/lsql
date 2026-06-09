@@ -4,10 +4,12 @@
 
 #include <llog/log.h>
 
-#define panic(...)                         \
-    llog::critical("panic: " __VA_ARGS__); \
-    std::terminate();                      \
-    __builtin_unreachable()
+#define panic(...)                             \
+    [&] [[noreturn]] {                         \
+        llog::critical("panic: " __VA_ARGS__); \
+        std::terminate();                      \
+        __builtin_unreachable();               \
+    }()
 
 #define verify(X, ...)                                      \
     [&] {                                                   \

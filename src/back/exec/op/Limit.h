@@ -22,19 +22,24 @@ class Limit : public OperationBase<Limit> {
             curr_limit_ = limit_;
         }
 
-        if (curr_limit_ > 0) {
-            --curr_limit_;
+        if (record == nullptr) {
+            return emit(phase, nullptr);
+        }
 
-            if (!emit(phase, record)) {
-                return false;
-            }
+        if (curr_limit_ == 0) {
+            return false;
+        }
+
+        --curr_limit_;
+        if (!emit(phase, record)) {
+            return false;
         }
 
         if (curr_limit_ == 0) {
             return emit(phase, nullptr);
-        } else {
-            return active(phase);
         }
+
+        return active(phase);
     }
 
     // Operation

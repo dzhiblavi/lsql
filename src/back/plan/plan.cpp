@@ -273,7 +273,7 @@ class Planner {
         auto aggregate = [&] -> AggregatePtr {
             switch (a.type) {
                 case UnaryAggregateType::CountNonNull:
-                    return arc<UnaryAggregate<CountNonNullOp>>(arg);
+                    return arc<UnaryAggregate<CountNonNullOp>>(arg, arg->valueType());
                 case UnaryAggregateType::Min:
                     return dispatch<AggregatePtr>(
                         [&]<Comparable T>(std::type_identity<T>) -> AggregatePtr {
