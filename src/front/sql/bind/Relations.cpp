@@ -73,19 +73,16 @@ bound::Relation bindRelation(ast::AdhocRelation r, auto&& self, Context& ctx) {
     };
 }
 
-bound::Relation bindRelation(ast::SelectRelation r, auto&& self, Context& ctx) {
+bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ctx) {
     auto source = bindRelation(std::move(*r.source), ctx);
-    auto source_field_set_node = source.fields_out;
-
-    auto generated_visible_fields = common::bound::FieldSetNode::emptySet();
-    auto source_visible_fields = common::bind::FieldSetChain(source_field_set_node, nullptr);
-    auto visible_fields =
-        common::bind::FieldSetChain(generated_visible_fields, &source_visible_fields);
-    auto _ = ctx.scopedFieldSet(&visible_fields);
+    auto source_visible_fields = FieldSetChain(source.fields_out, nullptr);
 
     std::optional<bound::Where> where;
     if (r.where) {
+        // Where sees only source fields
+        auto _ = ctx.scopedFieldSet(&source_visible_fields);
         auto cond = bindExpr(std::move(*r.where->condition), ctx);
+
         requireAt(
             cond.value_type == ValueType::Boolean,
             r.where->span,
@@ -100,45 +97,48 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& self, Context& ctx) {
 
     std::optional<bound::Limit> limit;
     if (r.limit) {
-        requireAt(r.limit->limit > 0, r.limit->span, "limit cannot be negative");
+        requireAt(r.limit->limit >= 0, r.limit->span, "limit cannot be negative");
         limit = bound::Limit{.limit = r.limit->limit};
     }
 
     auto projectors_span = spanOf(r.projectors);
-    auto projectors = bindProjectors<bound::Projector>(std::move(r.projectors), bindProjector, ctx);
-    requireAt(!projectors.empty(), projectors_span, "SELECT requires at least one projector");
-    auto output_fields = outputFieldsOf(projectors);
-    FieldSetNodePtr fields_out;
 
-    bool has_group_by = r.group_by.has_value();
-    bool has_group_projector = false;
-    for (auto&& p : projectors) {
-        util::match(
-            p,
-            [&](const bound::ExprProjector& p) {
-                has_group_projector |= p.expr->level == ExprKindLevel::Group;
-            },
-            [&](const bound::IdentifierProjector&) {},
-            [&](const bound::StarProjector&) {});
-    }
+    // The following code should fill these
+    FieldSetNodePtr fields_out = nullptr;
+    FieldSetNodePtr order_by_visible_fields = nullptr;
+    std::vector<bound::Projector> projectors;
+    bool aggregate = false;
 
     std::optional<bound::GroupBy> group_by;
-    if (has_group_by) {
-        // Group by
+    if (r.group_by.has_value()) {
         auto group_key_span = spanOf(r.group_by->group_list);
-        auto group_key =
-            bindProjectors<bound::Projector>(std::move(r.group_by->group_list), bindProjector, ctx);
+
+        auto group_key = [&] {
+            // Group by keys see source fields only
+            auto _ = ctx.scopedFieldSet(&source_visible_fields);
+            return bindProjectors<bound::Projector>(
+                std::move(r.group_by->group_list), bindProjector, ctx);
+        }();
 
         for (auto&& p : group_key) {
             util::match(
                 p,
                 [&](bound::StarProjector&) {
-                    throwAt(group_key_span, "Star projectors are not allowed in GROUP BY");
+                    throwAt(group_key_span, "star projectors are not allowed in GROUP BY");
                 },
                 [](auto&&) {});
         }
-
         auto group_key_map = buildMap(group_key);
+
+        projectors = [&] {
+            // Projectors see group keys and source visible fields
+            auto group_key_fields = FieldSetNode::make(outputFieldsOf(group_key));
+            auto proj_visible_fields = FieldSetChain(group_key_fields, &source_visible_fields);
+            auto _ = ctx.scopedFieldSet(&proj_visible_fields);
+
+            return bindProjectors<bound::Projector>(std::move(r.projectors), bindProjector, ctx);
+        }();
+        requireAt(!projectors.empty(), projectors_span, "SELECT requires at least one projector");
 
         for (auto&& p : projectors) {
             util::match(
@@ -166,43 +166,90 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& self, Context& ctx) {
                 });
         }
 
+        // Projectors' and group key fields are visible to order by
+        order_by_visible_fields = FieldSetNode::make(
+            FieldSet::merge(outputFieldsOf(projectors), outputFieldsOf(group_key)));
+
+        // Only projectors' fields are in output
+        fields_out = FieldSetNode::make(outputFieldsOf(projectors));
+
         group_by = bound::GroupBy{.group_list = std::move(group_key)};
+        aggregate = true;
+    } else {
+        // Simple SELECT or aggregate SELECT
+        projectors = [&] {
+            // Projectors see source visible fields only
+            auto _ = ctx.scopedFieldSet(&source_visible_fields);
+            return bindProjectors<bound::Projector>(std::move(r.projectors), bindProjector, ctx);
+        }();
+        requireAt(!projectors.empty(), projectors_span, "SELECT requires at least one projector");
 
-        // Add group output keys
-        generated_visible_fields->merge(outputFieldsOf(group_key));
-        fields_out = FieldSetNode::make(output_fields);
-    } else if (has_group_projector) {
-        // Aggregate
-        requireAt(!r.order_by, self.span, "ORDER BY does not make much sense with aggregates");
-
+        bool has_group_projector = false;
+        bool has_star_projector = false;
         for (auto&& p : projectors) {
             util::match(
                 p,
-                [&](const bound::StarProjector&) {
-                    throwAt(projectors_span, "Star projectors are not allowed in aggregates");
-                },
-                [&](const bound::IdentifierProjector&) {
-                    throwAt(projectors_span, "Identifier projectors are not allowed in aggregates");
-                },
                 [&](const bound::ExprProjector& p) {
-                    requireAt(
-                        p.expr->level != ExprKindLevel::Row,
-                        projectors_span,
-                        "Row projectors are not allowed in aggregates");
-                });
+                    has_group_projector |= p.expr->level == ExprKindLevel::Group;
+                },
+                [&](const bound::IdentifierProjector&) {},
+                [&](const bound::StarProjector&) { has_star_projector = true; });
         }
-        fields_out = FieldSetNode::make(output_fields);
-    } else {
-        // Simple select, nothing left to check
-        fields_out = FieldSetNode::make(output_fields, source_field_set_node);
+
+        if (has_group_projector) {
+            // Aggregate SELECT
+            aggregate = true;
+
+            for (auto&& p : projectors) {
+                util::match(
+                    p,
+                    [&](const bound::StarProjector&) {
+                        throwAt(projectors_span, "star projectors are not allowed in aggregates");
+                    },
+                    [&](const bound::IdentifierProjector&) {
+                        throwAt(
+                            projectors_span, "identifier projectors are not allowed in aggregates");
+                    },
+                    [&](const bound::ExprProjector& p) {
+                        requireAt(
+                            p.expr->level != ExprKindLevel::Row,
+                            projectors_span,
+                            "row projectors are not allowed in aggregates");
+                    });
+            }
+
+            // Order by sees projectors' fields only
+            order_by_visible_fields = FieldSetNode::make(outputFieldsOf(projectors));
+            // Only projectors' fields are in output
+            fields_out = FieldSetNode::make(outputFieldsOf(projectors));
+        } else {
+            // Simple SELECT
+
+            // Order by sees both projectors and source's visible fields
+            order_by_visible_fields =
+                FieldSetNode::make(outputFieldsOf(projectors), source.fields_out);
+
+            if (has_star_projector) {
+                // Both source and projectors' fields are in output (because * is present)
+                fields_out = FieldSetNode::make(outputFieldsOf(projectors), source.fields_out);
+            } else {
+                // Only projectors' fields are in output (no * in select list)
+                fields_out = FieldSetNode::make(outputFieldsOf(projectors));
+            }
+        }
     }
 
     std::optional<bound::OrderBy> order_by;
     if (r.order_by) {
-        generated_visible_fields->merge(output_fields);
-
         auto order_list_span = spanOf(r.order_by->order_list);
-        auto order_list = bindExprs(std::move(r.order_by->order_list), ctx);
+
+        auto order_list = [&] {
+            auto visible_fields = FieldSetChain(order_by_visible_fields, nullptr);
+            auto _ = ctx.scopedFieldSet(&visible_fields);
+
+            return bindExprs(std::move(r.order_by->order_list), ctx);
+        }();
+
         for (auto&& e : order_list) {
             requireAt(
                 e.level != ExprKindLevel::Group,
@@ -225,9 +272,9 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& self, Context& ctx) {
                 .where = std::move(where),
                 .order_by = std::move(order_by),
                 .group_by = std::move(group_by),
-                .aggregate = has_group_projector,
+                .aggregate = aggregate,
             },
-        .fields_out = std::move(fields_out),
+        .fields_out = fields_out,
     };
 }
 

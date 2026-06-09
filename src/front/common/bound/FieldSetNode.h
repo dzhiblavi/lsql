@@ -38,12 +38,6 @@ class FieldSetNode {
         return set;
     }
 
-    void merge(const FieldSet& b) {
-        verify(!hasUnknown());
-        verify(children_.empty());
-        current_.merge(b);
-    }
-
     bool hasUnknown() const { return has_unknown_; }
 
     void addUnknown(FieldId id) {
