@@ -95,15 +95,13 @@ bound::Stage bindStage(ast::TakeStage r, auto&& self, Context& ctx) {
 }
 
 bound::Stage bindStage(ast::SortStage r, auto&& self, Context& ctx) {
-    auto order_list_span = spanOf(r.order_list);
+    auto order_list_span = spansOf(r.order_list);
     auto order_list = bindExprs(std::move(r.order_list), ctx);
     requireAt(!order_list.empty(), self.span, "order list cannot be empty");
 
-    for (auto&& e : order_list) {
+    for (auto&& [e, span] : std::views::zip(order_list, order_list_span)) {
         requireAt(
-            e.level != ExprKindLevel::Group,
-            order_list_span,
-            "sort by cannot use aggregate expression here");
+            e.level != ExprKindLevel::Group, span, "sort by cannot use aggregate expression here");
     }
 
     return {
@@ -116,27 +114,38 @@ bound::Stage bindStage(ast::SortStage r, auto&& self, Context& ctx) {
     };
 }
 
-bound::Stage bindStage(ast::SelectStage r, auto&& /*self*/, Context& ctx) {
-    auto projectors_span = spanOf(r.projectors);
+bound::Stage bindStage(ast::SelectStage r, auto&& self, Context& ctx) {
+    auto projectors_spans = spansOf(r.projectors);
     auto projectors = bindProjectors<bound::Projector>(std::move(r.projectors), bindProjector, ctx);
-    requireAt(!projectors.empty(), projectors_span, "select requires at least one projector");
+    requireAt(!projectors.empty(), self.span, "select requires at least one projector");
 
     bool has_aggregates = false;
     bool has_scalars = false;
-    for (auto&& p : projectors) {
+    for (auto&& [p, span] : std::views::zip(projectors, projectors_spans)) {
         util::match(
             p,
             [&](const bound::StarProjector&) { /* nothing to check */ },
-            [&](const bound::IdentifierProjector&) { has_scalars = true; },
+            [&](const bound::IdentifierProjector&) {
+                if (has_aggregates) {
+                    throwAt(span, "cannot mix aggregates and scalars");
+                }
+                has_scalars = true;
+            },
             [&](const bound::ExprProjector& p) {
-                has_scalars |= p.expr->level == ExprKindLevel::Row;
-                has_aggregates |= p.expr->level == ExprKindLevel::Group;
+                if (p.expr->level == ExprKindLevel::Row) {
+                    if (has_aggregates) {
+                        throwAt(span, "cannot mix aggregates and scalars");
+                    }
+                    has_scalars = true;
+                }
+                if (p.expr->level == ExprKindLevel::Group) {
+                    if (has_scalars) {
+                        throwAt(span, "cannot mix aggregates and scalars");
+                    }
+                    has_aggregates = true;
+                }
             });
     }
-    requireAt(
-        !(has_scalars && has_aggregates),
-        projectors_span,
-        "select: cannot mix aggregates and scalars");
 
     auto output_fields = outputFieldsOf(projectors);
     return {
@@ -151,20 +160,20 @@ bound::Stage bindStage(ast::GroupStage r, auto&& /*self*/, Context& ctx) {
     requireAt(!group_list.empty(), group_list_span, "group list cannot be empty");
     auto group_list_fields = outputFieldsOf(group_list);
 
-    auto projectors_span = spanOf(r.projectors);
+    auto projectors_spans = spansOf(r.projectors);
     auto projectors = bindProjectors<bound::Projector>(std::move(r.projectors), bindProjector, ctx);
     requireAt(!projectors.empty(), group_list_span, "group projectors are required");
     auto projectors_fields = outputFieldsOf(projectors);
 
     auto group_list_map = buildMap(group_list);
-    for (auto&& p : projectors) {
+    for (auto&& [p, span] : std::views::zip(projectors, projectors_spans)) {
         util::match(
             p,
             [&](const bound::StarProjector&) { /* ok, just all group keys*/ },
             [&](const bound::IdentifierProjector& p) {
                 requireAt(
                     group_list_map.contains(p.field_id),
-                    projectors_span,
+                    span,
                     "group by: unknown field '{}'",
                     to_string(p.field_id, *ctx.binding()));
             },
@@ -176,7 +185,7 @@ bound::Stage bindStage(ast::GroupStage r, auto&& /*self*/, Context& ctx) {
                 for (auto id : p.expr->required_fields.fieldIds()) {
                     requireAt(
                         group_list_map.contains(id),
-                        projectors_span,
+                        span,
                         "group by: unknown field '{}'",
                         to_string(id, *ctx.binding()));
                 }

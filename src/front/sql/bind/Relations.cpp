@@ -14,6 +14,8 @@
 
 #include "core/time_formats.h"
 
+#include <ranges>
+
 namespace lsql::front::sql::bind {
 
 namespace {
@@ -101,6 +103,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
         limit = bound::Limit{.limit = r.limit->limit};
     }
 
+    auto projectors_spans = spansOf(r.projectors);
     auto projectors_span = spanOf(r.projectors);
 
     // The following code should fill these
@@ -111,7 +114,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
 
     std::optional<bound::GroupBy> group_by;
     if (r.group_by.has_value()) {
-        auto group_key_span = spanOf(r.group_by->group_list);
+        auto group_key_spans = spansOf(r.group_by->group_list);
 
         auto group_key = [&] {
             // Group by keys see source fields only
@@ -120,11 +123,11 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
                 std::move(r.group_by->group_list), bindProjector, ctx);
         }();
 
-        for (auto&& p : group_key) {
+        for (auto&& [p, span] : std::views::zip(group_key, group_key_spans)) {
             util::match(
                 p,
                 [&](bound::StarProjector&) {
-                    throwAt(group_key_span, "star projectors are not allowed in GROUP BY");
+                    throwAt(span, "star projectors are not allowed in GROUP BY");
                 },
                 [](auto&&) {});
         }
@@ -140,14 +143,14 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
         }();
         requireAt(!projectors.empty(), projectors_span, "SELECT requires at least one projector");
 
-        for (auto&& p : projectors) {
+        for (auto&& [p, span] : std::views::zip(projectors, projectors_spans)) {
             util::match(
                 p,
                 [](const bound::StarProjector&) { /* ok, all group keys */ },
                 [&](const bound::IdentifierProjector& p) {
                     requireAt(
                         group_key_map.contains(p.field_id),
-                        projectors_span,
+                        span,
                         "GROUP BY: unknown field {}",
                         to_string(p.field_id, *ctx.binding()));
                 },
@@ -159,7 +162,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
                     for (auto id : p.expr->required_fields.fieldIds()) {
                         requireAt(
                             group_key_map.contains(id),
-                            projectors_span,
+                            span,
                             "GROUP BY: unknown field {}",
                             to_string(id, *ctx.binding()));
                     }
@@ -200,20 +203,19 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
             // Aggregate SELECT
             aggregate = true;
 
-            for (auto&& p : projectors) {
+            for (auto&& [p, span] : std::views::zip(projectors, projectors_spans)) {
                 util::match(
                     p,
                     [&](const bound::StarProjector&) {
-                        throwAt(projectors_span, "star projectors are not allowed in aggregates");
+                        throwAt(span, "star projectors are not allowed in aggregates");
                     },
                     [&](const bound::IdentifierProjector&) {
-                        throwAt(
-                            projectors_span, "identifier projectors are not allowed in aggregates");
+                        throwAt(span, "identifier projectors are not allowed in aggregates");
                     },
                     [&](const bound::ExprProjector& p) {
                         requireAt(
                             p.expr->level != ExprKindLevel::Row,
-                            projectors_span,
+                            span,
                             "row projectors are not allowed in aggregates");
                     });
             }
@@ -241,7 +243,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
 
     std::optional<bound::OrderBy> order_by;
     if (r.order_by) {
-        auto order_list_span = spanOf(r.order_by->order_list);
+        auto order_list_spans = spansOf(r.order_by->order_list);
 
         auto order_list = [&] {
             auto visible_fields = FieldSetChain(order_by_visible_fields, nullptr);
@@ -250,10 +252,10 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
             return bindExprs(std::move(r.order_by->order_list), ctx);
         }();
 
-        for (auto&& e : order_list) {
+        for (auto&& [e, span] : std::views::zip(order_list, order_list_spans)) {
             requireAt(
                 e.level != ExprKindLevel::Group,
-                order_list_span,
+                span,
                 "ORDER BY cannot use aggregate expression here");
         }
 

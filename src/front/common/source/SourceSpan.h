@@ -51,4 +51,14 @@ SourceSpan spanOf(const std::vector<T>& args) {
     return span;
 }
 
+template <typename T>
+std::vector<SourceSpan> spansOf(const std::vector<T>& args) {
+    std::vector<SourceSpan> spans;
+    spans.reserve(args.size());
+    for (auto&& a : args) {
+        spans.push_back(a.span);
+    }
+    return spans;
+}
+
 }  // namespace lsql::front
