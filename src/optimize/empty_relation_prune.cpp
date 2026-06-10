@@ -63,7 +63,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
             ctx.setChanges().note("empty topk relation pruned");
             self.node = ir::EmptyRelation{};
         }
-        return pruneSimple(rel, self);
+        return std::move(self);
     }
 
     ir::Relation prune(ir::LimitRelation& rel, auto& self) {
@@ -71,7 +71,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
             ctx.setChanges().note("empty limit relation pruned");
             self.node = ir::EmptyRelation{};
         }
-        return pruneSimple(rel, self);
+        return std::move(self);
     }
 
     ir::Relation prune(ir::SemiJoinRelation& rel, auto& self) {
