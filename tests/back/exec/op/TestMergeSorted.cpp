@@ -1,5 +1,5 @@
-#include "tests/exec/op/MockOperation.h"
-#include "tests/exec/op/OperationTest.h"
+#include "tests/back/exec/op/MockOperation.h"
+#include "tests/back/exec/op/OperationTest.h"
 
 #include "back/exec/expr/IdentifierScalar.h"
 #include "back/exec/op/MergeSorted.h"

@@ -1,8 +1,9 @@
 #pragma once
 
+#include "tests/back/exec/MockRecord.h"
+
 #include "back/exec/op/Operation.h"
 #include "back/exec/op/Subscriber.h"
-#include "tests/exec/MockRecord.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <queue>
