@@ -15,7 +15,6 @@ struct LogTypeImpl<LogType::IMAP> {
     static void parseKeyValue(std::string_view line, F&& callback) {
         assert(line.size() >= 30);
 
-        callback("lsql_line", line);
         auto timestamp = line.substr(1, 20);
         callback("timestamp", timestamp);
         size_t anon_index = 0;

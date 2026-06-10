@@ -12,8 +12,6 @@ struct LogTypeImpl<LogType::TSKV2> {
 
     template <typename F>
     static void parseKeyValue(std::string_view line, F&& callback) {
-        callback("lsql_line", line);
-
         auto curr = line;
         size_t anon_index = 0;
 
