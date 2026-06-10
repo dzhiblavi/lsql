@@ -4,210 +4,9 @@
 #include "ir/Relations.h"   // IWYU pragma: keep
 #include "ir/Scalars.h"     // IWYU pragma: keep
 #include "ir/Statement.h"
+#include "ir/reflect.h"
 
 namespace lsql::ir {
-
-class Tree {
- public:
-    template <typename>
-    struct FieldsOf {};
-
-    template <>
-    struct FieldsOf<ir::FieldScalar> {
-        static auto get() { return std::tuple<>(); }
-    };
-
-    template <>
-    struct FieldsOf<ir::ValueScalar> {
-        static auto get() { return std::tuple<>(); }
-    };
-
-    template <>
-    struct FieldsOf<ir::CoalesceScalar> {
-        static auto get() { return std::make_tuple(&ir::CoalesceScalar::args); }
-    };
-
-    template <>
-    struct FieldsOf<ir::CastScalar> {
-        static auto get() { return std::make_tuple(&ir::CastScalar::expr); }
-    };
-
-    template <>
-    struct FieldsOf<ir::LikeScalar> {
-        static auto get() { return std::make_tuple(&ir::LikeScalar::expr); }
-    };
-
-    template <>
-    struct FieldsOf<ir::RSubstrScalar> {
-        static auto get() { return std::make_tuple(&ir::RSubstrScalar::expr); }
-    };
-
-    template <>
-    struct FieldsOf<ir::UnaryScalar> {
-        static auto get() { return std::make_tuple(&ir::UnaryScalar::expr); }
-    };
-
-    template <>
-    struct FieldsOf<ir::BinaryScalar> {
-        static auto get() {
-            return std::make_tuple(&ir::BinaryScalar::left, &ir::BinaryScalar::right);
-        }
-    };
-
-    template <>
-    struct FieldsOf<ir::UnaryAggregate> {
-        static auto get() { return std::make_tuple(&ir::UnaryAggregate::expr); }
-    };
-
-    template <>
-    struct FieldsOf<ir::CountAllAggregate> {
-        static auto get() { return std::make_tuple(); }
-    };
-
-    template <>
-    struct FieldsOf<ir::PercentileAggregate> {
-        static auto get() { return std::make_tuple(&ir::PercentileAggregate::expr); }
-    };
-
-    template <>
-    struct FieldsOf<ir::ConstAggregate> {
-        static auto get() { return std::make_tuple(); }
-    };
-
-    template <>
-    struct FieldsOf<ir::NamedRelationStatement> {
-        static auto get() { return std::make_tuple(&ir::NamedRelationStatement::relation); }
-    };
-
-    template <>
-    struct FieldsOf<ir::QueryStatement> {
-        static auto get() { return std::make_tuple(&ir::QueryStatement::relation); }
-    };
-
-    template <>
-    struct FieldsOf<ir::Projector> {
-        static auto get() { return std::make_tuple(&ir::Projector::expr); }
-    };
-
-    template <>
-    struct FieldsOf<ir::EmptyRelation> {
-        static auto get() { return std::make_tuple(); }
-    };
-
-    template <>
-    struct FieldsOf<ir::ValuesRelation> {
-        static auto get() { return std::make_tuple(); }
-    };
-
-    template <>
-    struct FieldsOf<ir::ProjectionRelation> {
-        static auto get() {
-            return std::make_tuple(
-                &ir::ProjectionRelation::source, &ir::ProjectionRelation::projectors);
-        }
-    };
-
-    template <>
-    struct FieldsOf<ir::AggregateRelation> {
-        static auto get() {
-            return std::make_tuple(
-                &ir::AggregateRelation::source, &ir::AggregateRelation::aggregates);
-        }
-    };
-
-    template <>
-    struct FieldsOf<ir::GroupRelation> {
-        static auto get() {
-            return std::make_tuple(
-                &ir::GroupRelation::source,
-                &ir::GroupRelation::aggregates,
-                &ir::GroupRelation::group_list);
-        }
-    };
-
-    template <>
-    struct FieldsOf<ir::LimitRelation> {
-        static auto get() { return std::make_tuple(&ir::LimitRelation::source); }
-    };
-
-    template <>
-    struct FieldsOf<ir::FilterRelation> {
-        static auto get() {
-            return std::make_tuple(&ir::FilterRelation::source, &ir::FilterRelation::condition);
-        }
-    };
-
-    template <>
-    struct FieldsOf<ir::SortRelation> {
-        static auto get() {
-            return std::make_tuple(&ir::SortRelation::source, &ir::SortRelation::order_list);
-        }
-    };
-
-    template <>
-    struct FieldsOf<ir::TopKRelation> {
-        static auto get() {
-            return std::make_tuple(&ir::TopKRelation::source, &ir::TopKRelation::order_list);
-        }
-    };
-
-    template <>
-    struct FieldsOf<ir::SemiJoinRelation> {
-        static auto get() {
-            return std::make_tuple(
-                &ir::SemiJoinRelation::source,
-                &ir::SemiJoinRelation::match,
-                &ir::SemiJoinRelation::expr);
-        }
-    };
-
-    template <>
-    struct FieldsOf<ir::MarkJoinRelation> {
-        static auto get() {
-            return std::make_tuple(
-                &ir::MarkJoinRelation::source,
-                &ir::MarkJoinRelation::match,
-                &ir::MarkJoinRelation::expr);
-        }
-    };
-
-    template <>
-    struct FieldsOf<ir::UnionAllRelation> {
-        static auto get() {
-            return std::make_tuple(&ir::UnionAllRelation::left, &ir::UnionAllRelation::right);
-        }
-    };
-
-    template <>
-    struct FieldsOf<ir::UnionAllSortedByRelation> {
-        static auto get() {
-            return std::make_tuple(
-                &ir::UnionAllSortedByRelation::left,
-                &ir::UnionAllSortedByRelation::right,
-                &ir::UnionAllSortedByRelation::order_list);
-        }
-    };
-
-    template <>
-    struct FieldsOf<ir::FileRelation> {
-        static auto get() { return std::make_tuple(); }
-    };
-
-    template <>
-    struct FieldsOf<ir::FileIntervalRelation> {
-        static auto get() { return std::make_tuple(); }
-    };
-
-    template <>
-    struct FieldsOf<ir::NamedRelationReferenceRelation> {
-        static auto get() { return std::make_tuple(); }
-    };
-
-    template <>
-    struct FieldsOf<ir::MaterializeRelation> {
-        static auto get() { return std::make_tuple(&ir::MaterializeRelation::source); }
-    };
-};
 
 template <typename Self>
 class ConsumePass {
@@ -231,9 +30,9 @@ class ConsumePass {
  private:
     template <typename E>
     E pass(auto& node, E& self) {
-        using Fields = Tree::template FieldsOf<std::decay_t<decltype(node)>>;
+        using Reflection = Reflect<std::decay_t<decltype(node)>>;
         auto modify = [&](auto field) { node.*field = pass(std::move(node.*field)); };
-        std::apply([&](auto&&... fields) { (modify(fields), ...); }, Fields::get());
+        std::apply([&](auto&&... fields) { (modify(fields), ...); }, Reflection::childNodes());
         return static_cast<Self*>(this)->construct(node, self);
     }
 
@@ -283,18 +82,18 @@ class ScalarViewPass {
  private:
     template <typename E>
     R pass(auto& node, E& self) {
-        using Fields = Tree::template FieldsOf<std::decay_t<decltype(node)>>;
+        using Reflection = Reflect<std::decay_t<decltype(node)>>;
         auto do_view = [&](auto field) { return pass(node.*field); };
 
         if constexpr (std::is_same_v<R, void>) {
-            std::apply([&](auto&&... fields) { (do_view(fields), ...); }, Fields::get());
+            std::apply([&](auto&&... fields) { (do_view(fields), ...); }, Reflection::childNodes());
             static_cast<Self*>(this)->view(node, self);
         } else {
             return std::apply(
                 [&](auto&&... fields) {
                     return static_cast<Self*>(this)->view(node, self, do_view(fields)...);
                 },
-                Fields::get());
+                Reflection::childNodes());
         }
     }
 
