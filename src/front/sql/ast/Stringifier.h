@@ -20,9 +20,9 @@ struct Stringifier : TreePrinter<Stringifier> {
         return b.render();
     }
 
-    StrBuilder print(const SourceSpan& /*span*/) {
-        // not printing it for now
-        return StrBuilder();
+    StrBuilder print(const SourceSpan& span) {
+        return std::format(
+            "{}:{}-{}:{}", span.begin.line, span.begin.column, span.end.line, span.end.column);
     }
 };
 
