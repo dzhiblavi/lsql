@@ -61,6 +61,12 @@ struct Reflect<BinaryScalar> {
 };
 
 template <>
+struct Reflect<Scalar> {
+    static auto childNodes() { return std::make_tuple(&Scalar::node); }
+    static auto fields() { return std::make_tuple(&Scalar::value_type); }
+};
+
+template <>
 struct Reflect<UnaryAggregate> {
     static auto childNodes() { return std::make_tuple(&UnaryAggregate::expr); }
     static auto fields() { return std::make_tuple(&UnaryAggregate::type); }
@@ -83,6 +89,14 @@ struct Reflect<ConstAggregate> {
     static auto childNodes() { return std::make_tuple(); }
     static auto fields() {
         return std::make_tuple(&ConstAggregate::value, &ConstAggregate::null_if_empty);
+    }
+};
+
+template <>
+struct Reflect<Aggregate> {
+    static auto childNodes() { return std::make_tuple(&Aggregate::node); }
+    static auto fields() {
+        return std::make_tuple(&Aggregate::output_field_id, &Aggregate::value_type);
     }
 };
 
@@ -241,5 +255,34 @@ struct Reflect<MaterializeRelation> {
     static auto childNodes() { return std::make_tuple(&MaterializeRelation::source); }
     static auto fields() { return std::make_tuple(); }
 };
+
+template <>
+struct Reflect<Relation> {
+    static auto childNodes() { return std::make_tuple(&Relation::node); }
+    static auto fields() { return std::make_tuple(&Relation::fields_out); }
+};
+
+template <typename N>
+concept Reflectable = requires {
+    { Reflect<N>::childNodes() };
+    { Reflect<N>::fields() };
+};
+
+template <typename Node>
+auto childNodes(const Node& node) {
+    using Reflection = Reflect<Node>;
+
+    return std::apply(
+        [&node](auto... field_ptr) { return std::tie(node.*field_ptr...); },
+        Reflection::childNodes());
+}
+
+template <typename Node>
+auto fields(const Node& node) {
+    using Reflection = Reflect<Node>;
+
+    return std::apply(
+        [&node](auto... field_ptr) { return std::tie(node.*field_ptr...); }, Reflection::fields());
+}
 
 }  // namespace lsql::ir

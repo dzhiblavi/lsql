@@ -89,6 +89,8 @@ class FieldSet {
         fields_.insert(other.fields_.begin(), other.fields_.end());
     }
 
+    bool operator==(const FieldSet&) const = default;
+
     static FieldSet withField(FieldId id) { return FieldSet({id}); }
     static FieldSet emptySet() { return FieldSet(); }
 
