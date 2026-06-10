@@ -9,18 +9,20 @@
 namespace lsql::opt {
 
 TEST_CASE("Constant binary scalar is folded inside projection") {
-    auto input = test::query(test::project(
-        test::file(),
-        test::projector(test::Output, test::add(test::integer(1), test::integer(2))),
-        test::fieldSet({test::Output})));
+    auto input = test::query(
+        test::project(
+            test::file(),
+            test::projector(test::Output, test::add(test::integer(1), test::integer(2))),
+            test::fieldSet({test::Output})));
 
     Context ctx;
     auto optimized = optimize(std::move(input), ctx);
 
-    auto expected = test::query(test::project(
-        test::file(),
-        test::projector(test::Output, test::integer(3)),
-        test::fieldSet({test::Output})));
+    auto expected = test::query(
+        test::project(
+            test::file(),
+            test::projector(test::Output, test::integer(3)),
+            test::fieldSet({test::Output})));
 
     CHECK(ctx.changes());
     CHECK(ir::equal(optimized.statements, expected.statements));

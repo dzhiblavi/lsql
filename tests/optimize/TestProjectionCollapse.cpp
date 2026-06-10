@@ -9,21 +9,23 @@
 namespace lsql::opt {
 
 TEST_CASE("Nested projections are collapsed") {
-    auto input = test::query(test::project(
+    auto input = test::query(
         test::project(
-            test::file(),
-            test::projector(test::Output, test::field(test::Timestamp)),
-            test::fieldSet({test::Output})),
-        test::projector(test::Result, test::field(test::Output)),
-        test::fieldSet({test::Result})));
+            test::project(
+                test::file(),
+                test::projector(test::Output, test::field(test::Timestamp)),
+                test::fieldSet({test::Output})),
+            test::projector(test::Result, test::field(test::Output)),
+            test::fieldSet({test::Result})));
 
     Context ctx;
     auto optimized = optimize(std::move(input), ctx);
 
-    auto expected = test::query(test::project(
-        test::file(),
-        test::projector(test::Result, test::field(test::Timestamp)),
-        test::fieldSet({test::Result})));
+    auto expected = test::query(
+        test::project(
+            test::file(),
+            test::projector(test::Result, test::field(test::Timestamp)),
+            test::fieldSet({test::Result})));
 
     CHECK(ctx.changes());
     CHECK(ir::equal(optimized.statements, expected.statements));

@@ -25,6 +25,7 @@ inline std::string explain(int max_phase, std::span<T> operations) {
 
         for (auto&& op : operations) {
             auto explain = op->explain(ctx);
+
             if (!explain.empty()) {
                 ops.item(explain);
             }

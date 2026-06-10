@@ -1,8 +1,8 @@
 #pragma once
 
 #include "front/pipe/ast/Expressions.h"  // IWYU pragma: keep
-#include "front/pipe/ast/Sources.h"  // IWYU pragma: keep
-#include "front/pipe/ast/Stages.h"   // IWYU pragma: keep
+#include "front/pipe/ast/Sources.h"      // IWYU pragma: keep
+#include "front/pipe/ast/Stages.h"       // IWYU pragma: keep
 #include "front/pipe/ast/Statements.h"
 
 #include "core/TreePrinter.h"
