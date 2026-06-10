@@ -35,6 +35,10 @@ execute_process(
     RESULT_VARIABLE exit_code
 )
 
+if(NOT exit_code EQUAL 0)
+    message(FATAL_ERROR "Query failed with exit code ${exit_code}: ${error_output}")
+endif()
+
 execute_process(
     COMMAND ${CMAKE_COMMAND} -E echo "${actual_output}"
     COMMAND python3 "${COMPARE_SCRIPT}" "${EXPECTED_OUTPUT_FILE}"

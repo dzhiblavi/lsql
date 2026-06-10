@@ -61,6 +61,14 @@ expected_blocks = sorted(expected_blocks, key=sort_key)
 
 
 for b, (ab, eb) in enumerate(zip(actual_blocks, expected_blocks)):
+    if len(ab) != len(eb):
+        print(
+            f"Different number of lines in block #{b}: actual={len(ab)}, expected={len(eb)}"
+        )
+        dump(actual_blocks, "/tmp/actual.json")
+        dump(expected_blocks, "/tmp/expected.json")
+        sys.exit(1)
+
     for a, e in zip(ab, eb):
         if a != e:
             print(f"Lines differ block #{b}:\n\t{a}\n\t{e}")
