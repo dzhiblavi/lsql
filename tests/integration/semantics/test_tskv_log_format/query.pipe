@@ -1,0 +1,12 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| where .status = 'ok'
+| sort by .timestamp
+| select .timestamp, .uid, .status, int(.latency) as latency_i, 1 as test_index
+
+$input
+| select .status, count(*) as count, 2 as test_index group by .status
+| sort by .status

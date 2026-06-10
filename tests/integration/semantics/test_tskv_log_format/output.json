@@ -1,0 +1,5 @@
+{"latency_i":10,"status":"ok","test_index":1,"timestamp":"2026-05-06 12:00:01","uid":"aaa"}
+{"latency_i":15,"status":"ok","test_index":1,"timestamp":"2026-05-06 12:00:03","uid":"ccc"}
+
+{"count":1,"status":"fail","test_index":2}
+{"count":2,"status":"ok","test_index":2}

@@ -1,0 +1,18 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| sort by .uid
+| select
+    .uid,
+    bool(.flag) as flag_b,
+    bool(.missing) as missing_b,
+    int(.latency) / int(.divisor) as ratio,
+    1 as test_index
+
+$input
+| select
+    sum(int(.latency)) as total_latency,
+    sum(int(.divisor)) as total_divisor,
+    2 as test_index

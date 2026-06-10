@@ -1,0 +1,3 @@
+tskv	timestamp=2026-05-06 12:00:01	timezone=+0300	uid=aaa	status=ok	latency=10
+tskv	timestamp=2026-05-06 12:00:02	timezone=+0300	uid=bbb	status=fail	latency=25
+tskv	timestamp=2026-05-06 12:00:03	timezone=+0300	uid=ccc	status=ok	latency=15

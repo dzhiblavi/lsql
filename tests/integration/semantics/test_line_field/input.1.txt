@@ -1,0 +1,2 @@
+[2026-May-06 12:00:01.111111] uid=aaa status=ok path=/api/users
+[2026-May-06 12:00:02.222222] uid=bbb status=fail path=/health

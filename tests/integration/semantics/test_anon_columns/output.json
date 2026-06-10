@@ -1,0 +1,6 @@
+{"context":"ctx-a","module":"web_server","status":"ok","test_index":1}
+{"context":"ctx-b","module":"worker","status":"fail","test_index":1}
+{"context":"ctx-c","module":"web_server","status":"ok","test_index":1}
+
+{"count":2,"module":"web_server","test_index":2}
+{"count":1,"module":"worker","test_index":2}

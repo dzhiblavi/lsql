@@ -1,0 +1,10 @@
+input = file input.1.txt @ 2026-05-06T12:00:02 + 2
+
+---------------------
+
+$input
+| sort by .timestamp
+| select .timestamp, .uid, .status, 1 as test_index
+
+$input
+| select count(*) as count, 2 as test_index

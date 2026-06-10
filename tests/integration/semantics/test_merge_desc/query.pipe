@@ -1,0 +1,16 @@
+input1 = file input.1.txt
+input2 = file input.2.txt
+
+sorted =
+    merge by .timestamp desc (
+        $input1
+        | sort by .timestamp desc
+    ) (
+        $input2
+        | sort by .timestamp desc
+    )
+
+---------------------
+
+$sorted
+| select .timestamp, .uid, .source, 1 as test_index

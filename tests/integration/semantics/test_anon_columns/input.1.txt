@@ -1,0 +1,3 @@
+[2026-May-06 12:00:01.111111] web_server ctx-a status=ok latency=10
+[2026-May-06 12:00:02.222222] worker ctx-b status=fail latency=20
+[2026-May-06 12:00:03.333333] web_server ctx-c status=ok latency=30

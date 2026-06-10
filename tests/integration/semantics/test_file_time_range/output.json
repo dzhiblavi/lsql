@@ -1,0 +1,5 @@
+{"status":"in-range","test_index":1,"timestamp":"2026-May-06 12:00:02","uid":"bbb"}
+{"status":"in-range","test_index":1,"timestamp":"2026-May-06 12:00:03","uid":"ccc"}
+{"status":"late","test_index":1,"timestamp":"2026-May-06 12:00:04","uid":"ddd"}
+
+{"count":3,"test_index":2}

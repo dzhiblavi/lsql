@@ -1,0 +1,11 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| sort by .anon2
+| select .anon1 as module, .anon2 as context, .status, 1 as test_index
+
+$input
+| select .anon1 as module, count(*) as count, 2 as test_index group by .anon1
+| sort by .module

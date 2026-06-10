@@ -1,0 +1,5 @@
+{"flag_b":false,"missing_b":null,"ratio":5,"test_index":1,"uid":"aaa"}
+{"flag_b":true,"missing_b":null,"ratio":5,"test_index":1,"uid":"bbb"}
+{"flag_b":true,"missing_b":null,"ratio":6,"test_index":1,"uid":"ccc"}
+
+{"test_index":2,"total_divisor":11,"total_latency":60}
