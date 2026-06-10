@@ -11,10 +11,12 @@
 
 namespace lsql::front::pipe::bound {
 
+using common::bound::FieldSetNodePtr;
+
 struct Pipeline {
     Box<Source> source;
     std::vector<Stage> stages;
-    common::bound::FieldSetNodePtr fields_out;
+    FieldSetNodePtr fields_out;
 };
 
 }  // namespace lsql::front::pipe::bound

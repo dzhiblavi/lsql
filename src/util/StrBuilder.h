@@ -17,13 +17,19 @@ class StrBuilder {
     }
 
     bool empty() const { return lines_.empty(); }
+    size_t lines() const { return lines_.size(); }
 
     std::string render() const {
+        if (lines_.empty()) {
+            return "";
+        }
+
         std::stringstream ss;
         for (auto&& line : lines_) {
             ss << line << '\n';
         }
-        return ss.str();
+
+        return ss.str().substr(0, ss.str().size() - 1);
     }
 
     StrBuilder& item(StrBuilder builder) {

@@ -12,4 +12,5 @@ target_link_libraries(
     magic_enum::magic_enum
     llog
     magic_enum::magic_enum
+    reflectcpp
 )
