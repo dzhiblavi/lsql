@@ -73,10 +73,10 @@ class Log : public Source, public OperationBase<Log> {
 
             auto parser = [&](std::string_view name, std::string_view value) {
                 auto id = binding_->id(name, ValueType::String);
-                if (id == UnknownFieldId || !required_fields.contains(id)) {
-                    return;
+
+                if (required_fields.contains(id)) {
+                    values.emplace(id, value);
                 }
-                values.emplace(id, value);
             };
 
             auto parse_func = back::logfmt::parseKeyValueFunc<decltype(parser)&>(type_);
