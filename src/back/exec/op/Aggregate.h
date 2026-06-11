@@ -99,14 +99,11 @@ class AggregateProjection
         source_->subscribe(first_phase_, &sub_, getFieldSet(downstream));
     }
 
-    FieldSet getFieldSet(const FieldSet& downstream) const {
+    FieldSet getFieldSet(const FieldSet& /*downstream*/) const {
         FieldSet result = FieldSet::emptySet();
 
         for (auto&& proj : projectors_) {
-            if (!downstream.contains(proj->field_id)) {
-                continue;
-            }
-
+            // not checking downstream fields because Aggregate computes all its aggregatees now
             result.merge(proj->expr->requiredFields());
         }
 
