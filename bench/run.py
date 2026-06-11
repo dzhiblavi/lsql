@@ -5,7 +5,6 @@ import hashlib
 import json
 import os
 import platform
-import resource
 import shutil
 import statistics
 import subprocess
@@ -24,7 +23,9 @@ RESULTS = BENCH / "results"
 
 def run_command(args, cwd=ROOT, capture=False):
     if capture:
-        return subprocess.run(args, cwd=cwd, check=True, text=True, capture_output=True).stdout
+        return subprocess.run(
+            args, cwd=cwd, check=True, text=True, capture_output=True
+        ).stdout
 
     subprocess.run(args, cwd=cwd, check=True)
 
@@ -95,7 +96,9 @@ def timed_run(command, cwd):
         stderr_bytes = stderr.read()
 
     elapsed = time.perf_counter() - started
-    max_rss_kb = usage.ru_maxrss / 1024.0 if platform.system() == "Darwin" else usage.ru_maxrss
+    max_rss_kb = (
+        usage.ru_maxrss / 1024.0 if platform.system() == "Darwin" else usage.ru_maxrss
+    )
 
     return {
         "returncode": returncode,
@@ -157,7 +160,9 @@ def collect_profile_artifacts(query_work_dir, profile_dir, result):
 
 def run_profile(query, frontend, command, query_work_dir, profile_dir):
     cleanup_profile_artifacts(query_work_dir)
-    result = timed_run(command + ["--profile", "--dot-graph", "--flamegraph"], cwd=query_work_dir)
+    result = timed_run(
+        command + ["--profile", "--dot-graph", "--flamegraph"], cwd=query_work_dir
+    )
     ensure_success(query, frontend, result)
     collect_profile_artifacts(query_work_dir, profile_dir, result)
 
@@ -242,7 +247,9 @@ def write_json(path, obj):
 
 def main():
     parser = argparse.ArgumentParser(description="Run logsql benchmark queries")
-    parser.add_argument("--git-tag", default=None, help="result directory tag; defaults to HEAD")
+    parser.add_argument(
+        "--git-tag", default=None, help="result directory tag; defaults to HEAD"
+    )
     parser.add_argument("--build-type", default="Release")
     parser.add_argument("--repeat", type=int, default=7)
     parser.add_argument("--warmup", type=int, default=0)
