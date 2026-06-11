@@ -39,6 +39,7 @@ Keywords are lowercase and currently case-sensitive.
 
 ```text
 file path/to/log.txt
+file path/to/log.txt.gz
 file path/to/log.txt @ 2026-06-10T12:00:00 + 3600
 values ('aaa', 'ccc')
 $name
@@ -49,6 +50,10 @@ merge by .timestamp desc (pipeline) (pipeline)
 
 `file ... @ ... + N` reads a timestamp range beginning at the given ISO-like
 timestamp and spanning `N` seconds.
+
+Gzip-compressed inputs with `.gz` or `.gzip` suffixes can be read as full-file
+sources. Timestamp ranges are not supported for compressed inputs, including
+default ranges passed through `--time-from` or `--time-to`.
 
 File sources are treated as having fields with any name of type `String`.
 When a requested field is missing in an input log line, its value is `null`.

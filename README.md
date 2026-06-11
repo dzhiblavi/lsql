@@ -113,6 +113,11 @@ requested field is missing in an input log line, its value is `null`.
 After a relation is bound, its fields are fixed by the query. References to
 fields outside that relation are rejected during binding.
 
+Gzip-compressed inputs with `.gz` or `.gzip` suffixes are supported for full-file
+scans. Timestamp ranges are not supported for compressed inputs, including
+explicit query ranges and default ranges passed through `--time-from` or
+`--time-to`.
+
 ## Output
 
 Supported output formats:

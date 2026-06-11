@@ -44,11 +44,16 @@ File sources:
 
 ```sql
 input = path/to/log.txt
+input = path/to/log.txt.gz
 input = path/to/log.txt @ 2026-06-10T12:00:00 + 3600
 ```
 
 `path @ timestamp + N` reads a timestamp range beginning at the given ISO-like
 timestamp and spanning `N` seconds.
+
+Gzip-compressed inputs with `.gz` or `.gzip` suffixes can be read as full-file
+sources. Timestamp ranges are not supported for compressed inputs, including
+default ranges passed through `--time-from` or `--time-to`.
 
 File sources are treated as having fields with any name of type `String`.
 When a requested field is missing in an input log line, its value is `null`.
