@@ -1,0 +1,21 @@
+input = file input.1.txt
+
+projected =
+    $input
+    | select
+        .uid as user_id,
+        .status as state,
+        .action as emitted_action
+
+ok_users =
+    $projected
+    | where .state = 'ok'
+    | select .user_id
+
+---------------------
+
+$projected
+| where .user_id in (
+    $ok_users
+)
+| select .emitted_action as action, 1 as test_index

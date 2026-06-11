@@ -1,0 +1,4 @@
+[2026-May-06 12:00:01.111111] uid=aaa status=ok action=login
+[2026-May-06 12:00:02.222222] uid=bbb status=fail action=logout
+[2026-May-06 12:00:03.333333] uid=ccc status=ok action=read
+[2026-May-06 12:00:04.444444] uid=ddd status=warn action=sync
