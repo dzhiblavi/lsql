@@ -27,7 +27,7 @@ class LineRecord : public Record {
         return it == values_.end() ? null : Value(std::string(it->second));
     }
 
-    ConstRecordPtr cloneImpl() const override { return std::make_shared<LineRecord>(*this); }
+    ConstRecordPtr cloneImpl() const override { return arc<LineRecord>(*this); }
 
  private:
     back::storage::Line line_;
@@ -38,7 +38,7 @@ class Log : public Source, public OperationBase<Log> {
     inline static constexpr std::string_view LineIdentifierName = "_line";
 
  public:
-    Log(std::shared_ptr<back::storage::LineSource> log,
+    Log(Arc<back::storage::LineSource> log,
         back::logfmt::LogType type,
         ConstFieldBindingPtr binding)
         : OperationBase(0, std::move(binding))
@@ -109,7 +109,7 @@ class Log : public Source, public OperationBase<Log> {
         return ExplanationItem().line("{} source: {}", description(ctx.phase), log_->describe());
     }
 
-    std::shared_ptr<back::storage::LineSource> log_;
+    Arc<back::storage::LineSource> log_;
     back::logfmt::LogType type_;
 };
 

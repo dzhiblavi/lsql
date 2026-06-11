@@ -14,6 +14,7 @@
 #include "front/common/source/require_at.h"
 
 #include "core/time_formats.h"
+#include "util/archive.h"
 
 namespace lsql::front::pipe::bind {
 
@@ -66,7 +67,12 @@ bound::Source bindSource(ast::FileSource s, auto&& /*self*/, Context& /*ctx*/) {
     };
 }
 
-bound::Source bindSource(ast::FileIntervalSource s, auto&& /*self*/, Context& /*ctx*/) {
+bound::Source bindSource(ast::FileIntervalSource s, auto&& self, Context& /*ctx*/) {
+    requireAt(
+        !util::isProbablyArchive(s.path),
+        self.span,
+        "time intervals cannot be applied to archives");
+
     constexpr auto format = TimeFormat::ISO8601;
     auto ts_from = timestampFromString(s.ts_from, format);
 

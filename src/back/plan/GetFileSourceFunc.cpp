@@ -1,5 +1,6 @@
 #include "back/plan/GetFileSourceFunc.h"
 
+#include "back/storage/Archive.h"
 #include "back/storage/LineSource.h"
 #include "back/storage/PagedFile.h"
 
@@ -9,6 +10,9 @@
 
 #include "back/exec/op/Log.h"
 
+#include "util/archive.h"
+#include "util/require.h"
+
 #include <cpptrace/exceptions.hpp>
 
 namespace lsql::back::plan {
@@ -17,26 +21,41 @@ namespace {
 
 using namespace exec;
 
-back::logfmt::LogType getLogType(const back::storage::PagedFile& file) {
-    // TODO: this assumes the file starts with a line
-    if (auto type = back::logfmt::detectLogType(file.page(0)->data())) {
-        return *type;
+back::logfmt::LogType getLogType(const back::storage::LineSource& source) {
+    for (auto&& line : source.lines()) {
+        if (auto type = back::logfmt::detectLogType(line.view())) {
+            return *type;
+        }
+
+        break;
     }
 
-    throw cpptrace::runtime_error("failed to detect log type");
+    throwError("failed to detect log type");
 }
 
 SourcePtr getFileSourceWhole(std::string path, ConstFieldBindingPtr binding) {
     auto file = back::storage::NativePagedFile::open(path);
-    return std::make_shared<Log>(
-        std::make_shared<back::storage::PagedLineSource>(file),
-        getLogType(*file),
-        std::move(binding));
+    Arc<back::storage::LineSource> line_source;
+
+    if (util::isProbablyArchive(path)) {
+        auto stream_source = arc<back::storage::NativeArchive>(file);
+        line_source = arc<back::storage::StreamLineSource>(stream_source);
+    } else {
+        line_source = arc<back::storage::PagedLineSource>(file);
+    }
+
+    return arc<Log>(line_source, getLogType(*line_source), std::move(binding));
 }
 
 SourcePtr getFileSourceRange(std::string path, TimeRange range, ConstFieldBindingPtr binding) {
+    require(
+        !util::isProbablyArchive(path),
+        "time range cannot be applied to compressed streams, path: '{}'",
+        path);
+
     auto file = back::storage::NativePagedFile::open(path);
-    auto log_type = getLogType(*file);
+    auto whole_line_source = arc<back::storage::PagedLineSource>(file);
+    auto log_type = getLogType(*whole_line_source);
     auto time_format = back::logfmt::timeFormat(log_type);
 
     llog::trace("searching for {} in file {}", range.ts_from, file->path().c_str());
@@ -49,10 +68,8 @@ SourcePtr getFileSourceRange(std::string path, TimeRange range, ConstFieldBindin
         from_pos = to_pos = 0;
     }
 
-    return std::make_shared<Log>(
-        std::make_shared<back::storage::PagedLineSource>(file, from_pos, to_pos),
-        log_type,
-        std::move(binding));
+    auto line_source = arc<back::storage::PagedLineSource>(file, from_pos, to_pos);
+    return arc<Log>(line_source, log_type, std::move(binding));
 }
 
 SourcePtr getFileSource(

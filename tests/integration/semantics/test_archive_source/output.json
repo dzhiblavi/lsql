@@ -1,0 +1,2 @@
+{"action":"login","status":"ok","uid":"aaa"}
+{"action":"logout","status":"fail","uid":"bbb"}

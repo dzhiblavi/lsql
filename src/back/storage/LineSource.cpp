@@ -4,10 +4,11 @@
 #include <llog/log.h>
 
 #include <cassert>
+#include <span>
 
 namespace lsql::back::storage {
 
-PagedLineSource::PagedLineSource(std::shared_ptr<PagedFile> file)
+PagedLineSource::PagedLineSource(Arc<PagedFile> file)
     : file_(std::move(file))
     , end_(file_->size()) {
 }
@@ -40,7 +41,7 @@ coro::generator<Line> PagedLineSource::lines() const {
         auto newline = data.find('\n');
 
         if (newline == std::string::npos) {
-            auto line = std::make_shared<std::string>();
+            auto line = arc<std::string>();
             line->append(data);
 
             while (newline == std::string::npos) {
@@ -94,6 +95,53 @@ coro::generator<Line> PagedLineSource::lines() const {
 std::string PagedLineSource::describe() const {
     return std::format(
         "'{}' in range [{}, {}) ({} bytes)", file_->path().c_str(), begin_, end_, end_ - begin_);
+}
+
+coro::generator<Line> StreamLineSource::lines() const {
+    llog::info("scanning lines of stream");
+
+    constexpr size_t ChunkSize = 64 * 1024;
+
+    verify(source_ != nullptr);
+    auto stream = source_->stream();
+    Arc<std::string> partial;
+
+    while (true) {
+        auto chunk = arc<std::string>(ChunkSize, '\0');
+        auto read = stream->read(chunk->size(), std::span<char>(chunk->data(), chunk->size()));
+        if (read == 0) {
+            co_return;
+        }
+
+        chunk->resize(read);
+        std::string_view data(*chunk);
+        size_t begin = 0;
+
+        while (begin < data.size()) {
+            const size_t newline = data.find('\n', begin);
+            if (newline == std::string_view::npos) {
+                if (!partial) {
+                    partial = arc<std::string>();
+                }
+                partial->append(data.substr(begin));
+                break;
+            }
+
+            if (partial) {
+                partial->append(data.substr(begin, newline - begin));
+                co_yield Line({partial, partial->data()}, partial->size());
+                partial.reset();
+            } else {
+                co_yield Line({chunk, chunk->data() + begin}, newline - begin);  // NOLINT
+            }
+
+            begin = newline + 1;
+        }
+    }
+}
+
+std::string StreamLineSource::describe() const {
+    return "streaming line source";
 }
 
 }  // namespace lsql::back::storage

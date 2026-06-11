@@ -13,6 +13,7 @@
 #include "front/common/source/require_at.h"
 
 #include "core/time_formats.h"
+#include "util/archive.h"
 
 #include <ranges>
 
@@ -328,7 +329,12 @@ bound::Relation bindRelation(ast::FileRelation r, auto&& /*self*/, Context& /*ct
     };
 }
 
-bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& /*self*/, Context& /*ctx*/) {
+bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& self, Context& /*ctx*/) {
+    requireAt(
+        !util::isProbablyArchive(r.path),
+        self.span,
+        "time intervals cannot be applied to archives");
+
     constexpr auto format = TimeFormat::ISO8601;
     auto ts_from = timestampFromString(r.ts_from, format);
 

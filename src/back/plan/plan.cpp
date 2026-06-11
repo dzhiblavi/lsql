@@ -29,6 +29,7 @@
 #include "ir/Scalars.h"
 #include "ir/Statement.h"
 
+#include "util/archive.h"
 #include "util/require.h"
 
 namespace lsql::back::plan {
@@ -171,7 +172,11 @@ class Planner {
     }
 
     OperationPtr planRelation(ir::FileRelation r, auto& /*info*/) {
-        auto src = file_source_func_(r.path, binding_, settings_.default_time_range);
+        auto src = file_source_func_(
+            r.path,
+            binding_,
+            util::isProbablyArchive(r.path) ? std::nullopt : settings_.default_time_range);
+
         plan_.sources.push_back(src);
         return src;
     }

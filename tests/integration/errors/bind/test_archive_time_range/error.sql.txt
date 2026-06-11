@@ -1,0 +1,2 @@
+contains: time intervals cannot be applied to archives
+contains: input = input.1.txt.gz @ 2026-05-06T12:00:00 + 1
