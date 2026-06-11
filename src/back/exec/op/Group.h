@@ -61,14 +61,9 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         }
 
         if (record != nullptr) {
-            std::vector<Value> key;
-            key.reserve(group_key_.size());
-            for (auto&& [id, proj] : group_key_) {
-                key.push_back(proj->expr->eval(*record));
-            }
+            auto key = getKey(*record);
 
             auto&& aggregators = groups_[key];
-
             if (aggregators.empty()) {
                 prepareAggregators(phase, aggregators);
             }
@@ -90,27 +85,23 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
 
         while (!groups_.empty()) {
             auto node = groups_.extract(groups_.begin());
-            auto group_values = std::move(node.key());
-
-            GroupValues group_kv;
-            group_kv.reserve(group_key_.size());
-            size_t group_by_column_index = 0;
-            for (auto&& [id, _] : group_key_) {
-                group_kv.emplace(id, std::move(group_values[group_by_column_index++]));
-            }
+            auto key = std::move(node.key());
+            auto group_kv = valuesFromKey(std::move(key));
 
             GroupValues values;
             values.reserve(required_fields.size());
 
             for (auto&& [id, value] : group_kv) {
+                // insert only required group keys
                 if (required_fields.contains(id)) {
                     values.emplace(id, std::move(value));
                 }
             }
 
+            // all these aggregators are required by downstream
             auto aggregators = std::move(node.mapped());
-            for (auto&& [id, _] : aggregators) {
-                values.emplace(id, aggregators[id]->get());
+            for (auto&& [id, aggregator] : aggregators) {
+                values.emplace(id, aggregator->get());
             }
 
             auto record = arc<GroupRecord>(std::move(values));
@@ -161,9 +152,30 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
             }
 
             auto it = aggregators_.find(id);
-            verify_dbg(it != aggregators_.end());
-            aggregators.emplace(id, it->second->expr->aggregator());
+            verify(it != aggregators_.end());
+            aggregators.push_back({id, it->second->expr->aggregator()});
         }
+    }
+
+    std::vector<Value> getKey(const Record& record) {
+        std::vector<Value> key;
+        key.reserve(group_key_.size());
+        for (auto&& [id, proj] : group_key_) {
+            key.push_back(proj->expr->eval(record));
+        }
+        return key;
+    }
+
+    GroupValues valuesFromKey(std::vector<Value> key) {
+        GroupValues group_kv;
+        group_kv.reserve(group_key_.size());
+
+        size_t group_by_column_index = 0;
+        for (auto&& [id, _] : group_key_) {
+            group_kv.emplace(id, std::move(key[group_by_column_index++]));
+        }
+
+        return group_kv;
     }
 
     static AggregateProjectionMap toProjectionMap(AggregateProjectionList list) {
@@ -207,9 +219,13 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         prof::newScope<ScopeMetrics>("{} input", name()),
     };
 
+    struct AggregatorField {
+        FieldId output_field_id;
+        AggregatorPtr aggregator;
+    };
+
     // phase state
-    using Groups =
-        std::unordered_map<std::vector<Value>, std::unordered_map<FieldId, AggregatorPtr>>;
+    using Groups = std::unordered_map<std::vector<Value>, std::vector<AggregatorField>>;
 
     int curr_phase_ = 0;
     Groups groups_;
