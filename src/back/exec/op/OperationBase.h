@@ -52,7 +52,7 @@ class OperationBase : public virtual Operation {
 
     std::string description(int phase) const {
         return std::format(
-            "{} [required-out: {}]", name(), to_string(requiredFields(phase), *binding_));
+            "{} {}", name(), to_string(requiredFields(phase), *binding_));
     }
 
     void updateFieldSet(int phase, const FieldSet& fields) {

@@ -120,9 +120,7 @@ class Projection : public OperationBase<Projection>,
             return {};
         }
 
-        return ExplanationItem()
-            .line("{} (projectors: {})", description(ctx.phase), projectors_.size())
-            .child(source);
+        return ExplanationItem().line("{}", description(ctx.phase)).child(source);
     }
 
     ScalarProjectionMap buildProjectionMap(ScalarProjectionList proj) {
