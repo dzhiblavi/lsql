@@ -14,14 +14,6 @@ class LineRecord : public Record {
         : line_(line)
         , values_(std::move(values)) {}
 
-    ids_t ids() const override {
-        ids_t ids;
-        for (auto&& [id, _] : values_) {
-            ids.insert(id);
-        }
-        return ids;
-    }
-
     Value value(FieldId id) const override {
         auto it = values_.find(id);
         return it == values_.end() ? null : Value(std::string(it->second));

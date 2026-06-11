@@ -18,14 +18,6 @@ class GroupRecord : public Record {
  public:
     explicit GroupRecord(GroupValues values) : values_(std::move(values)) {}
 
-    ids_t ids() const override {
-        ids_t ids;
-        for (auto&& [k, _] : values_) {
-            ids.insert(k);
-        }
-        return ids;
-    }
-
     Value value(FieldId id) const override {
         auto it = values_.find(id);
         return it == values_.end() ? null : it->second;

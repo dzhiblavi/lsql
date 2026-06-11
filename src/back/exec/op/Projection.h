@@ -25,15 +25,6 @@ class ScalarProjectionRecord : public Record {
     explicit ScalarProjectionRecord(absl::flat_hash_map<FieldId, Value> values)
         : values_(std::move(values)) {}
 
-    ids_t ids() const override {
-        ids_t ids;
-        ids.reserve(values_.size());
-        for (auto&& [id, _] : values_) {
-            ids.insert(id);
-        }
-        return ids;
-    }
-
     Value value(FieldId id) const override {
         if (auto it = values_.find(id); it != values_.end()) {
             return it->second;

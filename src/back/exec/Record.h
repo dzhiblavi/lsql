@@ -16,8 +16,6 @@ class Record : public std::enable_shared_from_this<Record> {
 
     virtual ~Record() = default;
 
-    virtual ids_t ids() const = 0;
-
     virtual Value value(FieldId id) const = 0;
 
     Arc<const Record> clone() const {
@@ -40,8 +38,6 @@ using ConstRecordPtr = Arc<const Record>;
 class EmptyRecord : public Record {
  public:
     EmptyRecord() = default;
-
-    ids_t ids() const override { return {}; }
 
     Value value(FieldId) const override { return null; }
 

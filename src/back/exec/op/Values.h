@@ -12,8 +12,6 @@ class ValueRecord : public Record {
         : id_(id)
         , value_(std::move(value)) {}
 
-    ids_t ids() const override { return {id_}; }
-
     Value value(FieldId id) const override { return id == id_ ? *value_ : null; }
 
  private:

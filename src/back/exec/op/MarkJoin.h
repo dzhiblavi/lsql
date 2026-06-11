@@ -27,12 +27,6 @@ class MarkJoinRecord : public Record {
         , id_(id)
         , value_(value) {}
 
-    ids_t ids() const override {
-        auto ids = get(child_)->ids();
-        ids.insert(id_);
-        return ids;
-    }
-
     Value value(FieldId id) const override {
         return id == id_ ? Value(value_) : get(child_)->value(id);
     }
