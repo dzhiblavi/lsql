@@ -5,6 +5,9 @@
 /*.pipe
 /ref.out
 /output
+/bench/results
+__pycache__/
+*.pyc
 /Makefile.dev
 /.dvim.lua
 /mirror_to_junk.sh
