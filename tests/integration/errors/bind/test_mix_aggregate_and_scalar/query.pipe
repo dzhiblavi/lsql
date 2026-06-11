@@ -1,0 +1,4 @@
+input = file input.1.txt
+
+$input
+| select .uid, count(*) as count

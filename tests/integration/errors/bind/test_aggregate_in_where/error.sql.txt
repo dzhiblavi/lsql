@@ -1,0 +1,2 @@
+contains: WHERE condition cannot be aggregate
+contains: WHERE COUNT(*) = 1

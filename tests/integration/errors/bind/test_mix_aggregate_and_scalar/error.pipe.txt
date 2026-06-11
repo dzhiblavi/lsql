@@ -1,0 +1,2 @@
+contains: cannot mix aggregates and scalars
+contains: count(*) as count

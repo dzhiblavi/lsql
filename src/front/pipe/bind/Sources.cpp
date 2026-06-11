@@ -49,10 +49,13 @@ bound::Source bindSource(ast::AdhocSource s, auto&& self, Context& ctx) {
     };
 }
 
-bound::Source bindSource(ast::NamedPipelineReferenceSource s, auto&& /*self*/, Context& ctx) {
+bound::Source bindSource(ast::NamedPipelineReferenceSource s, auto&& self, Context& ctx) {
+    auto child_node_ptr = ctx.find(s.name);
+    requireAt(child_node_ptr != nullptr, self.span, "unknown named pipeline '{}'", s.name);
+
     return {
         .node = bound::NamedPipelineReferenceSource{.name = s.name},
-        .fields_out = FieldSetNode::proxy(ctx.find(s.name)),
+        .fields_out = FieldSetNode::proxy(child_node_ptr),
     };
 }
 

@@ -1,0 +1,2 @@
+SELECT uid
+FROM $missing

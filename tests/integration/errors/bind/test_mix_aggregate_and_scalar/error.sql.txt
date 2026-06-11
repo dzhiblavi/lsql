@@ -1,0 +1,2 @@
+contains: identifier projectors are not allowed in aggregates
+contains: SELECT uid, COUNT(*) AS count

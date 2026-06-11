@@ -1,0 +1,8 @@
+input = file input.1.txt
+
+$input
+| where .uid in (
+    $input
+    | select .uid, .status
+)
+| select .uid

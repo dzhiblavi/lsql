@@ -24,3 +24,7 @@ add_integration_test(semantics/test_anon_columns)
 add_integration_test(semantics/test_projection_phase_fields)
 
 add_error_test(errors/bind/test_unknown_projected_field)
+add_error_test(errors/bind/test_unknown_named_source)
+add_error_test(errors/bind/test_mix_aggregate_and_scalar)
+add_error_test(errors/bind/test_aggregate_in_where)
+add_error_test(errors/bind/test_in_match_multiple_columns)
