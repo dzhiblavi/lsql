@@ -136,7 +136,7 @@ inline void run(int max_phase, const auto& sources, util::ThreadPool& tp, const 
 
         for (size_t i = 0; i < snapshots.size(); ++i) {
             std::cerr << std::format(
-                "profile [phase={}]\n{}", i, prof::formatProfile(snapshots[i]));
+                "profile [phase={}]\n{}\n", i, prof::formatProfile(snapshots[i]));
         }
     }
 
@@ -218,7 +218,7 @@ inline void run(ir::Program ir, Settings s) {
     }
 
     if (s.explain) {
-        std::cout << back::exec::explain(max_phase, std::span<Arc<ConsumerBridge>>(ops));
+        std::cout << back::exec::explain(max_phase, std::span<Arc<ConsumerBridge>>(ops)) << std::endl;
     }
 
     if (s.run) {
