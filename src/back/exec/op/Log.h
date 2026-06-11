@@ -43,7 +43,10 @@ class Log : public Source, public OperationBase<Log> {
         ConstFieldBindingPtr binding)
         : OperationBase(0, std::move(binding))
         , log_(std::move(log))
-        , type_(type) {}
+        , type_(type) {
+        prof::addEdge(parse_scope_, prof_);
+        prof::addEdge(source_read_scope_, prof_);
+    }
 
     void push(int phase) override {
         if (!active(phase)) {
@@ -55,9 +58,14 @@ class Log : public Source, public OperationBase<Log> {
         if (required_fields.empty()) {
             auto* record = EmptyRecord::instance().get();
 
-            for (auto _ : log_->lines()) {
+            auto lines = log_->lines();
+            for (auto it = lines.begin(); it != lines.end(); /* in body */) {
                 if (!emit(phase, record)) {
                     return;
+                }
+                {
+                    auto _ = source_read_scope_.scope();
+                    ++it;
                 }
             }
         } else {
@@ -76,12 +84,17 @@ class Log : public Source, public OperationBase<Log> {
             const bool has_line = required_fields.contains(line_id);
             const size_t values_count = required_fields.size() + (has_line ? 1 : 0);
 
-            for (auto line : log_->lines()) {
-                values.reserve(values_count);
+            auto lines = log_->lines();
+            for (auto it = lines.begin(); it != lines.end(); /* in body */) {
+                auto&& line = *it;
+                {
+                    auto _ = parse_scope_.scope();
 
-                parse_func(line.view(), parser);
-                if (has_line) {
-                    values.emplace(line_id, line.view());
+                    values.reserve(values_count);
+                    parse_func(line.view(), parser);
+                    if (has_line) {
+                        values.emplace(line_id, line.view());
+                    }
                 }
 
                 LineRecord record(line, std::move(values));
@@ -89,6 +102,11 @@ class Log : public Source, public OperationBase<Log> {
 
                 if (!emit(phase, &record)) {
                     return;
+                }
+
+                {
+                    auto _ = source_read_scope_.scope();
+                    ++it;
                 }
             }
         }
@@ -111,6 +129,11 @@ class Log : public Source, public OperationBase<Log> {
 
     Arc<back::storage::LineSource> log_;
     back::logfmt::LogType type_;
+
+    prof::ScopeHandle<prof::ScopeMetrics<>> source_read_scope_ =
+        prof::newScope<prof::ScopeMetrics<>>("read: {}", log_->describe());
+    prof::ScopeHandle<prof::ScopeMetrics<>> parse_scope_ =
+        prof::newScope<prof::ScopeMetrics<>>(std::string("parse"));
 };
 
 }  // namespace lsql::back::exec
