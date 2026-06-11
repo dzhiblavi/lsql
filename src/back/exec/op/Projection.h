@@ -4,6 +4,9 @@
 #include "back/exec/op/MemberSubscriber.h"
 #include "back/exec/op/OperationBase.h"
 
+#include <absl/container/flat_hash_map.h>
+
+#include <unordered_map>
 #include <vector>
 
 namespace lsql::back::exec {
@@ -19,32 +22,31 @@ using ScalarProjectionMap = std::unordered_map<FieldId, std::unique_ptr<ScalarPr
 
 class ScalarProjectionRecord : public Record {
  public:
-    ScalarProjectionRecord(RecordRef child, std::shared_ptr<const ScalarProjectionMap> projectors)
-        : child_(std::move(child))
-        , projectors_(std::move(projectors)) {}
+    explicit ScalarProjectionRecord(absl::flat_hash_map<FieldId, Value> values)
+        : values_(std::move(values)) {}
 
     ids_t ids() const override {
         ids_t ids;
-        for (auto&& [id, _] : *projectors_) {
+        ids.reserve(values_.size());
+        for (auto&& [id, _] : values_) {
             ids.insert(id);
         }
         return ids;
     }
 
     Value value(FieldId id) const override {
-        if (auto it = projectors_->find(id); it != projectors_->end()) {
-            return it->second->expr->eval(*get(child_));
+        if (auto it = values_.find(id); it != values_.end()) {
+            return it->second;
         }
         return null;
     }
 
     ConstRecordPtr cloneImpl() const override {
-        return std::make_shared<ScalarProjectionRecord>(pin(child_), projectors_);
+        return std::make_shared<ScalarProjectionRecord>(values_);
     }
 
  private:
-    RecordRef child_;
-    std::shared_ptr<const ScalarProjectionMap> projectors_;
+    absl::flat_hash_map<FieldId, Value> values_;
 };
 
 class Projection : public OperationBase<Projection>,
@@ -63,12 +65,39 @@ class Projection : public OperationBase<Projection>,
             return emit(phase, nullptr);
         }
 
-        ScalarProjectionRecord rec(record, {shared_from_this(), &projectors_});
+        auto&& phase_projectors = phase_projectors_[phase];
+        absl::flat_hash_map<FieldId, Value> values;
+        values.reserve(phase_projectors.size());
+        for (auto&& scalar : phase_projectors) {
+            values.emplace(scalar->field_id, scalar->expr->eval(*record));
+        }
+
+        ScalarProjectionRecord rec(std::move(values));
         return emit(phase, &rec);
     }
 
     void init(int phase, const FieldSet& downstream) override {
         source_->subscribe(phase, &sub_, getFieldSet(downstream));
+        precalcProjectors(phase);
+    }
+
+    void precalcProjectors(int phase) {
+        auto&& required = requiredFields(phase);
+        auto& phase_projectors = phase_projectors_[phase];
+
+        for (FieldId id : required.fieldIds()) {
+            if (std::ranges::find(phase_projectors, id, [](auto&& s) { return s->field_id; }) !=
+                phase_projectors.end()) {
+                // already projected in this phase
+                continue;
+            }
+
+            auto it = projectors_.find(id);
+            verify(it != projectors_.end());
+
+            auto&& scalar = it->second;
+            phase_projectors.push_back(scalar.get());
+        }
     }
 
     FieldSet getFieldSet(const FieldSet& downstream) const {
@@ -110,6 +139,7 @@ class Projection : public OperationBase<Projection>,
 
     OperationPtr source_;
     ScalarProjectionMap projectors_;
+    absl::flat_hash_map<int, std::vector<ScalarProjector*>> phase_projectors_;
 
     MemberSubscriber<Projection> sub_{
         this,
