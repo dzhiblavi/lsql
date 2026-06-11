@@ -148,7 +148,7 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
                 auto match = lowerToIR(std::move(*e.match), ctx);
                 verify(
                     match.fields_out.contains(e.match_field_id),
-                    "unknown field {}",
+                    "unknown identifier {}",
                     to_string(e.match_field_id, *ctx.binding()));
 
                 auto [key, key_aggregates] = lowerToIR(std::move(*e.expr), ctx);

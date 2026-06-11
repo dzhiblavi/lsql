@@ -1,4 +1,5 @@
 include(./cmake/add_test.cmake)
+include(./cmake/add_frontend_error_test.cmake)
 
 add_integration_test(semantics/test_basic_projection)
 add_integration_test(semantics/test_filtering)
@@ -21,3 +22,5 @@ add_integration_test(semantics/test_file_time_range)
 add_integration_test(semantics/test_tskv_log_format)
 add_integration_test(semantics/test_anon_columns)
 add_integration_test(semantics/test_projection_phase_fields)
+
+add_error_test(errors/bind/test_unknown_projected_field)

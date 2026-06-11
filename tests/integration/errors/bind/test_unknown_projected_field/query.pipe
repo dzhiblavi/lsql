@@ -1,0 +1,10 @@
+input = file input.1.txt
+
+projected =
+    $input
+    | select .uid
+
+---------------------
+
+$projected
+| select .status

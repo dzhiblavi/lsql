@@ -11,7 +11,7 @@ namespace {
 LowerExprResult lowerToIR(bound::IdentifierExpr e, auto& info, Context& ctx) {
     verify(
         ctx.currFieldSet().fieldIds().contains(e.field_id),
-        "unknown field: {}",
+        "unknown identifier: {}",
         to_string(e.field_id, *ctx.binding()));
 
     return LowerExprResult(

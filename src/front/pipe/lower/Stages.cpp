@@ -93,7 +93,7 @@ ir::Relation lowerToIR(bound::WhereInStage s, auto& /*self*/, Context& ctx) {
     auto match = lower::lowerToIR(std::move(*s.match), match_ctx);
     verify(
         match.fields_out.contains(s.match_field_id),
-        "unknown field {}",
+        "unknown identifier {}",
         to_string(s.match_field_id, *ctx.binding()));
 
     auto [key, key_aggregates] = lowerToIR(std::move(*s.expr), ctx);

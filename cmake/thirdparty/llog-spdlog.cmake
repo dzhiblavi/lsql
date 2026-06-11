@@ -6,7 +6,7 @@ set(LLOG_BUILD_TESTS OFF)
 FetchContent_Declare(
   llog-spdlog
   GIT_REPOSITORY https://github.com/dzhiblavi/llog-spdlog.git
-  GIT_TAG main
+  GIT_TAG b8cee45
   GIT_PROGRESS TRUE
   INSTALL_COMMAND "")
 

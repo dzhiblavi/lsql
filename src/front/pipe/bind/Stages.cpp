@@ -31,7 +31,7 @@ void bindProjector(ast::Projector pp, std::vector<bound::Projector>& out, Contex
         [&](ast::IdentifierProjector p) {
             auto name = p.identifier.substr(1);
             auto maybe_type = ctx.currFieldSet().typeOfSourceField(name, ctx.binding());
-            requireAt(maybe_type.has_value(), pp.span, "unknown field '{}'", name);
+            requireAt(maybe_type.has_value(), pp.span, "unknown identifier '{}'", name);
             auto id = ctx.binding()->getOrAdd(name, *maybe_type);
             out.emplace_back(bound::IdentifierProjector{.field_id = id});
         },
@@ -121,10 +121,17 @@ bound::Stage bindStage(ast::SelectStage r, auto&& self, Context& ctx) {
 
     bool has_aggregates = false;
     bool has_scalars = false;
+    bool has_star = false;
     for (auto&& [p, span] : std::views::zip(projectors, projectors_spans)) {
         util::match(
             p,
-            [&](const bound::StarProjector&) { /* nothing to check */ },
+            [&](const bound::StarProjector&) {
+                if (has_aggregates) {
+                    throwAt(span, "cannot mix aggregates and scalars");
+                }
+                has_star = true;
+                has_scalars = true;
+            },
             [&](const bound::IdentifierProjector&) {
                 if (has_aggregates) {
                     throwAt(span, "cannot mix aggregates and scalars");
@@ -148,9 +155,21 @@ bound::Stage bindStage(ast::SelectStage r, auto&& self, Context& ctx) {
     }
 
     auto output_fields = outputFieldsOf(projectors);
+    FieldSetNodePtr fields_out;
+
+    if (has_aggregates) {
+        fields_out = FieldSetNode::make(output_fields);
+    } else {
+        if (has_star) {
+            fields_out = FieldSetNode::make(output_fields, ctx.currFieldSet().top());
+        } else {
+            fields_out = FieldSetNode::make(output_fields);
+        }
+    }
+
     return {
         .node = bound::SelectStage{.projectors = std::move(projectors)},
-        .fields_out = FieldSetNode::make(output_fields, ctx.currFieldSet().top()),
+        .fields_out = fields_out,
     };
 }
 
@@ -174,7 +193,7 @@ bound::Stage bindStage(ast::GroupStage r, auto&& /*self*/, Context& ctx) {
                 requireAt(
                     group_list_map.contains(p.field_id),
                     span,
-                    "group by: unknown field '{}'",
+                    "group by: unknown identifier '{}'",
                     to_string(p.field_id, *ctx.binding()));
             },
             [&](const bound::ExprProjector& p) {
@@ -186,7 +205,7 @@ bound::Stage bindStage(ast::GroupStage r, auto&& /*self*/, Context& ctx) {
                     requireAt(
                         group_list_map.contains(id),
                         span,
-                        "group by: unknown field '{}'",
+                        "group by: unknown identifier '{}'",
                         to_string(id, *ctx.binding()));
                 }
             });

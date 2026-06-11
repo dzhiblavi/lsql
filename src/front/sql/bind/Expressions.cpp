@@ -20,7 +20,7 @@ std::vector<bound::Expr> bindExprs(std::vector<ast::Expr> exprs, Context& ctx) {
 
 bound::Expr bindExpr(ast::IdentifierExpr e, ast::Expr& self, Context& ctx) {
     auto maybe_type = ctx.currFieldSet().typeOfSourceField(e.identifier, ctx.binding());
-    requireAt(maybe_type.has_value(), self.span, "unknown field '{}'", e.identifier);
+    requireAt(maybe_type.has_value(), self.span, "unknown identifier '{}'", e.identifier);
     auto type = *maybe_type;
     auto id = ctx.binding()->getOrAdd(e.identifier, type);
 

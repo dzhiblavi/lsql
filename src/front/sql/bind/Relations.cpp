@@ -151,7 +151,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
                     requireAt(
                         group_key_map.contains(p.field_id),
                         span,
-                        "GROUP BY: unknown field {}",
+                        "GROUP BY: unknown identifier {}",
                         to_string(p.field_id, *ctx.binding()));
                 },
                 [&](const bound::ExprProjector& p) {
@@ -163,7 +163,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
                         requireAt(
                             group_key_map.contains(id),
                             span,
-                            "GROUP BY: unknown field {}",
+                            "GROUP BY: unknown identifier {}",
                             to_string(id, *ctx.binding()));
                     }
                 });

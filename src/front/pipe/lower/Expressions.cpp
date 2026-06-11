@@ -13,7 +13,7 @@ namespace {
 LowerExprResult lowerToIR(bound::IdentifierExpr e, auto& info, Context& ctx) {
     verify(
         ctx.currFieldSet().fieldIds().contains(e.field_id),
-        "unknown field: {}",
+        "unknown identifier: {}",
         to_string(e.field_id, *ctx.binding()));
 
     return LowerExprResult(
@@ -60,7 +60,7 @@ LowerExprResult lowerToIR(bound::InExpr e, auto& /*info*/, Context& ctx) {
     auto match = lower::lowerToIR(std::move(*e.match), match_ctx);
     verify(
         match.fields_out.contains(e.match_field_id),
-        "unknown field {}",
+        "unknown identifier {}",
         to_string(e.match_field_id, *ctx.binding()));
 
     auto source = ctx.pullRelation();
