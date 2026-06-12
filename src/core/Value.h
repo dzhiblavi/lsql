@@ -15,7 +15,7 @@ class Value {
  public:
     Value() = default;
 
-    Value(null_t) {}
+    constexpr Value(null_t) {}
     Value(bool value) : val_(value) {}
     Value(int64_t value) : val_(value) {}
     Value(float value) : val_(value) {}
@@ -79,6 +79,8 @@ inline std::string to_string(Value&& val) {
         },
         std::move(val).variant());
 }
+
+[[maybe_unused]] inline constexpr Value vnull = null;
 
 }  // namespace lsql
 

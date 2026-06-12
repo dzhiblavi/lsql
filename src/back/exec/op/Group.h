@@ -18,9 +18,9 @@ class GroupRecord : public Record {
  public:
     explicit GroupRecord(GroupValues values) : values_(std::move(values)) {}
 
-    Value value(FieldId id) const override {
+    const Value& value(FieldId id) const override {
         auto it = values_.find(id);
-        return it == values_.end() ? null : it->second;
+        return it == values_.end() ? vnull : it->second;
     }
 
     ConstRecordPtr cloneImpl() const override { return std::make_shared<GroupRecord>(*this); }

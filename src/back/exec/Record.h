@@ -16,7 +16,7 @@ class Record : public std::enable_shared_from_this<Record> {
 
     virtual ~Record() = default;
 
-    virtual Value value(FieldId id) const = 0;
+    virtual const Value& value(FieldId id) const = 0;
 
     Arc<const Record> clone() const {
         if (!weak_from_this().expired()) {
@@ -39,7 +39,7 @@ class EmptyRecord : public Record {
  public:
     EmptyRecord() = default;
 
-    Value value(FieldId) const override { return null; }
+    const Value& value(FieldId) const override { return vnull; }
 
     static ConstRecordPtr instance() {
         static ConstRecordPtr record = arc<EmptyRecord>();

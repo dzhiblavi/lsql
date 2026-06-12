@@ -25,11 +25,9 @@ class ScalarProjectionRecord : public Record {
     explicit ScalarProjectionRecord(absl::flat_hash_map<FieldId, Value> values)
         : values_(std::move(values)) {}
 
-    Value value(FieldId id) const override {
-        if (auto it = values_.find(id); it != values_.end()) {
-            return it->second;
-        }
-        return null;
+    const Value& value(FieldId id) const override {
+        auto it = values_.find(id);
+        return it == values_.end() ? vnull : it->second;
     }
 
     ConstRecordPtr cloneImpl() const override {

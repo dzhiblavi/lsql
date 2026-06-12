@@ -12,7 +12,7 @@ class ValueRecord : public Record {
         : id_(id)
         , value_(std::move(value)) {}
 
-    Value value(FieldId id) const override { return id == id_ ? *value_ : null; }
+    const Value& value(FieldId id) const override { return id == id_ ? *value_ : vnull; }
 
  private:
     std::shared_ptr<const Record> cloneImpl() const override {

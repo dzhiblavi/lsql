@@ -10,20 +10,17 @@ namespace lsql::back::exec {
 
 class LineRecord : public Record {
  public:
-    LineRecord(back::storage::Line line, absl::flat_hash_map<FieldId, std::string_view> values)
-        : line_(line)
-        , values_(std::move(values)) {}
+    LineRecord(absl::flat_hash_map<FieldId, Value> values) : values_(std::move(values)) {}
 
-    Value value(FieldId id) const override {
+    const Value& value(FieldId id) const override {
         auto it = values_.find(id);
-        return it == values_.end() ? null : Value(std::string(it->second));
+        return it == values_.end() ? vnull : it->second;
     }
 
     ConstRecordPtr cloneImpl() const override { return arc<LineRecord>(*this); }
 
  private:
-    back::storage::Line line_;
-    absl::flat_hash_map<FieldId, std::string_view> values_;
+    absl::flat_hash_map<FieldId, Value> values_;
 };
 
 class Log : public Source, public OperationBase<Log> {
@@ -61,13 +58,13 @@ class Log : public Source, public OperationBase<Log> {
                 }
             }
         } else {
-            absl::flat_hash_map<FieldId, std::string_view> values;
+            absl::flat_hash_map<FieldId, Value> values;
 
             auto parser = [&](std::string_view name, std::string_view value) {
                 auto id = binding_->id(name, ValueType::String);
 
                 if (required_fields.contains(id)) {
-                    values.emplace(id, value);
+                    values.emplace(id, std::string(value));
                 }
             };
 
@@ -85,11 +82,11 @@ class Log : public Source, public OperationBase<Log> {
                     values.reserve(values_count);
                     parse_func(line.view(), parser);
                     if (has_line) {
-                        values.emplace(line_id, line.view());
+                        values.emplace(line_id, std::string(line.view()));
                     }
                 }
 
-                LineRecord record(line, std::move(values));
+                LineRecord record(std::move(values));
                 values = {};
 
                 if (!emit(phase, &record)) {

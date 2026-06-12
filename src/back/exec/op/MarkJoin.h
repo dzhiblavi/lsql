@@ -22,13 +22,13 @@ struct MarkJoinMetrics {
 
 class MarkJoinRecord : public Record {
  public:
-    MarkJoinRecord(bool value, FieldId id, RecordRef child)
+    MarkJoinRecord(Value value, FieldId id, RecordRef child)
         : child_(std::move(child))
         , id_(id)
-        , value_(value) {}
+        , value_(std::move(value)) {}
 
-    Value value(FieldId id) const override {
-        return id == id_ ? Value(value_) : get(child_)->value(id);
+    const Value& value(FieldId id) const override {
+        return id == id_ ? value_ : get(child_)->value(id);
     }
 
  private:
@@ -38,7 +38,7 @@ class MarkJoinRecord : public Record {
 
     RecordRef child_;
     FieldId id_;
-    bool value_;
+    Value value_;
 };
 
 class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {

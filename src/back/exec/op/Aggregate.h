@@ -111,9 +111,9 @@ class AggregateProjection
     }
 
     // Record
-    Value value(FieldId id) const override {
+    const Value& value(FieldId id) const override {
         auto it = values_.find(id);
-        return it == values_.end() ? null : it->second;
+        return it == values_.end() ? vnull : it->second;
     }
 
     // Record
