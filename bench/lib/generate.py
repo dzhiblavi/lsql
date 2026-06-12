@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import gzip
 from pathlib import Path
 import random as random_module
 import string
@@ -39,6 +40,10 @@ def normal(mean, std):
     return lambda rng: rng.gauss(mean, std)
 
 
+def fixed(value):
+    return lambda _rng: value
+
+
 def random_string(distr, alphabet=DEFAULT_ALPHABET, min_len=0):
     def generate(_i, rng, _cache):
         length = max(min_len, int(round(distr(rng))))
@@ -61,14 +66,26 @@ def materialize_fields(fields, i, rng):
     return {key: value_of(value, i, rng, cache) for key, value in fields.items()}
 
 
-def write_imap_log(path, rows, fields, timestamp=imap_timestamp, seed=0):
-    path = Path(path)
+def write_imap_log_to(f, rows, fields, timestamp, seed):
     rng = random_module.Random(seed)
 
+    for i in range(rows):
+        line_fields = materialize_fields(fields, i, rng)
+        field_text = " ".join(
+            f"{key}={value}" for key, value in line_fields.items()
+        )
+        f.write(f"{timestamp(i)} {field_text}\n")
+
+
+def write_imap_log(path, rows, fields, timestamp=imap_timestamp, seed=0):
+    path = Path(path)
+
     with path.open("w") as f:
-        for i in range(rows):
-            line_fields = materialize_fields(fields, i, rng)
-            field_text = " ".join(
-                f"{key}={value}" for key, value in line_fields.items()
-            )
-            f.write(f"{timestamp(i)} {field_text}\n")
+        write_imap_log_to(f, rows, fields, timestamp, seed)
+
+
+def write_imap_log_gzip(path, rows, fields, timestamp=imap_timestamp, seed=0):
+    path = Path(path)
+
+    with gzip.open(path, "wt") as f:
+        write_imap_log_to(f, rows, fields, timestamp, seed)
