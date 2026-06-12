@@ -81,7 +81,11 @@ def prepare_query(query, query_work_dir):
     shutil.copytree(query["source_dir"], query_work_dir)
     prepare = query_work_dir / "prepare.py"
     if prepare.exists():
-        run_command([sys.executable, str(prepare)], cwd=query_work_dir)
+        env = os.environ.copy()
+        env["PYTHONPATH"] = (
+            str(BENCH) if not env.get("PYTHONPATH") else str(BENCH) + os.pathsep + env["PYTHONPATH"]
+        )
+        subprocess.run([sys.executable, str(prepare)], cwd=query_work_dir, env=env, check=True)
 
 
 def timed_run(command, cwd):

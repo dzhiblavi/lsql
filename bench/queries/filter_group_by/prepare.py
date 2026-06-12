@@ -1,15 +1,15 @@
-from pathlib import Path
+from lib.generate import format_string, random, random_int, write_imap_log
 
 
 rows = 200_000
 statuses = ["200", "200", "200", "404", "500", "503"]
-path = Path("input.1.txt")
 
-with path.open("w") as f:
-    for i in range(rows):
-        status = statuses[i % len(statuses)]
-        f.write(
-            f"[2026-May-06 12:00:{i % 60:02d}.123456] "
-            f"context_id=ctx{i % 30000} status_code={status} "
-            f"method=GET path=/api/v1/item/{i % 1000} total_time={i % 5000}\n"
-        )
+fields = {
+    "context_id": format_string("ctx{context}", context=random_int(0, 29_999)),
+    "status_code": random(statuses),
+    "method": "GET",
+    "path": format_string("/api/v1/item/{item}", item=random_int(0, 999)),
+    "total_time": random_int(0, 5_000),
+}
+
+write_imap_log("input.1.txt", rows, fields)
