@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <optional>
-#include <string>
+#include <string_view>
 
 namespace lsql::util {
 
@@ -21,13 +21,14 @@ inline std::optional<int64_t> parseInt64Strict(std::string_view s) {
     return value;
 }
 
-inline std::optional<float> parseFloatStrict(const std::string& s) {
+inline std::optional<float> parseFloatStrict(std::string_view s) {
     char* end = nullptr;
     errno = 0;
 
-    float value = std::strtof(s.c_str(), &end);
+    // TODO: may read past s.end()
+    float value = std::strtof(s.data(), &end);
 
-    if (end != s.c_str() + s.size()) {  // NOLINT
+    if (end != s.data() + s.size()) {  // NOLINT
         return std::nullopt;
     }
 

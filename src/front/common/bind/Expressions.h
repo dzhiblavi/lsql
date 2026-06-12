@@ -114,7 +114,10 @@ std::pair<BoundExprInfo, std::string> bindRsubstr(
 
     std::string regex = util::match(
         args[1].node,
-        [](bound::ValueExpr e) { return e.value.get<std::string>(); },
+        [](bound::ValueExpr e) {
+            verify(e.value.type() == ValueType::String);
+            return std::string(e.value.get<std::string_view>());
+        },
         [&](auto&&) -> std::string {
             throwAt(args_span, "rsubstr's second argument should be literal");
         });

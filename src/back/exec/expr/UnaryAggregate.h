@@ -72,7 +72,8 @@ struct CountNonNullOp {
 
 template <Comparable T>
 struct MinOp {
-    using State = std::optional<T>;
+    using U = std::conditional_t<std::same_as<T, std::string_view>, std::string, T>;
+    using State = std::optional<U>;
 
     void update(State* curr, const Value& value) const {
         if (value == null) {
@@ -81,9 +82,9 @@ struct MinOp {
 
         auto&& next = value.get<T>();
         if (curr->has_value()) {
-            *curr = std::min(**curr, next);
+            *curr = std::min(**curr, U(next));
         } else {
-            *curr = next;
+            *curr = U(next);
         }
     }
 
@@ -103,7 +104,8 @@ struct MinOp {
 
 template <Comparable T>
 struct MaxOp {
-    using State = std::optional<T>;
+    using U = std::conditional_t<std::same_as<T, std::string_view>, std::string, T>;
+    using State = std::optional<U>;
 
     void update(State* curr, const Value& value) const {
         if (value == null) {
@@ -112,9 +114,9 @@ struct MaxOp {
 
         auto&& next = value.get<T>();
         if (curr->has_value()) {
-            *curr = std::max(**curr, next);
+            *curr = std::max(**curr, U(next));
         } else {
-            *curr = next;
+            *curr = U(next);
         }
     }
 
@@ -134,25 +136,50 @@ struct MaxOp {
 
 template <Addable T>
 struct SumOp {
-    using State = T;
+    using State = std::conditional_t<std::same_as<T, std::string_view>, std::stringstream, T>;
 
     void update(State* curr, const Value& value) const {
         if (value != null) {
-            *curr += value.get<T>();
+            add(*curr, value.get<T>());
         }
     }
 
-    Value result(const State* state) const { return *state; }
     ValueType argType() const { return type; }
     ValueType valueType() const { return type; }
+
+    template <typename U = T>
+    requires(std::same_as<U, std::string_view>)
+    Value result(const State* state) const {
+        return state->str();
+    }
+
+    template <typename U = T>
+    requires(!std::same_as<U, std::string_view>)
+    Value result(const State* state) const {
+        return *state;
+    }
+
+    template <typename U = T>
+    requires(std::same_as<U, std::string_view>)
+    void add(State& curr, std::string_view s) const {
+        curr << s;
+    }
+
+    template <typename U = T>
+    requires(!std::same_as<U, std::string_view>)
+    void add(State& curr, const U& s) const {
+        curr += s;
+    }
 
     ValueType type;
 };
 
 template <Comparable T>
 struct PercentileOp {
+    using U = std::conditional_t<std::same_as<T, std::string_view>, std::string, T>;
+
     struct State {
-        std::vector<T> values;
+        std::vector<U> values;
     };
 
     PercentileOp(std::vector<float> perc, ValueType type)
@@ -164,12 +191,12 @@ struct PercentileOp {
 
     void update(State* curr, const Value& value) const {
         if (value != null) {
-            curr->values.push_back(value.get<T>());
+            curr->values.emplace_back(value.get<T>());
         }
     }
 
     Value result(State* state) const {
-        std::vector<T> result;
+        std::vector<U> result;
         result.reserve(percentiles.size());
 
         std::ptrdiff_t size = static_cast<std::ptrdiff_t>(state->values.size());
@@ -199,7 +226,7 @@ struct PercentileOp {
         }
 
         if (result.empty()) {
-            return "";
+            return std::string("");
         }
 
         std::stringstream ss;

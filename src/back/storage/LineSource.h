@@ -13,13 +13,15 @@ namespace lsql::back::storage {
 
 struct Line {
  public:
+    Line() = default;
     Line(std::shared_ptr<const char> pin, size_t size) : pin_(std::move(pin)), size_(size) {}
 
     std::string_view view() const { return {pin_.get(), size_}; }
+    const Arc<const char>& pin() const { return pin_; }
 
  private:
-    std::shared_ptr<const char> pin_;
-    size_t size_;
+    std::shared_ptr<const char> pin_ = nullptr;
+    size_t size_ = 0;
 };
 
 class LineSource {

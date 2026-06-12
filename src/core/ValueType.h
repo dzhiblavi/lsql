@@ -22,20 +22,22 @@ using ValueTypeVariant = std::variant<
     std::type_identity<int64_t>,
     std::type_identity<float>,
     std::type_identity<bool>,
-    std::type_identity<std::string>>;
+    std::type_identity<std::string_view>>;
 
 template <typename T>
 constexpr ValueType valueType() {
     if constexpr (std::same_as<T, null_t>) {
         return ValueType::Null;
-    } else if constexpr (std::same_as<T, std::string>) {
-        return ValueType::String;
     } else if constexpr (std::same_as<T, int64_t>) {
         return ValueType::Integer;
     } else if constexpr (std::same_as<T, float>) {
         return ValueType::Floating;
     } else if constexpr (std::same_as<T, bool>) {
         return ValueType::Boolean;
+    } else if constexpr (std::same_as<T, std::string>) {
+        return ValueType::String;
+    } else if constexpr (std::same_as<T, std::string_view>) {
+        return ValueType::String;
     }
 
     panic("unsupported type");
@@ -46,7 +48,7 @@ inline ValueTypeVariant intoTypeVariant(ValueType type) {
         case ValueType::Null:
             return std::type_identity<null_t>{};
         case ValueType::String:
-            return std::type_identity<std::string>{};
+            return std::type_identity<std::string_view>{};
         case ValueType::Integer:
             return std::type_identity<int64_t>{};
         case ValueType::Floating:

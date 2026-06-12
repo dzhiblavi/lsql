@@ -66,7 +66,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
                 case BinaryExprType::Divide:
                     return std::visit(
                         util::Overloaded{
-                            []<Dividable T>(T& l, T& r) -> Value {
+                            []<Dividable T>(T l, T r) -> Value {
                                 return r == 0 ? null : Value(l / r);
                             },
                             [](auto&&...) -> Value { panic(); },
@@ -76,7 +76,14 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
                 case BinaryExprType::Add:
                     return std::visit(
                         util::Overloaded{
-                            []<Addable T>(T& l, T& r) -> Value { return l + r; },
+                            []<Addable T>(T l, T r) -> Value {
+                                using U = std::conditional_t<
+                                    std::same_as<T, std::string_view>,
+                                    std::string,
+                                    T>;
+
+                                return U(l) + U(r);
+                            },
                             [](auto&&...) -> Value { panic(); },
                         },
                         vl->value.variant(),
@@ -85,7 +92,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
                 case BinaryExprType::Subtract:
                     return std::visit(
                         util::Overloaded{
-                            []<Subtractable T>(T& l, T& r) -> Value { return l - r; },
+                            []<Subtractable T>(T l, T r) -> Value { return l - r; },
                             [](auto&&...) -> Value { panic(); },
                         },
                         vl->value.variant(),

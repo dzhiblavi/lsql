@@ -87,7 +87,9 @@ struct DivideOp {
 
 template <Addable T>
 struct AddOp {
-    Value apply(const Value& l, const Value& r) const { return l.get<T>() + r.get<T>(); }
+    using U = std::conditional_t<std::same_as<T, std::string_view>, std::string, T>;
+
+    Value apply(const Value& l, const Value& r) const { return U(l.get<T>()) + U(r.get<T>()); }
     ValueType argTypeL() const { return type; }
     ValueType argTypeR() const { return type; }
     ValueType valueType() const { return type; }

@@ -6,6 +6,8 @@
 #include "back/logfmt/log_types.h"
 #include "back/storage/LineSource.h"
 
+#include "core/PinnedString.h"
+
 namespace lsql::back::exec {
 
 class LineRecord : public Record {
@@ -58,13 +60,23 @@ class Log : public Source, public OperationBase<Log> {
                 }
             }
         } else {
+            const size_t max_small_string_size = std::string().capacity();
             absl::flat_hash_map<FieldId, Value> values;
+            back::storage::Line line;
+
+            auto insert = [&](FieldId id, std::string_view view) {
+                if (view.size() <= max_small_string_size) {
+                    values.emplace(id, std::string(view));
+                } else {
+                    values.emplace(id, PinnedString(line.pin(), view));
+                }
+            };
 
             auto parser = [&](std::string_view name, std::string_view value) {
                 auto id = binding_->id(name, ValueType::String);
 
                 if (required_fields.contains(id)) {
-                    values.emplace(id, std::string(value));
+                    insert(id, value);
                 }
             };
 
@@ -75,14 +87,14 @@ class Log : public Source, public OperationBase<Log> {
 
             auto lines = log_->lines();
             for (auto it = lines.begin(); it != lines.end(); /* in body */) {
-                auto&& line = *it;
+                line = *it;
                 {
                     auto _ = parse_scope_.scope();
 
                     values.reserve(values_count);
                     parse_func(line.view(), parser);
                     if (has_line) {
-                        values.emplace(line_id, std::string(line.view()));
+                        insert(line_id, line.view());
                     }
                 }
 

@@ -48,7 +48,9 @@ struct LikeOp {
     explicit LikeOp(const std::string& regex) : pattern(regex) {}
 
     Value apply(const Value& value) const {
-        return reflex::Matcher(&pattern, value.get<std::string>()).matches() != 0;
+        auto view = value.get<std::string_view>();
+        auto input = reflex::Input(view.data(), view.size());
+        return reflex::Matcher(&pattern, input).matches() != 0;
     }
 
     ValueType valueType() const { return ValueType::Boolean; }
@@ -61,15 +63,16 @@ struct RSubstrOp {
     explicit RSubstrOp(const std::string& regex) : pattern(regex) {}
 
     Value apply(const Value& value) const {
-        auto val = value.get<std::string>();
-        reflex::Matcher matcher(&pattern, val);
+        auto view = value.get<std::string_view>();
+        auto input = reflex::Input(view.data(), view.size());
+        reflex::Matcher matcher(&pattern, input);
 
         size_t group = matcher.find();
         if (group == 0) {
             return null;
         }
 
-        return val.substr(matcher.first(), matcher.size());
+        return value.substr(matcher.first(), matcher.size());
     }
 
     ValueType valueType() const { return ValueType::String; }

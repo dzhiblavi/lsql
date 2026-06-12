@@ -5,7 +5,7 @@
 
 namespace lsql::output {
 
-inline std::string escapeForJSON(const std::string& input) {
+inline std::string escapeForJSON(std::string_view input) {
     std::ostringstream oss;
 
     for (char c : input) {
@@ -56,11 +56,11 @@ inline std::string toJSONStr(const Value& v) {
             [](bool x) -> std::string { return x ? "true" : "false"; },
             [](int64_t x) -> std::string { return std::to_string(x); },
             [](float x) -> std::string { return std::to_string(x); },
-            [](const std::string& x) -> std::string {
-                return std::format("\"{}\"", escapeForJSON(x));
+            [](std::string_view s) -> std::string {
+                return std::format("\"{}\"", escapeForJSON(s));
             },
         },
-        v);
+        v.variant());
 }
 
 template <Sink S>
