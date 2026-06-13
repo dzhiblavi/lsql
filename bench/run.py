@@ -299,7 +299,8 @@ def main():
     }
     write_json(result_dir / "meta.json", meta)
 
-    for query in discover_queries():
+    for idx, query in enumerate(discover_queries()):
+        print(f"running query #{idx}: '{query["name"]}'")
         query_work_dir = work_root / query["name"]
         prepare_query(query, query_work_dir)
 

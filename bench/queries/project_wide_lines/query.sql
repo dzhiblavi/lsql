@@ -1,6 +1,6 @@
 input = input.1.txt
 
-SELECT uid, status, latency
+SELECT _line
 FROM $input
 WHERE status = 'ok'
 ORDER BY uid
