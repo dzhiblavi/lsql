@@ -76,9 +76,10 @@ def resolve_result_dir(s):
 def meta_label(result_dir, meta):
     tag = meta.get("git_tag") or result_dir.name
     rev = meta.get("git_revision")
+    message = meta.get("git_commit_message")
     dirty = "-dirty" if meta.get("git_dirty") else ""
     if rev:
-        return f"{tag} ({rev}{dirty})"
+        return f"{tag} ({rev}{dirty}): {message}"
     return tag
 
 
