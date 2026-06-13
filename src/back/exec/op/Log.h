@@ -68,7 +68,7 @@ class Log : public Source, public OperationBase<Log> {
                 if (view.size() <= max_small_string_size) {
                     values.emplace(id, std::string(view));
                 } else {
-                    values.emplace(id, PinnedString(line.pin(), view));
+                    values.emplace(id, PinnedString({line.pin(), view.data()}, view.size()));
                 }
             };
 

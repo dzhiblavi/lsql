@@ -5,6 +5,7 @@
 #include "util/StrBuilder.h"
 
 namespace lsql::back::exec {
+
 class Operation;
 
 using ExplanationItem = util::StrBuilder;

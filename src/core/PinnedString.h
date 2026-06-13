@@ -9,23 +9,21 @@ namespace lsql {
 class PinnedString {
  public:
     PinnedString() = default;
-    PinnedString(Arc<const void> pin, std::string_view view) : pin_(std::move(pin)), view_(view) {}
+    PinnedString(Arc<const char> pin, size_t size) : pin_(std::move(pin)), size_(size) {}
 
-    std::string_view view() const { return view_; }
-    operator std::string_view() const { return view_; }
-    size_t size() const { return view_.size(); }
-    bool empty() const { return view_.empty(); }
+    std::string_view view() const { return {pin_.get(), size_}; }
+    operator std::string_view() const { return view(); }
+    size_t size() const { return size_; }
+    bool empty() const { return size_ == 0; }
 
     PinnedString substr(size_t pos, size_t len) const {
-        return {
-            pin_,
-            view_.substr(pos, len),
-        };
+        auto v = view().substr(pos, len);
+        return {Arc<const char>(pin_, v.data()), v.size()};
     }
 
  public:
-    Arc<const void> pin_ = nullptr;
-    std::string_view view_;
+    Arc<const char> pin_ = nullptr;
+    size_t size_ = 0;
 };
 
 inline bool operator==(const PinnedString& a, const PinnedString& b) {
