@@ -34,6 +34,10 @@ def current_revision():
     return run_command(["git", "rev-parse", "--short=12", "HEAD"], capture=True).strip()
 
 
+def current_commit_message():
+    return run_command(["git", "log", "-1", "--pretty=%B"], capture=True).strip()
+
+
 def is_dirty():
     result = subprocess.run(["git", "diff", "--quiet"], cwd=ROOT)
     return result.returncode != 0
@@ -281,6 +285,7 @@ def main():
 
     meta = {
         "git_revision": revision,
+        "git_commit_message": current_commit_message(),
         "git_dirty": dirty,
         "git_tag": tag,
         "build_type": args.build_type,
