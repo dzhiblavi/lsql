@@ -1,7 +1,7 @@
 from lib.generate import fixed, random_int, random_string, write_imap_log
 
 
-rows = 160_000
+rows = 300_000
 
 fields = {
     "bucket": random_string(distr=fixed(32)),

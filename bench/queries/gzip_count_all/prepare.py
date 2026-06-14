@@ -1,7 +1,7 @@
 from lib.generate import format_string, random, random_int, write_imap_log_gzip
 
 
-rows = 200_000
+rows = 400_000
 
 fields = {
     "uid": format_string("user{user}", user=random_int(0, 50_000)),

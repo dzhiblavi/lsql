@@ -8,7 +8,7 @@ from lib.generate import (
 )
 
 
-rows = 40_000
+rows = 80_000
 statuses = ["ok", "ok", "ok", "fail"]
 
 fields = {
