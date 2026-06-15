@@ -5,6 +5,7 @@
 #include "back/exec/op/types.h"
 
 #include "util/instrument/Timer.h"
+#include "util/require.h"
 #include "util/verify.h"
 
 #include <llog/log.h>

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "back/exec/expr/Scalar.h"
 #include "back/exec/op/MemberSubscriber.h"
 #include "back/exec/op/OperationBase.h"
+#include "back/exec/op/types.h"
 
 #include <absl/container/flat_hash_map.h>
 
@@ -10,37 +10,6 @@
 #include <vector>
 
 namespace lsql::back::exec {
-
-struct ScalarProjector {
-    FieldId field_id;
-    ScalarPtr expr;
-};
-
-using ScalarProjectorPtr = std::unique_ptr<ScalarProjector>;
-using ScalarProjectionList = std::vector<std::unique_ptr<ScalarProjector>>;
-using ScalarProjectionMap = std::unordered_map<FieldId, ScalarProjector*>;
-
-class ScalarProjectionRecord : public Record {
- public:
-    explicit ScalarProjectionRecord(std::vector<Value> values) : values_(std::move(values)) {}
-
-    const Value& value(SlotId slot) const override {
-        verify_dbg(
-            0 <= slot && slot < values_.size(),
-            "slot {} out of range {}",
-            uint32_t(slot),
-            values_.size());
-
-        return values_[slot];
-    }
-
-    ConstRecordPtr cloneImpl() const override {
-        return std::make_shared<ScalarProjectionRecord>(values_);
-    }
-
- private:
-    std::vector<Value> values_;
-};
 
 class Projection : public OperationBase<Projection>,
                    public std::enable_shared_from_this<Projection> {
@@ -70,7 +39,7 @@ class Projection : public OperationBase<Projection>,
             }
         }
 
-        ScalarProjectionRecord rec(std::move(values));
+        VecRecord rec(std::move(values));
         return emit(phase, &rec);
     }
 

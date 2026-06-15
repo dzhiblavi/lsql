@@ -11,26 +11,6 @@
 
 namespace lsql::back::exec {
 
-class LineRecord : public Record {
- public:
-    explicit LineRecord(std::vector<Value> values) : values_(std::move(values)) {}
-
-    const Value& value(SlotId slot) const override {
-        verify_dbg(
-            0 <= slot && slot < values_.size(),
-            "slot {} out of range {}",
-            uint32_t(slot),
-            values_.size());
-
-        return values_[slot];
-    }
-
-    ConstRecordPtr cloneImpl() const override { return arc<LineRecord>(*this); }
-
- private:
-    std::vector<Value> values_;
-};
-
 class Log : public Source, public OperationBase<Log> {
     inline static constexpr std::string_view LineIdentifierName = "_line";
 
@@ -107,7 +87,7 @@ class Log : public Source, public OperationBase<Log> {
                     }
                 }
 
-                LineRecord record(std::move(values));
+                VecRecord record(std::move(values));
                 values = {};
 
                 if (!emit(phase, &record)) {

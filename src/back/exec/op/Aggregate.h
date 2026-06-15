@@ -3,22 +3,13 @@
 #include "back/exec/op/MemberSubscriber.h"
 #include "back/exec/op/OperationBase.h"
 #include "back/exec/op/Source.h"
-
-#include "back/exec/expr/Aggregate.h"
+#include "back/exec/op/types.h"
 
 #include "util/verify.h"
 
 #include <vector>
 
 namespace lsql::back::exec {
-
-struct AggregateProjector {
-    FieldId field_id;
-    AggregatePtr expr;
-};
-
-using AggregateProjectorPtr = std::unique_ptr<AggregateProjector>;
-using AggregateProjectionList = std::vector<std::unique_ptr<AggregateProjector>>;
 
 class AggregateProjection
     : public Source,

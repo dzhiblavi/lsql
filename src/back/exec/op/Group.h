@@ -1,9 +1,9 @@
 #pragma once
 
 #include "back/exec/Record.h"
-#include "back/exec/op/Aggregate.h"
 #include "back/exec/op/MemberSubscriber.h"
 #include "back/exec/op/Projection.h"
+#include "back/exec/op/types.h"
 
 #include "core/types.h"
 #include "util/containers.h"
@@ -13,26 +13,7 @@
 
 namespace lsql::back::exec {
 
-class GroupRecord : public Record {
- public:
-    explicit GroupRecord(std::vector<Value> values) : values_(std::move(values)) {}
-
-    const Value& value(SlotId slot) const override {
-        verify_dbg(0 <= slot && slot < values_.size());
-        return values_[slot];
-    }
-
-    ConstRecordPtr cloneImpl() const override { return std::make_shared<GroupRecord>(*this); }
-
- private:
-    std::vector<Value> values_;
-};
-
-using AggregateProjectionMap = std::unordered_map<FieldId, AggregateProjector*>;
-
 class Group : public OperationBase<Group>, public std::enable_shared_from_this<Group> {
-    friend class GroupRecord;
-
  public:
     Group(
         OperationPtr source,
@@ -100,7 +81,7 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
 
             util::append(values, std::move(key));
 
-            auto record = arc<GroupRecord>(std::move(values));
+            auto record = arc<VecRecord>(std::move(values));
             if (!emit(phase, record.get())) {
                 groups_.clear();
                 return false;

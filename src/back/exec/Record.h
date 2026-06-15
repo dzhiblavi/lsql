@@ -32,6 +32,7 @@ class Record : public std::enable_shared_from_this<Record> {
 
 using RecordPtr = Arc<Record>;
 using ConstRecordPtr = Arc<const Record>;
+using RecordRef = std::variant<const Record*, ConstRecordPtr>;
 
 class EmptyRecord : public Record {
  public:
@@ -48,7 +49,20 @@ class EmptyRecord : public Record {
     Arc<const Record> cloneImpl() const override { return instance(); }
 };
 
-using RecordRef = std::variant<const Record*, ConstRecordPtr>;
+class VecRecord : public Record {
+ public:
+    explicit VecRecord(std::vector<Value> values) : values_(std::move(values)) {}
+
+    const Value& value(SlotId slot) const override {
+        verify_dbg(0 <= slot && slot < values_.size());
+        return values_[slot];
+    }
+
+    ConstRecordPtr cloneImpl() const override { return std::make_shared<VecRecord>(*this); }
+
+ private:
+    std::vector<Value> values_;
+};
 
 inline ConstRecordPtr pin(const RecordRef& ref) {
     return std::visit(

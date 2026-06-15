@@ -8,7 +8,7 @@ namespace lsql::back::exec {
 
 class ValueRecord : public Record {
  public:
-    explicit ValueRecord(const Value* value) : value_(std::move(value)) {}
+    explicit ValueRecord(const Value* value) : value_(value) {}
 
     const Value& value([[maybe_unused]] SlotId slot) const override {
         verify_dbg(slot == 0);
