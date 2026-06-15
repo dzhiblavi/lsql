@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/Value.h"
+#include "core/value/Value.h"
 
 namespace lsql::front::common::bound {
 

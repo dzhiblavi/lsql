@@ -5,8 +5,8 @@
 #include "ir/Scalars.h"
 #include "ir/Statement.h"
 
-#include "core/Fields.h"
-#include "core/Value.h"
+#include "core/schema/Fields.h"
+#include "core/value/Value.h"
 #include "core/exprs/BinaryExpr.h"
 #include "core/types.h"
 

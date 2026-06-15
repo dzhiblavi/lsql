@@ -6,7 +6,7 @@
 #include "back/logfmt/log_types.h"
 #include "back/storage/LineSource.h"
 
-#include "core/PinnedString.h"
+#include "core/value/PinnedString.h"
 
 namespace lsql::back::exec {
 

@@ -3,7 +3,7 @@
 #include "ir/Aggregates.h"
 #include "ir/Relations.h"
 
-#include "core/Fields.h"
+#include "core/schema/Fields.h"
 
 namespace lsql::ir {
 

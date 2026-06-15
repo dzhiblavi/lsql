@@ -2,7 +2,7 @@
 
 #include "back/exec/expr/Scalar.h"
 
-#include "core/Fields.h"
+#include "core/schema/Fields.h"
 
 namespace lsql::back::exec {
 

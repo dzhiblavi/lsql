@@ -11,7 +11,7 @@
     #include "front/sql/parser/Token.h"
     #include "front/sql/parser/grammar/parse.h"
 
-    #include "core/ValueType.h"
+    #include "core/value/ValueType.h"
 
     #include <cstdio>
     #include <cstdlib>

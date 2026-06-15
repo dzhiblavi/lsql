@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/Fields.h"
-#include "core/Value.h"
+#include "core/schema/Fields.h"
+#include "core/value/Value.h"
 
 #include <vector>
 

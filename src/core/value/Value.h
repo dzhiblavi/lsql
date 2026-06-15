@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/PinnedString.h"
-#include "core/ValueType.h"
-#include "core/null_t.h"
+#include "core/value/PinnedString.h"
+#include "core/value/ValueType.h"
+#include "core/value/null_t.h"
 #include "util/overloaded.h"
 
 #include <cassert>

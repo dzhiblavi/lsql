@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/Value.h"
+#include "core/value/Value.h"
 #include "util/string_cast.h"
 
 namespace lsql {

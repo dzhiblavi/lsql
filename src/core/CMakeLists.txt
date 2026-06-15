@@ -8,7 +8,7 @@ add_library(
     time_formats/oracle.cpp
     time_formats/iso8601.cpp
     time_formats/sql.cpp
-    Value.cpp
+    value/Value.cpp
 )
 
 target_link_libraries(

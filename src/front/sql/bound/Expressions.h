@@ -9,8 +9,8 @@
 #include "core/exprs/UnaryAggregate.h"
 #include "core/exprs/UnaryExpr.h"
 
-#include "core/Fields.h"
-#include "core/ValueType.h"
+#include "core/schema/Fields.h"
+#include "core/value/ValueType.h"
 #include "core/types.h"
 
 #include <string>

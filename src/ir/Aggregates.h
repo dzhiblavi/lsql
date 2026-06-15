@@ -1,10 +1,10 @@
 #pragma once
 
-#include "core/Value.h"
+#include "core/value/Value.h"
 #include "ir/Aggregate.h"
 #include "ir/Scalar.h"
 
-#include "core/Fields.h"
+#include "core/schema/Fields.h"
 #include "core/exprs/UnaryAggregate.h"
 #include "core/types.h"
 

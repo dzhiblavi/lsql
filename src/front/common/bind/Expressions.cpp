@@ -1,6 +1,6 @@
 #include "front/common/bind/Expressions.h"
 
-#include "core/ValueType.h"
+#include "core/value/ValueType.h"
 #include "util/enum.h"
 
 #include <algorithm>

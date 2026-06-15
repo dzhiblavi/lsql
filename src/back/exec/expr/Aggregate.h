@@ -2,8 +2,8 @@
 
 #include "back/exec/Record.h"
 
-#include "core/Fields.h"
-#include "core/Value.h"
+#include "core/schema/Fields.h"
+#include "core/value/Value.h"
 #include "core/types.h"
 
 #include <reflex/matcher.h>

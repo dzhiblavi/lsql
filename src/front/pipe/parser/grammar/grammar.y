@@ -12,7 +12,7 @@
     #include "front/pipe/parser/Token.h"
     #include "front/pipe/parser/grammar/parse.h"
 
-    #include "core/ValueType.h"
+    #include "core/value/ValueType.h"
 
     #include <cstdio>
     #include <cstdlib>

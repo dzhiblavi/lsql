@@ -4,8 +4,8 @@
 #include "front/sql/bound/fwd/Expr.h"
 #include "front/sql/bound/fwd/Relation.h"
 
-#include "core/Fields.h"
-#include "core/Value.h"
+#include "core/schema/Fields.h"
+#include "core/value/Value.h"
 #include "core/types.h"
 
 #include <optional>

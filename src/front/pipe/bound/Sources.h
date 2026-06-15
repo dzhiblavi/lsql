@@ -4,7 +4,7 @@
 #include "front/pipe/bound/fwd/Expr.h"
 #include "front/pipe/bound/fwd/Source.h"  // IWYU pragma: keep
 
-#include "core/Value.h"
+#include "core/value/Value.h"
 
 #include <string>
 #include <vector>

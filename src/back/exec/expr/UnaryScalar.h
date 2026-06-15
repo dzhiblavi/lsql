@@ -2,7 +2,7 @@
 
 #include "back/exec/expr/Scalar.h"
 
-#include "core/valueCast.h"
+#include "core/value/valueCast.h"
 
 #include <reflex/stdmatcher.h>
 

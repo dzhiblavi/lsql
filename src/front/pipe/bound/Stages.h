@@ -3,7 +3,7 @@
 #include "front/pipe/bound/Pipeline.h"
 #include "front/pipe/bound/fwd/Expr.h"
 
-#include "core/Fields.h"
+#include "core/schema/Fields.h"
 #include "core/types.h"
 
 #include <vector>

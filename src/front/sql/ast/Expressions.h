@@ -8,7 +8,7 @@
 
 #include "front/common/source/SourceSpan.h"
 
-#include "core/ValueType.h"
+#include "core/value/ValueType.h"
 #include "core/types.h"
 
 #include <string>

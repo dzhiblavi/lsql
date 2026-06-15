@@ -2,8 +2,8 @@
 
 #include "front/common/source/SourceSpan.h"
 
-#include "core/Value.h"
-#include "core/ValueType.h"
+#include "core/value/Value.h"
+#include "core/value/ValueType.h"
 
 #include "util/require.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/ValueType.h"
+#include "core/value/ValueType.h"
 #include "util/verify.h"
 
 #include <absl/container/flat_hash_map.h>
