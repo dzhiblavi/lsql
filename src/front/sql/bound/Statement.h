@@ -2,7 +2,6 @@
 
 #include "front/sql/bound/Relations.h"
 
-#include "core/schema/Fields.h"
 #include "core/types.h"
 
 #include <variant>

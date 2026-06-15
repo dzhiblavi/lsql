@@ -26,7 +26,11 @@ class ScalarProjectionRecord : public Record {
 
     const Value& value(SlotId slot) const override {
         verify_dbg(
-            0 <= slot && slot < values_.size(), "slot {} out of range {}", slot, values_.size());
+            0 <= slot && slot < values_.size(),
+            "slot {} out of range {}",
+            uint32_t(slot),
+            values_.size());
+
         return values_[slot];
     }
 

@@ -3,7 +3,8 @@
 #include "back/exec/op/Source.h"
 #include "back/plan/TimeRange.h"
 
-#include "core/schema/Fields.h"
+#include "core/schema/FieldBinding.h"
+#include "core/schema/Schema.h"
 
 #include <functional>
 #include <string>

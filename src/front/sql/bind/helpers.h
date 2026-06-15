@@ -3,7 +3,7 @@
 #include "front/sql/bound/Expressions.h"
 #include "front/sql/bound/Relations.h"
 
-#include "core/schema/Fields.h"
+#include "core/schema/FieldSet.h"
 
 namespace lsql::front::sql::bind {
 

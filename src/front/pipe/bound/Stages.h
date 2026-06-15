@@ -1,9 +1,9 @@
 #pragma once
 
+#include "front/common/bound/FieldSetNode.h"
 #include "front/pipe/bound/Pipeline.h"
 #include "front/pipe/bound/fwd/Expr.h"
 
-#include "core/schema/Fields.h"
 #include "core/types.h"
 
 #include <vector>
@@ -51,9 +51,11 @@ struct GroupStage {
     std::vector<Projector> group_list;
 };
 
+using common::bound::FieldSetNodePtr;
+
 struct Stage {
     StageNode node;
-    common::bound::FieldSetNodePtr fields_out;
+    FieldSetNodePtr fields_out;
 };
 
 }  // namespace lsql::front::pipe::bound

@@ -2,7 +2,7 @@
 
 #include "profiling/global.h"
 
-#include "core/schema/Fields.h"
+#include "core/schema/types.h"
 #include "core/types.h"
 #include "core/value/Value.h"
 

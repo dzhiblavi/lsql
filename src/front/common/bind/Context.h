@@ -2,7 +2,6 @@
 
 #include "front/common/bind/FieldSetChain.h"
 
-#include "core/schema/Fields.h"
 #include "util/Pinned.h"
 
 namespace lsql::front::common::bind {

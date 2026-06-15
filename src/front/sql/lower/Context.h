@@ -4,7 +4,8 @@
 #include "ir/Relations.h"   // IWYU pragma: keep
 #include "ir/Scalars.h"     // IWYU pragma: keep
 
-#include "core/schema/Fields.h"
+#include "core/schema/FieldSet.h"
+#include "core/schema/Schema.h"
 #include "util/Pinned.h"
 #include "util/require.h"
 

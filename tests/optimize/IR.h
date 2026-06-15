@@ -6,7 +6,7 @@
 #include "ir/Statement.h"
 
 #include "core/exprs/BinaryExpr.h"
-#include "core/schema/Fields.h"
+#include "core/schema/Schema.h"
 #include "core/types.h"
 #include "core/value/Value.h"
 

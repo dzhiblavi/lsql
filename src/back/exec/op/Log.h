@@ -6,6 +6,7 @@
 #include "back/logfmt/log_types.h"
 #include "back/storage/LineSource.h"
 
+#include "core/schema/Schema.h"
 #include "core/value/PinnedString.h"
 
 namespace lsql::back::exec {
@@ -16,7 +17,11 @@ class LineRecord : public Record {
 
     const Value& value(SlotId slot) const override {
         verify_dbg(
-            0 <= slot && slot < values_.size(), "slot {} out of range {}", slot, values_.size());
+            0 <= slot && slot < values_.size(),
+            "slot {} out of range {}",
+            uint32_t(slot),
+            values_.size());
+
         return values_[slot];
     }
 
@@ -128,7 +133,7 @@ class Log : public Source, public OperationBase<Log> {
 
         for (auto id : requiredFields(phase).fieldIds()) {
             if (auto slot = schema_.slot(id); slot.has_value()) {
-                slots_[binding_->name(id)] = *slot;
+                slots_.emplace(binding_->name(id), *slot);
             }
         }
     }

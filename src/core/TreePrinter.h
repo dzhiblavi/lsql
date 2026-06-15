@@ -1,8 +1,10 @@
 #pragma once
 
-#include "core/schema/Fields.h"
-#include "core/value/Value.h"
+#include "core/schema/FieldBinding.h"
+#include "core/schema/FieldSet.h"
+#include "core/schema/Schema.h"
 
+#include "core/value/Value.h"
 #include "util/TreePrinter.h"
 
 namespace lsql {

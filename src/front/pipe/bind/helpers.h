@@ -2,7 +2,7 @@
 
 #include "front/pipe/bound/Expressions.h"
 
-#include "core/schema/Fields.h"
+#include "core/schema/FieldSet.h"
 #include "front/pipe/bound/Stages.h"
 
 namespace lsql::front::pipe::bind {

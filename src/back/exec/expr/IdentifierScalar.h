@@ -2,8 +2,6 @@
 
 #include "back/exec/expr/Scalar.h"
 
-#include "core/schema/Fields.h"
-
 namespace lsql::back::exec {
 
 class IdentifierScalar : public Scalar {

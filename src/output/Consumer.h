@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/schema/Fields.h"
+#include "core/schema/types.h"
 #include "core/value/Value.h"
 
 #include <vector>

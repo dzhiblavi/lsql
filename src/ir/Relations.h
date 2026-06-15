@@ -4,7 +4,7 @@
 #include "ir/Relation.h"
 #include "ir/Scalar.h"
 
-#include "core/schema/Fields.h"
+#include "core/schema/Schema.h"
 #include "core/types.h"
 #include "core/value/Value.h"
 

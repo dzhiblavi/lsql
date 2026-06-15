@@ -2,7 +2,7 @@
 
 #include "back/exec/Record.h"
 
-#include "core/schema/Fields.h"
+#include "core/schema/FieldSet.h"
 #include "core/types.h"
 #include "core/value/Value.h"
 

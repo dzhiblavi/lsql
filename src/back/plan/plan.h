@@ -7,6 +7,8 @@
 
 #include "ir/Statement.h"
 
+#include "core/schema/Schema.h"
+
 #include <vector>
 
 namespace lsql::back::plan {

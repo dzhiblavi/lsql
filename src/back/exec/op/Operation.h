@@ -3,7 +3,7 @@
 #include "back/exec/op/Explanation.h"
 #include "back/exec/op/Subscriber.h"
 
-#include "core/schema/Fields.h"
+#include "core/schema/FieldSet.h"
 
 #include <absl/container/flat_hash_set.h>
 

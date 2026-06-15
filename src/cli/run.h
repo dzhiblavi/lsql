@@ -56,8 +56,8 @@ class ConsumerBridge : public back::exec::Subscriber {
             return false;
         }
 
-        for (SlotId slot = 0; slot < rec_.size(); ++slot) {
-            rec_[slot].second = record->value(slot);
+        for (uint32_t slot = 0; slot < rec_.size(); ++slot) {
+            rec_[slot].second = record->value(SlotId(slot));
         }
 
         consumer_->consume(rec_);

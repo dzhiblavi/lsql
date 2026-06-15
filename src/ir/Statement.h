@@ -2,7 +2,7 @@
 
 #include "ir/Relation.h"
 
-#include "core/schema/Fields.h"
+#include "core/schema/FieldBinding.h"
 #include "core/types.h"
 
 #include <variant>
