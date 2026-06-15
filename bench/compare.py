@@ -25,6 +25,7 @@ class BenchResult:
     key: BenchKey
     query_file: str
     output_sha256: str
+    output_semantic_sha256: str
     real_ms: float
     user_ms: float
     sys_ms: float
@@ -106,6 +107,9 @@ def load_results(result_dir):
                 key=key,
                 query_file=item["query_file"],
                 output_sha256=item["output_sha256"],
+                output_semantic_sha256=item.get(
+                    "output_semantic_sha256", item["output_sha256"]
+                ),
                 real_ms=summary.get("real_ms_median", median(samples, "real_ms")),
                 user_ms=summary.get("user_ms_median", median(samples, "user_ms")),
                 sys_ms=summary.get("sys_ms_median", median(samples, "sys_ms")),
@@ -222,9 +226,15 @@ def print_table(base_results, head_results, colors, threshold):
         sys_delta = pct_delta(base.sys_ms, head.sys_ms)
         rss_delta = pct_delta(base.max_rss_kb, head.max_rss_kb)
 
-        output_marker = (
-            "" if base.output_sha256 == head.output_sha256 else colors.yellow("hash!")
+        semantic_output_same = (
+            base.output_semantic_sha256 == head.output_semantic_sha256
         )
+        raw_output_same = base.output_sha256 == head.output_sha256
+        output_marker = ""
+        if not semantic_output_same:
+            output_marker = colors.yellow("hash!")
+        elif not raw_output_same:
+            output_marker = colors.dim("bytes")
         rows.append(
             [
                 key.name,
@@ -268,7 +278,7 @@ def print_summary(base_results, head_results, colors, threshold):
         total_base += base.real_ms
         total_head += head.real_ms
 
-        if base.output_sha256 != head.output_sha256:
+        if base.output_semantic_sha256 != head.output_semantic_sha256:
             mismatches.append(key)
         elif delta <= -threshold:
             faster.append((key, delta))

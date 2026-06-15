@@ -119,6 +119,23 @@ def timed_run(command, cwd):
     }
 
 
+def output_semantic_hash(stdout):
+    try:
+        rows = []
+        for line in stdout.splitlines():
+            if not line:
+                continue
+            rows.append(json.loads(line))
+
+        normalized = b"\n".join(
+            json.dumps(row, sort_keys=True, separators=(",", ":")).encode()
+            for row in rows
+        )
+        return hashlib.sha256(normalized).hexdigest()
+    except json.JSONDecodeError:
+        return hashlib.sha256(stdout).hexdigest()
+
+
 def ensure_success(query, frontend, result):
     if result["returncode"] == 0:
         return
@@ -180,6 +197,7 @@ def run_profile(query, frontend, command, query_work_dir, profile_dir):
         "sys_ms": result["sys_ms"],
         "max_rss_kb": result["max_rss_kb"],
         "output_sha256": hashlib.sha256(result["stdout"]).hexdigest(),
+        "output_semantic_sha256": output_semantic_hash(result["stdout"]),
         "output_bytes": len(result["stdout"]),
         "profile_dir": str(profile_dir.relative_to(RESULTS.parent)),
     }
@@ -201,6 +219,7 @@ def run_query(
     command = [str(binary), "-f", "JSON", str(query_file)]
     samples = []
     output_hash = None
+    output_semantic_hash_value = None
 
     for _ in range(warmup):
         result = timed_run(command, cwd=query_work_dir)
@@ -216,14 +235,17 @@ def run_query(
             result_dir / "profiles" / query["name"] / frontend,
         )
         output_hash = profile["output_sha256"]
+        output_semantic_hash_value = profile["output_semantic_sha256"]
 
     for i in range(repeat):
         result = timed_run(command, cwd=query_work_dir)
         ensure_success(query, frontend, result)
 
         sample_hash = hashlib.sha256(result["stdout"]).hexdigest()
+        sample_semantic_hash = output_semantic_hash(result["stdout"])
         if output_hash is None:
             output_hash = sample_hash
+            output_semantic_hash_value = sample_semantic_hash
         elif output_hash != sample_hash:
             raise RuntimeError(f"{query['name']} ({frontend}) produced unstable output")
 
@@ -243,6 +265,7 @@ def run_query(
         "query_file": query_file_name,
         "warmup": warmup,
         "output_sha256": output_hash,
+        "output_semantic_sha256": output_semantic_hash_value,
         "profile": profile,
         "summary": summarize(samples),
         "samples": samples,
