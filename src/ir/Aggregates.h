@@ -4,8 +4,8 @@
 #include "ir/Aggregate.h"
 #include "ir/Scalar.h"
 
-#include "core/schema/Fields.h"
 #include "core/exprs/UnaryAggregate.h"
+#include "core/schema/Fields.h"
 #include "core/types.h"
 
 namespace lsql::ir {

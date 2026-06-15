@@ -51,8 +51,7 @@ class OperationBase : public virtual Operation {
     virtual void init(int out_phase, const FieldSet& fields) = 0;
 
     std::string description(int phase) const {
-        return std::format(
-            "{} {}", name(), to_string(requiredFields(phase), *binding_));
+        return std::format("{} {}", name(), to_string(requiredFields(phase), *binding_));
     }
 
     void updateFieldSet(int phase, const FieldSet& fields) {

@@ -11,9 +11,7 @@ namespace lsql::opt {
 TEST_CASE("Min over constant scalar is folded to constant aggregate") {
     auto input = test::query(
         test::aggregate(
-            test::file(),
-            test::min(test::Output, test::integer(5)),
-            test::schema({test::Output})));
+            test::file(), test::min(test::Output, test::integer(5)), test::schema({test::Output})));
 
     Context ctx;
     auto optimized = optimize(std::move(input), ctx);

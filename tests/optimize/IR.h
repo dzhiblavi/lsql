@@ -5,10 +5,10 @@
 #include "ir/Scalars.h"
 #include "ir/Statement.h"
 
-#include "core/schema/Fields.h"
-#include "core/value/Value.h"
 #include "core/exprs/BinaryExpr.h"
+#include "core/schema/Fields.h"
 #include "core/types.h"
+#include "core/value/Value.h"
 
 #include <cstdint>
 #include <string>

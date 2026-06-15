@@ -6,8 +6,8 @@
 #include "core/exprs/UnaryExpr.h"
 
 #include "core/schema/Fields.h"
-#include "core/value/Value.h"
 #include "core/types.h"
+#include "core/value/Value.h"
 
 namespace lsql::ir {
 

@@ -3,8 +3,8 @@
 #include "profiling/global.h"
 
 #include "core/schema/Fields.h"
-#include "core/value/Value.h"
 #include "core/types.h"
+#include "core/value/Value.h"
 
 #include <absl/container/flat_hash_set.h>
 

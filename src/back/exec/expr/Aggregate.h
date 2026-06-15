@@ -3,8 +3,8 @@
 #include "back/exec/Record.h"
 
 #include "core/schema/Fields.h"
-#include "core/value/Value.h"
 #include "core/types.h"
+#include "core/value/Value.h"
 
 #include <reflex/matcher.h>
 #include <reflex/pattern.h>
