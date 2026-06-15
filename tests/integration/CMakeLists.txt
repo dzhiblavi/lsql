@@ -23,6 +23,7 @@ add_integration_test(semantics/test_archive_source)
 add_integration_test(semantics/test_tskv_log_format)
 add_integration_test(semantics/test_anon_columns)
 add_integration_test(semantics/test_projection_phase_fields)
+add_integration_test(semantics/test_projected_in_schema)
 
 add_error_test(errors/bind/test_unknown_projected_field)
 add_error_test(errors/bind/test_unknown_named_source)

@@ -1,0 +1,15 @@
+input = file input.1.txt
+
+ok_users =
+    $input
+    | where .status = 'ok'
+    | select .uid
+
+---------------------
+
+$input
+| select .uid, .uid in (
+    $ok_users
+) as is_ok
+| where .uid != 'missing'
+| sort by .uid

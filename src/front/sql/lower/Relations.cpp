@@ -145,6 +145,10 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
     auto projectors_output_fields = schemaFor(projectors);
     auto proj_aggregates_output_fields = schemaFor(proj_aggregates);
 
+    // Update relation because it could've changed after lowering projectors (e.g. markJoin)
+    source_schema = ctx.currRelation().schema;
+    visible_fields = source_schema.fieldSet();
+
     if (r.where) {
         util::match(
             r.where->condition->node,

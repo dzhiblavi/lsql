@@ -85,5 +85,6 @@ sync-dev-vm:
 		--exclude=/target \
 		--exclude=/output \
 		--exclude=/_logs  \
+		--exclude=/bench/results  \
 		--exclude=.git   \
 		../logsql/ dev-vm:/home/dzhiblavi/logsql
