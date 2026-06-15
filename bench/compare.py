@@ -168,6 +168,14 @@ def verdict(delta, threshold):
     return "same"
 
 
+def output_verdict(base, head, colors):
+    if base.output_semantic_sha256 != head.output_semantic_sha256:
+        return colors.yellow("different")
+    if base.output_sha256 != head.output_sha256:
+        return colors.dim("bytes")
+    return "equal"
+
+
 def pad_rows(rows):
     widths = [0] * len(rows[0])
     for row in rows:
@@ -211,6 +219,7 @@ def print_table(base_results, head_results, colors, threshold):
             "user",
             "sys",
             "rss",
+            "output",
             "result",
         ]
     ]
@@ -226,15 +235,6 @@ def print_table(base_results, head_results, colors, threshold):
         sys_delta = pct_delta(base.sys_ms, head.sys_ms)
         rss_delta = pct_delta(base.max_rss_kb, head.max_rss_kb)
 
-        semantic_output_same = (
-            base.output_semantic_sha256 == head.output_semantic_sha256
-        )
-        raw_output_same = base.output_sha256 == head.output_sha256
-        output_marker = ""
-        if not semantic_output_same:
-            output_marker = colors.yellow("hash!")
-        elif not raw_output_same:
-            output_marker = colors.dim("bytes")
         rows.append(
             [
                 key.name,
@@ -245,7 +245,8 @@ def print_table(base_results, head_results, colors, threshold):
                 format_pct(user_delta, colors, threshold),
                 format_pct(sys_delta, colors, threshold),
                 format_pct(rss_delta, colors, threshold),
-                output_marker or verdict(real_delta, threshold),
+                output_verdict(base, head, colors),
+                verdict(real_delta, threshold),
             ]
         )
 
@@ -269,7 +270,9 @@ def print_summary(base_results, head_results, colors, threshold):
     same = []
     total_base = 0.0
     total_head = 0.0
-    mismatches = []
+    output_equal = []
+    output_bytes = []
+    output_different = []
 
     for key in shared:
         base = base_results[key]
@@ -279,8 +282,13 @@ def print_summary(base_results, head_results, colors, threshold):
         total_head += head.real_ms
 
         if base.output_semantic_sha256 != head.output_semantic_sha256:
-            mismatches.append(key)
-        elif delta <= -threshold:
+            output_different.append(key)
+        elif base.output_sha256 != head.output_sha256:
+            output_bytes.append(key)
+        else:
+            output_equal.append(key)
+
+        if delta <= -threshold:
             faster.append((key, delta))
         elif delta >= threshold:
             slower.append((key, delta))
@@ -297,10 +305,16 @@ def print_summary(base_results, head_results, colors, threshold):
         f"({format_pct(total_delta, colors, threshold)})"
     )
     print(f"faster: {len(faster)}, slower: {len(slower)}, same/noisy: {len(same)}")
+    print(
+        "output: "
+        f"equal: {len(output_equal)}, "
+        f"bytes: {len(output_bytes)}, "
+        f"different: {len(output_different)}"
+    )
 
-    if mismatches:
-        print(colors.yellow(f"output hash mismatches: {len(mismatches)}"))
-        for key in mismatches:
+    if output_different:
+        print(colors.yellow(f"semantic output differences: {len(output_different)}"))
+        for key in output_different:
             print(colors.yellow(f"  {key.name} ({key.frontend})"))
 
     missing_base = sorted(
