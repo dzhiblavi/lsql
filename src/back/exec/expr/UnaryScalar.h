@@ -2,7 +2,7 @@
 
 #include "back/exec/expr/Scalar.h"
 
-#include "core/value/valueCast.h"
+#include "core/value/cast.h"
 
 #include <reflex/stdmatcher.h>
 
@@ -84,7 +84,7 @@ struct RSubstrOp {
 struct CastOp {
     ValueType valueType() const { return to; }
     ValueType argType() const { return from; }
-    Value apply(Value val) const { return valueCast(std::move(val), to).value_or(null); }
+    Value apply(Value val) const { return cast(std::move(val), to).value_or(null); }
 
     ValueType from, to;
 };

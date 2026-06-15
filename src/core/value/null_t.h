@@ -13,11 +13,7 @@ struct null_t {
 
 }  // namespace lsql
 
-namespace std {
-
 template <>
-struct hash<lsql::null_t> {
+struct std::hash<lsql::null_t> {
     size_t operator()(const lsql::null_t&) const noexcept { return 0x9e3779b9; }
 };
-
-}  // namespace std

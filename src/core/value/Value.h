@@ -26,7 +26,6 @@ class Value {
     Value(PinnedString value);
 
     ValueType type() const;
-
     bool operator==(const Value& rhs) const;
     std::partial_ordering operator<=>(const Value& rhs) const;
 
@@ -35,30 +34,7 @@ class Value {
     Value substr(size_t pos, size_t len) const;
 
     template <typename T>
-    T get() const {
-        if constexpr (std::same_as<T, bool>) {
-            verify_dbg(std::holds_alternative<bool>(val_));
-            return std::get<bool>(val_);
-        } else if constexpr (std::same_as<T, int64_t>) {
-            verify_dbg(std::holds_alternative<int64_t>(val_));
-            return std::get<int64_t>(val_);
-        } else if constexpr (std::same_as<T, float>) {
-            verify_dbg(std::holds_alternative<float>(val_));
-            return std::get<float>(val_);
-        } else if constexpr (std::same_as<T, std::string_view>) {
-            return std::visit(
-                util::Overloaded{
-                    [](const std::string& s) -> std::string_view { return s; },
-                    [](const PinnedString& s) -> std::string_view { return s; },
-                    [](auto&&...) -> std::string_view { panic("does not hold string"); },
-                },
-                val_);
-        } else if constexpr (std::same_as<T, null_t>) {
-            return null;
-        } else {
-            static_assert(false, "invalid Value type");
-        }
-    }
+    T get() const;
 
  private:
     using StorageVariant = std::variant<null_t, int64_t, float, bool, std::string, PinnedString>;
@@ -74,18 +50,41 @@ class Value {
 std::string to_string(const Value& val);
 std::string to_string(Value&& val);
 
+template <typename T>
+T Value::get() const {
+    if constexpr (std::same_as<T, null_t>) {
+        verify_dbg(std::holds_alternative<null_t>(val_));
+        return null;
+    } else if constexpr (std::same_as<T, bool>) {
+        verify_dbg(std::holds_alternative<bool>(val_));
+        return std::get<bool>(val_);
+    } else if constexpr (std::same_as<T, int64_t>) {
+        verify_dbg(std::holds_alternative<int64_t>(val_));
+        return std::get<int64_t>(val_);
+    } else if constexpr (std::same_as<T, float>) {
+        verify_dbg(std::holds_alternative<float>(val_));
+        return std::get<float>(val_);
+    } else if constexpr (std::same_as<T, std::string_view>) {
+        return std::visit(
+            util::Overloaded{
+                [](const std::string& s) -> std::string_view { return s; },
+                [](const PinnedString& s) -> std::string_view { return s; },
+                [](auto&&...) -> std::string_view { panic("does not hold string"); },
+            },
+            val_);
+    } else {
+        static_assert(false, "invalid Value type");
+    }
+}
+
 }  // namespace lsql
 
-namespace std {
-
 template <>
-struct hash<lsql::Value> {
+struct std::hash<lsql::Value> {
     size_t operator()(const lsql::Value& val) const noexcept;
 };
 
 template <>
-struct hash<std::vector<lsql::Value>> {
+struct std::hash<std::vector<lsql::Value>> {
     size_t operator()(const std::vector<lsql::Value>& vec) const noexcept;
 };
-
-}  // namespace std

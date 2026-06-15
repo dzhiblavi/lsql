@@ -1,7 +1,7 @@
 #include "optimize/const_fold.h"
 #include "ir/pass.h"
 
-#include "core/value/valueCast.h"
+#include "core/value/cast.h"
 
 #include <llog/log.h>
 #include <rfl.hpp>
@@ -21,7 +21,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
 
         ctx.setChanges().note("CastScalar const propagation");
 
-        auto val = valueCast(std::move(v->value), s.cast_to);
+        auto val = cast(std::move(v->value), s.cast_to);
         verify(val.has_value());
 
         self.node = ir::ValueScalar{.value = *std::move(val)};

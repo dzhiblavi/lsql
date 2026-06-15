@@ -1,11 +1,10 @@
-#pragma once
+#include "core/value/cast.h"
 
-#include "core/value/Value.h"
 #include "util/string_cast.h"
 
 namespace lsql {
 
-inline std::optional<Value> valueCast(Value val, ValueType to) {
+std::optional<Value> cast(Value val, ValueType to) {
     static constexpr auto make_value = [](auto x) { return Value(std::move(x)); };
 
     switch (val.type()) {
