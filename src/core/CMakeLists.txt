@@ -9,6 +9,9 @@ add_library(
     time_formats/iso8601.cpp
     time_formats/sql.cpp
     value/Value.cpp
+    schema/FieldBinding.cpp
+    schema/FieldSet.cpp
+    schema/Schema.cpp
 )
 
 target_link_libraries(
