@@ -19,7 +19,6 @@ struct AggregateProjector {
 
 using AggregateProjectorPtr = std::unique_ptr<AggregateProjector>;
 using AggregateProjectionList = std::vector<std::unique_ptr<AggregateProjector>>;
-using AggregateProjectionMap = std::unordered_map<FieldId, std::unique_ptr<AggregateProjector>>;
 
 class AggregateProjection
     : public Source,
@@ -78,7 +77,7 @@ class AggregateProjection
         // end of stream
         values_.reserve(aggregators_.size());
         for (auto&& [id, aggregator] : aggregators_) {
-            values_.emplace(id, aggregator->get());
+            values_.push_back(aggregator->get());
         }
 
         aggregators_.clear();
@@ -111,9 +110,9 @@ class AggregateProjection
     }
 
     // Record
-    const Value& value(FieldId id) const override {
-        auto it = values_.find(id);
-        return it == values_.end() ? vnull : it->second;
+    const Value& value(SlotId slot) const override {
+        verify_dbg(0 <= slot && slot < values_.size());
+        return values_[slot];
     }
 
     // Record
@@ -163,7 +162,7 @@ class AggregateProjection
     // phase state
     int first_phase_ = -1;
     std::vector<std::pair<FieldId, AggregatorPtr>> aggregators_;
-    std::unordered_map<FieldId, Value> values_;
+    std::vector<Value> values_;
 };
 
 SourcePtr aggregate(

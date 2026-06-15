@@ -33,7 +33,7 @@ back::logfmt::LogType getLogType(const back::storage::LineSource& source) {
     throwError("failed to detect log type");
 }
 
-SourcePtr getFileSourceWhole(std::string path, ConstFieldBindingPtr binding) {
+SourcePtr getFileSourceWhole(std::string path, Schema schema, ConstFieldBindingPtr binding) {
     auto file = back::storage::NativePagedFile::open(path);
     Arc<back::storage::LineSource> line_source;
 
@@ -44,10 +44,11 @@ SourcePtr getFileSourceWhole(std::string path, ConstFieldBindingPtr binding) {
         line_source = arc<back::storage::PagedLineSource>(file);
     }
 
-    return arc<Log>(line_source, getLogType(*line_source), std::move(binding));
+    return arc<Log>(line_source, getLogType(*line_source), schema, std::move(binding));
 }
 
-SourcePtr getFileSourceRange(std::string path, TimeRange range, ConstFieldBindingPtr binding) {
+SourcePtr getFileSourceRange(
+    std::string path, Schema schema, TimeRange range, ConstFieldBindingPtr binding) {
     require(
         !util::isProbablyArchive(path),
         "time range cannot be applied to compressed streams, path: '{}'",
@@ -69,15 +70,15 @@ SourcePtr getFileSourceRange(std::string path, TimeRange range, ConstFieldBindin
     }
 
     auto line_source = arc<back::storage::PagedLineSource>(file, from_pos, to_pos);
-    return arc<Log>(line_source, log_type, std::move(binding));
+    return arc<Log>(line_source, log_type, schema, std::move(binding));
 }
 
 SourcePtr getFileSource(
-    std::string path, ConstFieldBindingPtr binding, std::optional<TimeRange> range) {
+    std::string path, Schema schema, ConstFieldBindingPtr binding, std::optional<TimeRange> range) {
     if (range.has_value()) {
-        return getFileSourceRange(path, *range, std::move(binding));
+        return getFileSourceRange(path, schema, *range, std::move(binding));
     }
-    return getFileSourceWhole(path, std::move(binding));
+    return getFileSourceWhole(path, schema, std::move(binding));
 }
 
 }  // namespace

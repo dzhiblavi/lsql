@@ -9,10 +9,10 @@
 namespace lsql::opt {
 
 TEST_CASE("Projection over empty source is pruned to empty relation") {
-    auto fields = test::fieldSet({test::Output});
+    auto fields = test::schema({test::Output});
     auto input = test::query(
         test::project(
-            test::empty(FieldSet::withField(test::Timestamp)),
+            test::empty(Schema::withField(test::Timestamp)),
             test::projector(test::Output, test::field(test::Timestamp)),
             fields));
 
@@ -26,7 +26,7 @@ TEST_CASE("Projection over empty source is pruned to empty relation") {
 }
 
 TEST_CASE("Zero limit is pruned to empty relation") {
-    auto fields = FieldSet::withField(test::Timestamp);
+    auto fields = Schema::withField(test::Timestamp);
     auto input = test::query(test::limit(test::file(), 0));
 
     Context ctx;

@@ -8,12 +8,13 @@ namespace lsql::back::exec {
 
 class IdentifierScalar : public Scalar {
  public:
-    IdentifierScalar(FieldId id, ValueType type) : id_(id), type_(type) {}
+    IdentifierScalar(SlotId slot, FieldId id, ValueType type) : slot_(slot), id_(id), type_(type) {}
     FieldSet requiredFields() const override { return FieldSet::withField(id_); }
     ValueType valueType() const override { return type_; }
-    Value eval(const back::exec::Record& record) const override { return record.value(id_); }
+    Value eval(const back::exec::Record& record) const override { return record.value(slot_); }
 
  private:
+    SlotId slot_;
     FieldId id_;
     ValueType type_;
 };

@@ -22,23 +22,23 @@ struct MarkJoinMetrics {
 
 class MarkJoinRecord : public Record {
  public:
-    MarkJoinRecord(Value value, FieldId id, RecordRef child)
+    MarkJoinRecord(Value value, SlotId slot, RecordRef child)
         : child_(std::move(child))
-        , id_(id)
-        , value_(std::move(value)) {}
+        , value_(std::move(value))
+        , value_slot_(slot) {}
 
-    const Value& value(FieldId id) const override {
-        return id == id_ ? value_ : get(child_)->value(id);
+    const Value& value(SlotId slot) const override {
+        return slot == value_slot_ ? value_ : get(child_)->value(slot);
     }
 
  private:
     std::shared_ptr<const Record> cloneImpl() const override {
-        return std::make_shared<MarkJoinRecord>(value_, id_, pin(child_));
+        return std::make_shared<MarkJoinRecord>(value_, value_slot_, pin(child_));
     }
 
     RecordRef child_;
-    FieldId id_;
     Value value_;
+    SlotId value_slot_;
 };
 
 class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {
@@ -47,7 +47,7 @@ class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {
         OperationPtr source,
         OperationPtr match_source,
         ScalarPtr proj,
-        FieldId output_field_id,
+        SlotId output_slot_id,
         FieldId match_field_id,
         ConstFieldBindingPtr binding)
         : OperationBase(
@@ -55,7 +55,7 @@ class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {
         , source_(std::move(source))
         , match_source_(std::move(match_source))
         , proj_(std::move(proj))
-        , output_field_id_(output_field_id)
+        , output_slot_id_(output_slot_id)
         , match_field_id_(match_field_id) {
         prof::addEdge(sub_match_.scopeHandle(), prof_);
         prof::addEdge(sub_source_.scopeHandle(), prof_);
@@ -71,7 +71,7 @@ class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {
             return false;
         }
 
-        values_.insert(record->value(match_field_id_));
+        values_.insert(record->value(0));
 
         if (!active(phase + 1)) {
             updateMetrics();
@@ -88,7 +88,7 @@ class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {
         }
 
         bool value = values_.contains(proj_->eval(*record));
-        MarkJoinRecord marked_record(value, output_field_id_, record);
+        MarkJoinRecord marked_record(value, output_slot_id_, record);
 
         if (!emit(phase, &marked_record)) {
             cleanIfDone(phase);
@@ -168,7 +168,7 @@ class MarkJoin : public OperationBase<MarkJoin, MarkJoinMetrics> {
     OperationPtr source_;
     OperationPtr match_source_;
     ScalarPtr proj_;
-    FieldId output_field_id_;
+    SlotId output_slot_id_;
     FieldId match_field_id_;
 
     MemberSubscriber<MarkJoin> sub_source_{
@@ -191,14 +191,14 @@ OperationPtr markJoin(
     OperationPtr source,
     OperationPtr match,
     ScalarPtr proj,
-    FieldId output_field_id,
+    SlotId output_slot_id,
     FieldId match_field_id,
     ConstFieldBindingPtr binding) {
     return std::make_shared<MarkJoin>(
         std::move(source),
         std::move(match),
         std::move(proj),
-        output_field_id,
+        output_slot_id,
         match_field_id,
         std::move(binding));
 }

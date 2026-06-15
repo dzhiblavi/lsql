@@ -7,7 +7,7 @@
 
 namespace lsql::ir {
 
-FieldSet outputFieldsOf(const std::vector<Projector>& ps);
-FieldSet outputFieldsOf(const std::vector<Aggregate>& ps);
+Schema schemaFor(const std::vector<ir::Projector>& ps);
+Schema schemaFor(const std::vector<ir::Aggregate>& ps);
 
 }  // namespace lsql::ir

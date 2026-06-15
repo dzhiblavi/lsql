@@ -61,14 +61,15 @@ class Planner {
             std::move(s.node), [&](auto node) { return planRelation(std::move(node), s); });
     }
 
-    ScalarPtr planScalar(ir::Scalar s) {
+    ScalarPtr planScalar(ir::Scalar s, const Schema& schema) {
         return util::match(
-            std::move(s.node), [&](auto node) { return planScalar(std::move(node), s); });
+            std::move(s.node), [&](auto node) { return planScalar(std::move(node), s, schema); });
     }
 
-    AggregateProjectorPtr planAggregate(ir::Aggregate s) {
-        return util::match(
-            std::move(s.node), [&](auto node) { return planAggregate(std::move(node), s); });
+    AggregateProjectorPtr planAggregate(ir::Aggregate s, const Schema& schema) {
+        return util::match(std::move(s.node), [&](auto node) {
+            return planAggregate(std::move(node), s, schema);
+        });
     }
 
     void planStatement(ir::NamedRelationStatement s) {
@@ -77,38 +78,45 @@ class Planner {
     }
 
     void planStatement(ir::QueryStatement s) {
-        auto fields = s.relation->fields_out;
+        auto schema = s.relation->schema;
         auto r = planRelation(std::move(*s.relation));
-        plan_.top_operations.emplace_back(std::move(r), fields);
+        plan_.top_operations.emplace_back(std::move(r), schema);
     }
 
     OperationPtr planRelation(ir::EmptyRelation /*r*/, auto& /*info*/) {
-        auto src = values({}, UnknownFieldId, binding_);
+        auto src = values({}, binding_);
         plan_.sources.push_back(src);
         return src;
     }
 
     OperationPtr planRelation(ir::ValuesRelation r, auto& /*info*/) {
-        auto src = values(std::move(r.values), r.output_id, binding_);
+        auto src = values(std::move(r.values), binding_);
         plan_.sources.push_back(src);
         return src;
     }
 
     OperationPtr planRelation(ir::ProjectionRelation r, auto& /*info*/) {
+        auto source_schema = r.source->schema;
         return projection(
-            planRelation(std::move(*r.source)), projectorsList(std::move(r.projectors)), binding_);
+            planRelation(std::move(*r.source)),
+            projectorsList(std::move(r.projectors), source_schema),
+            binding_);
     }
 
     OperationPtr planRelation(ir::AggregateRelation r, auto& /*info*/) {
+        auto source_schema = r.source->schema;
         return aggregate(
-            planRelation(std::move(*r.source)), aggregatesList(std::move(r.aggregates)), binding_);
+            planRelation(std::move(*r.source)),
+            aggregatesList(std::move(r.aggregates), source_schema),
+            binding_);
     }
 
     OperationPtr planRelation(ir::GroupRelation r, auto& /*info*/) {
+        auto source_schema = r.source->schema;
         return group(
             planRelation(std::move(*r.source)),
-            aggregatesList(std::move(r.aggregates)),
-            projectorsList(std::move(r.group_list)),
+            aggregatesList(std::move(r.aggregates), source_schema),
+            projectorsList(std::move(r.group_list), source_schema),
             binding_);
     }
 
@@ -117,42 +125,52 @@ class Planner {
     }
 
     OperationPtr planRelation(ir::FilterRelation r, auto& /*info*/) {
+        auto source_schema = r.source->schema;
         return filter(
-            planRelation(std::move(*r.source)), planScalar(std::move(*r.condition)), binding_);
+            planRelation(std::move(*r.source)),
+            planScalar(std::move(*r.condition), source_schema),
+            binding_);
     }
 
     OperationPtr planRelation(ir::SortRelation r, auto& /*info*/) {
+        auto source_schema = r.source->schema;
         return sort(
             planRelation(std::move(*r.source)),
-            expressionList(std::move(r.order_list)),
+            expressionList(std::move(r.order_list), source_schema),
             r.desc,
             binding_);
     }
 
     OperationPtr planRelation(ir::TopKRelation r, auto& /*info*/) {
+        auto source_schema = r.source->schema;
         return topK(
             planRelation(std::move(*r.source)),
-            expressionList(std::move(r.order_list)),
+            expressionList(std::move(r.order_list), source_schema),
             r.top_count,
             r.desc,
             binding_);
     }
 
     OperationPtr planRelation(ir::SemiJoinRelation r, auto& /*info*/) {
+        auto source_schema = r.source->schema;
         return semiJoin(
             planRelation(std::move(*r.source)),
             planRelation(std::move(*r.match)),
-            planScalar(std::move(*r.expr)),
+            planScalar(std::move(*r.expr), source_schema),
             r.match_field_id,
             binding_);
     }
 
-    OperationPtr planRelation(ir::MarkJoinRelation r, auto& /*info*/) {
+    OperationPtr planRelation(ir::MarkJoinRelation r, auto& info) {
+        auto output_slot = info.schema.slot(r.output_field_id);
+        verify(output_slot.has_value());
+        auto source_schema = r.source->schema;
+
         return markJoin(
             planRelation(std::move(*r.source)),
             planRelation(std::move(*r.match)),
-            planScalar(std::move(*r.expr)),
-            r.output_field_id,
+            planScalar(std::move(*r.expr), source_schema),
+            *output_slot,
             r.match_field_id,
             binding_);
     }
@@ -163,17 +181,19 @@ class Planner {
     }
 
     OperationPtr planRelation(ir::UnionAllSortedByRelation r, auto& /*info*/) {
+        auto source_schema = r.left->schema;
         return mergeSorted(
             planRelation(std::move(*r.left)),
             planRelation(std::move(*r.right)),
-            expressionList(std::move(r.order_list)),
+            expressionList(std::move(r.order_list), source_schema),
             r.desc,
             binding_);
     }
 
-    OperationPtr planRelation(ir::FileRelation r, auto& /*info*/) {
+    OperationPtr planRelation(ir::FileRelation r, auto& info) {
         auto src = file_source_func_(
             r.path,
+            info.schema,
             binding_,
             util::isProbablyArchive(r.path) ? std::nullopt : settings_.default_time_range);
 
@@ -181,9 +201,10 @@ class Planner {
         return src;
     }
 
-    OperationPtr planRelation(ir::FileIntervalRelation r, auto& /*info*/) {
+    OperationPtr planRelation(ir::FileIntervalRelation r, auto& info) {
         auto src = file_source_func_(
             r.path,
+            info.schema,
             binding_,
             TimeRange{
                 .ts_from = r.ts_from,
@@ -205,33 +226,37 @@ class Planner {
         return src;
     }
 
-    ScalarPtr planScalar(ir::FieldScalar e, auto& info) {
-        return arc<IdentifierScalar>(e.field_id, info.value_type);
+    ScalarPtr planScalar(ir::FieldScalar e, auto& info, auto& schema) {
+        auto slot = schema.slot(e.field_id);
+        verify(slot.has_value());
+        return arc<IdentifierScalar>(*slot, e.field_id, info.value_type);
     }
 
-    ScalarPtr planScalar(ir::ValueScalar e, auto& /*info*/) { return arc<ValueScalar>(e.value); }
-
-    ScalarPtr planScalar(ir::CoalesceScalar e, auto& /*info*/) {
-        return arc<CoalesceScalar>(expressionList(std::move(e.args)));
+    ScalarPtr planScalar(ir::ValueScalar e, auto& /*info*/, auto& /*schema*/) {
+        return arc<ValueScalar>(e.value);
     }
 
-    ScalarPtr planScalar(ir::CastScalar e, auto& /*info*/) {
-        auto arg = planScalar(std::move(*e.expr));
+    ScalarPtr planScalar(ir::CoalesceScalar e, auto& /*info*/, auto& schema) {
+        return arc<CoalesceScalar>(expressionList(std::move(e.args), schema));
+    }
+
+    ScalarPtr planScalar(ir::CastScalar e, auto& /*info*/, auto& schema) {
+        auto arg = planScalar(std::move(*e.expr), schema);
         return arc<UnaryScalar<CastOp>>(arg, arg->valueType(), e.cast_to);
     }
 
-    ScalarPtr planScalar(ir::LikeScalar e, auto& /*info*/) {
-        auto arg = planScalar(std::move(*e.expr));
+    ScalarPtr planScalar(ir::LikeScalar e, auto& /*info*/, auto& schema) {
+        auto arg = planScalar(std::move(*e.expr), schema);
         return arc<UnaryScalar<LikeOp>>(arg, e.regex);
     }
 
-    ScalarPtr planScalar(ir::RSubstrScalar e, auto& /*info*/) {
-        auto arg = planScalar(std::move(*e.expr));
+    ScalarPtr planScalar(ir::RSubstrScalar e, auto& /*info*/, auto& schema) {
+        auto arg = planScalar(std::move(*e.expr), schema);
         return arc<UnaryScalar<RSubstrOp>>(arg, e.regex);
     }
 
-    ScalarPtr planScalar(ir::UnaryScalar e, auto& /*info*/) {
-        auto arg = planScalar(std::move(*e.expr));
+    ScalarPtr planScalar(ir::UnaryScalar e, auto& /*info*/, auto& schema) {
+        auto arg = planScalar(std::move(*e.expr), schema);
 
         switch (e.type) {
             case UnaryExprType::BooleanNegate:
@@ -239,9 +264,9 @@ class Planner {
         }
     }
 
-    ScalarPtr planScalar(ir::BinaryScalar e, auto& info) {
-        auto l = planScalar(std::move(*e.left));
-        auto r = planScalar(std::move(*e.right));
+    ScalarPtr planScalar(ir::BinaryScalar e, auto& info, auto& schema) {
+        auto l = planScalar(std::move(*e.left), schema);
+        auto r = planScalar(std::move(*e.right), schema);
 
         switch (e.type) {
             case BinaryExprType::Equal:
@@ -273,8 +298,8 @@ class Planner {
         }
     }
 
-    AggregateProjectorPtr planAggregate(ir::UnaryAggregate a, auto&& info) {
-        auto arg = planScalar(std::move(*a.expr));
+    AggregateProjectorPtr planAggregate(ir::UnaryAggregate a, auto&& info, auto& schema) {
+        auto arg = planScalar(std::move(*a.expr), schema);
         auto aggregate = [&] -> AggregatePtr {
             switch (a.type) {
                 case UnaryAggregateType::CountNonNull:
@@ -307,7 +332,7 @@ class Planner {
             });
     }
 
-    AggregateProjectorPtr planAggregate(ir::CountAllAggregate, auto&& info) {
+    AggregateProjectorPtr planAggregate(ir::CountAllAggregate, auto&& info, auto& /*schema*/) {
         return box(
             AggregateProjector{
                 .field_id = info.output_field_id,
@@ -315,8 +340,8 @@ class Planner {
             });
     }
 
-    AggregateProjectorPtr planAggregate(ir::PercentileAggregate a, auto&& info) {
-        auto arg = planScalar(std::move(*a.expr));
+    AggregateProjectorPtr planAggregate(ir::PercentileAggregate a, auto&& info, auto& schema) {
+        auto arg = planScalar(std::move(*a.expr), schema);
 
         auto aggregate = dispatch<AggregatePtr>(
             [&]<Comparable T>(std::type_identity<T>) -> AggregatePtr {
@@ -332,7 +357,7 @@ class Planner {
             });
     }
 
-    AggregateProjectorPtr planAggregate(ir::ConstAggregate a, auto&& info) {
+    AggregateProjectorPtr planAggregate(ir::ConstAggregate a, auto&& info, auto& /*schema*/) {
         return box(
             AggregateProjector{
                 .field_id = info.output_field_id,
@@ -340,33 +365,33 @@ class Planner {
             });
     }
 
-    ScalarProjectorPtr planProjector(ir::Projector p) {
-        return box<ScalarProjector>(p.alias_field_id, planScalar(std::move(*p.expr)));
+    ScalarProjectorPtr planProjector(ir::Projector p, const Schema& schema) {
+        return box<ScalarProjector>(p.alias_field_id, planScalar(std::move(*p.expr), schema));
     }
 
-    std::vector<ScalarPtr> expressionList(std::vector<ir::Scalar> list) {
+    std::vector<ScalarPtr> expressionList(std::vector<ir::Scalar> list, const Schema& schema) {
         std::vector<ScalarPtr> exprs;
         exprs.reserve(list.size());
         for (auto&& item : list) {
-            exprs.push_back(planScalar(std::move(item)));
+            exprs.push_back(planScalar(std::move(item), schema));
         }
         return exprs;
     }
 
-    ScalarProjectionList projectorsList(std::vector<ir::Projector> list) {
+    ScalarProjectionList projectorsList(std::vector<ir::Projector> list, const Schema& schema) {
         ScalarProjectionList proj;
         proj.reserve(list.size());
         for (auto&& item : list) {
-            proj.push_back(planProjector(std::move(item)));
+            proj.push_back(planProjector(std::move(item), schema));
         }
         return proj;
     }
 
-    AggregateProjectionList aggregatesList(std::vector<ir::Aggregate> list) {
+    AggregateProjectionList aggregatesList(std::vector<ir::Aggregate> list, const Schema& schema) {
         AggregateProjectionList proj;
         proj.reserve(list.size());
         for (auto&& item : list) {
-            proj.push_back(planAggregate(std::move(item)));
+            proj.push_back(planAggregate(std::move(item), schema));
         }
         return proj;
     }

@@ -15,7 +15,8 @@ ir::Relation lowerToIR(bound::Pipeline pipe, Context& ctx) {
     ctx.setRelation(lowerToIR(std::move(*pipe.source), ctx));
 
     for (auto&& stage : pipe.stages) {
-        auto _ = ctx.scopedFieldSet(&ctx.currRelation().fields_out);
+        auto fields = ctx.currRelation().schema.fieldSet();
+        auto _ = ctx.scopedFieldSet(&fields);
         ctx.setRelation(lowerToIR(std::move(stage), ctx));
     }
 

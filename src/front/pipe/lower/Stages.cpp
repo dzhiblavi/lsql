@@ -73,7 +73,7 @@ std::pair<std::vector<ir::Projector>, std::vector<ir::Aggregate>> lowerToIR(
 ir::Relation lowerToIR(bound::FilterStage s, bound::Stage& /*self*/, Context& ctx) {
     auto [cond, aggregates] = lowerToIR(std::move(*s.condition), ctx);
     verify(aggregates.empty());
-    auto fields_out = ctx.currRelation().fields_out;
+    auto schema = ctx.currRelation().schema;
 
     return ir::Relation{
         .node =
@@ -81,18 +81,18 @@ ir::Relation lowerToIR(bound::FilterStage s, bound::Stage& /*self*/, Context& ct
                 .source = box(ctx.pullRelation()),
                 .condition = box(std::move(cond)),
             },
-        .fields_out = fields_out,
+        .schema = schema,
     };
 }
 
 ir::Relation lowerToIR(bound::WhereInStage s, auto& /*self*/, Context& ctx) {
-    auto fields_out = ctx.currRelation().fields_out;
+    auto schema = ctx.currRelation().schema;
 
     // lower match against a separate context
     auto match_ctx = ctx.subContext();
     auto match = lower::lowerToIR(std::move(*s.match), match_ctx);
     verify(
-        match.fields_out.contains(s.match_field_id),
+        match.schema.contains(s.match_field_id),
         "unknown identifier {}",
         to_string(s.match_field_id, *ctx.binding()));
 
@@ -107,13 +107,13 @@ ir::Relation lowerToIR(bound::WhereInStage s, auto& /*self*/, Context& ctx) {
                 .expr = box(std::move(key)),
                 .match_field_id = s.match_field_id,
             },
-        .fields_out = fields_out,
+        .schema = schema,
     };
 }
 
 ir::Relation lowerToIR(bound::TakeStage s, auto& /*self*/, Context& ctx) {
     auto source = box(ctx.pullRelation());
-    auto fields_out = source->fields_out;
+    auto schema = source->schema;
 
     return ir::Relation{
         .node =
@@ -121,7 +121,7 @@ ir::Relation lowerToIR(bound::TakeStage s, auto& /*self*/, Context& ctx) {
                 .source = std::move(source),
                 .limit = s.count,
             },
-        .fields_out = fields_out,
+        .schema = schema,
     };
 }
 
@@ -130,7 +130,7 @@ ir::Relation lowerToIR(bound::SortStage s, auto& /*self*/, Context& ctx) {
     verify(order_aggregates.empty());
 
     auto source = box(ctx.pullRelation());
-    auto fields_out = source->fields_out;
+    auto schema = source->schema;
 
     return ir::Relation{
         .node =
@@ -139,14 +139,14 @@ ir::Relation lowerToIR(bound::SortStage s, auto& /*self*/, Context& ctx) {
                 .order_list = std::move(order_list),
                 .desc = s.desc,
             },
-        .fields_out = fields_out,
+        .schema = schema,
     };
 }
 
 ir::Relation lowerToIR(bound::SelectStage s, auto& /*self*/, Context& ctx) {
     auto [scalars, aggregates] = lowerToIR(std::move(s.projectors), ctx);
-    auto projectors_output_fields = outputFieldsOf(scalars);
-    auto proj_aggregates_output_fields = outputFieldsOf(aggregates);
+    auto projectors_output_fields = schemaFor(scalars);
+    auto proj_aggregates_output_fields = schemaFor(aggregates);
 
     if (aggregates.empty()) {
         return {
@@ -155,7 +155,7 @@ ir::Relation lowerToIR(bound::SelectStage s, auto& /*self*/, Context& ctx) {
                     .source = box(ctx.pullRelation()),
                     .projectors = std::move(scalars),
                 },
-            .fields_out = projectors_output_fields,
+            .schema = projectors_output_fields,
         };
     } else {
         auto aggregate = ir::Relation{
@@ -164,7 +164,7 @@ ir::Relation lowerToIR(bound::SelectStage s, auto& /*self*/, Context& ctx) {
                     .source = box(ctx.pullRelation()),
                     .aggregates = std::move(aggregates),
                 },
-            .fields_out = proj_aggregates_output_fields,
+            .schema = proj_aggregates_output_fields,
         };
 
         return {
@@ -173,7 +173,7 @@ ir::Relation lowerToIR(bound::SelectStage s, auto& /*self*/, Context& ctx) {
                     .source = box(std::move(aggregate)),
                     .projectors = std::move(scalars),
                 },
-            .fields_out = projectors_output_fields,
+            .schema = projectors_output_fields,
         };
     }
 }
@@ -182,10 +182,10 @@ ir::Relation lowerToIR(bound::GroupStage s, auto& /*self*/, Context& ctx) {
     // lowered against ctx.currRelation()
     auto [group_list_scalar, group_list_aggregates] = lowerToIR(std::move(s.group_list), ctx);
     verify(group_list_aggregates.empty());
-    auto group_list_scalar_fields = outputFieldsOf(group_list_scalar);
+    auto group_list_scalar_fields = schemaFor(group_list_scalar);
 
     auto [proj_scalars, proj_aggregates] = lowerToIR(std::move(s.projectors), ctx);
-    auto proj_aggregates_fields = outputFieldsOf(proj_aggregates);
+    auto proj_aggregates_fields = schemaFor(proj_aggregates);
 
     auto group = ir::GroupRelation{
         .source = box(ctx.pullRelation()),
@@ -193,8 +193,8 @@ ir::Relation lowerToIR(bound::GroupStage s, auto& /*self*/, Context& ctx) {
         .group_list = std::move(group_list_scalar),
     };
 
-    auto group_fields_out = FieldSet::merge(proj_aggregates_fields, group_list_scalar_fields);
-    auto fields_out = outputFieldsOf(proj_scalars);
+    auto group_fields_out = Schema::concat(proj_aggregates_fields, group_list_scalar_fields);
+    auto fields_out = schemaFor(proj_scalars);
 
     return {
         .node =
@@ -202,11 +202,11 @@ ir::Relation lowerToIR(bound::GroupStage s, auto& /*self*/, Context& ctx) {
                 .source =
                     box(ir::Relation{
                         .node = std::move(group),
-                        .fields_out = group_fields_out,
+                        .schema = group_fields_out,
                     }),
                 .projectors = std::move(proj_scalars),
             },
-        .fields_out = fields_out,
+        .schema = fields_out,
     };
 }
 

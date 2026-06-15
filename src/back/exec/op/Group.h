@@ -6,28 +6,29 @@
 #include "back/exec/op/Projection.h"
 
 #include "core/types.h"
+#include "util/containers.h"
 #include "util/verify.h"
 
 #include <vector>
 
 namespace lsql::back::exec {
 
-using GroupValues = absl::flat_hash_map<FieldId, Value>;
-
 class GroupRecord : public Record {
  public:
-    explicit GroupRecord(GroupValues values) : values_(std::move(values)) {}
+    explicit GroupRecord(std::vector<Value> values) : values_(std::move(values)) {}
 
-    const Value& value(FieldId id) const override {
-        auto it = values_.find(id);
-        return it == values_.end() ? vnull : it->second;
+    const Value& value(SlotId slot) const override {
+        verify_dbg(0 <= slot && slot < values_.size());
+        return values_[slot];
     }
 
     ConstRecordPtr cloneImpl() const override { return std::make_shared<GroupRecord>(*this); }
 
  private:
-    GroupValues values_;
+    std::vector<Value> values_;
 };
+
+using AggregateProjectionMap = std::unordered_map<FieldId, AggregateProjector*>;
 
 class Group : public OperationBase<Group>, public std::enable_shared_from_this<Group> {
     friend class GroupRecord;
@@ -40,9 +41,14 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         ConstFieldBindingPtr binding)
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
-        , aggregators_(toProjectionMap(std::move(aggregators)))
-        , group_key_(toProjectionMap(std::move(group_key))) {
+        , projectors_(std::move(aggregators))
+        , projectors_map_(toProjectionMap(projectors_))
+        , group_key_(std::move(group_key)) {
         prof::addEdge(sub_.scopeHandle(), prof_);
+
+        for (auto&& proj : group_key_) {
+            group_key_fields_.add(proj->field_id);
+        }
     }
 
  private:
@@ -60,8 +66,10 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
                 prepareAggregators(phase, aggregators);
             }
 
-            for (auto&& [_, aggregator] : aggregators) {
-                aggregator->feed(*record);
+            for (auto&& aggregator : aggregators) {
+                if (aggregator != nullptr) {
+                    aggregator->feed(*record);
+                }
             }
 
             if (!active(phase)) {
@@ -73,28 +81,24 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         }
 
         // end of stream
-        auto&& required_fields = requiredFields(phase);
-
         while (!groups_.empty()) {
             auto node = groups_.extract(groups_.begin());
             auto key = std::move(node.key());
-            auto group_kv = valuesFromKey(std::move(key));
 
-            GroupValues values;
-            values.reserve(required_fields.size());
+            std::vector<Value> values;
+            values.reserve(projectors_.size() + group_key_.size());
 
-            for (auto&& [id, value] : group_kv) {
-                // insert only required group keys
-                if (required_fields.contains(id)) {
-                    values.emplace(id, std::move(value));
+            // schema: <aggregators...>, <group key...>
+            auto aggregators = std::move(node.mapped());
+            for (auto&& aggregator : aggregators) {
+                if (aggregator != nullptr) {
+                    values.push_back(aggregator->get());
+                } else {
+                    values.push_back(vnull);
                 }
             }
 
-            // all these aggregators are required by downstream
-            auto aggregators = std::move(node.mapped());
-            for (auto&& [id, aggregator] : aggregators) {
-                values.emplace(id, aggregator->get());
-            }
+            util::append(values, std::move(key));
 
             auto record = arc<GroupRecord>(std::move(values));
             if (!emit(phase, record.get())) {
@@ -115,18 +119,18 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         FieldSet upstream = FieldSet::emptySet();
 
         // all group key projections are always needed
-        for (auto&& [_, proj] : group_key_) {
+        for (auto&& proj : group_key_) {
             upstream.merge(proj->expr->requiredFields());
         }
 
         for (auto&& id : downstream.fieldIds()) {
-            if (group_key_.contains(id)) {
+            if (group_key_fields_.contains(id)) {
                 // already requested
                 continue;
             }
 
-            auto it = aggregators_.find(id);
-            verify(it != aggregators_.end());
+            auto it = projectors_map_.find(id);
+            verify(it != projectors_map_.end());
             upstream.merge(it->second->expr->requiredFields());
         }
 
@@ -134,58 +138,35 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     }
 
     void prepareAggregators(int phase, auto& aggregators) {
+        aggregators.clear();
+        aggregators.reserve(projectors_.size());
+
         auto&& required_fields = requiredFields(phase);
 
-        // aggregate only required fields
-        for (auto&& id : required_fields.fieldIds()) {
-            if (group_key_.contains(id)) {
-                // comes from group key, no need to calculate additionally
-                continue;
+        for (auto&& projector : projectors_) {
+            if (required_fields.contains(projector->field_id)) {
+                aggregators.push_back(projector->expr->aggregator());
+            } else {
+                aggregators.push_back(nullptr);
             }
-
-            auto it = aggregators_.find(id);
-            verify(it != aggregators_.end());
-            aggregators.push_back({id, it->second->expr->aggregator()});
         }
     }
 
     std::vector<Value> getKey(const Record& record) {
         std::vector<Value> key;
         key.reserve(group_key_.size());
-        for (auto&& [id, proj] : group_key_) {
+        for (auto&& proj : group_key_) {
             key.push_back(proj->expr->eval(record));
         }
         return key;
     }
 
-    GroupValues valuesFromKey(std::vector<Value> key) {
-        GroupValues group_kv;
-        group_kv.reserve(group_key_.size());
-
-        size_t group_by_column_index = 0;
-        for (auto&& [id, _] : group_key_) {
-            group_kv.emplace(id, std::move(key[group_by_column_index++]));
-        }
-
-        return group_kv;
-    }
-
-    static AggregateProjectionMap toProjectionMap(AggregateProjectionList list) {
+    static AggregateProjectionMap toProjectionMap(AggregateProjectionList& list) {
         AggregateProjectionMap map;
         map.reserve(list.size());
         for (auto&& proj : list) {
             auto id = proj->field_id;
-            map.emplace(id, std::move(proj));
-        }
-        return map;
-    }
-
-    static ScalarProjectionMap toProjectionMap(ScalarProjectionList list) {
-        ScalarProjectionMap map;
-        map.reserve(list.size());
-        for (auto&& proj : list) {
-            auto id = proj->field_id;
-            map.emplace(id, std::move(proj));
+            map.emplace(id, proj.get());
         }
         return map;
     }
@@ -202,8 +183,10 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
     }
 
     OperationPtr source_;
-    AggregateProjectionMap aggregators_;
-    ScalarProjectionMap group_key_;
+    AggregateProjectionList projectors_;
+    AggregateProjectionMap projectors_map_;
+    std::vector<std::unique_ptr<ScalarProjector>> group_key_;
+    FieldSet group_key_fields_;
 
     MemberSubscriber<Group> sub_{
         this,
@@ -211,13 +194,8 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
         prof::newScope<ScopeMetrics>("{} input", name()),
     };
 
-    struct AggregatorField {
-        FieldId output_field_id;
-        AggregatorPtr aggregator;
-    };
-
     // phase state
-    using Groups = std::unordered_map<std::vector<Value>, std::vector<AggregatorField>>;
+    using Groups = std::unordered_map<std::vector<Value>, std::vector<AggregatorPtr>>;
 
     int curr_phase_ = 0;
     Groups groups_;

@@ -9,21 +9,24 @@ namespace lsql::front::pipe::lower {
 
 namespace {
 
-ir::Relation lowerToIR(bound::AdhocSource s, auto& self, Context& /*ctx*/) {
+ir::Relation lowerToIR(bound::AdhocSource s, auto& /*self*/, Context& /*ctx*/) {
+    auto schema = Schema();
+    schema.append(s.output_field_id);
+
     return {
         .node =
             ir::ValuesRelation{
                 .values = std::move(s.values),
                 .output_id = s.output_field_id,
             },
-        .fields_out = self.fields_out->fieldSet(),
+        .schema = schema,
     };
 }
 
 ir::Relation lowerToIR(bound::NamedPipelineReferenceSource s, auto& /*self*/, Context& ctx) {
     return {
         .node = ir::NamedRelationReferenceRelation{.name = s.name},
-        .fields_out = ctx.find(s.name),
+        .schema = ctx.find(s.name),
     };
 }
 
@@ -33,7 +36,7 @@ ir::Relation lowerToIR(bound::FileSource s, auto& self, Context& ctx) {
 
     return {
         .node = ir::FileRelation{.path = std::move(s.path)},
-        .fields_out = fields,
+        .schema = Schema::fromFieldSet(fields),
     };
 }
 
@@ -49,7 +52,7 @@ ir::Relation lowerToIR(bound::FileIntervalSource s, auto& self, Context& ctx) {
                 .ts_from = s.ts_from,
                 .ts_to = s.ts_to,
             },
-        .fields_out = fields,
+        .schema = Schema::fromFieldSet(fields),
     };
 }
 
@@ -58,7 +61,9 @@ ir::Relation lowerToIR(bound::UnionAllSource s, auto& /*self*/, Context& ctx) {
     auto left = lower::lowerToIR(std::move(*s.left), left_ctx);
     auto right_ctx = ctx.subContext();
     auto right = lower::lowerToIR(std::move(*s.right), right_ctx);
-    auto fields = FieldSet::merge(left.fields_out, right.fields_out);
+
+    verify(left.schema == right.schema);
+    auto schema = left.schema;
 
     return {
         .node =
@@ -66,7 +71,7 @@ ir::Relation lowerToIR(bound::UnionAllSource s, auto& /*self*/, Context& ctx) {
                 .left = box(std::move(left)),
                 .right = box(std::move(right)),
             },
-        .fields_out = fields,
+        .schema = schema,
     };
 }
 
@@ -75,7 +80,10 @@ ir::Relation lowerToIR(bound::UnionAllSortedBySource s, auto& /*self*/, Context&
     auto left = lower::lowerToIR(std::move(*s.left), left_ctx);
     auto right_ctx = ctx.subContext();
     auto right = lower::lowerToIR(std::move(*s.right), right_ctx);
-    auto fields = FieldSet::merge(left.fields_out, right.fields_out);
+
+    verify(left.schema == right.schema);
+    auto schema = left.schema;
+    auto fields = schema.fieldSet();
 
     auto _ = ctx.scopedFieldSet(&fields);
     auto [order_list, aggregates] = lowerToIR(std::move(s.order_list), ctx);
@@ -89,7 +97,7 @@ ir::Relation lowerToIR(bound::UnionAllSortedBySource s, auto& /*self*/, Context&
                 .order_list = std::move(order_list),
                 .desc = s.desc,
             },
-        .fields_out = fields,
+        .schema = schema,
     };
 }
 

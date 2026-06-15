@@ -12,7 +12,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
     Context& ctx;
 
     bool isForwardingProjection(const ir::ProjectionRelation& p, auto& self) {
-        if (self.fields_out.fieldIds() != p.source->fields_out.fieldIds()) {
+        if (self.schema != p.source->schema) {
             return false;
         }
 

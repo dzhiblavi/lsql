@@ -18,16 +18,16 @@ struct ScalarProjector {
 
 using ScalarProjectorPtr = std::unique_ptr<ScalarProjector>;
 using ScalarProjectionList = std::vector<std::unique_ptr<ScalarProjector>>;
-using ScalarProjectionMap = std::unordered_map<FieldId, std::unique_ptr<ScalarProjector>>;
+using ScalarProjectionMap = std::unordered_map<FieldId, ScalarProjector*>;
 
 class ScalarProjectionRecord : public Record {
  public:
-    explicit ScalarProjectionRecord(absl::flat_hash_map<FieldId, Value> values)
-        : values_(std::move(values)) {}
+    explicit ScalarProjectionRecord(std::vector<Value> values) : values_(std::move(values)) {}
 
-    const Value& value(FieldId id) const override {
-        auto it = values_.find(id);
-        return it == values_.end() ? vnull : it->second;
+    const Value& value(SlotId slot) const override {
+        verify_dbg(
+            0 <= slot && slot < values_.size(), "slot {} out of range {}", slot, values_.size());
+        return values_[slot];
     }
 
     ConstRecordPtr cloneImpl() const override {
@@ -35,7 +35,7 @@ class ScalarProjectionRecord : public Record {
     }
 
  private:
-    absl::flat_hash_map<FieldId, Value> values_;
+    std::vector<Value> values_;
 };
 
 class Projection : public OperationBase<Projection>,
@@ -44,7 +44,8 @@ class Projection : public OperationBase<Projection>,
     Projection(OperationPtr source, ScalarProjectionList projectors, ConstFieldBindingPtr binding)
         : OperationBase(source->minPhase(), std::move(binding))
         , source_(std::move(source))
-        , projectors_(buildProjectionMap(std::move(projectors))) {
+        , projectors_(std::move(projectors))
+        , projectors_map_(buildProjectionMap(projectors_)) {
         prof::addEdge(sub_.scopeHandle(), prof_);
     }
 
@@ -55,10 +56,14 @@ class Projection : public OperationBase<Projection>,
         }
 
         auto&& phase_projectors = phase_projectors_[phase];
-        absl::flat_hash_map<FieldId, Value> values;
-        values.reserve(phase_projectors.size());
-        for (auto&& scalar : phase_projectors) {
-            values.emplace(scalar->field_id, scalar->expr->eval(*record));
+        std::vector<Value> values;
+        values.reserve(projectors_.size());
+        for (auto* scalar : phase_projectors) {
+            if (scalar != nullptr) {
+                values.push_back(scalar->expr->eval(*record));
+            } else {
+                values.push_back(vnull);
+            }
         }
 
         ScalarProjectionRecord rec(std::move(values));
@@ -74,18 +79,13 @@ class Projection : public OperationBase<Projection>,
         auto&& required = requiredFields(phase);
         auto& phase_projectors = phase_projectors_[phase];
 
-        for (FieldId id : required.fieldIds()) {
-            if (std::ranges::find(phase_projectors, id, [](auto&& s) { return s->field_id; }) !=
-                phase_projectors.end()) {
-                // already projected in this phase
-                continue;
+        phase_projectors.clear();
+        for (auto&& projector : projectors_) {
+            if (required.contains(projector->field_id)) {
+                phase_projectors.push_back(projector.get());
+            } else {
+                phase_projectors.push_back(nullptr);
             }
-
-            auto it = projectors_.find(id);
-            verify(it != projectors_.end());
-
-            auto&& scalar = it->second;
-            phase_projectors.push_back(scalar.get());
         }
     }
 
@@ -93,7 +93,7 @@ class Projection : public OperationBase<Projection>,
         FieldSet result = FieldSet::emptySet();
 
         for (auto&& id : downstream.fieldIds()) {
-            if (auto it = projectors_.find(id); it != projectors_.end()) {
+            if (auto it = projectors_map_.find(id); it != projectors_map_.end()) {
                 result.merge(it->second->expr->requiredFields());
             }
         }
@@ -112,20 +112,21 @@ class Projection : public OperationBase<Projection>,
         return ExplanationItem().line("{}", description(ctx.phase)).child(source);
     }
 
-    ScalarProjectionMap buildProjectionMap(ScalarProjectionList proj) {
+    ScalarProjectionMap buildProjectionMap(ScalarProjectionList& proj) {
         ScalarProjectionMap res;
         res.reserve(proj.size());
 
         for (auto&& p : proj) {
             auto id = p->field_id;
-            res.emplace(id, std::move(p));
+            res.emplace(id, p.get());
         }
 
         return res;
     }
 
     OperationPtr source_;
-    ScalarProjectionMap projectors_;
+    std::vector<std::unique_ptr<ScalarProjector>> projectors_;
+    ScalarProjectionMap projectors_map_;
     absl::flat_hash_map<int, std::vector<ScalarProjector*>> phase_projectors_;
 
     MemberSubscriber<Projection> sub_{

@@ -11,7 +11,7 @@
 namespace lsql::back::plan {
 
 using GetFileSourceFuncType = std::function<back::exec::SourcePtr(
-    std::string, ConstFieldBindingPtr, std::optional<TimeRange>)>;
+    std::string, Schema, ConstFieldBindingPtr, std::optional<TimeRange>)>;
 
 GetFileSourceFuncType defaultFileSourceFunc();
 

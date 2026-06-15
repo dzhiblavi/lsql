@@ -14,9 +14,9 @@ TEST_CASE("Nested projections are collapsed") {
             test::project(
                 test::file(),
                 test::projector(test::Output, test::field(test::Timestamp)),
-                test::fieldSet({test::Output})),
+                test::schema({test::Output})),
             test::projector(test::Result, test::field(test::Output)),
-            test::fieldSet({test::Result})));
+            test::schema({test::Result})));
 
     Context ctx;
     auto optimized = optimize(std::move(input), ctx);
@@ -25,7 +25,7 @@ TEST_CASE("Nested projections are collapsed") {
         test::project(
             test::file(),
             test::projector(test::Result, test::field(test::Timestamp)),
-            test::fieldSet({test::Result})));
+            test::schema({test::Result})));
 
     CHECK(ctx.changes());
     CHECK(ir::equal(optimized.statements, expected.statements));

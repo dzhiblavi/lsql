@@ -15,7 +15,7 @@ ir::Statement lowerToIR(bound::QueryStatement s, Context& ctx) {
 
 ir::Statement lowerToIR(bound::NamedRelationStatement s, Context& ctx) {
     auto relation = box(lowerToIR(std::move(*s.relation), ctx));
-    ctx.insert(s.name, relation->fields_out);
+    ctx.insert(s.name, relation->schema);
 
     return ir::NamedRelationStatement{
         .name = s.name,

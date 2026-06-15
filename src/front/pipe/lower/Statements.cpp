@@ -22,7 +22,7 @@ ir::Statement lowerToIR(bound::QueryStatement statement, Context& ctx) {
 ir::Statement lowerToIR(bound::NamedPipelineStatement statement, Context& ctx) {
     auto pipeline_ctx = ctx.subContext();
     auto relation = box(lower::lowerToIR(std::move(*statement.pipeline), pipeline_ctx));
-    ctx.insert(statement.name, relation->fields_out);
+    ctx.insert(statement.name, relation->schema);
 
     return ir::NamedRelationStatement{
         .name = std::move(statement.name),

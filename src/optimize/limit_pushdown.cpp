@@ -28,17 +28,17 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         }
 
         ctx.setChanges().note("limit({}(L, R), N): limit {} by N", label, name);
-        auto fields = node->fields_out;
+        auto schema = node->schema;
         node =
             box(ir::Relation{
                 .node = ir::LimitRelation{.source = std::move(node), .limit = lim.limit},
-                .fields_out = fields,
+                .schema = schema,
             });
     }
 
     ir::Relation pushdown(auto& lim, ir::ProjectionRelation& src, auto& self) {
         ctx.setChanges().note("limit(projection) -> projection(limit)");
-        auto proj_source_fields = src.source->fields_out;
+        auto proj_source_fields = src.source->schema;
         self.node = ir::ProjectionRelation{
             .source =
                 box(ir::Relation{
@@ -47,7 +47,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
                             .source = std::move(src.source),
                             .limit = lim.limit,
                         },
-                    .fields_out = proj_source_fields,
+                    .schema = proj_source_fields,
                 }),
             .projectors = std::move(src.projectors),
         };

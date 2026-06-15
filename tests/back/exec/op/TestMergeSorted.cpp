@@ -13,7 +13,11 @@ namespace lsql::back::exec {
 struct MergeSortedTest : OperationTest {
     MergeSortedTest() {
         setOperation(mergeSorted(
-            left, right, SortList{arc<IdentifierScalar>(0, ValueType::Integer)}, false, binding));
+            left,
+            right,
+            SortList{arc<IdentifierScalar>(0, 0, ValueType::Integer)},
+            false,
+            binding));
     }
 
     std::shared_ptr<MockOperation> left = arc<MockOperation>(binding);

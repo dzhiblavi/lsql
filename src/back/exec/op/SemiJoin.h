@@ -48,7 +48,7 @@ class SemiJoin : public OperationBase<SemiJoin, SemiJoinMetrics> {
             return false;
         }
 
-        values_.insert(record->value(match_field_id_));
+        values_.insert(record->value(0));
 
         if (!active(phase + 1)) {
             updateMetrics();

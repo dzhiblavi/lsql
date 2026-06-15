@@ -65,12 +65,12 @@ class Context {
         return *curr_field_set_slot_;
     }
 
-    void insert(const std::string& name, FieldSet rel) {
+    void insert(const std::string& name, Schema rel) {
         require(!named_relations_.contains(name), "duplicate named relation '{}", name);
         named_relations_[name] = rel;
     }
 
-    FieldSet find(const std::string& name) {
+    Schema find(const std::string& name) {
         auto it = named_relations_.find(name);
         require(it != named_relations_.end(), "unknown named relation '{}'", name);
         return it->second;
@@ -78,7 +78,7 @@ class Context {
 
  private:
     FieldBindingPtr binding_;
-    std::unordered_map<std::string, FieldSet> named_relations_;
+    std::unordered_map<std::string, Schema> named_relations_;
     std::optional<ir::Relation> curr_relation_slot_;
     const FieldSet* curr_field_set_slot_ = nullptr;
 };

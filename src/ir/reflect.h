@@ -259,7 +259,7 @@ struct Reflect<MaterializeRelation> {
 template <>
 struct Reflect<Relation> {
     static auto childNodes() { return std::make_tuple(&Relation::node); }
-    static auto fields() { return std::make_tuple(&Relation::fields_out); }
+    static auto fields() { return std::make_tuple(&Relation::schema); }
 };
 
 template <typename N>

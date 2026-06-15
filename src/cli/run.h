@@ -23,12 +23,12 @@ namespace lsql {
 
 class ConsumerBridge : public back::exec::Subscriber {
  public:
-    ConsumerBridge(back::exec::OperationPtr source, FieldSet fields, Box<output::Consumer> consumer)
+    ConsumerBridge(back::exec::OperationPtr source, Schema schema, Box<output::Consumer> consumer)
         : source_(std::move(source))
         , consumer_(std::move(consumer)) {
-        source_->subscribe(source_->minPhase(), this, fields);
+        source_->subscribe(source_->minPhase(), this, schema.fieldSet());
 
-        for (auto id : fields.fieldIds()) {
+        for (auto id : schema.fieldIds()) {
             rec_.emplace_back(id, null);
         }
     }
@@ -56,8 +56,8 @@ class ConsumerBridge : public back::exec::Subscriber {
             return false;
         }
 
-        for (auto& [id, value] : rec_) {
-            value = record->value(id);
+        for (SlotId slot = 0; slot < rec_.size(); ++slot) {
+            rec_[slot].second = record->value(slot);
         }
 
         consumer_->consume(rec_);
@@ -218,7 +218,8 @@ inline void run(ir::Program ir, Settings s) {
     }
 
     if (s.explain) {
-        std::cout << back::exec::explain(max_phase, std::span<Arc<ConsumerBridge>>(ops)) << std::endl;
+        std::cout << back::exec::explain(max_phase, std::span<Arc<ConsumerBridge>>(ops))
+                  << std::endl;
     }
 
     if (s.run) {

@@ -19,7 +19,7 @@ TEST_CASE("Coalesce with leading nulls and a constant is folded") {
         test::project(
             test::file(),
             test::projector(test::Output, test::coalesce(std::move(args), ValueType::Integer)),
-            test::fieldSet({test::Output})));
+            test::schema({test::Output})));
 
     Context ctx;
     auto optimized = optimize(std::move(input), ctx);
@@ -28,7 +28,7 @@ TEST_CASE("Coalesce with leading nulls and a constant is folded") {
         test::project(
             test::file(),
             test::projector(test::Output, test::integer(7)),
-            test::fieldSet({test::Output})));
+            test::schema({test::Output})));
 
     CHECK(ctx.changes());
     CHECK(ir::equal(optimized.statements, expected.statements));

@@ -17,12 +17,12 @@ class ContextBase {
 
     FieldBindingPtr binding() { return binding_; }
 
-    void insert(const std::string& name, const FieldSet& field_set) {
+    void insert(const std::string& name, const Schema& schema) {
         require(!named_relations_.contains(name), "duplicate named relation '{}'", name);
-        named_relations_[name] = field_set;
+        named_relations_[name] = schema;
     }
 
-    FieldSet find(const std::string& name) {
+    Schema find(const std::string& name) {
         auto it = named_relations_.find(name);
         require(it != named_relations_.end(), "unknown named relation '{}'", name);
         return it->second;
@@ -30,7 +30,7 @@ class ContextBase {
 
  private:
     FieldBindingPtr binding_;
-    std::unordered_map<std::string, FieldSet> named_relations_;
+    std::unordered_map<std::string, Schema> named_relations_;
 };
 
 // local to a statement/pipeline/relation
@@ -45,7 +45,7 @@ class Context {
     explicit Context(ContextBase* base) : base_(base) {}
 
     FieldBindingPtr binding() { return base_->binding(); }
-    FieldSet find(const std::string& name) { return base_->find(name); }
+    Schema find(const std::string& name) { return base_->find(name); }
 
     ScopedFieldSet scopedFieldSet(const FieldSet* curr) {
         return ScopedFieldSet{
@@ -59,9 +59,7 @@ class Context {
         return *curr_field_set_slot_;
     }
 
-    void insert(const std::string& name, const FieldSet& field_set) {
-        base_->insert(name, field_set);
-    }
+    void insert(const std::string& name, const Schema& schema) { base_->insert(name, schema); }
 
     bool hasRelation() const { return curr_relation_.has_value(); }
 

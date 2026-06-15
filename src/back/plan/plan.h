@@ -13,7 +13,7 @@ namespace lsql::back::plan {
 
 struct Plan {
     std::vector<exec::SourcePtr> sources;
-    std::vector<std::pair<exec::OperationPtr, FieldSet>> top_operations;
+    std::vector<std::pair<exec::OperationPtr, Schema>> top_operations;
     ConstFieldBindingPtr field_binding;
 };
 

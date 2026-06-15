@@ -12,11 +12,9 @@ namespace lsql::back::exec {
 
 class Record : public std::enable_shared_from_this<Record> {
  public:
-    using ids_t = absl::flat_hash_set<FieldId>;
-
     virtual ~Record() = default;
 
-    virtual const Value& value(FieldId id) const = 0;
+    virtual const Value& value(SlotId slot) const = 0;
 
     Arc<const Record> clone() const {
         if (!weak_from_this().expired()) {
@@ -39,7 +37,7 @@ class EmptyRecord : public Record {
  public:
     EmptyRecord() = default;
 
-    const Value& value(FieldId) const override { return vnull; }
+    const Value& value(SlotId) const override { return vnull; }
 
     static ConstRecordPtr instance() {
         static ConstRecordPtr record = arc<EmptyRecord>();

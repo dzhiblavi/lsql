@@ -13,7 +13,7 @@ TEST_CASE("Constant binary scalar is folded inside projection") {
         test::project(
             test::file(),
             test::projector(test::Output, test::add(test::integer(1), test::integer(2))),
-            test::fieldSet({test::Output})));
+            test::schema({test::Output})));
 
     Context ctx;
     auto optimized = optimize(std::move(input), ctx);
@@ -22,7 +22,7 @@ TEST_CASE("Constant binary scalar is folded inside projection") {
         test::project(
             test::file(),
             test::projector(test::Output, test::integer(3)),
-            test::fieldSet({test::Output})));
+            test::schema({test::Output})));
 
     CHECK(ctx.changes());
     CHECK(ir::equal(optimized.statements, expected.statements));

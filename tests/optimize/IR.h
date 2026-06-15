@@ -21,10 +21,10 @@ constexpr FieldId Timestamp = 1;
 constexpr FieldId Output = 2;
 constexpr FieldId Result = 3;
 
-inline FieldSet fieldSet(std::initializer_list<FieldId> ids) {
-    auto fields = FieldSet::emptySet();
+inline Schema schema(std::initializer_list<FieldId> ids) {
+    auto fields = Schema();
     for (auto id : ids) {
-        fields.add(id);
+        fields.append(id);
     }
     return fields;
 }
@@ -76,35 +76,35 @@ inline ir::Scalar add(ir::Scalar left, ir::Scalar right) {
     };
 }
 
-inline ir::Relation empty(FieldSet fields = FieldSet::emptySet()) {
+inline ir::Relation empty(Schema schema = Schema()) {
     return ir::Relation{
         .node = ir::EmptyRelation{},
-        .fields_out = fields,
+        .schema = schema,
     };
 }
 
 inline ir::Relation file(
-    std::string path = "app.log", FieldSet fields = FieldSet::withField(Timestamp)) {
+    std::string path = "app.log", Schema schema = Schema::withField(Timestamp)) {
     return ir::Relation{
         .node = ir::FileRelation{.path = std::move(path)},
-        .fields_out = fields,
+        .schema = schema,
     };
 }
 
 inline ir::Relation filter(ir::Relation source, ir::Scalar condition) {
-    auto fields = source.fields_out;
+    auto schema = source.schema;
     return ir::Relation{
         .node =
             ir::FilterRelation{
                 .source = box(std::move(source)),
                 .condition = box(std::move(condition)),
             },
-        .fields_out = fields,
+        .schema = schema,
     };
 }
 
 inline ir::Relation sort(ir::Relation source, bool desc = true) {
-    auto fields = source.fields_out;
+    auto schema = source.schema;
     std::vector<ir::Scalar> order_list;
     order_list.push_back(field(Timestamp));
 
@@ -115,19 +115,19 @@ inline ir::Relation sort(ir::Relation source, bool desc = true) {
                 .order_list = std::move(order_list),
                 .desc = desc,
             },
-        .fields_out = fields,
+        .schema = schema,
     };
 }
 
 inline ir::Relation limit(ir::Relation source, int count) {
-    auto fields = source.fields_out;
+    auto schema = source.schema;
     return ir::Relation{
         .node =
             ir::LimitRelation{
                 .source = box(std::move(source)),
                 .limit = count,
             },
-        .fields_out = fields,
+        .schema = schema,
     };
 }
 
@@ -139,21 +139,21 @@ inline ir::Projector projector(FieldId id, ir::Scalar expr) {
 }
 
 inline ir::Relation project(
-    ir::Relation source, std::vector<ir::Projector> projectors, FieldSet fields) {
+    ir::Relation source, std::vector<ir::Projector> projectors, Schema schema) {
     return ir::Relation{
         .node =
             ir::ProjectionRelation{
                 .source = box(std::move(source)),
                 .projectors = std::move(projectors),
             },
-        .fields_out = fields,
+        .schema = schema,
     };
 }
 
-inline ir::Relation project(ir::Relation source, ir::Projector projector, FieldSet fields) {
+inline ir::Relation project(ir::Relation source, ir::Projector projector, Schema schema) {
     std::vector<ir::Projector> projectors;
     projectors.push_back(std::move(projector));
-    return project(std::move(source), std::move(projectors), fields);
+    return project(std::move(source), std::move(projectors), schema);
 }
 
 inline ir::Aggregate min(FieldId id, ir::Scalar expr) {
@@ -181,7 +181,7 @@ inline ir::Aggregate constant(FieldId id, Value value, bool null_if_empty) {
     };
 }
 
-inline ir::Relation aggregate(ir::Relation source, ir::Aggregate aggregate, FieldSet fields) {
+inline ir::Relation aggregate(ir::Relation source, ir::Aggregate aggregate, Schema schema) {
     std::vector<ir::Aggregate> aggregates;
     aggregates.push_back(std::move(aggregate));
 
@@ -191,7 +191,7 @@ inline ir::Relation aggregate(ir::Relation source, ir::Aggregate aggregate, Fiel
                 .source = box(std::move(source)),
                 .aggregates = std::move(aggregates),
             },
-        .fields_out = fields,
+        .schema = schema,
     };
 }
 
@@ -202,7 +202,7 @@ inline std::vector<ir::Scalar> timestampOrderList() {
 }
 
 inline ir::Relation topK(ir::Relation source, int count, bool desc = true) {
-    auto fields = source.fields_out;
+    auto schema = source.schema;
     return ir::Relation{
         .node =
             ir::TopKRelation{
@@ -211,7 +211,7 @@ inline ir::Relation topK(ir::Relation source, int count, bool desc = true) {
                 .desc = desc,
                 .top_count = count,
             },
-        .fields_out = fields,
+        .schema = schema,
     };
 }
 

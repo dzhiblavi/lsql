@@ -2,20 +2,20 @@
 
 namespace lsql::ir {
 
-FieldSet outputFieldsOf(const std::vector<ir::Projector>& ps) {
-    auto fields = FieldSet::emptySet();
+Schema schemaFor(const std::vector<ir::Projector>& ps) {
+    Schema s;
     for (auto&& p : ps) {
-        fields.add(p.alias_field_id);
+        s.append(p.alias_field_id);
     }
-    return fields;
+    return s;
 }
 
-FieldSet outputFieldsOf(const std::vector<ir::Aggregate>& ps) {
-    auto fields = FieldSet::emptySet();
+Schema schemaFor(const std::vector<ir::Aggregate>& ps) {
+    Schema s;
     for (auto&& p : ps) {
-        fields.add(p.output_field_id);
+        s.append(p.output_field_id);
     }
-    return fields;
+    return s;
 }
 
 }  // namespace lsql::ir

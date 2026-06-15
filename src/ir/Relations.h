@@ -110,7 +110,7 @@ struct MaterializeRelation {
 
 struct Relation {
     RelationNode node;
-    FieldSet fields_out;
+    Schema schema;
 };
 
 }  // namespace lsql::ir

@@ -12,17 +12,18 @@ namespace lsql::back::exec {
 
 class LineRecord : public Record {
  public:
-    LineRecord(absl::flat_hash_map<FieldId, Value> values) : values_(std::move(values)) {}
+    explicit LineRecord(std::vector<Value> values) : values_(std::move(values)) {}
 
-    const Value& value(FieldId id) const override {
-        auto it = values_.find(id);
-        return it == values_.end() ? vnull : it->second;
+    const Value& value(SlotId slot) const override {
+        verify_dbg(
+            0 <= slot && slot < values_.size(), "slot {} out of range {}", slot, values_.size());
+        return values_[slot];
     }
 
     ConstRecordPtr cloneImpl() const override { return arc<LineRecord>(*this); }
 
  private:
-    absl::flat_hash_map<FieldId, Value> values_;
+    std::vector<Value> values_;
 };
 
 class Log : public Source, public OperationBase<Log> {
@@ -31,9 +32,11 @@ class Log : public Source, public OperationBase<Log> {
  public:
     Log(Arc<back::storage::LineSource> log,
         back::logfmt::LogType type,
+        Schema schema,
         ConstFieldBindingPtr binding)
         : OperationBase(0, std::move(binding))
         , log_(std::move(log))
+        , schema_(std::move(schema))
         , type_(type) {
         prof::addEdge(parse_scope_, prof_);
         prof::addEdge(source_read_scope_, prof_);
@@ -60,41 +63,42 @@ class Log : public Source, public OperationBase<Log> {
                 }
             }
         } else {
+            prepareSlots(phase);
+
             const size_t max_small_string_size = std::string().capacity();
-            absl::flat_hash_map<FieldId, Value> values;
+            std::vector<Value> values;
             back::storage::Line line;
 
-            auto insert = [&](FieldId id, std::string_view view) {
+            auto insert = [&](SlotId slot, std::string_view view) {
+                verify_dbg(0 <= slot && slot < values.size());
+
                 if (view.size() <= max_small_string_size) {
-                    values.emplace(id, std::string(view));
+                    values[slot] = std::string(view);
                 } else {
-                    values.emplace(id, PinnedString({line.pin(), view.data()}, view.size()));
+                    values[slot] = PinnedString({line.pin(), view.data()}, view.size());
                 }
             };
 
             auto parser = [&](std::string_view name, std::string_view value) {
-                auto id = binding_->id(name, ValueType::String);
-
-                if (required_fields.contains(id)) {
-                    insert(id, value);
+                if (auto it = slots_.find(name); it != slots_.end()) {
+                    insert(it->second, value);
                 }
             };
 
             auto parse_func = back::logfmt::parseKeyValueFunc<decltype(parser)&>(type_);
-            const auto line_id = binding_->id(LineIdentifierName, ValueType::String);
-            const bool has_line = required_fields.contains(line_id);
-            const size_t values_count = required_fields.size() + (has_line ? 1 : 0);
+            const auto line_slot = slots_.find(LineIdentifierName);
+            const bool has_line = line_slot != slots_.end();
 
             auto lines = log_->lines();
             for (auto it = lines.begin(); it != lines.end(); /* in body */) {
+                values.assign(schema_.columns(), vnull);
                 line = *it;
+
                 {
                     auto _ = parse_scope_.scope();
-
-                    values.reserve(values_count);
                     parse_func(line.view(), parser);
                     if (has_line) {
-                        insert(line_id, line.view());
+                        insert(line_slot->second, line.view());
                     }
                 }
 
@@ -119,6 +123,16 @@ class Log : public Source, public OperationBase<Log> {
     // Operation
     void init(int, const FieldSet&) override {}
 
+    void prepareSlots(int phase) {
+        slots_.clear();
+
+        for (auto id : requiredFields(phase).fieldIds()) {
+            if (auto slot = schema_.slot(id); slot.has_value()) {
+                slots_[binding_->name(id)] = *slot;
+            }
+        }
+    }
+
     // Operation
     ExplanationItem explain(ExplanationCtx ctx) const override {
         if (!hasSubscriber(ctx.phase, ctx.requester)) {
@@ -129,7 +143,10 @@ class Log : public Source, public OperationBase<Log> {
     }
 
     Arc<back::storage::LineSource> log_;
+    Schema schema_;
     back::logfmt::LogType type_;
+
+    absl::flat_hash_map<std::string_view, SlotId> slots_;
 
     prof::ScopeHandle<prof::ScopeMetrics<>> source_read_scope_ =
         prof::newScope<prof::ScopeMetrics<>>("read: {}", log_->describe());
