@@ -23,7 +23,7 @@ struct Line {
     std::string text;
 };
 
-std::optional<char> readChar(const back::storage::PagedFile& file, size_t offset) {
+std::optional<char> readChar(const back::storage::File& file, size_t offset) {
     if (offset >= file.size()) {
         return std::nullopt;
     }
@@ -33,7 +33,7 @@ std::optional<char> readChar(const back::storage::PagedFile& file, size_t offset
     return ch;
 }
 
-std::optional<size_t> findLineBegin(const back::storage::PagedFile& file, size_t offset) {
+std::optional<size_t> findLineBegin(const back::storage::File& file, size_t offset) {
     if (offset >= file.size()) {
         return std::nullopt;
     }
@@ -66,7 +66,7 @@ std::optional<size_t> findLineBegin(const back::storage::PagedFile& file, size_t
     return 0;
 }
 
-Line readLine(const back::storage::PagedFile& file, size_t begin) {
+Line readLine(const back::storage::File& file, size_t begin) {
     std::array<char, config::Buffering::TimestampSearchBufferSize> buffer{};
     std::string text;
     size_t offset = begin;
@@ -95,7 +95,7 @@ Line readLine(const back::storage::PagedFile& file, size_t begin) {
     return Line{.begin = begin, .next_begin = file.size(), .text = std::move(text)};
 }
 
-std::optional<Line> readLineAt(const back::storage::PagedFile& file, size_t offset) {
+std::optional<Line> readLineAt(const back::storage::File& file, size_t offset) {
     auto begin = findLineBegin(file, offset);
     if (!begin) {
         return std::nullopt;
@@ -112,7 +112,7 @@ timestamp_t lineTimestamp(std::string_view line, TimeFormat format) {
 
 template <typename AcceptLineF, typename SkipLineF>
 size_t boundLine(
-    const back::storage::PagedFile& file,
+    const back::storage::File& file,
     timestamp_t ts,
     TimeFormat format,
     AcceptLineF accept_line,
@@ -147,7 +147,7 @@ size_t boundLine(
 
 }  // namespace
 
-size_t lowerBoundLine(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format) {
+size_t lowerBoundLine(const back::storage::File& file, timestamp_t ts, TimeFormat format) {
     return boundLine(
         file,
         ts,
@@ -156,7 +156,7 @@ size_t lowerBoundLine(const back::storage::PagedFile& file, timestamp_t ts, Time
         [](timestamp_t line_ts, timestamp_t target) { return line_ts < target; });
 }
 
-size_t upperBoundLine(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format) {
+size_t upperBoundLine(const back::storage::File& file, timestamp_t ts, TimeFormat format) {
     auto result = boundLine(
         file,
         ts,

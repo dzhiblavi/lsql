@@ -10,9 +10,9 @@
 namespace lsql::back::plan::search {
 
 // index of the first character of the first line with ts >= x
-size_t lowerBoundLine(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format);
+size_t lowerBoundLine(const back::storage::File& file, timestamp_t ts, TimeFormat format);
 
 // index of the first character of the first line with ts > x
-size_t upperBoundLine(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format);
+size_t upperBoundLine(const back::storage::File& file, timestamp_t ts, TimeFormat format);
 
 }  // namespace lsql::back::plan::search

@@ -85,16 +85,18 @@ std::shared_ptr<Page> NativePagedFile::page(size_t index) const {
 size_t NativePagedFile::read(size_t offset, std::span<char> dest) const {
     verify(offset < size());
 
-    if (lseek(fd_, offset, SEEK_SET) == -1) {  // NOLINT
-        throw RuntimeError(std::format("lseek failed: errno={}, error={}", errno, strerror(errno)));
+    ssize_t read = ::pread(fd_, dest.data(), dest.size(), static_cast<off_t>(offset));  // NOLINT
+    if (read == -1) {
+        throw RuntimeError(
+            std::format(
+                "pread failed at offset {} for {} bytes: errno={}, error={}",
+                offset,
+                dest.size(),
+                errno,
+                strerror(errno)));
     }
 
-    size_t read = ::read(fd_, dest.data(), dest.size());
-    if (read == static_cast<size_t>(-1)) {
-        throw RuntimeError(std::format("read failed: errno={}, error={}", errno, strerror(errno)));
-    }
-
-    return read;
+    return static_cast<size_t>(read);
 }
 
 const std::filesystem::path& NativePagedFile::path() const {
