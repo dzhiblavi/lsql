@@ -2,7 +2,7 @@
 
 #include "back/exec/Record.h"
 #include "back/exec/op/MemberSubscriber.h"
-#include "back/exec/op/Projection.h"
+#include "back/exec/op/OperationBase.h"
 #include "back/exec/op/types.h"
 
 #include "core/types.h"
