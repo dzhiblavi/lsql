@@ -1,7 +1,7 @@
 from lib.generate import format_string, random_int, write_imap_log
 
 
-rows = 200_000
+rows = 900_000
 
 user = random_int(0, 49_999)
 session = random_int(0, 9_999)

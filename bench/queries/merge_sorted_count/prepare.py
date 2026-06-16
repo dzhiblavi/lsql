@@ -3,7 +3,7 @@ from datetime import datetime
 from lib.generate import imap_timestamp, write_imap_log
 
 
-rows = 200_000
+rows = 1_370_000
 
 fields = {}
 

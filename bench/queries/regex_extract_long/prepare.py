@@ -1,7 +1,7 @@
 from lib.generate import fixed, format_string, random_int, random_string, write_imap_log
 
 
-rows = 200_000
+rows = 270_000
 user = random_int(0, 50_000)
 session = random_int(0, 10_000)
 noise = random_string(distr=fixed(220))

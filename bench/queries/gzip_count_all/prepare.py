@@ -1,7 +1,7 @@
 from lib.generate import write_imap_log_gzip
 
 
-rows = 400_000
+rows = 10_800_000
 
 fields = {}
 

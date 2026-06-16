@@ -1,7 +1,7 @@
 from lib.generate import format_string, random, random_int, write_imap_log
 
 
-rows = 400_000
+rows = 1_500_000
 statuses = ["ok", "ok", "ok", "fail"]
 
 fields = {
