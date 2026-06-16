@@ -1,7 +1,7 @@
 from lib.generate import random, random_int, write_imap_log
 
 
-rows = 2_050_000
+rows = 1_300_000
 
 fields = {
     "bucket": random(["a", "b", "c", "d", "e", "f", "g", "h"]),

@@ -1,7 +1,7 @@
 from lib.generate import fixed, random, random_string, write_imap_log
 
 
-rows = 1_000_000
+rows = 600_000
 context = random_string(distr=fixed(96))
 
 fields = {
