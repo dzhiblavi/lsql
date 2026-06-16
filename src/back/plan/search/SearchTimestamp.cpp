@@ -1,9 +1,8 @@
 #include "back/plan/search/SearchTimestamp.h"
 #include "back/plan/search/SearchRegex.h"
 
+#include "core/exceptions.h"
 #include "util/PageSize.h"
-
-#include <cpptrace/exceptions.hpp>
 
 #include <cassert>
 
@@ -35,7 +34,7 @@ size_t lowerBoundPageImpl(
             }
 
             if (++mid >= file.pageCount()) {
-                throw cpptrace::runtime_error("fix me if I fire (1) {}");
+                throw RuntimeError("fix me if I fire (1) {}");
             }
         }
 
@@ -58,7 +57,7 @@ size_t lowerBoundPageImpl(
             }
 
             if (--mid == 0) {
-                throw cpptrace::runtime_error("fix me if I fire (2)");
+                throw RuntimeError("fix me if I fire (2)");
             }
         }
 
@@ -77,7 +76,7 @@ size_t lowerBoundPageImpl(
     auto page = get_page(begin);
     auto maybe_upper_ts = last(page->data());
     if (!maybe_upper_ts) {
-        throw cpptrace::runtime_error("fix me pls");
+        throw RuntimeError("fix me pls");
     }
 
     auto upper_ts = *maybe_upper_ts;

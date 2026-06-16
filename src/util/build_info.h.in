@@ -1,0 +1,76 @@
+#pragma once
+
+#include <string_view>
+
+// clang-format off
+
+#define LSQL_BUILD_TYPE @CMAKE_BUILD_TYPE@
+#define LSQL_ASAN @ASAN@
+#define LSQL_TSAN @TSAN@
+#define LSQL_UBSAN @UBSAN@
+
+#if !defined(NDEBUG)
+#define LSQL_BUILD_DEBUG
+#endif
+
+// clang-format on
+
+namespace lsql {
+
+enum class BuildType {
+    Debug,
+    Release,
+    RelWithDebInfo,
+};
+
+enum class Toggle {
+    ON,
+    OFF
+};
+
+enum class Platform {
+    Unknown,
+    Linux,
+    MacOS,
+};
+
+struct ProjectVersion {
+    int major;
+    int minor;
+    int patch;
+};
+
+constexpr BuildType getBuildType() {
+    return BuildType::LSQL_BUILD_TYPE;
+}
+
+constexpr Platform getCurrentPlatform() {
+#if defined(__APPLE__)
+    return Platform::MacOS;
+#elif defined(__linux__)
+    return Platform::Linux;
+#else
+    return Platform::Unknown;
+#endif
+}
+
+constexpr Toggle isBuiltWithASAN() {
+    return Toggle::LSQL_ASAN;
+}
+
+constexpr Toggle isBuiltWithUBSAN() {
+    return Toggle::LSQL_UBSAN;
+}
+
+constexpr Toggle isBuiltWithTSAN() {
+    return Toggle::LSQL_TSAN;
+}
+
+// clang-format on
+
+std::string_view getGitCommitSHA1();
+ProjectVersion getProjectVersion();
+std::string_view getBuildTimestamp();
+std::string formatBuildInfo();
+
+}  // namespace lsql

@@ -2,16 +2,16 @@
 
 #include "front/common/source/SourceSpan.h"
 
-#include <cpptrace/exceptions.hpp>
+#include "core/exceptions.h"
 
 #include <format>
 
 namespace lsql::front {
 
-class SpanRuntimeError : public cpptrace::exception_with_message {
+class SpanRuntimeError : public RuntimeError {
  public:
     SpanRuntimeError(std::string message, SourceSpan span)
-        : cpptrace::exception_with_message(std::move(message))
+        : RuntimeError(std::move(message))
         , span_(span) {}
 
     SourceSpan span() const { return span_; }

@@ -5,7 +5,7 @@
 #include "core/value/Value.h"
 #include "core/value/ValueType.h"
 
-#include "util/require.h"
+#include "core/exceptions.h"
 
 #include <magic_enum/magic_enum.hpp>
 

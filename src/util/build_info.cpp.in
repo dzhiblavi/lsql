@@ -9,10 +9,6 @@
 #define LSQL_VERSION_MAJOR @CMAKE_PROJECT_VERSION_MAJOR@
 #define LSQL_VERSION_MINOR @CMAKE_PROJECT_VERSION_MINOR@
 #define LSQL_VERSION_PATCH @CMAKE_PROJECT_VERSION_PATCH@
-#define LSQL_BUILD_TYPE @CMAKE_BUILD_TYPE@
-#define LSQL_ASAN @ASAN@
-#define LSQL_TSAN @TSAN@
-#define LSQL_UBSAN @UBSAN@
 #define LSQL_BUILD_TIMESTAMP "@LSQL_BUILD_TIMESTAMP@"
 #define LSQL_GIT_SHA1 "@GIT_SHA1@"
 
@@ -34,38 +30,6 @@ ProjectVersion getProjectVersion() {
 
 std::string_view getBuildTimestamp() {
     return LSQL_BUILD_TIMESTAMP;
-}
-
-BuildType getBuildType() {
-    using enum BuildType;
-    return LSQL_BUILD_TYPE;
-}
-
-Platform getCurrentPlatform() {
-    using enum Platform;
-
-#if defined(__APPLE__)
-    return MacOS;
-#elif defined(__linux__)
-    return Linux;
-#else
-    return Unknown;
-#endif
-}
-
-Toggle isBuiltWithASAN() {
-    using enum Toggle;
-    return LSQL_ASAN;
-}
-
-Toggle isBuiltWithUBSAN() {
-    using enum Toggle;
-    return LSQL_UBSAN;
-}
-
-Toggle isBuiltWithTSAN() {
-    using enum Toggle;
-    return LSQL_TSAN;
 }
 
 // clang-format on

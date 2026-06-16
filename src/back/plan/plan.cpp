@@ -29,8 +29,8 @@
 #include "ir/Scalars.h"
 #include "ir/Statement.h"
 
+#include "core/exceptions.h"
 #include "util/archive.h"
-#include "util/require.h"
 
 namespace lsql::back::plan {
 

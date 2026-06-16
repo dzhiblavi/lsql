@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <string_view>
 
+#include "util/build_info.h"
+
 namespace lsql::config {
 
 struct Semantics {
@@ -27,6 +29,10 @@ struct Optimize {
     static inline constexpr int ParseStringCostOverhead = 10;
     static inline constexpr int RegexCostOverhead = 4;
     static inline constexpr int ProjectionCostOverhead = 10;
+};
+
+struct Exceptions {
+    static inline constexpr bool StackTracesEnabled = getBuildType() != BuildType::Release;
 };
 
 }  // namespace lsql::config

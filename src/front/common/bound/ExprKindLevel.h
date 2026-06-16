@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cpptrace/exceptions.hpp>
+#include "core/exceptions.h"
 
 namespace lsql::front::common::bound {
 
@@ -16,7 +16,7 @@ inline bool composable(ExprKindLevel a, ExprKindLevel b) {
 
 inline ExprKindLevel composed(ExprKindLevel a, ExprKindLevel b) {
     if (!composable(a, b)) {
-        throw cpptrace::runtime_error("incompatible expr levels");
+        throw RuntimeError("incompatible expr levels");
     }
 
     if (a == b) {

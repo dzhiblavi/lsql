@@ -80,7 +80,7 @@ ast::Program parse(std::string query) {
     SqlParserFree(parser, free);
 
     if (ctx.has_error) {
-        throw cpptrace::runtime_error("parsing failed");
+        throw RuntimeError("parsing failed");
     }
 
     return std::move(ctx.program);

@@ -4,10 +4,10 @@
 #include "ir/Relations.h"   // IWYU pragma: keep
 #include "ir/Scalars.h"     // IWYU pragma: keep
 
+#include "core/exceptions.h"
 #include "core/schema/FieldSet.h"
 #include "core/schema/Schema.h"
 #include "util/Pinned.h"
-#include "util/require.h"
 
 namespace lsql::front::pipe::lower {
 

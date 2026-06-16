@@ -3,9 +3,9 @@
 #include "back/exec/expr/Aggregate.h"
 #include "back/exec/expr/Scalar.h"
 
+#include "core/exceptions.h"
 #include "core/exprs/concepts.h"
 #include "util/instrument/Timer.h"
-#include "util/require.h"
 
 #include <llog/log.h>
 

@@ -8,16 +8,14 @@
 #include "front/common/source/format.h"
 #include "front/common/source/require_at.h"
 
+#include "core/exceptions.h"
 #include "core/time_formats.h"
 #include "util/build_info.h"
-#include "util/require.h"
 
 #include <llog/load.h>
 #include <llog/log.h>
 
-#include <cpptrace/cpptrace.hpp>
-#include <cpptrace/formatting.hpp>
-#include <cpptrace/from_current.hpp>
+#include <cpptrace/utils.hpp>
 #include <magic_enum/magic_enum.hpp>
 #include <tclap/CmdLine.h>
 
@@ -184,8 +182,7 @@ bool parseArgs(std::span<const char*> argv) {
     try {
         cmd.parse(static_cast<int>(argv.size()), argv.data());
     } catch (const TCLAP::ArgException& e) {
-        throw cpptrace::runtime_error(
-            std::format("error for argument '{}': {}", e.argId(), e.error()));
+        throw RuntimeError(std::format("error for argument '{}': {}", e.argId(), e.error()));
     } catch (const TCLAP::ExitException& e) {
         return false;
     }
@@ -217,19 +214,10 @@ std::string readQuery(std::string_view maybe_path) {
 
 [[noreturn]] void reportSpanError(std::string_view query, const front::SpanRuntimeError& err) {
     if (stacktrace_arg) {
-        auto formatter = cpptrace::get_default_formatter();
-        formatter.header("Stack trace:")
-            .addresses(cpptrace::formatter::address_mode::object)
-            .break_before_filename()
-            .colors(cpptrace::formatter::color_mode::automatic)
-            .hide_exception_machinery()
-            .symbols(cpptrace::formatter::symbol_mode::pruned)
-            .snippets(true);
-
-        formatter.print(std::cerr, err.trace());
+        printStackTrace(err, std::cerr);
     }
 
-    throwError("{}, at {}", err.message(), format(front::RichSourceSpan{query, err.span()}));
+    throwError("{}, at {}", message(err), format(front::RichSourceSpan{query, err.span()}));
 }
 
 std::optional<back::plan::TimeRange> defaultTimeRange() {
@@ -256,9 +244,11 @@ std::optional<back::plan::TimeRange> defaultTimeRange() {
 }
 
 void cliMain(std::span<const char*> argv) {
-    cpptrace::enable_inlined_call_resolution(true);
-    cpptrace::register_terminate_handler();
-    cpptrace::use_default_stderr_logger();
+    if constexpr (config::Exceptions::StackTracesEnabled) {
+        cpptrace::enable_inlined_call_resolution(true);
+        cpptrace::register_terminate_handler();
+        cpptrace::use_default_stderr_logger();
+    }
 
     if (!parseArgs(argv)) {
         return;
