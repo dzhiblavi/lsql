@@ -16,7 +16,6 @@ enum class TimeFormat {
 
 std::string_view timeFormatRegex(TimeFormat format);
 const reflex::Pattern& timeFormatPattern(TimeFormat format);
-const reflex::Pattern& timeFormatReversePattern(TimeFormat format);
 timestamp_t timestampFromString(std::string_view s, TimeFormat format);
 
 }  // namespace lsql

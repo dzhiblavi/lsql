@@ -1,176 +1,169 @@
 #include "back/plan/search/SearchTimestamp.h"
 #include "back/plan/search/SearchRegex.h"
 
+#include "config/build_settings.h"
 #include "core/exceptions.h"
-#include "util/PageSize.h"
 
-#include <cassert>
+#include <algorithm>
+#include <array>
+#include <iterator>
+#include <optional>
+#include <span>
+#include <string>
+#include <string_view>
+#include <tuple>
 
 namespace lsql::back::plan::search {
 
 namespace {
 
-template <typename GetPageF, typename FirstTsF, typename LastTsF>
-size_t lowerBoundPageImpl(
+struct Line {
+    size_t begin;
+    size_t next_begin;
+    std::string text;
+};
+
+std::optional<char> readChar(const back::storage::PagedFile& file, size_t offset) {
+    if (offset >= file.size()) {
+        return std::nullopt;
+    }
+
+    char ch = 0;
+    std::ignore = file.read(offset, std::span{&ch, 1});
+    return ch;
+}
+
+std::optional<size_t> findLineBegin(const back::storage::PagedFile& file, size_t offset) {
+    if (offset >= file.size()) {
+        return std::nullopt;
+    }
+
+    if (offset == 0) {
+        return 0;
+    }
+
+    auto prev = readChar(file, offset - 1);
+    if (prev == '\n') {
+        return offset;
+    }
+
+    std::array<char, config::Buffering::TimestampSearchBufferSize> buffer{};
+    while (offset > 0) {
+        size_t chunk_begin = offset > buffer.size() ? offset - buffer.size() : 0;
+        size_t chunk_size = offset - chunk_begin;
+        std::ignore = file.read(chunk_begin, std::span{buffer.data(), chunk_size});
+
+        auto begin = buffer.begin();
+        auto end = begin + chunk_size;  // NOLINT
+        auto newline = std::find(std::reverse_iterator{end}, std::reverse_iterator{begin}, '\n');
+        if (newline != std::reverse_iterator{begin}) {
+            return chunk_begin + static_cast<size_t>((newline.base() - begin));
+        }
+
+        offset = chunk_begin;
+    }
+
+    return 0;
+}
+
+Line readLine(const back::storage::PagedFile& file, size_t begin) {
+    std::array<char, config::Buffering::TimestampSearchBufferSize> buffer{};
+    std::string text;
+    size_t offset = begin;
+
+    while (offset < file.size()) {
+        size_t bytes_read = file.read(
+            offset, std::span{buffer.data(), std::min(buffer.size(), file.size() - offset)});
+        auto chunk_begin = buffer.begin();
+        auto chunk_end = chunk_begin + bytes_read;  // NOLINT
+        auto newline = std::find(chunk_begin, chunk_end, '\n');
+
+        text.append(chunk_begin, newline);
+
+        if (newline != chunk_end) {
+            auto next_begin = offset + static_cast<size_t>(newline - chunk_begin) + 1;
+            return Line{
+                .begin = begin,
+                .next_begin = next_begin,
+                .text = std::move(text),
+            };
+        }
+
+        offset += bytes_read;
+    }
+
+    return Line{.begin = begin, .next_begin = file.size(), .text = std::move(text)};
+}
+
+std::optional<Line> readLineAt(const back::storage::PagedFile& file, size_t offset) {
+    auto begin = findLineBegin(file, offset);
+    if (!begin) {
+        return std::nullopt;
+    }
+
+    return readLine(file, *begin);
+}
+
+timestamp_t lineTimestamp(std::string_view line, TimeFormat format) {
+    auto maybe_ts = searchFirstTimestamp(line, format);
+    require(maybe_ts.has_value(), "failed to find timestamp in line '{}'", line);
+    return *maybe_ts;
+}
+
+template <typename AcceptLineF, typename SkipLineF>
+size_t boundLine(
     const back::storage::PagedFile& file,
     timestamp_t ts,
-    GetPageF get_page,
-    FirstTsF first,
-    LastTsF last) {
+    TimeFormat format,
+    AcceptLineF accept_line,
+    SkipLineF skip_line) {
     size_t begin = 0;
-    size_t end = file.pageCount();
+    size_t end = file.size();
+    size_t answer = std::string::npos;
 
-    // searching in [begin, end)
-    while (begin + 1 < end) {
+    while (begin < end) {
         size_t mid = begin + (end - begin) / 2;
-        timestamp_t lower_ts = 0;
+        auto line = readLineAt(file, mid);
 
-        for (;;) {
-            auto page = get_page(mid);
-            auto maybe_lower_ts = first(page->data());
-            if (maybe_lower_ts) {
-                lower_ts = *maybe_lower_ts;
-                break;
-            }
-
-            if (++mid >= file.pageCount()) {
-                throw RuntimeError("fix me if I fire (1) {}");
-            }
-        }
-
-        if (lower_ts < ts) {
-            begin = mid;
-            continue;
-        }
-
-        // lower_ts >= ts
-        assert(mid > 0);
-        timestamp_t prev_upper_ts = 0;
-
-        for (;;) {
-            auto prev_page = get_page(mid - 1);
-            auto maybe_prev_upper_ts = last(prev_page->data());
-
-            if (maybe_prev_upper_ts) {
-                prev_upper_ts = *maybe_prev_upper_ts;
-                break;
-            }
-
-            if (--mid == 0) {
-                throw RuntimeError("fix me if I fire (2)");
-            }
-        }
-
-        if (prev_upper_ts >= ts) {
-            // previous page also has the needed range
+        if (!line) {
             end = mid;
             continue;
         }
 
-        // lower_ts <= ts
-        // prev_upper_ts < ts
-        // that means that we've found the needed page, it is mid.
-        return mid;
-    }
-
-    auto page = get_page(begin);
-    auto maybe_upper_ts = last(page->data());
-    if (!maybe_upper_ts) {
-        throw RuntimeError("fix me pls");
-    }
-
-    auto upper_ts = *maybe_upper_ts;
-    return upper_ts >= ts ? begin : std::string::npos;
-}
-
-size_t getSincePos(std::string_view s, timestamp_t from, TimeFormat format) {
-    auto pos = s.find('\n');
-    if (pos == std::string::npos) {
-        return std::string::npos;
-    }
-    ++pos;  // points to the first character of the line
-
-    while (pos < s.size()) {
-        auto line_length = s.substr(pos).find('\n');
-        auto line_ts = searchFirstTimestamp(s.substr(pos, line_length), format);
-        if (line_ts >= from) {
-            return pos;
+        auto line_ts = lineTimestamp(line->text, format);
+        if (skip_line(line_ts, ts)) {
+            begin = line->next_begin;
+            continue;
         }
 
-        if (line_length == std::string::npos) {
-            return std::string::npos;
+        if (accept_line(line_ts, ts)) {
+            answer = line->begin;
         }
-
-        pos += line_length + 1;
+        end = line->begin;
     }
 
-    return std::string::npos;
-}
-
-size_t getUntilPos(std::string_view s, timestamp_t to, TimeFormat format) {
-    auto pos = s.find('\n');
-    if (pos == std::string::npos) {
-        return std::string::npos;
-    }
-    ++pos;  // points to the first character of the line
-
-    while (pos < s.size()) {
-        auto line_length = s.substr(pos).find('\n');
-        auto line_ts = searchFirstTimestamp(s.substr(pos, line_length), format);
-        if (line_ts > to) {
-            return pos;
-        }
-
-        if (line_length == std::string::npos) {
-            return s.size();
-        }
-
-        pos += line_length + 1;
-    }
-
-    return s.size();
+    return answer;
 }
 
 }  // namespace
 
-size_t lowerBoundPage(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format) {
-    return lowerBoundPageImpl(
+size_t lowerBoundLine(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format) {
+    return boundLine(
         file,
         ts,
-        [&file](size_t page_index) { return file.page(page_index); },
-        [&](auto data) { return searchFirstTimestamp(data, format); },
-        [&](auto data) { return searchLastTimestamp(data, format); });
-}
-
-size_t upperBoundPage(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format) {
-    auto pc = file.pageCount();
-
-    auto res = lowerBoundPageImpl(
-        file,
-        -ts,
-        [&file, pc](size_t page_index) { return file.page(pc - page_index - 1); },
-        [&](auto data) { return searchLastTimestamp(data, format).transform(std::negate{}); },
-        [&](auto data) { return searchFirstTimestamp(data, format).transform(std::negate{}); });
-
-    return res == std::string::npos ? std::string::npos : pc - 1 - res;
-}
-
-size_t lowerBoundLine(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format) {
-    size_t p = lowerBoundPage(file, ts, format);
-    if (p == std::string::npos) {
-        return std::string::npos;
-    }
-    size_t pos = getSincePos(file.page(p)->data(), ts, format);
-    return pos == std::string::npos ? pos : pos + p * util::pageSize();
+        format,
+        [](timestamp_t line_ts, timestamp_t target) { return line_ts >= target; },
+        [](timestamp_t line_ts, timestamp_t target) { return line_ts < target; });
 }
 
 size_t upperBoundLine(const back::storage::PagedFile& file, timestamp_t ts, TimeFormat format) {
-    size_t p = upperBoundPage(file, ts, format);
-    if (p == std::string::npos) {
-        return std::string::npos;
-    }
-    size_t pos = getUntilPos(file.page(p)->data(), ts, format);
-    return pos == std::string::npos ? pos : pos + p * util::pageSize();
+    auto result = boundLine(
+        file,
+        ts,
+        format,
+        [](timestamp_t line_ts, timestamp_t target) { return line_ts > target; },
+        [](timestamp_t line_ts, timestamp_t target) { return line_ts <= target; });
+    return result == std::string::npos ? file.size() : result;
 }
 
 }  // namespace lsql::back::plan::search

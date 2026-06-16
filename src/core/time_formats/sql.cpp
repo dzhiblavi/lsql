@@ -1,5 +1,7 @@
 #include "core/time_formats/impl.h"
 
+#include "util/verify.h"
+
 namespace lsql {
 
 template <>
@@ -9,7 +11,7 @@ std::string_view timeFormatRegex<TimeFormat::SQL>() {
 
 template <>
 timestamp_t timestampFromString<TimeFormat::SQL>(std::string_view s) {
-    assert(s.size() == 19);
+    verify_dbg(s.size() == 19);
 
     struct tm tm = {};
     tm.tm_year =

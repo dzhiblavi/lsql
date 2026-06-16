@@ -12,7 +12,7 @@ struct Semantics {
 };
 
 struct Buffering {
-    static constexpr inline size_t ReverseStreamBufferSize = 16 * 1024;
+    static constexpr inline size_t TimestampSearchBufferSize = 8 * 1024;
     static constexpr inline size_t CompressedChunkSize = 64 * 1024;
     static constexpr inline size_t DecompressedChunkSize = 64 * 1024;
 };
