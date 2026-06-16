@@ -71,10 +71,11 @@ def write_imap_log_to(f, rows, fields, timestamp, seed):
 
     for i in range(rows):
         line_fields = materialize_fields(fields, i, rng)
-        field_text = " ".join(
-            f"{key}={value}" for key, value in line_fields.items()
-        )
-        f.write(f"{timestamp(i)} {field_text}\n")
+        field_text = " ".join(f"{key}={value}" for key, value in line_fields.items())
+        if field_text:
+            f.write(f"{timestamp(i)} {field_text}\n")
+        else:
+            f.write(f"{timestamp(i)}\n")
 
 
 def write_imap_log(path, rows, fields, timestamp=imap_timestamp, seed=0):

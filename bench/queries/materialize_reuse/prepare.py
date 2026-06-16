@@ -1,10 +1,10 @@
 from lib.generate import format_string, random, random_int, write_imap_log
 
 
-rows = 400_000
+rows = 300_000
 
 fields = {
-    "uid": format_string("u{user}", user=random_int(0, 20_000)),
+    "uid": format_string("user{user}", user=random_int(0, 40_000)),
     "status": random(["ok", "ok", "ok", "fail"]),
 }
 

@@ -7,7 +7,6 @@ session = random_int(0, 10_000)
 noise = random_string(distr=fixed(220))
 
 fields = {
-    "uid": format_string("user{user}", user=user),
     "message": format_string(
         "prefix{noise} user={user} session=s{session} suffix{tail}",
         noise=noise,

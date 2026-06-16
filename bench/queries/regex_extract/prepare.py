@@ -8,7 +8,6 @@ session = random_int(0, 9_999)
 
 fields = {
     "uid": format_string("user{user}", user=user),
-    "status": "ok",
     "request": format_string(
         "/api/search?user={user}&session=s{session}&q=item{item}",
         user=user,

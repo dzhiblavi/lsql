@@ -1,13 +1,8 @@
-from lib.generate import format_string, random_int, write_imap_log
+from lib.generate import write_imap_log
 
 
 rows = 400_000
 
-fields = {
-    "uid": format_string("user{user}", user=random_int(0, 9_999)),
-    "status": "ok",
-    "action": "ping",
-    "latency": random_int(0, 999),
-}
+fields = {}
 
 write_imap_log("input.1.txt", rows, fields)
