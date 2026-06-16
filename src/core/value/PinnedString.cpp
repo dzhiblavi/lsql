@@ -22,8 +22,11 @@ bool PinnedString::empty() const {
 }
 
 PinnedString PinnedString::substr(size_t pos, size_t len) const {
-    auto v = view().substr(pos, len);
-    return {Arc<const char>(pin_, v.data()), v.size()};
+    return subview(view().substr(pos, len));
+}
+
+PinnedString PinnedString::subview(std::string_view view) const {
+    return {Arc<const char>(pin_, view.data()), view.size()};
 }
 
 bool operator==(const PinnedString& a, const PinnedString& b) {

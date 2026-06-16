@@ -16,6 +16,7 @@ class PinnedString {
     size_t size() const;
     bool empty() const;
     PinnedString substr(size_t pos, size_t len) const;
+    PinnedString subview(std::string_view view) const;
 
  public:
     Arc<const char> pin_ = nullptr;

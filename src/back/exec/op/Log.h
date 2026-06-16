@@ -7,7 +7,6 @@
 #include "back/storage/LineSource.h"
 
 #include "core/schema/Schema.h"
-#include "core/value/PinnedString.h"
 
 #include "config/build_settings.h"
 
@@ -60,7 +59,7 @@ class Log : public Source, public OperationBase<Log> {
                 if (view.size() <= max_small_string_size) {
                     values[slot] = std::string(view);
                 } else {
-                    values[slot] = PinnedString({line.pin(), view.data()}, view.size());
+                    values[slot] = line.subview(view);
                 }
             };
 
