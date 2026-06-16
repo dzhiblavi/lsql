@@ -1,0 +1,9 @@
+{
+  "category": "join/materialize",
+  "description": "materialized filtered relation reused by a later semi-join",
+  "scale": "rows",
+  "target_ms": [
+    300,
+    700
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "category": "merge",
+  "description": "sorted union / merge over two already sorted inputs",
+  "scale": "rows",
+  "target_ms": [
+    300,
+    700
+  ]
+}

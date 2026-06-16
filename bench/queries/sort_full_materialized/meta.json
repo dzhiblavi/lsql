@@ -1,0 +1,9 @@
+{
+  "category": "sort",
+  "description": "full sort whose output is materialized and consumed",
+  "scale": "rows",
+  "target_ms": [
+    300,
+    700
+  ]
+}

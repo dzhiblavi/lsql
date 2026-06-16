@@ -1,0 +1,9 @@
+{
+  "category": "gzip/io",
+  "description": "gzip stream read plus grouping and aggregate",
+  "scale": "rows",
+  "target_ms": [
+    300,
+    700
+  ]
+}

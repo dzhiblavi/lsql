@@ -1,0 +1,9 @@
+{
+  "category": "group/hash",
+  "description": "filter, string grouping, integer cast, aggregate, and small result ordering",
+  "scale": "rows",
+  "target_ms": [
+    300,
+    700
+  ]
+}

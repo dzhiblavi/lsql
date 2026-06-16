@@ -1,0 +1,9 @@
+{
+  "category": "regex",
+  "description": "LIKE and RSUBSTR over long message strings with aggregate output",
+  "scale": "rows",
+  "target_ms": [
+    300,
+    700
+  ]
+}

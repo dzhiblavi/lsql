@@ -1,0 +1,9 @@
+{
+  "category": "projection",
+  "description": "filtered projection of raw wide _line values plus top-k",
+  "scale": "rows",
+  "target_ms": [
+    300,
+    700
+  ]
+}

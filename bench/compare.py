@@ -23,6 +23,8 @@ class BenchKey:
 @dataclass
 class BenchResult:
     key: BenchKey
+    category: str
+    target_ms: list[float]
     query_file: str
     output_sha256: str
     output_semantic_sha256: str
@@ -33,6 +35,14 @@ class BenchResult:
     real_ms_min: float
     real_ms_max: float
     repeat: int
+
+
+def query_metadata(name):
+    path = BENCH / "queries" / name / "meta.json"
+    if not path.exists():
+        return {}
+
+    return load_json(path)
 
 
 class Colors:
@@ -99,12 +109,15 @@ def load_results(result_dir):
 
         data = load_json(path)
         name = data["name"]
+        metadata = data.get("metadata") or query_metadata(name)
         for item in data["results"]:
             samples = item["samples"]
             key = BenchKey(name=name, frontend=item["frontend"])
             summary = item.get("summary", {})
             results[key] = BenchResult(
                 key=key,
+                category=metadata.get("category", ""),
+                target_ms=metadata.get("target_ms", []),
                 query_file=item["query_file"],
                 output_sha256=item["output_sha256"],
                 output_semantic_sha256=item.get(
@@ -146,6 +159,24 @@ def format_kb(x):
     if x >= 1024:
         return f"{x / 1024:.1f}M"
     return f"{x:.0f}K"
+
+
+def spread_pct(result):
+    if result.real_ms == 0:
+        return 0.0
+    return (result.real_ms_max - result.real_ms_min) / result.real_ms * 100.0
+
+
+def target_verdict(result, colors):
+    if len(result.target_ms) != 2:
+        return ""
+
+    low, high = result.target_ms
+    if result.real_ms < low:
+        return colors.yellow("low")
+    if result.real_ms > high:
+        return colors.yellow("high")
+    return colors.dim("ok")
 
 
 def format_pct(x, colors, threshold):
@@ -212,10 +243,15 @@ def print_table(base_results, head_results, colors, threshold):
     rows = [
         [
             "query",
+            "cat",
             "front",
             "base",
             "head",
             "delta",
+            "b-spread",
+            "h-spread",
+            "s-delta",
+            "target",
             "user",
             "sys",
             "rss",
@@ -234,14 +270,21 @@ def print_table(base_results, head_results, colors, threshold):
         user_delta = pct_delta(base.user_ms, head.user_ms)
         sys_delta = pct_delta(base.sys_ms, head.sys_ms)
         rss_delta = pct_delta(base.max_rss_kb, head.max_rss_kb)
+        base_spread = spread_pct(base)
+        head_spread = spread_pct(head)
 
         rows.append(
             [
                 key.name,
+                head.category or base.category,
                 key.frontend,
                 format_ms(base.real_ms),
                 format_ms(head.real_ms),
                 format_pct(real_delta, colors, threshold),
+                format_pct(base_spread, colors, 15.0),
+                format_pct(head_spread, colors, 15.0),
+                format_pct(head_spread - base_spread, colors, 10.0),
+                target_verdict(head, colors),
                 format_pct(user_delta, colors, threshold),
                 format_pct(sys_delta, colors, threshold),
                 format_pct(rss_delta, colors, threshold),
@@ -273,6 +316,8 @@ def print_summary(base_results, head_results, colors, threshold):
     output_equal = []
     output_bytes = []
     output_different = []
+    target_low = []
+    target_high = []
 
     for key in shared:
         base = base_results[key]
@@ -295,6 +340,13 @@ def print_summary(base_results, head_results, colors, threshold):
         else:
             same.append((key, delta))
 
+        if len(head.target_ms) == 2:
+            low, high = head.target_ms
+            if head.real_ms < low:
+                target_low.append(key)
+            elif head.real_ms > high:
+                target_high.append(key)
+
     total_delta = pct_delta(total_base, total_head)
     print()
     print(colors.bold("Summary"))
@@ -311,11 +363,19 @@ def print_summary(base_results, head_results, colors, threshold):
         f"bytes: {len(output_bytes)}, "
         f"different: {len(output_different)}"
     )
+    print(f"target band: low: {len(target_low)}, high: {len(target_high)}")
 
     if output_different:
         print(colors.yellow(f"semantic output differences: {len(output_different)}"))
         for key in output_different:
             print(colors.yellow(f"  {key.name} ({key.frontend})"))
+
+    if target_low or target_high:
+        print(colors.yellow("target band misses:"))
+        for key in target_low:
+            print(colors.yellow(f"  {key.name} ({key.frontend}): low"))
+        for key in target_high:
+            print(colors.yellow(f"  {key.name} ({key.frontend}): high"))
 
     missing_base = sorted(
         set(head_results) - set(base_results), key=lambda k: (k.name, k.frontend)

@@ -1,0 +1,9 @@
+{
+  "category": "sort",
+  "description": "top-k optimization over sort and limit",
+  "scale": "rows",
+  "target_ms": [
+    300,
+    700
+  ]
+}

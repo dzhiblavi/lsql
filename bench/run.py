@@ -59,9 +59,13 @@ def binary_for(frontend, build_type):
     return path
 
 
-def discover_queries():
+def discover_queries(names=None):
+    names = set(names or [])
     queries = []
     for query_dir in sorted(p for p in QUERIES.iterdir() if p.is_dir()):
+        if names and query_dir.name not in names:
+            continue
+
         has_sql = (query_dir / "query.sql").exists()
         has_pipe = (query_dir / "query.pipe").exists()
         if not has_sql and not has_pipe:
@@ -71,6 +75,7 @@ def discover_queries():
             {
                 "name": query_dir.name,
                 "source_dir": query_dir,
+                "metadata": query_metadata(query_dir),
                 "frontends": [
                     ("sql", "query.sql") if has_sql else None,
                     ("pipe", "query.pipe") if has_pipe else None,
@@ -79,6 +84,14 @@ def discover_queries():
         )
 
     return queries
+
+
+def query_metadata(query_dir):
+    path = query_dir / "meta.json"
+    if not path.exists():
+        return {}
+
+    return json.loads(path.read_text())
 
 
 def prepare_query(query, query_work_dir):
@@ -160,6 +173,36 @@ def summarize(samples):
     }
 
 
+def check_output_stability(query, frontend, result, output_hash, output_semantic_hash_value):
+    sample_hash = hashlib.sha256(result["stdout"]).hexdigest()
+    sample_semantic_hash = output_semantic_hash(result["stdout"])
+    if output_hash is None:
+        return sample_hash, sample_semantic_hash
+    if output_hash != sample_hash:
+        raise RuntimeError(f"{query['name']} ({frontend}) produced unstable output")
+    return output_hash, output_semantic_hash_value
+
+
+def append_sample(samples, result):
+    samples.append(
+        {
+            "iteration": len(samples),
+            "real_ms": result["real_ms"],
+            "user_ms": result["user_ms"],
+            "sys_ms": result["sys_ms"],
+            "max_rss_kb": result["max_rss_kb"],
+            "output_bytes": len(result["stdout"]),
+        }
+    )
+
+
+def auto_repeat_count(pilot_ms, time_limit_s):
+    if pilot_ms <= 0:
+        return 1
+
+    return max(1, int(time_limit_s * 1000.0 / pilot_ms))
+
+
 def cleanup_profile_artifacts(query_work_dir):
     for path in query_work_dir.glob("prof.*.folded"):
         path.unlink()
@@ -211,6 +254,7 @@ def run_query(
     build_type,
     repeat,
     warmup,
+    time_limit_s,
     dump_profiles,
     result_dir,
 ):
@@ -220,6 +264,7 @@ def run_query(
     samples = []
     output_hash = None
     output_semantic_hash_value = None
+    pilot_ms = None
 
     for _ in range(warmup):
         result = timed_run(command, cwd=query_work_dir)
@@ -237,33 +282,32 @@ def run_query(
         output_hash = profile["output_sha256"]
         output_semantic_hash_value = profile["output_semantic_sha256"]
 
-    for i in range(repeat):
+    if repeat is None:
         result = timed_run(command, cwd=query_work_dir)
         ensure_success(query, frontend, result)
-
-        sample_hash = hashlib.sha256(result["stdout"]).hexdigest()
-        sample_semantic_hash = output_semantic_hash(result["stdout"])
-        if output_hash is None:
-            output_hash = sample_hash
-            output_semantic_hash_value = sample_semantic_hash
-        elif output_hash != sample_hash:
-            raise RuntimeError(f"{query['name']} ({frontend}) produced unstable output")
-
-        samples.append(
-            {
-                "iteration": i,
-                "real_ms": result["real_ms"],
-                "user_ms": result["user_ms"],
-                "sys_ms": result["sys_ms"],
-                "max_rss_kb": result["max_rss_kb"],
-                "output_bytes": len(result["stdout"]),
-            }
+        output_hash, output_semantic_hash_value = check_output_stability(
+            query, frontend, result, output_hash, output_semantic_hash_value
         )
+        append_sample(samples, result)
+        pilot_ms = result["real_ms"]
+        repeat = auto_repeat_count(pilot_ms, time_limit_s)
+
+    while len(samples) < repeat:
+        result = timed_run(command, cwd=query_work_dir)
+        ensure_success(query, frontend, result)
+        output_hash, output_semantic_hash_value = check_output_stability(
+            query, frontend, result, output_hash, output_semantic_hash_value
+        )
+        append_sample(samples, result)
 
     return {
         "frontend": frontend,
         "query_file": query_file_name,
         "warmup": warmup,
+        "repeat": repeat,
+        "auto_repeat": pilot_ms is not None,
+        "time_limit_s": time_limit_s if pilot_ms is not None else None,
+        "pilot_ms": pilot_ms,
         "output_sha256": output_hash,
         "output_semantic_sha256": output_semantic_hash_value,
         "profile": profile,
@@ -282,14 +326,33 @@ def main():
         "--git-tag", default=None, help="result directory tag; defaults to HEAD"
     )
     parser.add_argument("--build-type", default="Release")
-    parser.add_argument("--repeat", type=int, default=7)
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        default=None,
+        help="fixed recorded sample count; by default repeat count is estimated from --time-limit",
+    )
+    parser.add_argument(
+        "--time-limit",
+        type=float,
+        default=5.0,
+        help="target seconds spent on recorded samples per query when --repeat is omitted",
+    )
     parser.add_argument("--warmup", type=int, default=0)
     parser.add_argument("--dump-profiles", action="store_true")
     parser.add_argument("--skip-build", action="store_true")
+    parser.add_argument(
+        "--query",
+        action="append",
+        default=[],
+        help="benchmark query name to run; can be passed multiple times",
+    )
     args = parser.parse_args()
 
-    if args.repeat <= 0:
+    if args.repeat is not None and args.repeat <= 0:
         raise RuntimeError("--repeat should be positive")
+    if args.time_limit <= 0:
+        raise RuntimeError("--time-limit should be positive")
     if args.warmup < 0:
         raise RuntimeError("--warmup should be non-negative")
 
@@ -313,6 +376,8 @@ def main():
         "git_tag": tag,
         "build_type": args.build_type,
         "repeat": args.repeat,
+        "auto_repeat": args.repeat is None,
+        "time_limit_s": args.time_limit if args.repeat is None else None,
         "warmup": args.warmup,
         "dump_profiles": args.dump_profiles,
         "started_at": datetime.now(timezone.utc).isoformat(),
@@ -322,7 +387,13 @@ def main():
     }
     write_json(result_dir / "meta.json", meta)
 
-    for idx, query in enumerate(discover_queries()):
+    queries = discover_queries(args.query)
+    if args.query and len(queries) != len(set(args.query)):
+        found = {query["name"] for query in queries}
+        missing = sorted(set(args.query) - found)
+        raise RuntimeError(f"benchmark query not found: {', '.join(missing)}")
+
+    for idx, query in enumerate(queries):
         print(f"running query #{idx}: '{query["name"]}'")
         query_work_dir = work_root / query["name"]
         prepare_query(query, query_work_dir)
@@ -342,6 +413,7 @@ def main():
                     args.build_type,
                     args.repeat,
                     args.warmup,
+                    args.time_limit,
                     args.dump_profiles,
                     result_dir,
                 )
@@ -351,6 +423,7 @@ def main():
             result_dir / f"{query['name']}.json",
             {
                 "name": query["name"],
+                "metadata": query["metadata"],
                 "meta": meta,
                 "results": frontend_results,
             },

@@ -1,0 +1,9 @@
+{
+  "category": "gzip/io",
+  "description": "gzip stream read and COUNT(*) over minimal lines",
+  "scale": "rows",
+  "target_ms": [
+    100,
+    500
+  ]
+}

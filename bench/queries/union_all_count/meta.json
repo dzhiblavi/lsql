@@ -1,0 +1,9 @@
+{
+  "category": "scan/io",
+  "description": "concatenation of two file sources and COUNT(*)",
+  "scale": "rows",
+  "target_ms": [
+    50,
+    200
+  ]
+}

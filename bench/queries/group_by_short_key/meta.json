@@ -1,0 +1,9 @@
+{
+  "category": "group/hash",
+  "description": "low-cardinality grouping by short string keys",
+  "scale": "rows",
+  "target_ms": [
+    300,
+    700
+  ]
+}

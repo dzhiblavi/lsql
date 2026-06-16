@@ -1,0 +1,9 @@
+{
+  "category": "join/materialize",
+  "description": "semi-join with long string keys",
+  "scale": "rows",
+  "target_ms": [
+    300,
+    700
+  ]
+}

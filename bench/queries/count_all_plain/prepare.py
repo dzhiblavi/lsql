@@ -1,7 +1,7 @@
 from lib.generate import write_imap_log
 
 
-rows = 1_500_000
+rows = 2_050_000
 
 fields = {}
 

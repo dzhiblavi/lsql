@@ -1,28 +1,54 @@
 # Benchmark Queries
 
 Each directory contains one benchmark workload. `prepare.py` generates the input
-shape, and `query.sql` is the measured query.
+shape, `query.sql` is the measured query, and `meta.json` describes what the
+benchmark is intended to stress.
 
-## Workloads
+Benchmark target bands are intentionally category-specific. Pure scan and source
+benchmarks should stay shorter than CPU-heavy benchmarks, otherwise they mostly
+measure kernel and page-cache behavior.
 
 ```text
-count_all_plain        sequential scan and COUNT(*) over minimal plain text lines
-filter_group_by        filter, string grouping, integer cast, aggregate, small sort
-group_by_short_key     low-cardinality short string grouping
-group_by_medium_key    high-cardinality medium string grouping
-group_by_long_key      high-cardinality long string grouping
-gzip_count_all         gzip stream read and COUNT(*) over minimal lines
-gzip_group_by          gzip stream read plus grouping and aggregate
-project_short_fields   filtered projection of a few short fields plus top-k
-project_wide_lines     filtered projection of raw wide _line values plus top-k
-regex_extract          LIKE and RSUBSTR over medium request strings
-regex_extract_long     LIKE and RSUBSTR over long message strings
-semi_join_short_key    semi-join with short keys
-semi_join_long_key     semi-join with long keys
-sort_topk              top-k optimization over sort and limit
-sort_full_materialized full sort whose output is materialized and consumed
-time_range_count       timestamp lower/upper bound search plus range scan
-union_all_count        concatenation of two file sources
-merge_sorted_count     sorted union / merge over two sorted inputs
-materialize_reuse      materialized filtered relation reused by later query
+scan/io          50-200ms
+gzip/io          100-500ms
+group/hash       300-700ms
+regex            300-700ms
+sort             300-700ms
+join/materialize 300-700ms
+merge            300-700ms
+projection       300-700ms
 ```
+
+## Calibration
+
+After running benchmarks, use the calibration helper to print row-count
+suggestions based on each workload's target band:
+
+```sh
+python3 bench/calibrate.py bench/results/<tag>
+```
+
+The script only prints suggested edits. Apply them deliberately, then rerun the
+suite and compare again.
+
+## Repeat Count
+
+By default, `bench/run.py` warms up, runs each query once as a pilot sample, and
+chooses the recorded sample count from `--time-limit`:
+
+```sh
+python3 bench/run.py --warmup 3 --time-limit 5
+```
+
+Pass `--repeat N` to force an exact recorded sample count instead.
+
+## Profiling One Workload
+
+To dump profiles for one benchmark instead of the whole suite:
+
+```sh
+python3 bench/profile.py regex_extract --warmup 3
+```
+
+This writes the usual result JSON plus `prof.dot`, folded flamegraph files, and
+captured profile output under that result directory.
