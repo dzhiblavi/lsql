@@ -11,6 +11,7 @@
 #define LSQL_VERSION_PATCH @CMAKE_PROJECT_VERSION_PATCH@
 #define LSQL_BUILD_TIMESTAMP "@LSQL_BUILD_TIMESTAMP@"
 #define LSQL_GIT_SHA1 "@GIT_SHA1@"
+#define LSQL_GIT_LOCAL_STATE "@GIT_LOCAL_STATE@"
 
 // clang-format on
 
@@ -18,6 +19,10 @@ namespace lsql {
 
 std::string_view getGitCommitSHA1() {
     return LSQL_GIT_SHA1;
+}
+
+bool isLocalStateClean() {
+    return std::string(LSQL_GIT_LOCAL_STATE) == "CLEAN";
 }
 
 ProjectVersion getProjectVersion() {
@@ -38,11 +43,14 @@ std::string formatBuildInfo() {
     auto [ma, mi, pa] = getProjectVersion();
 
     return std::format(
-        "v{}.{}.{} (sha {}) {} ASAN={} TSAN={} UBSAN={}",
+        "v{}.{}.{}\ngit_sha: {}\ngit_state: {}\nbuilt_at: {}\nbuild_type: {}\nASAN: "
+        "{}\nTSAN: {}\nUBSAN: {}",
         ma,
         mi,
         pa,
         getGitCommitSHA1(),
+        isLocalStateClean() ? "clean" : "dirty",
+        getBuildTimestamp(),
         magic_enum::enum_name(getBuildType()),
         magic_enum::enum_name(isBuiltWithASAN()),
         magic_enum::enum_name(isBuiltWithTSAN()),

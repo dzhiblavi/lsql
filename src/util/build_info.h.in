@@ -68,6 +68,7 @@ constexpr Toggle isBuiltWithTSAN() {
 
 // clang-format on
 
+bool isLocalStateClean();
 std::string_view getGitCommitSHA1();
 ProjectVersion getProjectVersion();
 std::string_view getBuildTimestamp();

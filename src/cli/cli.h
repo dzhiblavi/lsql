@@ -158,7 +158,7 @@ TCLAP::SwitchArg stacktrace_arg{
 };
 
 bool parseArgs(std::span<const char*> argv) {
-    TCLAP::CmdLine cmd{"tsql", ' ', std::format("{} syntax: {}", formatBuildInfo(), syntaxName())};
+    TCLAP::CmdLine cmd{"tsql", ' ', std::format("{}\nsyntax: {}", formatBuildInfo(), syntaxName())};
     cmd.add(&query_file_arg);
     cmd.add(&format_arg);
     cmd.add(&log_level_arg);

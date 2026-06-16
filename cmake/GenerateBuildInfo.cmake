@@ -1,6 +1,7 @@
 include(./cmake/git/GetGitRevisionDescription.cmake)
 
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+git_local_changes(GIT_LOCAL_STATE)
 
 # Configure header
 set(BUILD_INFO_HEADER_REL_PATH "src/util/build_info.h")
