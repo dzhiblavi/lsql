@@ -1,6 +1,6 @@
 #pragma once
 
-#include "util/thread_name.h"
+#include "util/thread.h"
 #include "util/verify.h"
 
 #include <cassert>

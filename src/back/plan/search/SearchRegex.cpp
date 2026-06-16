@@ -2,6 +2,8 @@
 
 #include "util/NonCopyable.h"
 
+#include "config/build_settings.h"
+
 #include <algorithm>
 #include <reflex/matcher.h>
 
@@ -22,7 +24,7 @@ class reverse_streambuf : public std::streambuf, util::NonCopyable {
             return std::char_traits<char>::eof();
         }
 
-        size_t bytes_to_read = std::min(BufSize, bytes_remaining);
+        size_t bytes_to_read = std::min(buf_.size(), bytes_remaining);
         current_ -= bytes_to_read;                                            // NOLINT
         std::reverse_copy(current_, current_ + bytes_to_read, buf_.begin());  // NOLINT
 
@@ -33,8 +35,7 @@ class reverse_streambuf : public std::streambuf, util::NonCopyable {
     const char* begin_;
     const char* current_;
 
-    static constexpr size_t BufSize = 2048;
-    std::array<char, BufSize> buf_{};
+    std::array<char, config::Buffering::ReverseStreamBufferSize> buf_{};
 };
 
 }  // namespace

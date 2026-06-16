@@ -1,5 +1,8 @@
 #include "back/storage/LineSource.h"
+
 #include "util/PageSize.h"
+
+#include "config/build_settings.h"
 
 #include <llog/log.h>
 
@@ -100,14 +103,12 @@ std::string PagedLineSource::describe() const {
 coro::generator<Line> StreamLineSource::lines() const {
     llog::info("scanning lines of stream");
 
-    constexpr size_t ChunkSize = 64 * 1024;
-
     verify(source_ != nullptr);
     auto stream = source_->stream();
     Arc<std::string> partial;
 
     while (true) {
-        auto chunk = arc<std::string>(ChunkSize, '\0');
+        auto chunk = arc<std::string>(config::Buffering::DecompressedChunkSize, '\0');
         auto read = stream->read(chunk->size(), std::span<char>(chunk->data(), chunk->size()));
         if (read == 0) {
             co_return;

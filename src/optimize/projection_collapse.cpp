@@ -1,6 +1,8 @@
 #include "optimize/projection_collapse.h"
 #include "ir/pass.h"
 
+#include "config/build_settings.h"
+
 #include <llog/log.h>
 #include <rfl.hpp>
 
@@ -9,12 +11,7 @@ namespace lsql::opt {
 namespace {
 
 struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
-    static constexpr int CoalesceCostOverhead = 1;
-    static constexpr int UnaryOpCostOverhead = 1;
-    static constexpr int BinaryOpCostOverhead = 1;
-    static constexpr int CastToStringCostOverhead = 2;
-    static constexpr int ParseStringCostOverhead = 10;
-    static constexpr int RegexCostOverhead = 4;
+    using Optimize = config::Optimize;
 
     virtual ~ScalarCostEstimator() = default;
 
@@ -29,26 +26,26 @@ struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
     int view(const ir::ValueScalar&, auto&) { return 0; }
 
     int view(const ir::CoalesceScalar&, auto&, auto args) {
-        return std::ranges::fold_left(args, CoalesceCostOverhead, std::plus());
+        return std::ranges::fold_left(args, Optimize::CoalesceCostOverhead, std::plus());
     }
 
     int view(const ir::CastScalar& s, auto&, int arg) {
         int cost = arg;
         if (s.cast_to == ValueType::String) {
-            cost += CastToStringCostOverhead;
+            cost += Optimize::CastToStringCostOverhead;
         }
         if (s.expr->value_type == ValueType::String) {
-            cost += ParseStringCostOverhead;
+            cost += Optimize::ParseStringCostOverhead;
         }
         return cost;
     }
 
-    int view(const ir::LikeScalar&, auto&, int arg) { return RegexCostOverhead + arg; }
-    int view(const ir::RSubstrScalar&, auto&, int arg) { return RegexCostOverhead + arg; }
-    int view(const ir::UnaryScalar&, auto&, int arg) { return UnaryOpCostOverhead + arg; }
+    int view(const ir::LikeScalar&, auto&, int arg) { return Optimize::RegexCostOverhead + arg; }
+    int view(const ir::RSubstrScalar&, auto&, int arg) { return Optimize::RegexCostOverhead + arg; }
+    int view(const ir::UnaryScalar&, auto&, int arg) { return Optimize::UnaryOpCostOverhead + arg; }
 
     int view(const ir::BinaryScalar&, auto&, int left, int right) {
-        return BinaryOpCostOverhead + left + right;
+        return Optimize::BinaryOpCostOverhead + left + right;
     }
 
     void estimateProjector(FieldId id, const auto& s) {
@@ -179,7 +176,9 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
             collapsed_estimator.estimateProjector(id, *scalar);
         }
 
-        int total_current_cost = inner_estimator.totalCost() + outer_estimator.totalCost();
+        int total_current_cost = inner_estimator.totalCost() + outer_estimator.totalCost() +
+                                 config::Optimize::ProjectionCostOverhead;
+
         if (collapsed_estimator.totalCost() > total_current_cost) {
             llog::trace(
                 "projection collapse skipped, cost too high: collapsed={}, old={}",

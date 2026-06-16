@@ -2,8 +2,11 @@ find_package(magic_enum REQUIRED)
 
 add_library(
     lsql-util STATIC
+    archive.cpp
     build_info.cpp
     PageSize.cpp
+    thread.cpp
+    uniq_id.cpp
     instrument/duration.cpp
 )
 

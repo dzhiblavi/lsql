@@ -1,4 +1,5 @@
 #include "util/PageSize.h"
+#include "config/build_settings.h"
 
 #include <unistd.h>
 
@@ -8,8 +9,6 @@ namespace {
 
 const size_t page_size_ = sysconf(_SC_PAGE_SIZE);
 
-constexpr size_t PageSizeMultiplier = 2;
-
 }  // namespace
 
 size_t systemPageSize() {
@@ -17,7 +16,7 @@ size_t systemPageSize() {
 }
 
 size_t pageSize() {
-    return PageSizeMultiplier * systemPageSize();
+    return config::IO::SystemPageSizeMultiplier * systemPageSize();
 }
 
 size_t pageCount(size_t file_size) {

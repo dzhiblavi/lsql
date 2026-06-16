@@ -9,11 +9,11 @@
 #include "core/schema/Schema.h"
 #include "core/value/PinnedString.h"
 
+#include "config/build_settings.h"
+
 namespace lsql::back::exec {
 
 class Log : public Source, public OperationBase<Log> {
-    inline static constexpr std::string_view LineIdentifierName = "_line";
-
  public:
     Log(Arc<back::storage::LineSource> log,
         back::logfmt::LogType type,
@@ -71,7 +71,7 @@ class Log : public Source, public OperationBase<Log> {
             };
 
             auto parse_func = back::logfmt::parseKeyValueFunc<decltype(parser)&>(type_);
-            const auto line_slot = slots_.find(LineIdentifierName);
+            const auto line_slot = slots_.find(config::Semantics::LineIdentifier);
             const bool has_line = line_slot != slots_.end();
 
             auto lines = log_->lines();

@@ -2,6 +2,8 @@
 
 #include "util/require.h"
 
+#include "config/build_settings.h"
+
 #include <zlib.h>
 
 namespace lsql::back::storage {
@@ -61,7 +63,7 @@ class NativeArchiveStream : public Stream {
         while (strm.avail_out > 0 && !decompressed_eof_) {
             if (strm.avail_in == 0 && !compressed_eof_) {
                 const size_t remaining = file_->size() - compressed_offset_;
-                const size_t to_read = std::min(CompressedChunkSize, remaining);
+                const size_t to_read = std::min(inbuf_.size(), remaining);
 
                 if (to_read == 0) {
                     compressed_eof_ = true;
@@ -99,10 +101,8 @@ class NativeArchiveStream : public Stream {
     }
 
  private:
-    static constexpr size_t CompressedChunkSize = 64 * 1024;
-
     Arc<File> file_;
-    std::array<char, CompressedChunkSize> inbuf_{};
+    std::array<char, config::Buffering::CompressedChunkSize> inbuf_{};
 
     // state
     bool compressed_eof_ = false;

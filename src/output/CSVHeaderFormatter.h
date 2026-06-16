@@ -3,6 +3,8 @@
 #include "output/Consumer.h"
 #include "output/Sink.h"
 
+#include "core/schema/FieldBinding.h"
+
 namespace lsql::output {
 
 template <Sink S>
@@ -28,8 +30,9 @@ class CSVHeaderFormatter : public Consumer {
             ss << to_string(std::move(value)) << ',';
         }
 
-        ss.seekp(-1, std::ios_base::end);
-        sink_.push(ss.str());
+        auto str = ss.str();
+        str.pop_back();
+        sink_.push(str);
     }
 
     void done() override { sink_.done(); }
@@ -46,8 +49,9 @@ class CSVHeaderFormatter : public Consumer {
             ss << binding_->name(id) << ',';
         }
 
-        ss.seekp(-1, std::ios_base::end);
-        sink_.push(ss.str());
+        auto str = ss.str();
+        str.pop_back();
+        sink_.push(str);
     }
 
     bool header_written_ = false;

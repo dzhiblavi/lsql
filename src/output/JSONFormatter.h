@@ -3,6 +3,8 @@
 #include "output/Consumer.h"
 #include "output/Sink.h"
 
+#include "core/schema/FieldBinding.h"
+
 namespace lsql::output {
 
 inline std::string escapeForJSON(std::string_view input) {
