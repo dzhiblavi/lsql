@@ -92,10 +92,9 @@ struct Settings {
     bool dump_profile;
     bool dump_flamegraphs;
     bool dump_dot_graph;
+    bool is_diagnostic;
     unsigned optimization_passes;
     bool explain;
-    bool profiling_enabled;
-    bool run;
     unsigned num_threads;
     output::Format out_format;
     std::optional<back::plan::TimeRange> default_time_range;
@@ -190,10 +189,10 @@ inline back::plan::Plan plan(ir::Program ir, const Settings& s) {
 }
 
 inline void run(ir::Program ir, Settings s) {
-    s.profiling_enabled |= (s.dump_flamegraphs || s.dump_dot_graph || s.dump_profile);
+    auto profiling_enabled = s.dump_flamegraphs || s.dump_dot_graph || s.dump_profile;
 
     std::optional<prof::Profiler> profiler;
-    if (s.profiling_enabled) {
+    if (profiling_enabled) {
         llog::info("enabling profiling [threads={}]", s.num_threads);
         profiler.emplace();
         prof::setGlobalProfiler(&profiler.value());
@@ -222,12 +221,14 @@ inline void run(ir::Program ir, Settings s) {
                   << std::endl;
     }
 
-    if (s.run) {
-        util::ThreadPool pool(s.num_threads);
-        run(max_phase, sources, pool, s);
-        pool.stop();
-        pool.join();
+    if (s.is_diagnostic) {
+        return;
     }
+
+    util::ThreadPool pool(s.num_threads);
+    run(max_phase, sources, pool, s);
+    pool.stop();
+    pool.join();
 }
 
 }  // namespace lsql

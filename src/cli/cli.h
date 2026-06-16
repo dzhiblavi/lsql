@@ -87,8 +87,6 @@ TCLAP::ValueArg<unsigned> optimize_passes_arg{
     "unsigned",
 };
 
-bool run_query = true;
-
 TCLAP::SwitchArg force_run_arg{
     "",
     "run",
@@ -130,8 +128,6 @@ TCLAP::SwitchArg print_ir_optimized_arg{
     "print-ir-optimized",
     "show IR",
 };
-
-bool any_profile_enabled = false;
 
 TCLAP::SwitchArg profile_arg{
     "p",
@@ -187,13 +183,6 @@ bool parseArgs(std::span<const char*> argv) {
         return false;
     }
 
-    if ((explain_arg || print_ast_arg || print_bound_arg || print_ir_unoptimized_arg ||
-         print_optimization_report_arg || print_ir_optimized_arg) &&
-        !force_run_arg) {
-        run_query = false;
-    }
-
-    any_profile_enabled = profile_arg || flamegraph_arg || dot_graph_arg;
     return true;
 }
 
@@ -268,10 +257,10 @@ void cliMain(std::span<const char*> argv) {
         .dump_profile = profile_arg,
         .dump_flamegraphs = flamegraph_arg,
         .dump_dot_graph = dot_graph_arg,
+        .is_diagnostic = !force_run_arg && (explain_arg || print_ast_arg || print_bound_arg ||
+                                            print_ir_unoptimized_arg || print_ir_optimized_arg),
         .optimization_passes = optimize_passes_arg,
         .explain = explain_arg,
-        .profiling_enabled = any_profile_enabled,
-        .run = run_query,
         .num_threads = threads_arg,
         .out_format = *format,
         .default_time_range = defaultTimeRange(),
