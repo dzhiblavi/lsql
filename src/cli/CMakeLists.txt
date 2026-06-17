@@ -11,7 +11,6 @@ target_link_libraries(
     magic_enum::magic_enum
     lsql-front-sql
     lsql-back-exec
-    lsql-back-plan
     lsql-back-storage
     lsql-back-logfmt
     lsql-optimize
@@ -33,7 +32,6 @@ target_link_libraries(
     magic_enum::magic_enum
     lsql-front-pipe
     lsql-back-exec
-    lsql-back-plan
     lsql-back-storage
     lsql-back-logfmt
     lsql-optimize

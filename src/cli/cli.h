@@ -1,9 +1,10 @@
 #include "cli/run.h"
 #include "output/Formats.h"
 
-#include "ir/Relations.h"  // IWYU pragma: keep
-#include "ir/Scalars.h"    // IWYU pragma: keep
-#include "ir/Statement.h"  // IWYU pragma: keep
+#include "ir/Aggregates.h"  // IWYU pragma: keep
+#include "ir/Relations.h"   // IWYU pragma: keep
+#include "ir/Scalars.h"     // IWYU pragma: keep
+#include "ir/Statement.h"   // IWYU pragma: keep
 
 #include "front/common/source/format.h"
 #include "front/common/source/require_at.h"
@@ -18,6 +19,8 @@
 #include <cpptrace/utils.hpp>
 #include <magic_enum/magic_enum.hpp>
 #include <tclap/CmdLine.h>
+
+#include <fstream>
 
 namespace lsql {
 
@@ -209,7 +212,7 @@ std::string readQuery(std::string_view maybe_path) {
     throwError("{}, at {}", message(err), format(front::RichSourceSpan{query, err.span()}));
 }
 
-std::optional<back::plan::TimeRange> defaultTimeRange() {
+std::optional<TimeRange> defaultTimeRange() {
     std::string time_from_s = time_from_arg.getValue();
     std::string time_to_s = time_to_arg.getValue();
 
@@ -217,7 +220,7 @@ std::optional<back::plan::TimeRange> defaultTimeRange() {
         return std::nullopt;
     }
 
-    back::plan::TimeRange range{
+    TimeRange range{
         .ts_from = 0,
         .ts_to = std::numeric_limits<timestamp_t>::max(),
     };

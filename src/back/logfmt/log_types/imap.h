@@ -19,14 +19,15 @@ struct LogTypeImpl<LogType::IMAP> {
 
         auto timestamp = line.substr(1, 20);
         callback("timestamp", timestamp);
-        size_t anon_index = 0;
 
+        line = line.substr(21);
         auto sep = line.find(' ');
         if (sep == std::string::npos) {
             return;
         }
         auto curr = line.substr(sep + 1);
 
+        size_t anon_index = 0;
         while (!curr.empty()) {
             auto sep = curr.find(' ');
             auto token = curr.substr(0, sep);

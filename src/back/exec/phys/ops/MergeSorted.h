@@ -1,0 +1,274 @@
+#pragma once
+
+#include "back/exec/expr/Scalar.h"
+#include "back/exec/phys/MemberSubscriber.h"
+#include "back/exec/phys/Operation.h"
+
+#include "util/instrument/Counters.h"
+#include "util/verify.h"
+
+#include <array>
+#include <queue>
+
+namespace lsql::back::exec::phys {
+
+struct MergeSortedMetrics {
+    void reset() {
+        buf_sizes[0].set(0);
+        buf_sizes[1].set(0);
+    }
+
+    util::StrBuilder report() const { return shortReport(); }
+
+    util::StrBuilder shortReport() const {
+        return util::StrBuilder()
+            .item("max_buf_size (L): {}", buf_sizes[0].value())
+            .item("max_buf_size (R): {}", buf_sizes[1].value());
+    }
+
+    std::array<instr::Counter<size_t>, 2> buf_sizes{};
+};
+
+class MergeSorted : public OperationBase<MergeSorted, MergeSortedMetrics> {
+    using SortKey = std::vector<Value>;
+
+    enum class DrainResult : uint8_t {
+        Continue,
+        StopRequested,
+    };
+
+ public:
+    MergeSorted(int id, std::vector<Arc<Scalar>> sort_key, bool desc)
+        : OperationBase(id)
+        , sort_key_(std::move(sort_key))
+        , desc_(desc) {
+        prof::addEdge(sub_l_.scopeHandle(), prof_);
+        prof::addEdge(sub_r_.scopeHandle(), prof_);
+    }
+
+    Subscriber* subLeft() { return &sub_l_; }
+    Subscriber* subRight() { return &sub_r_; }
+
+ private:
+    template <int Index>
+    bool consume(const Record* record) {
+        static_assert(Index == 0 || Index == 1);
+
+        if (delay_done_) {
+            verify_dbg(eof_[1 - Index]);
+            reset();
+            return false;
+        }
+
+        verify_dbg(!eof_[Index]);
+
+        if (record == nullptr) {
+            eof_[Index] = true;
+
+            if (drain() == DrainResult::StopRequested) {
+                terminate(Index);
+            } else {
+                if (eof()) {
+                    emitLast();
+                    reset();
+                }
+            }
+
+            // false anyhow, no more input from this side
+            return false;
+        }
+
+        verify_dbg(record != nullptr);
+
+        if (shouldWait(1 - Index)) {
+            // waiting for records from other side to compare to, cannot emit
+            push(Index, record);
+            return true;
+        }
+
+        if (!buffers_[Index].empty()) {
+            // already buffering this side
+            push(Index, record);
+
+            if (drain() == DrainResult::Continue) {
+                return true;
+            }
+
+            // StopRequested, no emit last
+            terminate(Index);
+            return false;
+        }
+
+        // current side's buffer is empty,
+        // other side is not in waiting state (either has records or eof)
+        if (drain(Index, record) == DrainResult::StopRequested) {
+            terminate(Index);
+            return false;
+        }
+
+        return true;
+    }
+
+    bool shouldWait(int index) const {
+        // buffer is empty and not eof yet
+        return !eof_[index] && buffers_[index].empty();
+    }
+
+    void push(int index, const Record* record) { push(index, record, key(*record)); }
+
+    void push(int index, const Record* record, SortKey key) {
+        buffers_[index].emplace(record->clone(), std::move(key));
+
+        if (auto m = prof_.metrics()) {
+            m->custom<MergeSortedMetrics>().buf_sizes[index].max(buffers_[index].size());
+        }
+    }
+
+    // drain from buffers only
+    DrainResult drain() {
+        verify_dbg(!delay_done_);
+
+        auto& lb = buffers_[Left];
+        auto& rb = buffers_[Right];
+
+        while (!lb.empty() && !rb.empty()) {
+            const auto& [l, lkey] = lb.front();
+            const auto& [r, rkey] = rb.front();
+
+            int curr = less(lkey, rkey) ? Left : Right;
+            auto record = pop(curr);
+
+            if (!emit(record.get())) {
+                return DrainResult::StopRequested;
+            }
+        }
+
+        if (eof_[Right] && !lb.empty()) {
+            verify_dbg(rb.empty());
+            return drainSide(Left);
+        }
+
+        if (eof_[Left] && !rb.empty()) {
+            verify_dbg(lb.empty());
+            return drainSide(Right);
+        }
+
+        return DrainResult::Continue;
+    }
+
+    DrainResult drainSide(int side) {
+        verify_dbg(eof_[1 - side]);
+        verify_dbg(buffers_[1 - side].empty());
+        verify_dbg(!delay_done_);
+
+        // "other" will not push more records, so drain the buffer
+        while (!buffers_[side].empty()) {
+            auto record = pop(side);
+
+            if (!emit(record.get())) {
+                return DrainResult::StopRequested;
+            }
+        }
+
+        return DrainResult::Continue;
+    }
+
+    DrainResult drain(int curr_side, const Record* record) {
+        verify_dbg(record != nullptr);
+        verify_dbg(buffers_[curr_side].empty());
+
+        auto k = key(*record);
+        auto& b = buffers_[1 - curr_side];  // other side's buffer
+
+        while (!b.empty()) {
+            auto& [v, kv] = b.front();
+
+            if (less(k, kv)) {
+                if (!emit(record)) {
+                    return DrainResult::StopRequested;
+                }
+
+                // now we do not have records to compare to
+                return DrainResult::Continue;
+            } else {
+                auto v = pop(1 - curr_side);
+
+                if (!emit(v.get())) {
+                    // simply drop record because no more output is needed
+                    return DrainResult::StopRequested;
+                }
+            }
+        }
+
+        // other buffer is drained
+        // need to push record to be processed later
+        push(curr_side, record, std::move(k));
+        return DrainResult::Continue;
+    }
+
+    bool less(const SortKey& a, const SortKey& b) { return desc_ ^ (a < b); }
+
+    bool eof() const { return eof_[Left] && eof_[Right]; }
+
+    void terminate(int stopped_side) {
+        eof_[stopped_side] = true;
+
+        if (eof()) {
+            // both sides reached eof, termination is complete
+            reset();
+        } else {
+            // request other side to stop. it will handle state reset
+            delay_done_ = true;
+        }
+    }
+
+    void emitLast() { emit(nullptr); }
+
+    void reset() {
+        buffers_[Left] = buffers_[Right] = {};
+        eof_[Left] = eof_[Right] = false;
+        delay_done_ = false;
+    }
+
+    ConstRecordPtr pop(int index) {
+        verify_dbg(!buffers_[index].empty());
+        auto [val, _] = std::move(buffers_[index].front());
+        buffers_[index].pop();
+        return val;
+    }
+
+    SortKey key(const Record& record) const {
+        SortKey result;
+        result.reserve(sort_key_.size());
+        for (auto&& col : sort_key_) {
+            result.push_back(col->eval(record));
+        }
+        return result;
+    }
+
+    static constexpr int Left = 0;
+    static constexpr int Right = 1;
+
+    std::vector<Arc<Scalar>> sort_key_;
+    bool desc_;
+    std::mutex m_;
+
+    MemberSubscriber<MergeSorted, LockMixin> sub_l_{
+        this,
+        &MergeSorted::consume<0>,
+        prof::newScope<ScopeMetrics>("{} input(L)", name()),
+        &m_,
+    };
+    MemberSubscriber<MergeSorted, LockMixin> sub_r_{
+        this,
+        &MergeSorted::consume<1>,
+        prof::newScope<ScopeMetrics>("{} input(R)", name()),
+        &m_,
+    };
+
+    bool delay_done_ = false;
+    std::array<bool, 2> eof_ = {false};
+    std::array<std::queue<std::pair<ConstRecordPtr, SortKey>>, 2> buffers_ = {};
+};
+
+}  // namespace lsql::back::exec::phys

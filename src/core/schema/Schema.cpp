@@ -8,6 +8,15 @@ bool Schema::contains(FieldId id) const {
     return slots_.contains(id);
 }
 
+bool Schema::contains(const FieldSet& fields) const {
+    for (FieldId id : fields.fieldIds()) {
+        if (!contains(id)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 std::optional<SlotId> Schema::slot(FieldId id) const {
     auto it = slots_.find(id);
     return it == slots_.end() ? std::nullopt : std::optional(it->second);

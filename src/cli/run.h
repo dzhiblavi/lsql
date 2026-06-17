@@ -1,9 +1,8 @@
 #pragma once
 
-#include "back/exec/op/Operation.h"
-#include "back/exec/op/Subscriber.h"
-#include "back/exec/op/explain.h"
-#include "back/plan/plan.h"
+#include "back/exec/phys/build.h"
+#include "back/exec/plan/Stringifier.h"
+#include "back/exec/plan/plan.h"
 
 #include "profiling/Profiler.h"
 #include "profiling/global.h"
@@ -21,36 +20,16 @@
 
 namespace lsql {
 
-class ConsumerBridge : public back::exec::Subscriber {
+class ConsumerBridge : public back::exec::phys::Subscriber {
  public:
-    ConsumerBridge(back::exec::OperationPtr source, Schema schema, Box<output::Consumer> consumer)
-        : source_(std::move(source))
-        , consumer_(std::move(consumer)) {
-        source_->subscribe(source_->minPhase(), this, schema.fieldSet());
-
+    ConsumerBridge(Schema schema, Box<output::Consumer> consumer) : consumer_(std::move(consumer)) {
         for (auto id : schema.fieldIds()) {
             rec_.emplace_back(id, null);
         }
     }
 
-    back::exec::ExplanationItem explain(back::exec::ExplanationCtx ctx) const {
-        auto source = source_->explain(ctx.withRequester(this));
-
-        if (ctx.phase != source_->minPhase()) {
-            verify(source.empty());
-            return {};
-        } else {
-            verify(!source.empty());
-            return back::exec::ExplanationItem().line("Print").child(source);
-        }
-    }
-
  private:
-    prof::ScopeHandleBase scopeHandle() override { return prof::ScopeHandleBase(); }
-
-    bool consume([[maybe_unused]] int phase, const back::exec::Record* record) override {
-        verify_dbg(phase == source_->minPhase());
-
+    bool consume(const back::exec::Record* record) override {
         if (record == nullptr) {
             consumer_->done();
             return false;
@@ -64,8 +43,9 @@ class ConsumerBridge : public back::exec::Subscriber {
         return true;
     }
 
+    prof::ScopeHandleBase scopeHandle() const override { return {}; }
+
     output::Record rec_;
-    back::exec::OperationPtr source_;
     Box<output::Consumer> consumer_;
 };
 
@@ -97,22 +77,28 @@ struct Settings {
     bool explain;
     unsigned num_threads;
     output::Format out_format;
-    std::optional<back::plan::TimeRange> default_time_range;
+    std::optional<TimeRange> default_time_range;
 };
 
-inline void run(int max_phase, const auto& sources, util::ThreadPool& tp, const Settings& s) {
+inline void run(back::exec::phys::Program& program, util::ThreadPool& tp, const Settings& s) {
+    verify(!program.phases.empty());
+    int max_phase = program.phases.rbegin()->first;
     std::vector<prof::Profiler::Snapshot> snapshots;
 
     for (int phase = 0; phase <= max_phase; ++phase) {
-        llog::info("executing phase {}", phase);
-        std::latch latch(sources.size());
+        auto it = program.phases.find(phase);
+        if (it == program.phases.end()) {
+            continue;
+        }
+        auto&& p = it->second;
 
-        for (auto source : sources) {
-            tp.enqueue([source, phase, &latch] {
+        llog::info("executing phase {} ({} sources)", phase, p.sources.size());
+        std::latch latch(p.sources.size());  // NOLINT
+
+        for (auto source : p.sources) {
+            tp.enqueue([source, &latch] {
                 try {
-                    if (phase <= source->maxPhase()) {
-                        source->push(phase);
-                    }
+                    source->push();
                 } catch (const std::exception& e) {
                     panic("unhandled exception: {}", e.what());
                 }
@@ -156,7 +142,7 @@ inline void run(int max_phase, const auto& sources, util::ThreadPool& tp, const 
     }
 }
 
-inline back::plan::Plan plan(ir::Program ir, const Settings& s) {
+inline ir::Program optimize(ir::Program ir, const Settings& s) {
     if (s.print_ir_unoptimized) {
         std::cout << "Unoptimized IR dump:" << std::endl;
         std::cout << ir::Stringifier().print(ir).render() << std::endl;
@@ -181,11 +167,7 @@ inline back::plan::Plan plan(ir::Program ir, const Settings& s) {
         std::cout << ir::Stringifier().print(ir).render() << std::endl;
     }
 
-    return back::plan::plan(
-        std::move(ir),
-        {
-            .default_time_range = s.default_time_range,
-        });
+    return ir;
 }
 
 inline void run(ir::Program ir, Settings s) {
@@ -200,35 +182,39 @@ inline void run(ir::Program ir, Settings s) {
         llog::info("profiling disabled");
     }
 
+    llog::info("optimizing");
+    ir = optimize(std::move(ir), s);
+
     llog::info("planning");
-    auto [sources, top_operations, binding] = plan(std::move(ir), s);
-
-    std::vector<Arc<ConsumerBridge>> ops;
-    for (auto&& [op, fields] : top_operations) {
-        ops.push_back(
-            arc<ConsumerBridge>(
-                op, fields, output::makeConsumer<StdoutSink>(s.out_format, binding)));
-    }
-
-    llog::info("determining phase count");
-    int max_phase = 0;
-    for (auto&& source : sources) {
-        max_phase = std::max(max_phase, source->maxPhase());
-    }
-
+    auto plan = back::exec::plan::plan(std::move(ir), {.default_time_range = s.default_time_range});
     if (s.explain) {
-        std::cout << back::exec::explain(max_phase, std::span<Arc<ConsumerBridge>>(ops))
-                  << std::endl;
+        std::cout << back::exec::plan::Stringifier().print(plan) << std::endl;
     }
 
     if (s.is_diagnostic) {
+        prof::setGlobalProfiler(nullptr);
         return;
     }
 
+    llog::info("building physical operations");
+    auto phys = back::exec::phys::build(plan);
+
+    std::vector<Arc<ConsumerBridge>> ops;
+    for (auto&& [_, phase] : phys.phases) {
+        for (auto&& [schema, operation] : phase.outputs) {
+            auto consumer = arc<ConsumerBridge>(
+                schema, output::makeConsumer<StdoutSink>(s.out_format, plan.field_binding));
+
+            operation->output(consumer.get());
+            ops.push_back(consumer);
+        }
+    }
+
     util::ThreadPool pool(s.num_threads);
-    run(max_phase, sources, pool, s);
+    run(phys, pool, s);
     pool.stop();
     pool.join();
+    prof::setGlobalProfiler(nullptr);
 }
 
 }  // namespace lsql

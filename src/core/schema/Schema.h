@@ -14,6 +14,7 @@ class Schema {
 
     SlotId append(FieldId id);
     bool contains(FieldId id) const;
+    bool contains(const FieldSet& fields) const;
     std::optional<SlotId> slot(FieldId id) const;
     std::vector<FieldId> fieldIds() const;
     FieldSet fieldSet() const;

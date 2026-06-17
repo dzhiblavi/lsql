@@ -7,6 +7,11 @@ namespace lsql {
 
 using timestamp_t = int64_t;
 
+struct TimeRange {
+    timestamp_t ts_from;
+    timestamp_t ts_to;
+};
+
 template <typename T>
 using Box = std::unique_ptr<T>;
 

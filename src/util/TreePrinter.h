@@ -2,6 +2,7 @@
 
 #include "util/StrBuilder.h"
 #include "util/concepts.h"
+#include "util/string.h"
 
 #include <rfl.hpp>
 
@@ -46,6 +47,11 @@ struct TreePrinter {
     }
 
     template <typename T>
+    StrBuilder print(const std::shared_ptr<T>& b) {
+        return call(*b);
+    }
+
+    template <typename T>
     StrBuilder print(const std::optional<T>& v) {
         return v.has_value() ? call(*v) : StrBuilder();
     }
@@ -81,14 +87,6 @@ struct TreePrinter {
     template <typename T>
     StrBuilder call(const T& t) {
         return static_cast<Self*>(this)->print(t);
-    }
-
-    std::string stripNamespace(std::string s) {
-        auto pos = s.find_last_of(':');
-        if (pos == std::string::npos) {
-            return s;
-        }
-        return s.substr(pos + 1);
     }
 };
 

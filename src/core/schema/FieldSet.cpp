@@ -22,6 +22,10 @@ void FieldSet::add(FieldId id) {
     fields_.insert(id);
 }
 
+void FieldSet::remove(FieldId id) {
+    fields_.erase(id);
+}
+
 void FieldSet::merge(const FieldSet& other) {
     fields_.insert(other.fields_.begin(), other.fields_.end());
 }

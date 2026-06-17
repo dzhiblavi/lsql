@@ -16,6 +16,7 @@ class FieldSet {
     size_t size() const;
     const std::unordered_set<FieldId>& fieldIds() const;
     void add(FieldId id);
+    void remove(FieldId id);
     void merge(const FieldSet& other);
 
     static FieldSet withField(FieldId id);

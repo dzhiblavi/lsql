@@ -192,10 +192,53 @@ void formatDotSnapshot(util::StrBuilder& b, const Snapshot& p, size_t phase_inde
 std::string formatProfile(const Profiler::Snapshot& p) {
     using util::StrBuilder;
 
+    std::unordered_map<const ScopeNodeSnapshot*, bool> visible;
+    std::unordered_set<const ScopeNodeSnapshot*> visibility_stack;
+
+    auto hasVisibleMetrics = [&]<typename S>(this S& self, const ScopeNodeSnapshot& node) -> bool {
+        if (auto it = visible.find(&node); it != visible.end()) {
+            return it->second;
+        }
+
+        if (!visibility_stack.insert(&node).second) {
+            return false;
+        }
+
+        bool result = !node.metrics->empty();
+        for (auto* child : node.children) {
+            result = result || self(*child);
+        }
+
+        visibility_stack.erase(&node);
+        visible[&node] = result;
+        return result;
+    };
+
     auto formatNode = [&]<typename S>(this S& self, const ScopeNodeSnapshot& node, auto& visited) {
+        if (!hasVisibleMetrics(node)) {
+            return StrBuilder();
+        }
+
         visited.insert(&node);
         if (node.metrics->empty()) {
-            return StrBuilder("{} - no metrics", node.name);
+            auto b = StrBuilder("{} - no metrics", node.name);
+            auto cb = StrBuilder();
+            for (auto* child : node.children) {
+                if (!hasVisibleMetrics(*child)) {
+                    continue;
+                }
+
+                if (visited.contains(child)) {
+                    cb.item(StrBuilder("(visited) {}", child->name));
+                } else {
+                    cb.item(self(*child, visited));
+                }
+            }
+
+            if (!cb.empty()) {
+                b.child(StrBuilder("children").block(cb));
+            }
+            return b;
         }
 
         auto b = StrBuilder(node.name);
@@ -204,21 +247,32 @@ std::string formatProfile(const Profiler::Snapshot& p) {
         if (node.parents.size() > 1) {
             auto pb = StrBuilder("parents");
             for (auto* parent : node.parents) {
+                if (!hasVisibleMetrics(*parent)) {
+                    continue;
+                }
                 pb.item(StrBuilder("(see) {}", parent->name));
             }
-            b.child(pb);
+            if (!pb.empty()) {
+                b.child(pb);
+            }
         }
 
         if (!node.children.empty()) {
             auto cb = StrBuilder();
             for (auto* child : node.children) {
+                if (!hasVisibleMetrics(*child)) {
+                    continue;
+                }
+
                 if (visited.contains(child)) {
                     cb.item(StrBuilder("(visited) {}", child->name));
                 } else {
                     cb.item(self(*child, visited));
                 }
             }
-            b.child(StrBuilder("children").block(cb));
+            if (!cb.empty()) {
+                b.child(StrBuilder("children").block(cb));
+            }
         }
 
         return b;
