@@ -10,6 +10,7 @@ struct UnionAllRelation;
 struct UnionAllSortedByRelation;
 struct FileRelation;
 struct FileIntervalRelation;
+struct StreamRelation;
 struct NamedRelationReferenceRelation;
 struct MaterializeRelation;
 
@@ -20,6 +21,7 @@ using RelationNode = std::variant< //
     UnionAllSortedByRelation, //
     FileRelation, //
     FileIntervalRelation, //
+    StreamRelation, //
     NamedRelationReferenceRelation, //
     MaterializeRelation //
 >;

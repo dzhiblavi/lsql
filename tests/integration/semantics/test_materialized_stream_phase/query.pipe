@@ -1,0 +1,17 @@
+access =
+    stream 'printf "[2026-May-06 12:00:00.000000] context_id=c1 status_code=500\n[2026-May-06 12:00:01.000000] context_id=c2 status_code=200\n"'
+
+app =
+    stream 'printf "[2026-May-06 12:00:00.000000] context_id=c1 message=boom\n[2026-May-06 12:00:01.000000] context_id=c3 message=other\n"'
+
+contexts_500 =
+    $access
+    | where .status_code = '500'
+    | select .context_id
+
+$app
+| where .context_id in (
+    $contexts_500
+)
+| select .timestamp, .message, .context_id
+| sort by .context_id

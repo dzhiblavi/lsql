@@ -12,6 +12,7 @@ class NativeArchive : public StreamSource {
  public:
     explicit NativeArchive(Arc<File> file) : file_(std::move(file)) { verify(file_ != nullptr); }
     Box<Stream> stream() const override;
+    std::string describe() const override;
 
  private:
     Arc<File> file_;

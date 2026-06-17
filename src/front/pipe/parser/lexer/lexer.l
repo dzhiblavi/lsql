@@ -62,6 +62,7 @@ TIMESTAMP        [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}
 "*"              { return TOKEN_STAR; }
 
 file             { return TOKEN_FILE; }
+stream           { return TOKEN_STREAM; }
 values           { return TOKEN_VALUES; }
 union            { return TOKEN_UNION; }
 merge            { return TOKEN_MERGE; }

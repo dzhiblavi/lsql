@@ -111,6 +111,9 @@ coro::generator<Line> StreamLineSource::lines() const {
         auto chunk = arc<std::string>(config::Buffering::DecompressedChunkSize, '\0');
         auto read = stream->read(chunk->size(), std::span<char>(chunk->data(), chunk->size()));
         if (read == 0) {
+            if (partial && !partial->empty()) {
+                co_yield Line({partial, partial->data()}, partial->size());
+            }
             co_return;
         }
 
@@ -142,7 +145,7 @@ coro::generator<Line> StreamLineSource::lines() const {
 }
 
 std::string StreamLineSource::describe() const {
-    return "streaming line source";
+    return source_->describe();
 }
 
 }  // namespace lsql::back::storage

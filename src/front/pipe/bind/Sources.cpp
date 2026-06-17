@@ -87,6 +87,13 @@ bound::Source bindSource(ast::FileIntervalSource s, auto&& self, Context& /*ctx*
     };
 }
 
+bound::Source bindSource(ast::StreamSource s, auto&& /*self*/, Context& /*ctx*/) {
+    return {
+        .node = bound::StreamSource{.command = std::move(s.command)},
+        .fields_out = FieldSetNode::unknownSet(),
+    };
+}
+
 bound::Source bindSource(ast::UnionAllSource s, auto&& /*self*/, Context& ctx) {
     auto left = bindPipeline(std::move(*s.left), ctx);
     auto right = bindPipeline(std::move(*s.right), ctx);

@@ -92,6 +92,10 @@ struct FileIntervalRelation {
     int interval_s;
 };
 
+struct StreamRelation {
+    std::string command;
+};
+
 struct NamedRelationReferenceRelation {
     std::string name;
 };

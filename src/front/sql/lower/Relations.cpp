@@ -412,6 +412,17 @@ ir::Relation lowerToIR(bound::FileIntervalRelation r, auto& info, Context& ctx) 
     };
 }
 
+ir::Relation lowerToIR(bound::StreamRelation r, auto& info, Context& ctx) {
+    auto fields = info.fields_out->fieldSet();
+    llog::info(
+        "stream command={}, requested fields: {}", r.command, to_string(fields, *ctx.binding()));
+
+    return {
+        .node = ir::StreamRelation{.command = std::move(r.command)},
+        .schema = Schema::fromFieldSet(fields),
+    };
+}
+
 ir::Relation lowerToIR(bound::NamedRelationReferenceRelation r, auto& /*info*/, Context& ctx) {
     auto schema = ctx.find(r.name);
 

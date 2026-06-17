@@ -124,7 +124,18 @@ struct Builder {
 
     void build(const plan::Log& n, const plan::Operation& op) {
         auto [lines, type] = open(n);
+        buildLog(op, std::move(lines), type);
+    }
 
+    void build(const plan::Stream& n, const plan::Operation& op) {
+        auto [lines, type] = open(n);
+        buildLog(op, std::move(lines), type);
+    }
+
+    void buildLog(
+        const plan::Operation& op,
+        Arc<back::storage::LineSource> lines,
+        std::optional<logfmt::LogType> type) {
         for (auto&& [phase, fields] : op.required_fields) {
             absl::flat_hash_map<std::string_view, SlotId> slots;
             uint32_t num_slots = 0;

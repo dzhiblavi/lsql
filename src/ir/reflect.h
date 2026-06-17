@@ -245,6 +245,12 @@ struct Reflect<FileIntervalRelation> {
 };
 
 template <>
+struct Reflect<StreamRelation> {
+    static auto childNodes() { return std::make_tuple(); }
+    static auto fields() { return std::make_tuple(&StreamRelation::command); }
+};
+
+template <>
 struct Reflect<NamedRelationReferenceRelation> {
     static auto childNodes() { return std::make_tuple(); }
     static auto fields() { return std::make_tuple(&NamedRelationReferenceRelation::name); }

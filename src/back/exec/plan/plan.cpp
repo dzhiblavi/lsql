@@ -77,6 +77,10 @@ void init(Log& /*node*/, Arc<Operation> /*op*/, int /*phase*/) {
     // nothing to do
 }
 
+void init(Stream& /*node*/, Arc<Operation> /*op*/, int /*phase*/) {
+    // nothing to do
+}
+
 void init(MarkJoin& node, Arc<Operation> op, int phase) {
     {  // match
         auto upstream = FieldSet::withField(node.match_field_id);
@@ -429,6 +433,15 @@ class Planner {
                         .path = r.path,
                         .range = TimeRange{r.ts_from, r.ts_to},
                     },
+                .min_phase = 0,
+                .schema = info.schema,
+            });
+    }
+
+    Arc<Operation> planRelation(ir::StreamRelation r, auto& info) {
+        return arc(
+            Operation{
+                .node = Stream{.command = std::move(r.command)},
                 .min_phase = 0,
                 .schema = info.schema,
             });

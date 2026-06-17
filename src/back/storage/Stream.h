@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <span>
+#include <string>
 
 namespace lsql::back::storage {
 
@@ -17,6 +18,7 @@ class StreamSource {
  public:
     virtual ~StreamSource() = default;
     virtual Box<Stream> stream() const = 0;
+    virtual std::string describe() const { return "stream"; }
 };
 
 }  // namespace lsql::back::storage

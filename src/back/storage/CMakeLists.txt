@@ -1,8 +1,10 @@
 find_package(ZLIB REQUIRED)
+find_package(Threads REQUIRED)
 
 add_library(
     lsql-back-storage STATIC
     Archive.cpp
+    CommandStream.cpp
     PagedFile.cpp
     Page.cpp
     LineSource.cpp
@@ -15,4 +17,5 @@ target_link_libraries(
     libcoro
     llog
     ZLIB::ZLIB
+    Threads::Threads
 )

@@ -69,6 +69,7 @@ AND              { return TOKEN_AND; }
 OR               { return TOKEN_OR; }
 LIKE             { return TOKEN_LIKE; }
 MATERIALIZE      { return TOKEN_MATERIALIZE; }
+STREAM           { return TOKEN_STREAM; }
 String           { return TOKEN_STRING; }
 Int              { return TOKEN_INT; }
 Float            { return TOKEN_FLOAT; }

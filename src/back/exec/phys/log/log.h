@@ -8,9 +8,10 @@ namespace lsql::back::exec::phys {
 
 struct LogFile {
     Arc<back::storage::LineSource> lines;
-    logfmt::LogType type;
+    std::optional<logfmt::LogType> type;
 };
 
 LogFile open(const plan::Log& log);
+LogFile open(const plan::Stream& stream);
 
 }  // namespace lsql::back::exec::phys

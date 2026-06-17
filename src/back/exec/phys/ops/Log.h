@@ -7,6 +7,9 @@
 #include "back/storage/LineSource.h"
 
 #include "config/build_settings.h"
+#include "core/exceptions.h"
+
+#include <optional>
 
 namespace lsql::back::exec::phys {
 
@@ -14,7 +17,7 @@ class Log : public Source, public OperationBase<Log> {
  public:
     Log(int id,
         Arc<back::storage::LineSource> log,
-        back::logfmt::LogType type,
+        std::optional<back::logfmt::LogType> type,
         absl::flat_hash_map<std::string_view, SlotId> slots,
         uint32_t num_slots)
         : OperationBase(id)
@@ -63,7 +66,7 @@ class Log : public Source, public OperationBase<Log> {
                 }
             };
 
-            auto parse_func = back::logfmt::parseKeyValueFunc<decltype(parser)&>(type_);
+            back::logfmt::ParseKeyValueFunc<decltype(parser)&> parse_func = nullptr;
             const auto line_slot = slots_.find(config::Semantics::LineIdentifier);
             const bool has_line = line_slot != slots_.end();
 
@@ -74,6 +77,14 @@ class Log : public Source, public OperationBase<Log> {
 
                 {
                     auto _ = parse_scope_.scope();
+                    if (parse_func == nullptr) {
+                        if (!type_.has_value()) {
+                            type_ = back::logfmt::detectLogType(line.view());
+                        }
+                        require(type_.has_value(), "failed to detect log type in {}", line.view());
+                        parse_func = back::logfmt::parseKeyValueFunc<decltype(parser)&>(*type_);
+                    }
+
                     parse_func(line.view(), parser);
                     if (has_line) {
                         insert(line_slot->second, line.view());
@@ -99,7 +110,7 @@ class Log : public Source, public OperationBase<Log> {
 
  private:
     Arc<back::storage::LineSource> log_;
-    back::logfmt::LogType type_;
+    std::optional<back::logfmt::LogType> type_;
     absl::flat_hash_map<std::string_view, SlotId> slots_;
     uint32_t num_slots_;
 

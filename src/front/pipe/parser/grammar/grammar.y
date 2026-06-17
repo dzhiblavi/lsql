@@ -37,6 +37,7 @@
 }
 
 %token TOKEN_FILE.
+%token TOKEN_STREAM.
 %token TOKEN_VALUES.
 %token TOKEN_UNION.
 %token TOKEN_MERGE.
@@ -193,6 +194,13 @@ source(S) ::= TOKEN_FILE(F) TOKEN_PATH(P) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLU
             .interval_s = std::stoi(I.text),
         },
         .span = merge(F.span, I.span),
+    };
+}
+
+source(S) ::= TOKEN_STREAM(Stream) TOKEN_STR(Command). {
+    S = new ast::Source{
+        .node = ast::StreamSource{ .command = unquote(Command.text) },
+        .span = merge(Stream.span, Command.span),
     };
 }
 

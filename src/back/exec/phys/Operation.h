@@ -34,7 +34,6 @@ class OperationBase : public virtual Operation {
 
     bool emit(const Record* record) {
         auto _ = prof_.scope();
-        verify_dbg(!subscribers_.empty());
 
         auto it = subscribers_.begin();
         while (it != subscribers_.end()) {

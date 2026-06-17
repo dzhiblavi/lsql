@@ -30,6 +30,10 @@ struct FileIntervalSource {
     timestamp_t ts_to;
 };
 
+struct StreamSource {
+    std::string command;
+};
+
 struct UnionAllSource {
     Box<Pipeline> left;
     Box<Pipeline> right;

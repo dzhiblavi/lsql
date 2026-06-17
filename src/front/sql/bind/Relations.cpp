@@ -349,6 +349,13 @@ bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& self, Context& 
     };
 }
 
+bound::Relation bindRelation(ast::StreamRelation r, auto&& /*self*/, Context& /*ctx*/) {
+    return {
+        .node = bound::StreamRelation{.command = std::move(r.command)},
+        .fields_out = FieldSetNode::unknownSet(),
+    };
+}
+
 bound::Relation bindRelation(ast::NamedRelationReferenceRelation r, auto&& self, Context& ctx) {
     auto child_node_ptr = ctx.find(r.name);
     requireAt(child_node_ptr != nullptr, self.span, "unknown named relation '{}'", r.name);

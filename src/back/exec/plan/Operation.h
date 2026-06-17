@@ -49,6 +49,10 @@ struct Log {
     std::optional<TimeRange> range;
 };
 
+struct Stream {
+    std::string command;
+};
+
 struct MarkJoin {
     Arc<Operation> match;
     Arc<Operation> source;

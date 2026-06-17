@@ -8,6 +8,7 @@ struct AdhocSource;
 struct NamedPipelineReferenceSource;
 struct FileSource;
 struct FileIntervalSource;
+struct StreamSource;
 struct UnionAllSource;
 struct UnionAllSortedBySource;
 
@@ -16,6 +17,7 @@ using SourceNode = std::variant< //
     NamedPipelineReferenceSource, //
     FileSource, //
     FileIntervalSource, //
+    StreamSource, //
     UnionAllSource, //
     UnionAllSortedBySource //
 >;

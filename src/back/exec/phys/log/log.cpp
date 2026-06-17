@@ -2,6 +2,7 @@
 #include "back/exec/phys/log/search/SearchTimestamp.h"
 
 #include "back/storage/Archive.h"
+#include "back/storage/CommandStream.h"
 #include "back/storage/LineSource.h"
 #include "back/storage/PagedFile.h"
 
@@ -87,6 +88,15 @@ LogFile getFileSource(std::string path, std::optional<TimeRange> range) {
 
 LogFile open(const plan::Log& log) {
     return getFileSource(log.path, log.range);
+}
+
+LogFile open(const plan::Stream& stream) {
+    auto stream_source = arc<back::storage::CommandStreamSource>(stream.command);
+    auto line_source = arc<back::storage::StreamLineSource>(stream_source);
+    return {
+        .lines = line_source,
+        .type = std::nullopt,
+    };
 }
 
 }  // namespace lsql::back::exec::phys

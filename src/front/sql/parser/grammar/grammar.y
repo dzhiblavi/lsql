@@ -24,6 +24,7 @@
     using lsql::Box;
     using lsql::ValueType;
     using lsql::front::common::ast::Literal;
+    using lsql::front::common::ast::removeQuotes;
 }
 
 %token TOKEN_SELECT.
@@ -72,6 +73,7 @@
 %token TOKEN_EXCLAMATION.
 %token TOKEN_NOT.
 %token TOKEN_TIMESTAMP.
+%token TOKEN_STREAM.
 
 // Precedence (from LOWEST to HIGHEST)
 %left TOKEN_UNION_ALL.
@@ -285,6 +287,15 @@ file_source(F) ::= TOKEN_PATH(File) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKE
             .interval_s = std::stoi(Interval.text),
         },
         .span = merge(File.span, Interval.span),
+    };
+}
+
+file_source(F) ::= TOKEN_STREAM(Stream) TOKEN_STR(Command). {
+    F = new ast::Relation{
+        .node = ast::StreamRelation{
+            .command = removeQuotes(Command.text),
+        },
+        .span = merge(Stream.span, Command.span),
     };
 }
 

@@ -117,4 +117,8 @@ Box<Stream> NativeArchive::stream() const {
     return box<NativeArchiveStream>(file_);
 }
 
+std::string NativeArchive::describe() const {
+    return std::format("archive '{}'", file_->path().c_str());
+}
+
 }  // namespace lsql::back::storage

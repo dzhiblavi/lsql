@@ -44,11 +44,17 @@ class MaterializeCollector : public OperationBase<MaterializeCollector> {
     // Subscriber
     bool consume(const Record* record) {
         if (record == nullptr) {
-            return emit(nullptr);
+            if (active()) {
+                emit(nullptr);
+            }
+            return false;
         }
 
         state_->records.push_back(record->clone());
-        return emit(record);
+        if (active()) {
+            emit(record);
+        }
+        return true;
     }
 
     Arc<MaterializeState> state_;

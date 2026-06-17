@@ -100,6 +100,10 @@ struct FileIntervalRelation {
     timestamp_t ts_to;
 };
 
+struct StreamRelation {
+    std::string command;
+};
+
 struct NamedRelationReferenceRelation {
     std::string name;
 };

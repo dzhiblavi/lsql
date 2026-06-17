@@ -28,6 +28,10 @@ struct FileIntervalSource {
     int interval_s;
 };
 
+struct StreamSource {
+    std::string command;
+};
+
 struct UnionAllSource {
     Box<Pipeline> left;
     Box<Pipeline> right;
