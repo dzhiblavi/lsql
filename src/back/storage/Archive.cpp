@@ -102,7 +102,7 @@ class NativeArchiveStream : public Stream {
 
  private:
     Arc<File> file_;
-    std::array<char, config::Buffering::CompressedChunkSize> inbuf_{};
+    std::array<char, config::Storage::ArchiveInputChunkSize> inbuf_{};
 
     // state
     bool compressed_eof_ = false;

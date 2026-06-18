@@ -47,7 +47,7 @@ std::optional<size_t> findLineBegin(const back::storage::File& file, size_t offs
         return offset;
     }
 
-    std::array<char, config::Buffering::TimestampSearchBufferSize> buffer{};
+    std::array<char, config::Storage::TimestampSearchBufferSize> buffer{};
     while (offset > 0) {
         size_t chunk_begin = offset > buffer.size() ? offset - buffer.size() : 0;
         size_t chunk_size = offset - chunk_begin;
@@ -67,7 +67,7 @@ std::optional<size_t> findLineBegin(const back::storage::File& file, size_t offs
 }
 
 Line readLine(const back::storage::File& file, size_t begin) {
-    std::array<char, config::Buffering::TimestampSearchBufferSize> buffer{};
+    std::array<char, config::Storage::TimestampSearchBufferSize> buffer{};
     std::string text;
     size_t offset = begin;
 

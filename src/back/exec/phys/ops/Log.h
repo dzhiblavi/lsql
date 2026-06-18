@@ -67,7 +67,7 @@ class Log : public Source, public OperationBase<Log> {
             };
 
             back::logfmt::ParseKeyValueFunc<decltype(parser)&> parse_func = nullptr;
-            const auto line_slot = slots_.find(config::Semantics::LineIdentifier);
+            const auto line_slot = slots_.find(config::Language::LineIdentifier);
             const bool has_line = line_slot != slots_.end();
 
             auto lines = log_->lines();

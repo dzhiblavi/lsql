@@ -1,5 +1,6 @@
 #include "back/storage/CommandStream.h"
 
+#include "config/build_settings.h"
 #include "core/exceptions.h"
 
 #include <array>
@@ -144,7 +145,7 @@ class CommandStream : public Stream {
     }
 
     void drainStderr() {
-        std::array<char, 4096> buf{};
+        std::array<char, config::Storage::CommandStderrBufferSize> buf{};
         while (true) {
             auto n = ::read(stderr_fd_.get(), buf.data(), buf.size());
             if (n > 0) {
@@ -164,12 +165,10 @@ class CommandStream : public Stream {
     }
 
     void appendStderr(std::string_view data) {
-        constexpr size_t max_stderr_size = 16 * 1024;
-
         std::lock_guard lock(stderr_mutex_);
         stderr_.append(data);
-        if (stderr_.size() > max_stderr_size) {
-            stderr_.erase(0, stderr_.size() - max_stderr_size);
+        if (stderr_.size() > config::Storage::CommandStderrTailSize) {
+            stderr_.erase(0, stderr_.size() - config::Storage::CommandStderrTailSize);
         }
     }
 

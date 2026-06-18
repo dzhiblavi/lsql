@@ -1,6 +1,7 @@
 #include "cli/run.h"
 #include "output/Formats.h"
 
+#include "config/build_settings.h"
 #include "ir/Aggregates.h"  // IWYU pragma: keep
 #include "ir/Relations.h"   // IWYU pragma: keep
 #include "ir/Scalars.h"     // IWYU pragma: keep
@@ -86,7 +87,7 @@ TCLAP::ValueArg<unsigned> optimize_passes_arg{
     "optimize-passes",
     "number of optimization passes",
     false,
-    5,
+    config::Optimizer::DefaultPasses,
     "unsigned",
 };
 
@@ -157,7 +158,10 @@ TCLAP::SwitchArg stacktrace_arg{
 };
 
 bool parseArgs(std::span<const char*> argv) {
-    TCLAP::CmdLine cmd{"tsql", ' ', std::format("{}\nsyntax: {}", formatBuildInfo(), syntaxName())};
+    TCLAP::CmdLine cmd{
+        "tsql",
+        ' ',
+        std::format("{}\n{}\nsyntax: {}", formatBuildInfo(), config::formatBuildSettings(), syntaxName())};
     cmd.add(&query_file_arg);
     cmd.add(&format_arg);
     cmd.add(&log_level_arg);
@@ -236,7 +240,7 @@ std::optional<TimeRange> defaultTimeRange() {
 }
 
 void cliMain(std::span<const char*> argv) {
-    if constexpr (config::Exceptions::StackTracesEnabled) {
+    if constexpr (config::Diagnostics::StackTracesEnabled) {
         cpptrace::enable_inlined_call_resolution(true);
         cpptrace::register_terminate_handler();
         cpptrace::use_default_stderr_logger();

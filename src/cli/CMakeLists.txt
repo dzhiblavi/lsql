@@ -15,6 +15,7 @@ target_link_libraries(
     lsql-back-logfmt
     lsql-optimize
     lsql-core
+    lsql-config
     lsql-util
 )
 
@@ -36,6 +37,7 @@ target_link_libraries(
     lsql-back-logfmt
     lsql-optimize
     lsql-core
+    lsql-config
     lsql-util
     lsql-front-sql
 )

@@ -1,4 +1,5 @@
 add_subdirectory(util)
+add_subdirectory(config)
 add_subdirectory(core)
 add_subdirectory(ir)
 add_subdirectory(optimize)

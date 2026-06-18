@@ -108,7 +108,7 @@ coro::generator<Line> StreamLineSource::lines() const {
     Arc<std::string> partial;
 
     while (true) {
-        auto chunk = arc<std::string>(config::Buffering::DecompressedChunkSize, '\0');
+        auto chunk = arc<std::string>(config::Storage::StreamReadChunkSize, '\0');
         auto read = stream->read(chunk->size(), std::span<char>(chunk->data(), chunk->size()));
         if (read == 0) {
             if (partial && !partial->empty()) {

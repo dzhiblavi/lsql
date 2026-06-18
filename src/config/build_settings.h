@@ -1,27 +1,28 @@
 #pragma once
 
-#include <cstddef>
-#include <string_view>
-
 #include "util/build_info.h"
+
+#include <cstddef>
+#include <string>
+#include <string_view>
 
 namespace lsql::config {
 
-struct Semantics {
+struct Language {
     static inline constexpr std::string_view LineIdentifier = "_line";
 };
 
-struct Buffering {
-    static constexpr inline size_t TimestampSearchBufferSize = 8 * 1024;
-    static constexpr inline size_t CompressedChunkSize = 64 * 1024;
-    static constexpr inline size_t DecompressedChunkSize = 64 * 1024;
+struct Storage {
+    static inline constexpr size_t TimestampSearchBufferSize = 8 * 1024;
+    static inline constexpr size_t ArchiveInputChunkSize = 64 * 1024;
+    static inline constexpr size_t StreamReadChunkSize = 64 * 1024;
+    static inline constexpr size_t PageSizeMultiplier = 2;
+    static inline constexpr size_t CommandStderrBufferSize = 4 * 1024;
+    static inline constexpr size_t CommandStderrTailSize = 16 * 1024;
 };
 
-struct IO {
-    static inline constexpr size_t SystemPageSizeMultiplier = 2;
-};
-
-struct Optimize {
+struct Optimizer {
+    static inline constexpr unsigned DefaultPasses = 5;
     static inline constexpr int CoalesceCostOverhead = 1;
     static inline constexpr int UnaryOpCostOverhead = 1;
     static inline constexpr int BinaryOpCostOverhead = 1;
@@ -31,8 +32,11 @@ struct Optimize {
     static inline constexpr int ProjectionCostOverhead = 10;
 };
 
-struct Exceptions {
+struct Diagnostics {
     static inline constexpr bool StackTracesEnabled = getBuildType() != BuildType::Release;
+    static inline constexpr int SourceContextLines = 2;
 };
+
+std::string formatBuildSettings();
 
 }  // namespace lsql::config

@@ -14,7 +14,7 @@
 namespace lsql {
 
 using RuntimeError = std::conditional_t<
-    config::Exceptions::StackTracesEnabled,
+    config::Diagnostics::StackTracesEnabled,
     cpptrace::runtime_error,
     std::runtime_error>;
 

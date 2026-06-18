@@ -11,7 +11,7 @@ namespace lsql::opt {
 namespace {
 
 struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
-    using Optimize = config::Optimize;
+    using Optimizer = config::Optimizer;
 
     virtual ~ScalarCostEstimator() = default;
 
@@ -26,26 +26,26 @@ struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
     int view(const ir::ValueScalar&, auto&) { return 0; }
 
     int view(const ir::CoalesceScalar&, auto&, auto args) {
-        return std::ranges::fold_left(args, Optimize::CoalesceCostOverhead, std::plus());
+        return std::ranges::fold_left(args, Optimizer::CoalesceCostOverhead, std::plus());
     }
 
     int view(const ir::CastScalar& s, auto&, int arg) {
         int cost = arg;
         if (s.cast_to == ValueType::String) {
-            cost += Optimize::CastToStringCostOverhead;
+            cost += Optimizer::CastToStringCostOverhead;
         }
         if (s.expr->value_type == ValueType::String) {
-            cost += Optimize::ParseStringCostOverhead;
+            cost += Optimizer::ParseStringCostOverhead;
         }
         return cost;
     }
 
-    int view(const ir::LikeScalar&, auto&, int arg) { return Optimize::RegexCostOverhead + arg; }
-    int view(const ir::RSubstrScalar&, auto&, int arg) { return Optimize::RegexCostOverhead + arg; }
-    int view(const ir::UnaryScalar&, auto&, int arg) { return Optimize::UnaryOpCostOverhead + arg; }
+    int view(const ir::LikeScalar&, auto&, int arg) { return Optimizer::RegexCostOverhead + arg; }
+    int view(const ir::RSubstrScalar&, auto&, int arg) { return Optimizer::RegexCostOverhead + arg; }
+    int view(const ir::UnaryScalar&, auto&, int arg) { return Optimizer::UnaryOpCostOverhead + arg; }
 
     int view(const ir::BinaryScalar&, auto&, int left, int right) {
-        return Optimize::BinaryOpCostOverhead + left + right;
+        return Optimizer::BinaryOpCostOverhead + left + right;
     }
 
     void estimateProjector(FieldId id, const auto& s) {
@@ -177,7 +177,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         }
 
         int total_current_cost = inner_estimator.totalCost() + outer_estimator.totalCost() +
-                                 config::Optimize::ProjectionCostOverhead;
+                                 config::Optimizer::ProjectionCostOverhead;
 
         if (collapsed_estimator.totalCost() > total_current_cost) {
             llog::trace(

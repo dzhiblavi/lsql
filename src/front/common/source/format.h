@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config/build_settings.h"
 #include "front/common/source/SourceSpan.h"
 
 #include <format>
@@ -34,10 +35,8 @@ inline std::string format(RichSourceSpan rich_span) {
         return offset;
     };
 
-    constexpr int context = 2;
-
-    int first_line = std::max(0, span.begin.line - context);
-    int last_line = span.end.line + context;
+    int first_line = std::max(0, span.begin.line - config::Diagnostics::SourceContextLines);
+    int last_line = span.end.line + config::Diagnostics::SourceContextLines;
 
     int line_no_width = static_cast<int>(std::to_string(last_line).size());
 

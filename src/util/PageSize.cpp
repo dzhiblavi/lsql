@@ -16,7 +16,7 @@ size_t systemPageSize() {
 }
 
 size_t pageSize() {
-    return config::IO::SystemPageSizeMultiplier * systemPageSize();
+    return config::Storage::PageSizeMultiplier * systemPageSize();
 }
 
 size_t pageCount(size_t file_size) {
