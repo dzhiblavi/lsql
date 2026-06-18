@@ -7,6 +7,7 @@ add_library(
     PageSize.cpp
     thread.cpp
     uniq_id.cpp
+    OrderedSink.cpp
     instrument/duration.cpp
 )
 

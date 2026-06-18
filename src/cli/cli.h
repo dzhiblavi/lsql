@@ -64,6 +64,12 @@ TCLAP::ValueArg<unsigned> threads_arg{
     "unsigned",
 };
 
+TCLAP::SwitchArg keep_output_order_arg{
+    "k",
+    "keep-output-order",
+    "buffer outputs to print them in query order",
+};
+
 TCLAP::ValueArg<std::string> time_from_arg{
     "",
     "time-from",
@@ -161,10 +167,12 @@ bool parseArgs(std::span<const char*> argv) {
     TCLAP::CmdLine cmd{
         "tsql",
         ' ',
-        std::format("{}\n{}\nsyntax: {}", formatBuildInfo(), config::formatBuildSettings(), syntaxName())};
+        std::format(
+            "{}\n{}\nsyntax: {}", formatBuildInfo(), config::formatBuildSettings(), syntaxName())};
     cmd.add(&query_file_arg);
     cmd.add(&format_arg);
     cmd.add(&log_level_arg);
+    cmd.add(&keep_output_order_arg);
     cmd.add(&force_run_arg);
     cmd.add(&explain_arg);
     cmd.add(&print_ast_arg);
@@ -271,6 +279,7 @@ void cliMain(std::span<const char*> argv) {
         .optimization_passes = optimize_passes_arg,
         .explain = explain_arg,
         .num_threads = threads_arg,
+        .keep_output_order = keep_output_order_arg,
         .out_format = *format,
         .default_time_range = defaultTimeRange(),
     };

@@ -12,6 +12,8 @@
 
 #include "ir/Stringifier.h"
 #include "optimize/optimize.h"
+
+#include "util/OrderedSink.h"
 #include "util/ThreadPool.h"
 
 #include <fstream>
@@ -49,22 +51,6 @@ class ConsumerBridge : public back::exec::phys::Subscriber {
     Box<output::Consumer> consumer_;
 };
 
-struct StdoutSink {
-    StdoutSink() = default;
-
-    void push(std::string_view s) { buf_ << s << '\n'; }
-
-    void done() {
-        std::lock_guard lg(m_);
-        std::cout << buf_.str() << '\n';
-        buf_ = {};
-    }
-
- private:
-    inline static std::mutex m_;
-    std::stringstream buf_;
-};
-
 struct Settings {
     bool print_optimization_report;
     bool print_ir_optimized;
@@ -76,6 +62,7 @@ struct Settings {
     unsigned optimization_passes;
     bool explain;
     unsigned num_threads;
+    bool keep_output_order;
     output::Format out_format;
     std::optional<TimeRange> default_time_range;
 };
@@ -199,14 +186,26 @@ inline void run(ir::Program ir, Settings s) {
     llog::info("building physical operations");
     auto phys = back::exec::phys::build(plan);
 
-    std::vector<Arc<ConsumerBridge>> ops;
+    std::mutex print_lock;
+    std::vector<Box<util::OrderedSink>> sinks;
+    std::vector<Box<ConsumerBridge>> ops;
     for (auto&& [_, phase] : phys.phases) {
         for (auto&& [schema, operation] : phase.outputs) {
-            auto consumer = arc<ConsumerBridge>(
-                schema, output::makeConsumer<StdoutSink>(s.out_format, plan.field_binding));
+            auto sink = box<util::OrderedSink>(
+                &std::cout, &print_lock, s.keep_output_order && !sinks.empty());
+
+            if (!sinks.empty()) {
+                sinks.back()->setNext(sink.get());
+            }
+
+            auto consumer = box<ConsumerBridge>(
+                schema,
+                output::makeConsumer<util::OrderedSink>(
+                    sink.get(), s.out_format, plan.field_binding));
 
             operation->output(consumer.get());
-            ops.push_back(consumer);
+            ops.push_back(std::move(consumer));
+            sinks.push_back(std::move(sink));
         }
     }
 

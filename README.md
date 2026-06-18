@@ -62,6 +62,7 @@ Both `lsql` and `lpipe` share the same CLI flags.
 -f, --format              JSON, TSKV, CSVHeader; default TSKV
 -l, --log-level           Trace, Debug, Info, Warn, Err, Critical, Off
 -j, --threads             max worker threads
+-k, --keep-output-order   buffer output groups and print them in query order
 --time-from               default lower timestamp, ISO8601
 --time-to                 default upper timestamp, ISO8601
 -o, --optimize-passes     number of optimization passes; default 5
@@ -128,4 +129,5 @@ Supported output formats:
 - `CSVHeader`: a header row followed by comma-separated rows.
 
 Multiple top-level queries produce multiple output groups. The order of those
-groups is unspecified.
+groups is unspecified by default. Use `--keep-output-order` to buffer output
+groups and print them in query order.

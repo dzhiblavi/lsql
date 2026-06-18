@@ -10,9 +10,9 @@ namespace lsql::output {
 template <Sink S>
 class CSVHeaderFormatter : public Consumer {
  public:
-    CSVHeaderFormatter(S sink, ConstFieldBindingPtr binding)
+    CSVHeaderFormatter(S* sink, ConstFieldBindingPtr binding)
         : binding_(std::move(binding))
-        , sink_(std::move(sink)) {}
+        , sink_(sink) {}
 
     void consume(Record& r) override {
         if (!header_written_) {
@@ -21,7 +21,7 @@ class CSVHeaderFormatter : public Consumer {
         }
 
         if (r.empty()) {
-            sink_.push("");
+            sink_->push("");
             return;
         }
 
@@ -32,15 +32,15 @@ class CSVHeaderFormatter : public Consumer {
 
         auto str = ss.str();
         str.pop_back();
-        sink_.push(str);
+        sink_->push(str);
     }
 
-    void done() override { sink_.done(); }
+    void done() override { sink_->done(); }
 
  private:
     void writeHeader(const Record& r) {
         if (r.empty()) {
-            sink_.push("");
+            sink_->push("");
             return;
         }
 
@@ -51,12 +51,12 @@ class CSVHeaderFormatter : public Consumer {
 
         auto str = ss.str();
         str.pop_back();
-        sink_.push(str);
+        sink_->push(str);
     }
 
     bool header_written_ = false;
     ConstFieldBindingPtr binding_;
-    [[no_unique_address]] S sink_;
+    S* sink_;
 };
 
 }  // namespace lsql::output

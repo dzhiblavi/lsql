@@ -10,9 +10,9 @@ namespace lsql::output {
 template <Sink S>
 class TSKVFormatter : public Consumer {
  public:
-    TSKVFormatter(S sink, ConstFieldBindingPtr binding)
+    TSKVFormatter(S* sink, ConstFieldBindingPtr binding)
         : binding_(std::move(binding))
-        , sink_(std::move(sink)) {}
+        , sink_(sink) {}
 
     void consume(Record& r) override {
         std::stringstream ss;
@@ -21,14 +21,14 @@ class TSKVFormatter : public Consumer {
             ss << binding_->name(id) << '=' << to_string(std::move(value)) << '\t';
         }
 
-        sink_.push(ss.str());
+        sink_->push(ss.str());
     }
 
-    void done() override { sink_.done(); }
+    void done() override { sink_->done(); }
 
  private:
     ConstFieldBindingPtr binding_;
-    [[no_unique_address]] S sink_;
+    S* sink_;
 };
 
 }  // namespace lsql::output
