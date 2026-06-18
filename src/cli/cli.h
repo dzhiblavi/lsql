@@ -260,8 +260,10 @@ void cliMain(std::span<const char*> argv) {
         .dump_profile = profile_arg,
         .dump_flamegraphs = flamegraph_arg,
         .dump_dot_graph = dot_graph_arg,
-        .is_diagnostic = !force_run_arg && (explain_arg || print_ast_arg || print_bound_arg ||
-                                            print_ir_unoptimized_arg || print_ir_optimized_arg),
+        .is_diagnostic =
+            !force_run_arg &&
+            (explain_arg || print_ast_arg || print_bound_arg || print_ir_unoptimized_arg ||
+             print_ir_optimized_arg || print_optimization_report_arg),
         .optimization_passes = optimize_passes_arg,
         .explain = explain_arg,
         .num_threads = threads_arg,
