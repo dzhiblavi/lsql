@@ -64,16 +64,17 @@ Both `lsql` and `lpipe` share the same CLI flags.
 -j, --threads             max worker threads
 --time-from               default lower timestamp, ISO8601
 --time-to                 default upper timestamp, ISO8601
--e, --explain             print execution plan
+-o, --optimize-passes     number of optimization passes; default 5
+--explain                 print execution plan
 --run                     force execution when using diagnostic flags
 --print-ast               print frontend AST
 --print-bound             print bound AST
 --print-ir-unoptimized    print IR before optimization
 --print-ir-optimized      print IR after optimization
 --print-optimize-report   print optimization report
--p, --profile             print per-phase profile to stderr
---flamegraph              write prof.<N>.folded files
---dot-graph               write prof.dot
+--profile-text            print per-phase text profile to stderr
+--profile-flamegraph      write prof.<N>.folded files
+--profile-dot-graph       write prof.dot
 --print-stacktrace        print stacktrace on span errors
 ```
 

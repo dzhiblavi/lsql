@@ -82,7 +82,7 @@ TCLAP::ValueArg<std::string> time_to_arg{
 };
 
 TCLAP::ValueArg<unsigned> optimize_passes_arg{
-    "",
+    "o",
     "optimize-passes",
     "number of optimization passes",
     false,
@@ -97,7 +97,7 @@ TCLAP::SwitchArg force_run_arg{
 };
 
 TCLAP::SwitchArg explain_arg{
-    "e",
+    "",
     "explain",
     "show execution plan",
 };
@@ -133,21 +133,21 @@ TCLAP::SwitchArg print_ir_optimized_arg{
 };
 
 TCLAP::SwitchArg profile_arg{
-    "p",
-    "profile",
-    "enable profiling (printed to stderr)",
+    "",
+    "profile-text",
+    "print text profile to stderr",
 };
 
 TCLAP::SwitchArg flamegraph_arg{
     "",
-    "flamegraph",
-    "build phase flamegraphs (dumped to prof.N.folded)",
+    "profile-flamegraph",
+    "dump phase profile flamegraphs to prof.N.folded",
 };
 
 TCLAP::SwitchArg dot_graph_arg{
     "",
-    "dot-graph",
-    "build .dot graph (dumped to prof.dot)",
+    "profile-dot-graph",
+    "dump profile as .dot graph to prof.dot",
 };
 
 TCLAP::SwitchArg stacktrace_arg{
