@@ -1,0 +1,7 @@
+input = file input.1.txt
+
+---------------------
+
+$input
+| select .timestamp, .uid, .status
+| sort by .timestamp

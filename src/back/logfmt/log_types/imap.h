@@ -2,7 +2,6 @@
 #include "back/logfmt/log_types/impl.h"
 
 #include "core/time_formats.h"
-#include "util/verify.h"
 
 #include <cassert>
 #include <string>
@@ -14,8 +13,10 @@ struct LogTypeImpl<LogType::IMAP> {
     static constexpr TimeFormat time_format = TimeFormat::ORACLE;
 
     template <typename F>
-    static void parseKeyValue(std::string_view line, F&& callback) {
-        verify_dbg(line.size() >= 21);
+    static bool parseKeyValue(std::string_view line, F&& callback) {
+        if (line.size() < 21) {
+            return false;
+        }
 
         auto timestamp = line.substr(1, 20);
         callback("timestamp", timestamp);
@@ -23,7 +24,7 @@ struct LogTypeImpl<LogType::IMAP> {
         line = line.substr(21);
         auto sep = line.find(' ');
         if (sep == std::string::npos) {
-            return;
+            return true;
         }
         auto curr = line.substr(sep + 1);
 
@@ -44,11 +45,13 @@ struct LogTypeImpl<LogType::IMAP> {
             }
 
             if (sep == std::string::npos) {
-                return;
+                return true;
             }
 
             curr = curr.substr(sep + 1);
         }
+
+        return true;
     }
 
     static bool detectLogType(std::string_view line) { return line.starts_with("["); }

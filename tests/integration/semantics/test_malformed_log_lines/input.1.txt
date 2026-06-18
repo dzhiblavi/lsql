@@ -1,0 +1,4 @@
+5
+[2026-May-06 12:00:01] uid=aaa status=ok
+not a log record
+[2026-May-06 12:00:02] uid=bbb status=fail

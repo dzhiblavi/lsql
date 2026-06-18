@@ -85,7 +85,16 @@ class Log : public Source, public OperationBase<Log> {
                         parse_func = back::logfmt::parseKeyValueFunc<decltype(parser)&>(*type_);
                     }
 
-                    parse_func(line.view(), parser);
+                    const bool parsed = parse_func(line.view(), parser);
+                    if (!parsed) {
+                        prof::addCounter("log.malformed", 1);
+                        {
+                            auto _ = source_read_scope_.scope();
+                            ++it;
+                        }
+                        continue;
+                    }
+
                     if (has_line) {
                         insert(line_slot->second, line.view());
                     }

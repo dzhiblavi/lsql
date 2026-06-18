@@ -25,8 +25,6 @@ back::logfmt::LogType getLogType(const back::storage::LineSource& source) {
         if (auto type = back::logfmt::detectLogType(line.view())) {
             return *type;
         }
-
-        break;
     }
 
     throwError("failed to detect log type");

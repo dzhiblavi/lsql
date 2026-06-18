@@ -10,12 +10,13 @@
 #include <absl/container/flat_hash_map.h>
 #include <magic_enum/magic_enum.hpp>
 
+#include <array>
 #include <string_view>
 
 namespace lsql::back::logfmt {
 
 template <typename F>
-using ParseKeyValueFunc = void (*)(std::string_view, F&& callback);
+using ParseKeyValueFunc = bool (*)(std::string_view, F&& callback);
 
 template <typename F>
 ParseKeyValueFunc<F> parseKeyValueFunc(LogType type) {

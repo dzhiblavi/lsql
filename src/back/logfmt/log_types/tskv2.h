@@ -11,7 +11,7 @@ struct LogTypeImpl<LogType::TSKV2> {
     static constexpr TimeFormat time_format = TimeFormat::SQL;
 
     template <typename F>
-    static void parseKeyValue(std::string_view line, F&& callback) {
+    static bool parseKeyValue(std::string_view line, F&& callback) {
         auto curr = line;
         size_t anon_index = 0;
 
@@ -31,11 +31,13 @@ struct LogTypeImpl<LogType::TSKV2> {
             }
 
             if (tab == std::string::npos) {
-                return;
+                return true;
             }
 
             curr = curr.substr(tab + 1);
         }
+
+        return true;
     }
 
     static bool detectLogType(std::string_view line) { return line.contains("tskv"); }
