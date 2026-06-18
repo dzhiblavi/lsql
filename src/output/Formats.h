@@ -6,6 +6,7 @@ enum class Format {
     JSON,
     TSKV,
     CSVHeader,
+    PrettyTable,
 };
 
 }  // namespace lsql::output

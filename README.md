@@ -59,7 +59,7 @@ Both `lsql` and `lpipe` share the same CLI flags.
 
 ```text
 <path>                    query file; stdin is used when omitted
--f, --format              JSON, TSKV, CSVHeader; default TSKV
+-f, --format              JSON, TSKV, CSVHeader, PrettyTable; default PrettyTable
 -l, --log-level           Trace, Debug, Info, Warn, Err, Critical, Off
 -j, --threads             max worker threads
 -k, --keep-output-order   buffer output groups and print them in query order
@@ -127,6 +127,7 @@ Supported output formats:
 - `JSON`: one JSON object per output record.
 - `TSKV`: tab-separated `field=value` pairs.
 - `CSVHeader`: a header row followed by comma-separated rows.
+- `PrettyTable`: a buffered, human-readable table with aligned columns.
 
 Multiple top-level queries produce multiple output groups. The order of those
 groups is unspecified by default. Use `--keep-output-order` to buffer output

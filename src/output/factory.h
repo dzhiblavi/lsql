@@ -6,6 +6,7 @@
 
 #include "output/CSVHeaderFormatter.h"
 #include "output/JSONFormatter.h"
+#include "output/PrettyTableFormatter.h"
 #include "output/TSKVFormatter.h"
 
 #include "core/types.h"
@@ -21,6 +22,8 @@ Box<Consumer> makeConsumer(S* sink, Format format, ConstFieldBindingPtr binding)
             return box<output::TSKVFormatter<S>>(sink, binding);
         case output::Format::CSVHeader:
             return box<output::CSVHeaderFormatter<S>>(sink, binding);
+        case output::Format::PrettyTable:
+            return box<output::PrettyTableFormatter<S>>(sink, binding);
     }
 }
 

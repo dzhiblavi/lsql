@@ -42,7 +42,7 @@ TCLAP::ValueArg<std::string> format_arg{
     "format",
     "output format",
     false,
-    "TSKV",
+    "PrettyTable",
     "see lsql::output::Format enum",
 };
 
