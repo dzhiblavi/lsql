@@ -2,7 +2,7 @@
 
 #include <concepts>
 
-namespace lsql {
+namespace lsql::front::common::bound {
 
 enum class UnaryExprType {
     BooleanNegate,
@@ -22,4 +22,4 @@ struct UnaryExprTraits<UnaryExprType::BooleanNegate> {
     using ValueType = bool;
 };
 
-}  // namespace lsql
+}  // namespace lsql::front::common::bound

@@ -1,4 +1,6 @@
 #include "front/pipe/lower/Expressions.h"
+
+#include "front/common/lower/Functions.h"
 #include "front/pipe/lower/Pipeline.h"
 
 #include "front/pipe/bound/Sources.h"  // IWYU pragma: keep
@@ -133,13 +135,16 @@ LowerExprResult lowerToIR(bound::BinaryExpr e, auto& info, Context& ctx) {
     auto [left, al] = lowerToIR(std::move(*e.left), ctx);
     auto [right, ar] = lowerToIR(std::move(*e.right), ctx);
 
+    std::vector<ir::Scalar> args;
+    args.push_back(std::move(left));
+    args.push_back(std::move(right));
+
     return LowerExprResult(
         {
             .node =
-                ir::BinaryScalar{
-                    .type = e.type,
-                    .left = box(std::move(left)),
-                    .right = box(std::move(right)),
+                ir::FnCallScalar{
+                    .function = common::lower::function(e.type, info.value_type),
+                    .args = std::move(args),
                 },
             .value_type = info.value_type,
         },
@@ -148,13 +153,15 @@ LowerExprResult lowerToIR(bound::BinaryExpr e, auto& info, Context& ctx) {
 
 LowerExprResult lowerToIR(bound::UnaryExpr e, auto& info, Context& ctx) {
     auto [arg, aggregates] = lowerToIR(std::move(*e.expr), ctx);
+    std::vector<ir::Scalar> args;
+    args.push_back(std::move(arg));
 
     return LowerExprResult(
         {
             .node =
-                ir::UnaryScalar{
-                    .type = e.type,
-                    .expr = box(std::move(arg)),
+                ir::FnCallScalar{
+                    .function = common::lower::function(e.type),
+                    .args = std::move(args),
                 },
             .value_type = info.value_type,
         },

@@ -7,39 +7,39 @@
 
 namespace lsql::front::common::bind {
 
-UnaryExprType exprType(ast::UnaryExprType ast) {
+bound::UnaryExprType exprType(ast::UnaryExprType ast) {
     switch (ast) {
         using enum ast::UnaryExprType;
 
         case Not:
-            return UnaryExprType::BooleanNegate;
+            return bound::UnaryExprType::BooleanNegate;
     }
 }
 
-BinaryExprType exprType(ast::BinaryExprType ast) {
+bound::BinaryExprType exprType(ast::BinaryExprType ast) {
     switch (ast) {
         using enum ast::BinaryExprType;
 
         case Equal:
-            return BinaryExprType::Equal;
+            return bound::BinaryExprType::Equal;
         case NotEqual:
-            return BinaryExprType::NotEqual;
+            return bound::BinaryExprType::NotEqual;
         case And:
-            return BinaryExprType::And;
+            return bound::BinaryExprType::And;
         case Or:
-            return BinaryExprType::Or;
+            return bound::BinaryExprType::Or;
         case Divide:
-            return BinaryExprType::Divide;
+            return bound::BinaryExprType::Divide;
         case Plus:
-            return BinaryExprType::Add;
+            return bound::BinaryExprType::Add;
         case Minus:
-            return BinaryExprType::Subtract;
+            return bound::BinaryExprType::Subtract;
     }
 }
 
-template <UnaryExprType Type>
+template <bound::UnaryExprType Type>
 ValueType unaryExprResultType(ValueType value_type, SourceSpan span) {
-    using Traits = UnaryExprTraits<Type>;
+    using Traits = bound::UnaryExprTraits<Type>;
 
     return dispatch<ValueType>(
         [&]<typename T>(std::type_identity<T>) {
@@ -57,9 +57,9 @@ ValueType unaryExprResultType(ValueType value_type, SourceSpan span) {
         value_type);
 }
 
-template <BinaryExprType Type>
+template <bound::BinaryExprType Type>
 ValueType binaryExprResultType(ValueType left, ValueType right, SourceSpan span) {
-    using Traits = BinaryExprTraits<Type>;
+    using Traits = bound::BinaryExprTraits<Type>;
 
     return dispatch<ValueType>(
         [&]<typename L, typename R>(std::type_identity<L>, std::type_identity<R>) {
@@ -79,12 +79,12 @@ ValueType binaryExprResultType(ValueType left, ValueType right, SourceSpan span)
         right);
 }
 
-ValueType valueType(ValueType arg, UnaryExprType type, SourceSpan span) {
+ValueType valueType(ValueType arg, bound::UnaryExprType type, SourceSpan span) {
     return util::enum_dispatch(
         [&]<auto Type>() { return unaryExprResultType<Type>(arg, span); }, type);
 }
 
-ValueType valueType(ValueType l, ValueType r, BinaryExprType type, SourceSpan span) {
+ValueType valueType(ValueType l, ValueType r, bound::BinaryExprType type, SourceSpan span) {
     return util::enum_dispatch(
         [&]<auto Type>() { return binaryExprResultType<Type>(l, r, span); }, type);
 }

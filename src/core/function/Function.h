@@ -38,6 +38,44 @@ struct Cast {
     bool operator==(const Cast&) const = default;
 };
 
+struct BooleanNegate {
+    bool operator==(const BooleanNegate&) const = default;
+};
+
+struct Equal {
+    bool operator==(const Equal&) const = default;
+};
+
+struct NotEqual {
+    bool operator==(const NotEqual&) const = default;
+};
+
+struct And {
+    bool operator==(const And&) const = default;
+};
+
+struct Or {
+    bool operator==(const Or&) const = default;
+};
+
+struct Divide {
+    ValueType arg_type;
+
+    bool operator==(const Divide&) const = default;
+};
+
+struct Add {
+    ValueType arg_type;
+
+    bool operator==(const Add&) const = default;
+};
+
+struct Subtract {
+    ValueType arg_type;
+
+    bool operator==(const Subtract&) const = default;
+};
+
 struct Percentile {
     std::vector<float> percentiles;
     ValueType args_type;
@@ -77,6 +115,14 @@ using Function = std::variant< //
     RSubstr, //
     Like, //
     Cast, //
+    BooleanNegate, //
+    Equal, //
+    NotEqual, //
+    And, //
+    Or, //
+    Divide, //
+    Add, //
+    Subtract, //
     Percentile, //
     CountNonNull, //
     CountAll, //
@@ -89,16 +135,15 @@ inline bool isScalar(const Function& f) {
     return util::match(
         f,
         util::Overloaded{
-            [](const Substr&) { return true; },
-            [](const Coalesce&) { return true; },
-            [](const RSubstr&) { return true; },
-            [](const Like&) { return true; },
-            [](const Cast&) { return true; },
-            [](const Percentile&) { return false; },
-            [](const CountNonNull&) { return false; },
-            [](const CountAll&) { return false; },
-            [](const Min&) { return false; },
-            [](const Max&) { return false; },
+            [](const Substr&) { return true; },        [](const Coalesce&) { return true; },
+            [](const RSubstr&) { return true; },       [](const Like&) { return true; },
+            [](const Cast&) { return true; },          [](const BooleanNegate&) { return true; },
+            [](const Equal&) { return true; },         [](const NotEqual&) { return true; },
+            [](const And&) { return true; },           [](const Or&) { return true; },
+            [](const Divide&) { return true; },        [](const Add&) { return true; },
+            [](const Subtract&) { return true; },      [](const Percentile&) { return false; },
+            [](const CountNonNull&) { return false; }, [](const CountAll&) { return false; },
+            [](const Min&) { return false; },          [](const Max&) { return false; },
             [](const Sum&) { return false; },
         });
 }

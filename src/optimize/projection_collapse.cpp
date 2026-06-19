@@ -25,6 +25,11 @@ struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
 
     int view(const ir::ValueScalar&, auto&) { return 0; }
 
+    int view(const ir::CoalesceScalar& /*s*/, auto& /*self*/, auto args) {
+        int cost = std::ranges::fold_left(args, 0, std::plus());
+        return cost + Optimizer::CoalesceCostOverhead;
+    }
+
     int view(const ir::FnCallScalar& s, auto&, auto args) {
         int cost = std::ranges::fold_left(args, 0, std::plus());
 
@@ -44,18 +49,18 @@ struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
                 },
                 [&](const func::Like&) { cost += Optimizer::RegexCostOverhead; },
                 [&](const func::RSubstr&) { cost += Optimizer::RegexCostOverhead; },
+                [&](const func::BooleanNegate&) { cost += Optimizer::UnaryOpCostOverhead; },
+                [&](const func::Equal&) { cost += Optimizer::BinaryOpCostOverhead; },
+                [&](const func::NotEqual&) { cost += Optimizer::BinaryOpCostOverhead; },
+                [&](const func::And&) { cost += Optimizer::BinaryOpCostOverhead; },
+                [&](const func::Or&) { cost += Optimizer::BinaryOpCostOverhead; },
+                [&](const func::Divide&) { cost += Optimizer::BinaryOpCostOverhead; },
+                [&](const func::Add&) { cost += Optimizer::BinaryOpCostOverhead; },
+                [&](const func::Subtract&) { cost += Optimizer::BinaryOpCostOverhead; },
                 [&](const auto&) {},
             });
 
         return cost;
-    }
-
-    int view(const ir::UnaryScalar&, auto&, int arg) {
-        return Optimizer::UnaryOpCostOverhead + arg;
-    }
-
-    int view(const ir::BinaryScalar&, auto&, int left, int right) {
-        return Optimizer::BinaryOpCostOverhead + left + right;
     }
 
     void estimateProjector(FieldId id, const auto& s) {
@@ -94,28 +99,16 @@ struct CloneScalarView : ir::ScalarViewPass<CloneScalarView, ir::Scalar> {
         return ir::Scalar{.node = s, .value_type = self.value_type};
     }
 
+    ir::Scalar view(const ir::CoalesceScalar& /*s*/, auto& self, auto args) {
+        return ir::Scalar{
+            .node = ir::CoalesceScalar{.args = std::move(args)},
+            .value_type = self.value_type,
+        };
+    }
+
     ir::Scalar view(const ir::FnCallScalar& s, auto& self, auto args) {
         return ir::Scalar{
             .node = ir::FnCallScalar{.function = s.function, .args = std::move(args)},
-            .value_type = self.value_type,
-        };
-    }
-
-    ir::Scalar view(const ir::UnaryScalar& s, auto& self, auto expr) {
-        return ir::Scalar{
-            .node = ir::UnaryScalar{.type = s.type, .expr = box(std::move(expr))},
-            .value_type = self.value_type,
-        };
-    }
-
-    ir::Scalar view(const ir::BinaryScalar& s, auto& self, auto left, auto right) {
-        return ir::Scalar{
-            .node =
-                ir::BinaryScalar{
-                    .type = s.type,
-                    .left = box(std::move(left)),
-                    .right = box(std::move(right)),
-                },
             .value_type = self.value_type,
         };
     }

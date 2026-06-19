@@ -2,12 +2,9 @@
 
 #include "ir/Scalar.h"
 
-#include "core/exprs/BinaryExpr.h"
-#include "core/exprs/UnaryExpr.h"
 #include "core/function/Function.h"
 
 #include "core/schema/types.h"
-#include "core/types.h"
 #include "core/value/Value.h"
 
 namespace lsql::ir {
@@ -20,20 +17,15 @@ struct ValueScalar {
     Value value;
 };
 
-struct FnCallScalar {
-    func::Function function;
+// Coalesce has weird argument calculation policy
+// that does not match generic functions.
+struct CoalesceScalar {
     std::vector<Scalar> args;
 };
 
-struct UnaryScalar {
-    UnaryExprType type;
-    Box<Scalar> expr;
-};
-
-struct BinaryScalar {
-    BinaryExprType type;
-    Box<Scalar> left;
-    Box<Scalar> right;
+struct FnCallScalar {
+    func::Function function;
+    std::vector<Scalar> args;
 };
 
 struct Scalar {

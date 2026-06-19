@@ -5,7 +5,6 @@
 #include "ir/Scalars.h"
 #include "ir/Statement.h"
 
-#include "core/exprs/BinaryExpr.h"
 #include "core/schema/Schema.h"
 #include "core/types.h"
 #include "core/value/Value.h"
@@ -59,22 +58,21 @@ inline ir::Scalar null(ValueType value_type = ValueType::Null) {
 
 inline ir::Scalar coalesce(std::vector<ir::Scalar> args, ValueType value_type) {
     return ir::Scalar{
-        .node =
-            ir::FnCallScalar{
-                .function = func::Coalesce(),
-                .args = std::move(args),
-            },
+        .node = ir::CoalesceScalar{.args = std::move(args)},
         .value_type = value_type,
     };
 }
 
 inline ir::Scalar add(ir::Scalar left, ir::Scalar right) {
+    std::vector<ir::Scalar> args;
+    args.push_back(std::move(left));
+    args.push_back(std::move(right));
+
     return ir::Scalar{
         .node =
-            ir::BinaryScalar{
-                .type = BinaryExprType::Add,
-                .left = box(std::move(left)),
-                .right = box(std::move(right)),
+            ir::FnCallScalar{
+                .function = func::Add{.arg_type = args[0].value_type},
+                .args = std::move(args),
             },
         .value_type = ValueType::Integer,
     };

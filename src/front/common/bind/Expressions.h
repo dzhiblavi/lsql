@@ -2,23 +2,23 @@
 
 #include "front/common/ast/Expressions.h"
 #include "front/common/bind/Context.h"
+#include "front/common/bound/BinaryExpr.h"
 #include "front/common/bound/ExprKindLevel.h"
 #include "front/common/bound/Expressions.h"
+#include "front/common/bound/UnaryExpr.h"
 #include "front/common/source/SourceSpan.h"
 #include "front/common/source/require_at.h"
 
-#include "core/exprs/BinaryExpr.h"
-#include "core/exprs/UnaryExpr.h"
 #include "core/function/Function.h"
 
 #include <algorithm>
 
 namespace lsql::front::common::bind {
 
-UnaryExprType exprType(ast::UnaryExprType ast);
-BinaryExprType exprType(ast::BinaryExprType ast);
-ValueType valueType(ValueType arg, UnaryExprType type, SourceSpan span);
-ValueType valueType(ValueType l, ValueType r, BinaryExprType type, SourceSpan span);
+bound::UnaryExprType exprType(ast::UnaryExprType ast);
+bound::BinaryExprType exprType(ast::BinaryExprType ast);
+ValueType valueType(ValueType arg, bound::UnaryExprType type, SourceSpan span);
+ValueType valueType(ValueType l, ValueType r, bound::BinaryExprType type, SourceSpan span);
 
 template <typename BoundExpr, typename AstExpr>
 std::vector<BoundExpr> bindExprs(std::vector<AstExpr> exprs, auto& binder, Context& ctx) {
@@ -372,7 +372,7 @@ BoundExprInfo bindLikeExpr(const Arg& arg, SourceSpan arg_span) {
 }
 
 template <BoundExpr Arg>
-std::pair<BoundExprInfo, UnaryExprType> bindUnaryExpr(
+std::pair<BoundExprInfo, bound::UnaryExprType> bindUnaryExpr(
     const Arg& arg, ast::UnaryExprType type, SourceSpan span) {
     auto bound_type = exprType(type);
 
@@ -387,7 +387,7 @@ std::pair<BoundExprInfo, UnaryExprType> bindUnaryExpr(
 }
 
 template <BoundExpr L, BoundExpr R>
-std::pair<BoundExprInfo, BinaryExprType> bindBinaryExpr(
+std::pair<BoundExprInfo, bound::BinaryExprType> bindBinaryExpr(
     const L& l, const R& r, ast::BinaryExprType type, SourceSpan span) {
     auto bound_type = exprType(type);
     auto value_type = valueType(l.value_type, r.value_type, bound_type, span);

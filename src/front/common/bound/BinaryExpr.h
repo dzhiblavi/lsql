@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core/exprs/concepts.h"
+#include "core/function/Concepts.h"
 #include "core/value/null_t.h"
 
-namespace lsql {
+namespace lsql::front::common::bound {
 
 enum class BinaryExprType {
     Equal,
@@ -103,4 +103,4 @@ struct BinaryExprTraits<BinaryExprType::Subtract> {
     using ValueType = L;
 };
 
-}  // namespace lsql
+}  // namespace lsql::front::common::bound

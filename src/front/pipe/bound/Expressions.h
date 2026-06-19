@@ -1,11 +1,11 @@
 #pragma once
 
+#include "front/common/bound/BinaryExpr.h"
 #include "front/common/bound/ExprKindLevel.h"
+#include "front/common/bound/UnaryExpr.h"
 #include "front/pipe/bound/Pipeline.h"
 #include "front/pipe/bound/fwd/Expr.h"
 
-#include "core/exprs/BinaryExpr.h"
-#include "core/exprs/UnaryExpr.h"
 #include "core/function/Function.h"
 #include "core/types.h"
 
@@ -34,13 +34,13 @@ struct LikeExpr {
 };
 
 struct BinaryExpr {
-    BinaryExprType type;
+    common::bound::BinaryExprType type;
     Box<Expr> left;
     Box<Expr> right;
 };
 
 struct UnaryExpr {
-    UnaryExprType type;
+    common::bound::UnaryExprType type;
     Box<Expr> expr;
 };
 

@@ -1,11 +1,13 @@
 #include "back/exec/plan/plan.h"
 
-#include "back/exec/expr/BinaryScalar.h"
+#include "back/exec/expr/BinaryFnScalar.h"
+#include "back/exec/expr/CoalesceScalar.h"
 #include "back/exec/expr/ConstAggregate.h"
-#include "back/exec/expr/FnAggregate.h"
-#include "back/exec/expr/FnScalar.h"
 #include "back/exec/expr/IdentifierScalar.h"
-#include "back/exec/expr/UnaryScalar.h"
+#include "back/exec/expr/NaryFnScalar.h"
+#include "back/exec/expr/NullaryFnAggregate.h"
+#include "back/exec/expr/UnaryFnAggregate.h"
+#include "back/exec/expr/UnaryFnScalar.h"
 #include "back/exec/expr/ValueScalar.h"
 
 #include "ir/Aggregates.h"
@@ -474,63 +476,46 @@ class Planner {
         return arc<ValueScalar>(e.value);
     }
 
+    ScalarPtr planScalar(ir::CoalesceScalar s, auto& info, auto& schema) {
+        auto args = expressionList(std::move(s.args), schema);
+        return arc<CoalesceScalar>(info.value_type, std::move(args));
+    }
+
     ScalarPtr planScalar(ir::FnCallScalar s, auto& info, auto& schema) {
         auto args = expressionList(std::move(s.args), schema);
 
-        return func::buildScalar<ScalarPtr>(s.function, [&]<func::Executor E>(E e) {
-            return arc<FnScalar<E>>(info.value_type, std::move(e), std::move(args));
-        });
-    }
-
-    ScalarPtr planScalar(ir::UnaryScalar e, auto& /*info*/, auto& schema) {
-        auto arg = planScalar(std::move(*e.expr), schema);
-
-        switch (e.type) {
-            case UnaryExprType::BooleanNegate:
-                return arc<UnaryScalar<BooleanNegationOp>>(arg);
-        }
-    }
-
-    ScalarPtr planScalar(ir::BinaryScalar e, auto& info, auto& schema) {
-        auto l = planScalar(std::move(*e.left), schema);
-        auto r = planScalar(std::move(*e.right), schema);
-
-        switch (e.type) {
-            case BinaryExprType::Equal:
-                return arc<BinaryScalar<EqualOp>>(l, r, l->valueType(), r->valueType());
-            case BinaryExprType::NotEqual:
-                return arc<BinaryScalar<NotEqualOp>>(l, r, l->valueType(), r->valueType());
-            case BinaryExprType::And:
-                return arc<BinaryScalar<AndOp>>(l, r);
-            case BinaryExprType::Or:
-                return arc<BinaryScalar<OrOp>>(l, r);
-            case BinaryExprType::Divide:
-                return dispatch<ScalarPtr>(
-                    [&]<Dividable T>(std::type_identity<T>) -> ScalarPtr {
-                        return arc<BinaryScalar<DivideOp<T>>>(l, r, info.value_type);
-                    },
-                    info.value_type);
-            case BinaryExprType::Add:
-                return dispatch<ScalarPtr>(
-                    [&]<Addable T>(std::type_identity<T>) -> ScalarPtr {
-                        return arc<BinaryScalar<AddOp<T>>>(l, r, info.value_type);
-                    },
-                    info.value_type);
-            case BinaryExprType::Subtract:
-                return dispatch<ScalarPtr>(
-                    [&]<Subtractable T>(std::type_identity<T>) -> ScalarPtr {
-                        return arc<BinaryScalar<SubtractOp<T>>>(l, r, info.value_type);
-                    },
-                    info.value_type);
-        }
+        return func::buildScalar<ScalarPtr>(
+            s.function,
+            util::Overloaded{
+                [&]<func::UnaryExecutor E>(E e) {
+                    verify(args.size() == 1);
+                    return arc<UnaryFnScalar<E>>(info.value_type, std::move(e), std::move(args[0]));
+                },
+                [&]<func::BinaryExecutor E>(E e) {
+                    verify(args.size() == 2);
+                    return arc<BinaryFnScalar<E>>(
+                        info.value_type, std::move(e), std::move(args[0]), std::move(args[1]));
+                },
+                [&]<func::NaryExecutor E>(E e) {
+                    return arc<NaryFnScalar<E>>(info.value_type, std::move(e), std::move(args));
+                },
+            });
     }
 
     Arc<AggregateProjector> planAggregate(ir::FnCallAggregate a, auto& info, auto& schema) {
         auto args = expressionList(std::move(a.args), schema);
-
-        auto aggregate =
-            func::buildAggregate<AggregatePtr>(a.function, [&]<func::Aggregate A>(A a) {
-                return arc<FnAggregate<A>>(info.value_type, std::move(a), std::move(args));
+        auto aggregate = func::buildAggregate<AggregatePtr>(
+            a.function,
+            util::Overloaded{
+                [&]<func::NullaryAggregate A>(A a) {
+                    verify(args.empty());
+                    return arc<NullaryFnAggregate<A>>(info.value_type, std::move(a));
+                },
+                [&]<func::UnaryAggregate A>(A a) {
+                    verify(args.size() == 1);
+                    return arc<UnaryFnAggregate<A>>(
+                        info.value_type, std::move(a), std::move(args[0]));
+                },
             });
 
         return box(

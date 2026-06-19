@@ -4,10 +4,9 @@
 #include "front/sql/bound/fwd/Expr.h"
 #include "front/sql/bound/fwd/Relation.h"
 
+#include "front/common/bound/BinaryExpr.h"
 #include "front/common/bound/ExprKindLevel.h"
-
-#include "core/exprs/BinaryExpr.h"
-#include "core/exprs/UnaryExpr.h"
+#include "front/common/bound/UnaryExpr.h"
 
 #include "core/schema/FieldSet.h"
 #include "core/types.h"
@@ -39,13 +38,13 @@ struct LikeExpr {
 };
 
 struct BinaryExpr {
-    BinaryExprType type;
+    common::bound::BinaryExprType type;
     Box<Expr> left;
     Box<Expr> right;
 };
 
 struct UnaryExpr {
-    UnaryExprType type;
+    common::bound::UnaryExprType type;
     Box<Expr> expr;
 };
 

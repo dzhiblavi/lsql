@@ -25,21 +25,15 @@ struct Reflect<ValueScalar> {
 };
 
 template <>
+struct Reflect<CoalesceScalar> {
+    static auto childNodes() { return std::make_tuple(&CoalesceScalar::args); }
+    static auto fields() { return std::make_tuple(); }
+};
+
+template <>
 struct Reflect<FnCallScalar> {
     static auto childNodes() { return std::make_tuple(&FnCallScalar::args); }
     static auto fields() { return std::make_tuple(&FnCallScalar::function); }
-};
-
-template <>
-struct Reflect<UnaryScalar> {
-    static auto childNodes() { return std::make_tuple(&UnaryScalar::expr); }
-    static auto fields() { return std::make_tuple(&UnaryScalar::type); }
-};
-
-template <>
-struct Reflect<BinaryScalar> {
-    static auto childNodes() { return std::make_tuple(&BinaryScalar::left, &BinaryScalar::right); }
-    static auto fields() { return std::make_tuple(&BinaryScalar::type); }
 };
 
 template <>

@@ -33,92 +33,15 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
             values.push_back(std::get<ir::ValueScalar>(arg.node).value);
         }
 
-        return func::buildScalar<ir::Scalar>(s.function, [&]<func::Executor E>(E executor) {
+        return func::buildScalar<ir::Scalar>(s.function, [&]<typename E>(E executor) {
             ctx.setChanges().note("folded constant scalar function call");
-            auto result = executor.execute(values);
+            auto result = execute(executor, values);
 
             return ir::Scalar{
                 .node = ir::ValueScalar{.value = std::move(result)},
                 .value_type = self.value_type,
             };
         });
-    }
-
-    ir::Scalar optimize(ir::UnaryScalar& s, auto& self) {
-        auto* v = std::get_if<ir::ValueScalar>(&s.expr->node);
-        if (!v) {
-            return std::move(self);
-        }
-
-        auto value = [&] -> Value {
-            switch (s.type) {
-                case UnaryExprType::BooleanNegate:
-                    return !v->value.get<bool>();
-            }
-        }();
-
-        ctx.setChanges().note("UnaryScalar const propagation");
-        self.node = ir::ValueScalar{.value = value};
-        return std::move(self);
-    }
-
-    ir::Scalar optimize(ir::BinaryScalar& s, auto& self) {
-        auto* vl = std::get_if<ir::ValueScalar>(&s.left->node);
-        auto* vr = std::get_if<ir::ValueScalar>(&s.right->node);
-        if (!vl || !vr) {
-            return std::move(self);
-        }
-
-        auto value = [&] -> Value {
-            switch (s.type) {
-                case BinaryExprType::Equal:
-                    return vl->value == vr->value;
-                case BinaryExprType::NotEqual:
-                    return vl->value != vr->value;
-                case BinaryExprType::And:
-                    return vl->value.get<bool>() && vr->value.get<bool>();
-                case BinaryExprType::Or:
-                    return vl->value.get<bool>() || vr->value.get<bool>();
-                case BinaryExprType::Divide:
-                    return std::visit(
-                        util::Overloaded{
-                            []<Dividable T>(T l, T r) -> Value {
-                                return r == 0 ? null : Value(l / r);
-                            },
-                            [](auto&&...) -> Value { panic(); },
-                        },
-                        vl->value.variant(),
-                        vr->value.variant());
-                case BinaryExprType::Add:
-                    return std::visit(
-                        util::Overloaded{
-                            []<Addable T>(T l, T r) -> Value {
-                                using U = std::conditional_t<
-                                    std::same_as<T, std::string_view>,
-                                    std::string,
-                                    T>;
-
-                                return U(l) + U(r);
-                            },
-                            [](auto&&...) -> Value { panic(); },
-                        },
-                        vl->value.variant(),
-                        vr->value.variant());
-
-                case BinaryExprType::Subtract:
-                    return std::visit(
-                        util::Overloaded{
-                            []<Subtractable T>(T l, T r) -> Value { return l - r; },
-                            [](auto&&...) -> Value { panic(); },
-                        },
-                        vl->value.variant(),
-                        vr->value.variant());
-            }
-        }();
-
-        ctx.setChanges().note("BinaryScalar const propagation");
-        self.node = ir::ValueScalar{.value = value};
-        return std::move(self);
     }
 
     auto construct(auto& node, auto& self) {
