@@ -1,12 +1,12 @@
 #pragma once
 
+#include "core/function/Function.h"
 #include "front/sql/bound/fwd/Expr.h"
 #include "front/sql/bound/fwd/Relation.h"
 
 #include "front/common/bound/ExprKindLevel.h"
 
 #include "core/exprs/BinaryExpr.h"
-#include "core/exprs/UnaryAggregate.h"
 #include "core/exprs/UnaryExpr.h"
 
 #include "core/schema/FieldSet.h"
@@ -22,32 +22,18 @@ struct IdentifierExpr {
     FieldId field_id;
 };
 
-struct CastExpr {
-    ValueType cast_to;
-    Box<Expr> expr;
-};
-
 struct InExpr {
     Box<Expr> expr;
     Box<Relation> match;
     FieldId match_field_id;
 };
 
-struct LikeExpr {
-    Box<Expr> expr;
-    std::string regex;
-};
-
-struct CoalesceExpr {
+struct FnCallExpr {
+    func::Function func;
     std::vector<Expr> args;
 };
 
-struct PercentileExpr {
-    Box<Expr> expr;
-    std::vector<float> percentiles;
-};
-
-struct RSubstrExpr {
+struct LikeExpr {
     Box<Expr> expr;
     std::string regex;
 };
@@ -57,13 +43,6 @@ struct BinaryExpr {
     Box<Expr> left;
     Box<Expr> right;
 };
-
-struct UnaryAggregateExpr {
-    UnaryAggregateType type;
-    Box<Expr> expr;
-};
-
-struct CountAllExpr {};
 
 struct UnaryExpr {
     UnaryExprType type;

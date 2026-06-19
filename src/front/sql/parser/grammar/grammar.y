@@ -25,6 +25,13 @@
     using lsql::ValueType;
     using lsql::front::common::ast::Literal;
     using lsql::front::common::ast::removeQuotes;
+
+    std::string tolower(std::string text){
+        std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) {
+            return std::tolower(c);
+        });
+        return text;
+    }
 }
 
 %token TOKEN_SELECT.
@@ -454,40 +461,56 @@ expression(E) ::= TOKEN_IDENTIFIER(Id). {
 }
 
 expression(E) ::= TOKEN_STRING(Str) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
+    auto args = std::vector<ast::Expr>();
+    args.push_back(std::move(*S));
+    delete S;
+
     E = new ast::Expr{
-        .node = ast::CastExpr{
-            .cast_to = ValueType::String,
-            .expr = Box<ast::Expr>(S),
+        .node = ast::FnCallExpr{
+            .func = "string",
+            .args = std::move(args),
         },
         .span = merge(Str.span, RP.span),
     };
 }
 
 expression(E) ::= TOKEN_INT(I) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
+    auto args = std::vector<ast::Expr>();
+    args.push_back(std::move(*S));
+    delete S;
+
     E = new ast::Expr{
-        .node = ast::CastExpr{
-            .cast_to = ValueType::Integer,
-            .expr = Box<ast::Expr>(S),
+        .node = ast::FnCallExpr{
+            .func = "int",
+            .args = std::move(args),
         },
         .span = merge(I.span, RP.span),
     };
 }
 
 expression(E) ::= TOKEN_FLOAT(F) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
+    auto args = std::vector<ast::Expr>();
+    args.push_back(std::move(*S));
+    delete S;
+
     E = new ast::Expr{
-        .node = ast::CastExpr{
-            .cast_to = ValueType::Floating,
-            .expr = Box<ast::Expr>(S),
+        .node = ast::FnCallExpr{
+            .func = "float",
+            .args = std::move(args),
         },
         .span = merge(F.span, RP.span),
     };
 }
 
 expression(E) ::= TOKEN_BOOL(B) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
+    auto args = std::vector<ast::Expr>();
+    args.push_back(std::move(*S));
+    delete S;
+
     E = new ast::Expr{
-        .node = ast::CastExpr{
-            .cast_to = ValueType::Boolean,
-            .expr = Box<ast::Expr>(S),
+        .node = ast::FnCallExpr{
+            .func = "bool",
+            .args = std::move(args),
         },
         .span = merge(B.span, RP.span),
     };
@@ -520,7 +543,7 @@ expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
 
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = "builtin_count_nonnull",
+            .func = "count_nonnull",
             .args = std::move(args),
         },
         .span = merge(C.span, RP.span),
@@ -530,7 +553,7 @@ expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
 expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN(RP). {
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = "builtin_count_all",
+            .func = "count_all",
             .args = {},
         },
         .span = merge(C.span, RP.span),
@@ -544,7 +567,7 @@ expression(E) ::= TOKEN_MIN(M) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
 
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = "builtin_min",
+            .func = "min",
             .args = std::move(args),
         },
         .span = merge(M.span, RP.span),
@@ -558,7 +581,7 @@ expression(E) ::= TOKEN_MAX(M) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
 
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = "builtin_max",
+            .func = "max",
             .args = std::move(args),
         },
         .span = merge(M.span, RP.span),
@@ -572,11 +595,23 @@ expression(E) ::= TOKEN_SUM(S) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
 
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = "builtin_sum",
+            .func = "sum",
             .args = std::move(args),
         },
         .span = merge(S.span, RP.span),
     };
+}
+
+expression(E) ::= TOKEN_IDENTIFIER(Id) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = tolower(Id.text),
+            .args = std::move(*L),
+        },
+        .span = merge(Id.span, RP.span),
+    };
+
+    delete L;
 }
 
 expression(E) ::= expression(L) TOKEN_LIKE TOKEN_STR(R). {
@@ -671,7 +706,7 @@ expression(E) ::= expression(L) TOKEN_MINUS expression(R). {
 expression(E) ::= TOKEN_COALESCE(C) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = "builtin_coalesce",
+            .func = "coalesce",
             .args = std::move(*L),
         },
         .span = merge(C.span, RP.span),
@@ -699,7 +734,7 @@ expression(E) ::= TOKEN_PERCENTILE(Pe) TOKEN_LPAREN expression(X) TOKEN_COMMA va
 
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = "builtin_percentile",
+            .func = "percentile",
             .args = std::move(args),
         },
         .span = merge(Pe.span, RP.span),
@@ -726,7 +761,7 @@ expression(E) ::= TOKEN_RSUBSTR(Rs) TOKEN_LPAREN expression(A) TOKEN_COMMA TOKEN
 
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = "builtin_rsubstr",
+            .func = "rsubstr",
             .args = std::move(args),
         },
         .span = merge(Rs.span, RP.span),

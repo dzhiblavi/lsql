@@ -26,6 +26,7 @@ struct TreePrinter {
     StrBuilder print(bool s) { return std::to_string(s); }
     StrBuilder print(int s) { return std::to_string(s); }
     StrBuilder print(int64_t s) { return std::to_string(s); }
+    StrBuilder print(size_t s) { return std::to_string(s); }
 
     template <util::InstanceOf<std::variant> T>
     StrBuilder print(const T& t) {

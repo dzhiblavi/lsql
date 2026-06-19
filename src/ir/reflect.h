@@ -25,27 +25,9 @@ struct Reflect<ValueScalar> {
 };
 
 template <>
-struct Reflect<CoalesceScalar> {
-    static auto childNodes() { return std::make_tuple(&CoalesceScalar::args); }
-    static auto fields() { return std::make_tuple(); }
-};
-
-template <>
-struct Reflect<CastScalar> {
-    static auto childNodes() { return std::make_tuple(&CastScalar::expr); }
-    static auto fields() { return std::make_tuple(&CastScalar::cast_to); }
-};
-
-template <>
-struct Reflect<LikeScalar> {
-    static auto childNodes() { return std::make_tuple(&LikeScalar::expr); }
-    static auto fields() { return std::make_tuple(&LikeScalar::regex); }
-};
-
-template <>
-struct Reflect<RSubstrScalar> {
-    static auto childNodes() { return std::make_tuple(&RSubstrScalar::expr); }
-    static auto fields() { return std::make_tuple(&RSubstrScalar::regex); }
+struct Reflect<FnCallScalar> {
+    static auto childNodes() { return std::make_tuple(&FnCallScalar::args); }
+    static auto fields() { return std::make_tuple(&FnCallScalar::function); }
 };
 
 template <>
@@ -67,21 +49,9 @@ struct Reflect<Scalar> {
 };
 
 template <>
-struct Reflect<UnaryAggregate> {
-    static auto childNodes() { return std::make_tuple(&UnaryAggregate::expr); }
-    static auto fields() { return std::make_tuple(&UnaryAggregate::type); }
-};
-
-template <>
-struct Reflect<CountAllAggregate> {
-    static auto childNodes() { return std::make_tuple(); }
-    static auto fields() { return std::make_tuple(); }
-};
-
-template <>
-struct Reflect<PercentileAggregate> {
-    static auto childNodes() { return std::make_tuple(&PercentileAggregate::expr); }
-    static auto fields() { return std::make_tuple(&PercentileAggregate::percentiles); }
+struct Reflect<FnCallAggregate> {
+    static auto childNodes() { return std::make_tuple(&FnCallAggregate::args); }
+    static auto fields() { return std::make_tuple(&FnCallAggregate::function); }
 };
 
 template <>

@@ -33,21 +33,6 @@ LowerExprResult lowerToIR(bound::ValueExpr e, auto& info, Context& /*ctx*/) {
         {});
 }
 
-LowerExprResult lowerToIR(bound::CastExpr e, auto& info, Context& ctx) {
-    auto [arg, aggregates] = lowerToIR(std::move(*e.expr), ctx);
-
-    return LowerExprResult(
-        {
-            .node =
-                ir::CastScalar{
-                    .cast_to = e.cast_to,
-                    .expr = box(std::move(arg)),
-                },
-            .value_type = info.value_type,
-        },
-        std::move(aggregates));
-}
-
 LowerExprResult lowerToIR(bound::InExpr e, auto& /*info*/, Context& ctx) {
     auto output_id = ctx.binding()->addAnonymous("mark_join", ValueType::Boolean);
 
@@ -89,51 +74,30 @@ LowerExprResult lowerToIR(bound::InExpr e, auto& /*info*/, Context& ctx) {
         {});
 }
 
-LowerExprResult lowerToIR(bound::LikeExpr e, auto& info, Context& ctx) {
-    auto [arg, aggregates] = lowerToIR(std::move(*e.expr), ctx);
-
-    return LowerExprResult(
-        {
-            .node =
-                ir::LikeScalar{
-                    .expr = box(std::move(arg)),
-                    .regex = std::move(e.regex),
-                },
-            .value_type = info.value_type,
-        },
-        std::move(aggregates));
-}
-
-LowerExprResult lowerToIR(bound::UnaryAggregateExpr e, auto& info, Context& ctx) {
-    auto output_field_id = ctx.binding()->addAnonymous("un_agr", info.value_type);
-    auto [expr, aggregates] = lowerToIR(std::move(*e.expr), ctx);
+LowerExprResult lowerToIR(bound::FnCallExpr e, auto& info, Context& ctx) {
+    auto [scalars, aggregates] = lowerToIR(std::move(e.args), ctx);
     verify(aggregates.empty());
 
-    std::vector<ir::Aggregate> aggrs;
-    aggrs.push_back({
-        .node =
-            ir::UnaryAggregate{
-                .type = e.type,
-                .expr = box(std::move(expr)),
+    if (func::isScalar(e.func)) {
+        return LowerExprResult(
+            {
+                .node =
+                    ir::FnCallScalar{
+                        .function = e.func,
+                        .args = std::move(scalars),
+                    },
+                .value_type = info.value_type,
             },
-        .output_field_id = output_field_id,
-        .value_type = info.value_type,
-    });
+            std::move(aggregates));
+    }
 
-    return LowerExprResult(
-        {
-            .node = ir::FieldScalar{.field_id = output_field_id},
-            .value_type = info.value_type,
-        },
-        std::move(aggrs));
-}
-
-LowerExprResult lowerToIR(bound::CountAllExpr, auto& info, Context& ctx) {
-    auto output_field_id = ctx.binding()->addAnonymous("count_all", info.value_type);
-
-    std::vector<ir::Aggregate> aggrs;
-    aggrs.push_back({
-        .node = ir::CountAllAggregate{},
+    auto output_field_id = ctx.binding()->addAnonymous("fn_call_aggr", info.value_type);
+    aggregates.push_back({
+        .node =
+            ir::FnCallAggregate{
+                .function = e.func,
+                .args = std::move(scalars),
+            },
         .output_field_id = output_field_id,
         .value_type = info.value_type,
     });
@@ -143,58 +107,26 @@ LowerExprResult lowerToIR(bound::CountAllExpr, auto& info, Context& ctx) {
             .node = ir::FieldScalar{.field_id = output_field_id},
             .value_type = info.value_type,
         },
-        std::move(aggrs),
+        std::move(aggregates),
     };
 }
 
-LowerExprResult lowerToIR(bound::RSubstrExpr e, auto& info, Context& ctx) {
-    auto [expr, aggregates] = lowerToIR(std::move(*e.expr), ctx);
+LowerExprResult lowerToIR(bound::LikeExpr e, auto& info, Context& ctx) {
+    auto [arg, aggregates] = lowerToIR(std::move(*e.expr), ctx);
+
+    std::vector<ir::Scalar> args;
+    args.push_back(std::move(arg));
 
     return LowerExprResult(
         {
             .node =
-                ir::RSubstrScalar{
-                    .expr = box(std::move(expr)),
-                    .regex = std::move(e.regex),
+                ir::FnCallScalar{
+                    .function = func::Like{.regex = std::move(e.regex)},
+                    .args = std::move(args),
                 },
             .value_type = info.value_type,
         },
         std::move(aggregates));
-}
-
-LowerExprResult lowerToIR(bound::CoalesceExpr e, auto& info, Context& ctx) {
-    auto [exprs, aggregates] = lowerToIR(std::move(e.args), ctx);
-
-    return LowerExprResult(
-        {
-            .node = ir::CoalesceScalar{.args = std::move(exprs)},
-            .value_type = info.value_type,
-        },
-        std::move(aggregates));
-}
-
-LowerExprResult lowerToIR(bound::PercentileExpr e, auto& info, Context& ctx) {
-    auto output_field_id = ctx.binding()->addAnonymous("perc", ValueType::String);
-    auto [expr, aggregates] = lowerToIR(std::move(*e.expr), ctx);
-    verify(aggregates.empty());
-
-    std::vector<ir::Aggregate> aggrs;
-    aggrs.push_back({
-        .node =
-            ir::PercentileAggregate{
-                .expr = box(std::move(expr)),
-                .percentiles = std::move(e.percentiles),
-            },
-        .output_field_id = output_field_id,
-        .value_type = info.value_type,
-    });
-
-    return LowerExprResult(
-        ir::Scalar{
-            .node = ir::FieldScalar{.field_id = output_field_id},
-            .value_type = ValueType::String,
-        },
-        std::move(aggrs));
 }
 
 LowerExprResult lowerToIR(bound::BinaryExpr e, auto& info, Context& ctx) {

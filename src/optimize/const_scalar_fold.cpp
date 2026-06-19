@@ -1,7 +1,8 @@
-#include "optimize/const_fold.h"
+#include "optimize/const_scalar_fold.h"
+
 #include "ir/pass.h"
 
-#include "core/value/cast.h"
+#include "core/function/build.h"
 
 #include <llog/log.h>
 #include <rfl.hpp>
@@ -13,19 +14,33 @@ namespace {
 struct Optimizer : ir::ConsumePass<Optimizer> {
     Context& ctx;
 
-    ir::Scalar optimize(ir::CastScalar& s, auto& self) {
-        auto* v = std::get_if<ir::ValueScalar>(&s.expr->node);
-        if (!v) {
+    ir::Scalar optimize(ir::FnCallScalar& s, auto& self) {
+        if (!func::isScalar(s.function)) {
             return std::move(self);
         }
 
-        ctx.setChanges().note("CastScalar const propagation");
+        bool all_const = std::ranges::all_of(s.args, [](ir::Scalar& arg) {
+            return std::holds_alternative<ir::ValueScalar>(arg.node);
+        });
 
-        auto val = cast(std::move(v->value), s.cast_to);
-        verify(val.has_value());
+        if (!all_const) {
+            return std::move(self);
+        }
 
-        self.node = ir::ValueScalar{.value = *std::move(val)};
-        return std::move(self);
+        std::vector<Value> values;
+        values.reserve(s.args.size());
+        for (auto&& arg : s.args) {
+            values.push_back(std::get<ir::ValueScalar>(arg.node).value);
+        }
+
+        auto executor = func::buildScalar(s.function);
+        auto result = executor->execute(values);
+
+        ctx.setChanges().note("folded constant scalar function call");
+        return {
+            .node = ir::ValueScalar{.value = std::move(result)},
+            .value_type = self.value_type,
+        };
     }
 
     ir::Scalar optimize(ir::UnaryScalar& s, auto& self) {
@@ -106,7 +121,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
     }
 
     auto construct(auto& node, auto& self) {
-        auto step_name = "const_fold";
+        auto step_name = "const_scalar_fold";
         auto name = rfl::type_name_t<decltype(node)>().name();
 
         if constexpr (requires { optimize(node, self); }) {
@@ -120,7 +135,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
 
 }  // namespace
 
-ir::Program constFold(ir::Program program, Context& ctx) {
+ir::Program constScalarFold(ir::Program program, Context& ctx) {
     ir::Program result{
         .statements = {},
         .field_binding = program.field_binding,

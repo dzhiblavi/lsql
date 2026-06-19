@@ -9,7 +9,6 @@
 #include "front/common/source/SourceSpan.h"
 
 #include "core/types.h"
-#include "core/value/ValueType.h"
 
 #include <string>
 #include <vector>
@@ -22,11 +21,6 @@ struct IdentifierExpr {
 
 struct LiteralExpr {
     common::ast::Literal literal;
-};
-
-struct CastExpr {
-    ValueType cast_to;
-    Box<Expr> expr;
 };
 
 struct InExpr {

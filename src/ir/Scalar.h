@@ -6,20 +6,14 @@ namespace lsql::ir {
 
 struct FieldScalar;
 struct ValueScalar;
-struct CoalesceScalar;
-struct CastScalar;
-struct LikeScalar;
-struct RSubstrScalar;
+struct FnCallScalar;
 struct UnaryScalar;
 struct BinaryScalar;
 
 using ScalarNode = std::variant< //
-    FieldScalar,
+    FieldScalar, //
     ValueScalar, //
-    CoalesceScalar, //
-    CastScalar, //
-    LikeScalar, //
-    RSubstrScalar, //
+    FnCallScalar, //
     UnaryScalar, //
     BinaryScalar //
 >;

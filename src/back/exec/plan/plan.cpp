@@ -1,11 +1,10 @@
 #include "back/exec/plan/plan.h"
 
 #include "back/exec/expr/BinaryScalar.h"
-#include "back/exec/expr/CoalesceScalar.h"
 #include "back/exec/expr/ConstAggregate.h"
-#include "back/exec/expr/CountAllAggregate.h"
+#include "back/exec/expr/FnCallAggregate.h"
+#include "back/exec/expr/FnCallScalar.h"
 #include "back/exec/expr/IdentifierScalar.h"
-#include "back/exec/expr/UnaryAggregate.h"
 #include "back/exec/expr/UnaryScalar.h"
 #include "back/exec/expr/ValueScalar.h"
 
@@ -14,6 +13,8 @@
 #include "ir/Scalars.h"
 #include "ir/Statement.h"
 
+#include "core/exceptions.h"
+#include "core/function/build.h"
 #include "util/archive.h"
 
 namespace lsql::back::exec::plan {
@@ -473,23 +474,11 @@ class Planner {
         return arc<ValueScalar>(e.value);
     }
 
-    ScalarPtr planScalar(ir::CoalesceScalar e, auto& /*info*/, auto& schema) {
-        return arc<CoalesceScalar>(expressionList(std::move(e.args), schema));
-    }
-
-    ScalarPtr planScalar(ir::CastScalar e, auto& /*info*/, auto& schema) {
-        auto arg = planScalar(std::move(*e.expr), schema);
-        return arc<UnaryScalar<CastOp>>(arg, arg->valueType(), e.cast_to);
-    }
-
-    ScalarPtr planScalar(ir::LikeScalar e, auto& /*info*/, auto& schema) {
-        auto arg = planScalar(std::move(*e.expr), schema);
-        return arc<UnaryScalar<LikeOp>>(arg, e.regex);
-    }
-
-    ScalarPtr planScalar(ir::RSubstrScalar e, auto& /*info*/, auto& schema) {
-        auto arg = planScalar(std::move(*e.expr), schema);
-        return arc<UnaryScalar<RSubstrOp>>(arg, e.regex);
+    ScalarPtr planScalar(ir::FnCallScalar s, auto& info, auto& schema) {
+        return arc<FnCallScalar>(
+            info.value_type,
+            func::buildScalar(s.function),
+            expressionList(std::move(s.args), schema));
     }
 
     ScalarPtr planScalar(ir::UnaryScalar e, auto& /*info*/, auto& schema) {
@@ -535,57 +524,10 @@ class Planner {
         }
     }
 
-    Arc<AggregateProjector> planAggregate(ir::UnaryAggregate a, auto&& info, auto& schema) {
-        auto arg = planScalar(std::move(*a.expr), schema);
-        auto aggregate = [&] -> AggregatePtr {
-            switch (a.type) {
-                case UnaryAggregateType::CountNonNull:
-                    return arc<UnaryAggregate<CountNonNullOp>>(arg, arg->valueType());
-                case UnaryAggregateType::Min:
-                    return dispatch<AggregatePtr>(
-                        [&]<Comparable T>(std::type_identity<T>) -> AggregatePtr {
-                            return arc<UnaryAggregate<MinOp<T>>>(arg, info.value_type);
-                        },
-                        info.value_type);
-                case UnaryAggregateType::Max:
-                    return dispatch<AggregatePtr>(
-                        [&]<Comparable T>(std::type_identity<T>) -> AggregatePtr {
-                            return arc<UnaryAggregate<MaxOp<T>>>(arg, info.value_type);
-                        },
-                        info.value_type);
-                case UnaryAggregateType::Sum:
-                    return dispatch<AggregatePtr>(
-                        [&]<Addable T>(std::type_identity<T>) -> AggregatePtr {
-                            return arc<UnaryAggregate<SumOp<T>>>(arg, info.value_type);
-                        },
-                        info.value_type);
-            }
-        }();
-
-        return box(
-            AggregateProjector{
-                .field_id = info.output_field_id,
-                .expr = aggregate,
-            });
-    }
-
-    Arc<AggregateProjector> planAggregate(ir::CountAllAggregate, auto&& info, auto& /*schema*/) {
-        return box(
-            AggregateProjector{
-                .field_id = info.output_field_id,
-                .expr = arc<CountAllAggregate>(),
-            });
-    }
-
-    Arc<AggregateProjector> planAggregate(ir::PercentileAggregate a, auto&& info, auto& schema) {
-        auto arg = planScalar(std::move(*a.expr), schema);
-
-        auto aggregate = dispatch<AggregatePtr>(
-            [&]<Comparable T>(std::type_identity<T>) -> AggregatePtr {
-                return arc<UnaryAggregate<PercentileOp<T>>>(
-                    arg, std::move(a.percentiles), arg->valueType());
-            },
-            arg->valueType());
+    Arc<AggregateProjector> planAggregate(ir::FnCallAggregate a, auto& info, auto& schema) {
+        auto args = expressionList(std::move(a.args), schema);
+        auto aggregate = arc<FnCallAggregate>(
+            info.value_type, func::buildAggregate(a.function), std::move(args));
 
         return box(
             AggregateProjector{

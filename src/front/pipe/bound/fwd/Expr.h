@@ -9,30 +9,20 @@ namespace lsql::front::pipe::bound {
 using common::bound::ValueExpr;
 
 struct IdentifierExpr;
-struct CastExpr;
+struct FnCallExpr;
 struct InExpr;
 struct LikeExpr;
-struct CoalesceExpr;
-struct PercentileExpr;
-struct RSubstrExpr;
 struct BinaryExpr;
 struct UnaryExpr;
-struct UnaryAggregateExpr;
-struct CountAllExpr;
 
 using ExprNode = std::variant< //
     IdentifierExpr, //
+    FnCallExpr, //
     ValueExpr, //
-    CastExpr, //
     InExpr, //
     LikeExpr, //
-    CoalesceExpr, //
-    PercentileExpr, //
-    RSubstrExpr, //
     BinaryExpr, //
-    UnaryExpr, //
-    UnaryAggregateExpr, //
-    CountAllExpr //
+    UnaryExpr //
 >;
 
 struct Expr;

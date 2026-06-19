@@ -23,6 +23,7 @@ struct Storage {
 
 struct Optimizer {
     static inline constexpr unsigned DefaultPasses = 5;
+    static inline constexpr int FnCallCostOverhead = 3;
     static inline constexpr int CoalesceCostOverhead = 1;
     static inline constexpr int UnaryOpCostOverhead = 1;
     static inline constexpr int BinaryOpCostOverhead = 1;

@@ -8,18 +8,17 @@
 #include "front/common/source/require_at.h"
 
 #include "core/exprs/BinaryExpr.h"
-#include "core/exprs/Percentile.h"
-#include "core/exprs/UnaryAggregate.h"
 #include "core/exprs/UnaryExpr.h"
+#include "core/function/Function.h"
+
+#include <algorithm>
 
 namespace lsql::front::common::bind {
 
 UnaryExprType exprType(ast::UnaryExprType ast);
 BinaryExprType exprType(ast::BinaryExprType ast);
-std::optional<UnaryAggregateType> unaryAggregateType(std::string_view fn_name);
 ValueType valueType(ValueType arg, UnaryExprType type, SourceSpan span);
 ValueType valueType(ValueType l, ValueType r, BinaryExprType type, SourceSpan span);
-ValueType unaryAggregateValueType(UnaryAggregateType type, ValueType arg, SourceSpan span);
 
 template <typename BoundExpr, typename AstExpr>
 std::vector<BoundExpr> bindExprs(std::vector<AstExpr> exprs, auto& binder, Context& ctx) {
@@ -58,6 +57,283 @@ FieldSet requiredFieldsOf(const std::vector<E>& exprs) {
     return fields;
 }
 
+template <BoundExpr Arg>
+Value getLiteral(const Arg& arg, SourceSpan span) {
+    return util::match(
+        arg.node,
+        [](bound::ValueExpr e) -> Value { return e.value; },
+        [&](auto&&) -> Value { throwAt(span, "expected literal argument"); });
+}
+
+template <BoundExpr Arg>
+bound::ExprKindLevel composedLevel(std::span<const Arg> args, SourceSpan span) {
+    auto level = common::bound::ExprKindLevel::Const;
+    for (auto&& arg : args) {
+        requireAt(composable(level, arg.level), span, "different expression kinds not allowed");
+        level = composed(level, arg.level);
+    }
+    return level;
+}
+
+template <BoundExpr Arg>
+std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
+    std::string_view fn_name, std::vector<Arg> args, SourceSpan span, SourceSpan args_span) {
+    auto level = composedLevel<Arg>(args, args_span);
+
+    if (fn_name == "substr") {
+        requireAt(2 <= args.size() && args.size() <= 3, args_span, "2-3 arguments required");
+        requireAt(args[0].value_type == ValueType::String, args_span, "1st arg should be string");
+        requireAt(args[1].value_type == ValueType::Integer, args_span, "2nd arg should be integer");
+        if (args.size() == 3) {
+            requireAt(
+                args[2].value_type == ValueType::Integer, args_span, "3rd arg should be integer");
+        }
+
+        std::vector<Arg> dynamic;
+        dynamic.push_back(std::move(args[0]));
+
+        auto from = getLiteral(args[1], args_span).template get<int64_t>();
+        requireAt(from >= 0, args_span, "negative pos is not allowed");
+
+        auto length = std::string::npos;
+        if (args.size() == 3) {
+            length = getLiteral(args[2], args_span).template get<int64_t>();
+            requireAt(length >= 0, args_span, "negative length is not allowed");
+        }
+
+        auto substr = func::Substr{
+            .from = size_t(from),
+            .length = length,
+        };
+
+        auto fields = requiredFieldsOf(dynamic);
+        return {
+            BoundExprInfo{
+                .value_type = ValueType::String,
+                .level = level,
+                .required_fields = fields,
+            },
+            std::move(substr),
+            std::move(dynamic),
+        };
+    }
+
+    if (fn_name == "coalesce") {
+        std::unordered_set<ValueType> types;
+        for (auto&& arg : args) {
+            if (arg.value_type != ValueType::Null) {
+                types.insert(arg.value_type);
+            }
+        }
+        requireAt(types.size() <= 1, args_span, "coalesce arguments must have the same type");
+
+        return {
+            BoundExprInfo{
+                .value_type = types.empty() ? ValueType::Null : *types.begin(),
+                .level = level,
+                .required_fields = requiredFieldsOf(args),
+            },
+            func::Coalesce{},
+            std::move(args),
+        };
+    }
+
+    if (fn_name == "percentile") {
+        requireAt(args.size() > 1, args_span, "percentile must be given at least one percentile");
+        requireAt(
+            args[0].level != common::bound::ExprKindLevel::Group,
+            args_span,
+            "percentile does not accept aggregates");
+        requireAt(
+            dispatch<bool>(
+                []<typename T>(std::type_identity<T>) { return Comparable<T>; },
+                args[0].value_type),
+            args_span,
+            "percentile argument must be comparable");
+
+        std::vector<float> percentiles;
+        percentiles.reserve(args.size() - 1);
+        for (size_t i = 1; i < args.size(); ++i) {
+            requireAt(
+                args[i].value_type == ValueType::Floating,
+                args_span,
+                "percentile's arguments in positions >=1 must be floating");
+
+            auto p = getLiteral(args[i], args_span).template get<float>();
+            requireAt(p >= 0.0f && p <= 1.0f, args_span, "percentile value must be in [0, 1]");
+            percentiles.push_back(p);
+        }
+
+        std::vector<Arg> dynamic;
+        dynamic.push_back(std::move(args[0]));
+        auto fields = requiredFieldsOf(dynamic);
+        auto args_type = dynamic[0].value_type;
+
+        return {
+            BoundExprInfo{
+                .value_type = ValueType::String,
+                .level = bound::ExprKindLevel::Group,
+                .required_fields = fields,
+            },
+            func::Percentile{
+                .percentiles = std::move(percentiles),
+                .args_type = args_type,
+            },
+            std::move(dynamic),
+        };
+    }
+
+    if (fn_name == "rsubstr") {
+        requireAt(args.size() == 2, args_span, "rsubstr expects exactly 2 arguments");
+        requireAt(
+            args[0].value_type == ValueType::String,
+            args_span,
+            "rsubstr's first argument should be String");
+        requireAt(
+            args[1].level == common::bound::ExprKindLevel::Const,
+            args_span,
+            "rsubstr's second argument should be a constant");
+        requireAt(
+            args[1].value_type == ValueType::String,
+            args_span,
+            "rsubstr's second argument should be String");
+
+        auto regex = std::string(getLiteral(args[1], args_span).template get<std::string_view>());
+        std::vector<Arg> dynamic;
+        dynamic.push_back(std::move(args[0]));
+        auto fields = requiredFieldsOf(dynamic);
+
+        return {
+            BoundExprInfo{
+                .value_type = ValueType::String,
+                .level = level,
+                .required_fields = fields,
+            },
+            func::RSubstr{.regex = std::move(regex)},
+            std::move(dynamic),
+
+        };
+    }
+
+    if (fn_name == "count_all") {
+        requireAt(args.size() == 0, args_span, "no arguments expected for count_all");
+
+        return {
+            BoundExprInfo{
+                .value_type = ValueType::Integer,
+                .level = bound::ExprKindLevel::Group,
+                .required_fields = FieldSet::emptySet(),
+            },
+            func::CountAll(),
+            std::vector<Arg>(),
+        };
+    }
+
+    if (fn_name == "count_nonnull") {
+        requireAt(args.size() == 1, args_span, "1 argument expected for count_nonnull");
+        auto fields = args[0].required_fields;
+
+        return {
+            BoundExprInfo{
+                .value_type = ValueType::Integer,
+                .level = bound::ExprKindLevel::Group,
+                .required_fields = fields,
+            },
+            func::CountNonNull(),
+            std::move(args),
+        };
+    }
+
+    if (fn_name == "min") {
+        requireAt(args.size() == 1, args_span, "function expects 1 argument");
+        requireAt(
+            args[0].level != common::bound::ExprKindLevel::Group,
+            args_span,
+            "min operation does not accept aggregates");
+
+        auto type = args[0].value_type;
+        auto fields = args[0].required_fields;
+
+        return {
+            BoundExprInfo{
+                .value_type = type,
+                .level = bound::ExprKindLevel::Group,
+                .required_fields = fields,
+            },
+            func::Min{.arg_type = type},
+            std::move(args),
+        };
+    }
+
+    if (fn_name == "max") {
+        requireAt(args.size() == 1, args_span, "function expects 1 argument");
+        requireAt(
+            args[0].level != common::bound::ExprKindLevel::Group,
+            args_span,
+            "max operation does not accept aggregates");
+
+        auto type = args[0].value_type;
+        auto fields = args[0].required_fields;
+
+        return {
+            BoundExprInfo{
+                .value_type = type,
+                .level = bound::ExprKindLevel::Group,
+                .required_fields = fields,
+            },
+            func::Max{.arg_type = type},
+            std::move(args),
+        };
+    }
+
+    if (fn_name == "sum") {
+        requireAt(args.size() == 1, args_span, "function expects 1 argument");
+        requireAt(
+            args[0].level != common::bound::ExprKindLevel::Group,
+            args_span,
+            "sum operation does not accept aggregates");
+
+        auto type = args[0].value_type;
+        auto fields = args[0].required_fields;
+
+        return {
+            BoundExprInfo{
+                .value_type = type,
+                .level = bound::ExprKindLevel::Group,
+                .required_fields = fields,
+            },
+            func::Sum{.arg_type = type},
+            std::move(args),
+        };
+    }
+
+    static constexpr std::array<std::pair<std::string_view, ValueType>, 5> cast_fns{
+        std::make_pair("null", ValueType::Null),
+        std::make_pair("int", ValueType::Integer),
+        std::make_pair("float", ValueType::Floating),
+        std::make_pair("bool", ValueType::Boolean),
+        std::make_pair("string", ValueType::String),
+    };
+
+    if (auto it = std::ranges::find(cast_fns, fn_name, [](auto&& p) { return p.first; });
+        it != cast_fns.end()) {
+        requireAt(args.size() == 1, args_span, "'{}' expects 1 argument", fn_name);
+        auto fields = requiredFieldsOf(args);
+
+        return {
+            BoundExprInfo{
+                .value_type = it->second,
+                .level = level,
+                .required_fields = fields,
+            },
+            func::Cast{.cast_to = it->second},
+            std::move(args),
+        };
+    }
+
+    throwAt(span, "unknown function name '{}'", fn_name);
+}
+
 template <BoundExpr Arg, BoundRel Match>
 std::pair<BoundExprInfo, FieldId> bindInExpr(
     const Arg& arg, const Match& match, auto& ctx, SourceSpan arg_span, SourceSpan match_span) {
@@ -92,43 +368,6 @@ BoundExprInfo bindLikeExpr(const Arg& arg, SourceSpan arg_span) {
         .value_type = ValueType::Boolean,
         .level = arg.level,
         .required_fields = arg.required_fields,
-    };
-}
-
-template <BoundExpr Arg>
-std::pair<BoundExprInfo, std::string> bindRsubstr(
-    const std::vector<Arg>& args, SourceSpan args_span) {
-    requireAt(args.size() == 2, args_span, "rsubstr expects exactly 2 arguments");
-    requireAt(
-        args[0].value_type == ValueType::String,
-        args_span,
-        "rsubstr's first argument should be String");
-    requireAt(
-        args[1].level == common::bound::ExprKindLevel::Const,
-        args_span,
-        "rsubstr's second argument should be a constant");
-    requireAt(
-        args[1].value_type == ValueType::String,
-        args_span,
-        "rsubstr's second argument should be String");
-
-    std::string regex = util::match(
-        args[1].node,
-        [](bound::ValueExpr e) {
-            verify(e.value.type() == ValueType::String);
-            return std::string(e.value.get<std::string_view>());
-        },
-        [&](auto&&) -> std::string {
-            throwAt(args_span, "rsubstr's second argument should be literal");
-        });
-
-    return {
-        BoundExprInfo{
-            .value_type = ValueType::String,
-            .level = args[0].level,
-            .required_fields = args[0].required_fields,
-        },
-        std::move(regex),
     };
 }
 
@@ -172,22 +411,6 @@ std::pair<BoundExprInfo, BinaryExprType> bindBinaryExpr(
 }
 
 template <BoundExpr Arg>
-BoundExprInfo bindUnaryAggregate(
-    const std::vector<Arg>& args, UnaryAggregateType type, SourceSpan span, SourceSpan args_span) {
-    requireAt(args.size() == 1, args_span, "function expects 1 argument");
-    requireAt(
-        args[0].level != common::bound::ExprKindLevel::Group,
-        args_span,
-        "grouping operations do not accept aggregates");
-
-    return {
-        .value_type = unaryAggregateValueType(type, args[0].value_type, span),
-        .level = bound::ExprKindLevel::Group,
-        .required_fields = args[0].required_fields,
-    };
-}
-
-template <BoundExpr Arg>
 BoundExprInfo bindCast(const Arg& arg, ValueType cast_to) {
     return {
         .value_type = cast_to,
@@ -204,80 +427,6 @@ BoundExprInfo bindCountAll(const std::vector<Arg>& args, SourceSpan args_span) {
         .value_type = ValueType::Integer,
         .level = bound::ExprKindLevel::Group,
         .required_fields = FieldSet::emptySet(),
-    };
-}
-
-template <BoundExpr Arg>
-BoundExprInfo bindCoalesce(const std::vector<Arg>& args, SourceSpan args_span) {
-    requireAt(args.size() >= 1, args_span, "at least one argument required for coalesce");
-
-    auto level = common::bound::ExprKindLevel::Const;
-    for (auto&& arg : args) {
-        requireAt(
-            composable(level, arg.level),
-            args_span,
-            "different expression kinds not allowed in function calls");
-        level = composed(level, arg.level);
-    }
-
-    std::unordered_set<ValueType> types;
-    for (auto&& arg : args) {
-        if (arg.value_type != ValueType::Null) {
-            types.insert(arg.value_type);
-        }
-    }
-
-    requireAt(types.size() <= 1, args_span, "coalesce arguments must have the same type");
-
-    return {
-        .value_type = types.empty() ? ValueType::Null : *types.begin(),
-        .level = level,
-        .required_fields = requiredFieldsOf(args),
-    };
-}
-
-template <BoundExpr Arg>
-std::pair<BoundExprInfo, std::vector<float>> bindPercentile(
-    const std::vector<Arg>& args, SourceSpan args_span) {
-    requireAt(args.size() > 1, args_span, "percentile must be given at least one percentile");
-    requireAt(
-        args[0].level != common::bound::ExprKindLevel::Group,
-        args_span,
-        "percentile does not accept aggregates");
-    requireAt(
-        dispatch<bool>(
-            []<typename T>(std::type_identity<T>) {
-                return PercentileTraits::template allowed<T>();
-            },
-            args[0].value_type),
-        args_span,
-        "unsupported argument type for percentile");
-
-    std::vector<float> percentiles;
-    percentiles.reserve(args.size() - 1);
-    for (size_t i = 1; i < args.size(); ++i) {
-        requireAt(
-            args[i].value_type == ValueType::Floating,
-            args_span,
-            "percentile's arguments in positions >=1 must be floating");
-
-        auto* value = std::get_if<bound::ValueExpr>(&args[i].node);
-        if (!value) {
-            throwAt(args_span, "percentile's arguments in positions >=1 must be literals");
-        }
-
-        auto p = value->value.template get<float>();
-        requireAt(p >= 0.0f && p <= 1.0f, args_span, "percentile value must be in [0, 1]");
-        percentiles.push_back(p);
-    }
-
-    return {
-        BoundExprInfo{
-            .value_type = ValueType::String,
-            .level = bound::ExprKindLevel::Group,
-            .required_fields = args[0].required_fields,
-        },
-        std::move(percentiles),
     };
 }
 

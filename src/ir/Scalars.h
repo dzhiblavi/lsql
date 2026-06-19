@@ -4,6 +4,7 @@
 
 #include "core/exprs/BinaryExpr.h"
 #include "core/exprs/UnaryExpr.h"
+#include "core/function/Function.h"
 
 #include "core/schema/types.h"
 #include "core/types.h"
@@ -19,23 +20,9 @@ struct ValueScalar {
     Value value;
 };
 
-struct CoalesceScalar {
+struct FnCallScalar {
+    func::Function function;
     std::vector<Scalar> args;
-};
-
-struct CastScalar {
-    ValueType cast_to;
-    Box<Scalar> expr;
-};
-
-struct LikeScalar {
-    Box<Scalar> expr;
-    std::string regex;
-};
-
-struct RSubstrScalar {
-    Box<Scalar> expr;
-    std::string regex;
 };
 
 struct UnaryScalar {

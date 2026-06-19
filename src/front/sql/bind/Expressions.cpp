@@ -44,22 +44,6 @@ bound::Expr bindExpr(ast::LiteralExpr e, auto&& self, Context& /*ctx*/) {
     };
 }
 
-bound::Expr bindExpr(ast::CastExpr e, auto&& /*self*/, Context& ctx) {
-    auto expr = bindExpr(std::move(*e.expr), ctx);
-    auto info = common::bind::bindCast(expr, e.cast_to);
-
-    return {
-        .node =
-            bound::CastExpr{
-                .cast_to = e.cast_to,
-                .expr = box(std::move(expr)),
-            },
-        .value_type = info.value_type,
-        .level = info.level,
-        .required_fields = info.required_fields,
-    };
-}
-
 bound::Expr bindExpr(ast::InExpr e, auto&& /*self*/, Context& ctx) {
     auto expr_span = e.expr->span;
     auto match_span = e.match->span;
@@ -102,74 +86,19 @@ bound::Expr bindExpr(ast::FnCallExpr e, auto&& self, Context& ctx) {
     auto args_span = spanOf(e.args);
     auto args = bindExprs(std::move(e.args), ctx);
 
-    if (auto un_aggr_type = common::bind::unaryAggregateType(e.func)) {
-        auto info = common::bind::bindUnaryAggregate(args, *un_aggr_type, self.span, args_span);
+    auto [info, func, dynamic] =
+        common::bind::bindFnCallExpr(e.func, std::move(args), self.span, args_span);
 
-        return {
-            .node =
-                bound::UnaryAggregateExpr{
-                    .type = *un_aggr_type,
-                    .expr = box(std::move(args[0])),
-                },
-            .value_type = info.value_type,
-            .level = info.level,
-            .required_fields = info.required_fields,
-        };
-    }
-
-    if (e.func == "builtin_count_all") {
-        auto info = common::bind::bindCountAll(args, args_span);
-
-        return {
-            .node = bound::CountAllExpr{},
-            .value_type = info.value_type,
-            .level = info.level,
-            .required_fields = info.required_fields,
-        };
-    }
-
-    if (e.func == "builtin_coalesce") {
-        auto info = common::bind::bindCoalesce(args, args_span);
-
-        return {
-            .node = bound::CoalesceExpr{.args = std::move(args)},
-            .value_type = info.value_type,
-            .level = info.level,
-            .required_fields = info.required_fields,
-        };
-    }
-
-    if (e.func == "builtin_percentile") {
-        auto [info, percentiles] = common::bind::bindPercentile(args, args_span);
-
-        return {
-            .node =
-                bound::PercentileExpr{
-                    .expr = box(std::move(args[0])),
-                    .percentiles = std::move(percentiles),
-                },
-            .value_type = info.value_type,
-            .level = info.level,
-            .required_fields = info.required_fields,
-        };
-    }
-
-    if (e.func == "builtin_rsubstr") {
-        auto [info, regex] = common::bind::bindRsubstr(args, args_span);
-
-        return {
-            .node =
-                bound::RSubstrExpr{
-                    .expr = box(std::move(args[0])),
-                    .regex = std::move(regex),
-                },
-            .value_type = info.value_type,
-            .level = info.level,
-            .required_fields = info.required_fields,
-        };
-    }
-
-    throwAt(self.span, "unknown function name: {}", e.func);
+    return {
+        .node =
+            bound::FnCallExpr{
+                .func = std::move(func),
+                .args = std::move(dynamic),
+            },
+        .value_type = info.value_type,
+        .level = info.level,
+        .required_fields = info.required_fields,
+    };
 }
 
 bound::Expr bindExpr(ast::BinaryExpr e, auto&& self, Context& ctx) {

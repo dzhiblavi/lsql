@@ -11,37 +11,39 @@ namespace {
 struct Optimizer : ir::ConsumePass<Optimizer> {
     Context& ctx;
 
-    ir::Scalar optimize(ir::CoalesceScalar& s, auto& self) {
-        auto args = std::move(s.args);
-        s.args.reserve(args.size());
+    ir::Scalar optimize(ir::FnCallScalar& s, auto& self) {
+        if (std::holds_alternative<func::Coalesce>(s.function)) {
+            auto args = std::move(s.args);
+            s.args.reserve(args.size());
 
-        for (auto&& a : args) {
-            if (auto* v = std::get_if<ir::ValueScalar>(&a.node)) {
-                if (v->value == null) {
-                    // just skip nulls, they don't make a difference
-                    continue;
+            for (auto&& a : args) {
+                if (auto* v = std::get_if<ir::ValueScalar>(&a.node)) {
+                    if (v->value == null) {
+                        // just skip nulls, they don't make a difference
+                        continue;
+                    }
+
+                    if (s.args.empty()) {
+                        // first value collapsed => done
+                        ctx.setChanges().note("coalesce folded to a constant");
+                        self.node = ir::ValueScalar{.value = std::move(v->value)};
+                        return std::move(self);
+                    }
                 }
 
-                if (s.args.empty()) {
-                    // first value collapsed => done
-                    ctx.setChanges().note("coalesce folded to a constant");
-                    self.node = ir::ValueScalar{.value = std::move(v->value)};
-                    return std::move(self);
-                }
+                // not a constant
+                s.args.push_back(std::move(a));
             }
 
-            // not a constant
-            s.args.push_back(std::move(a));
-        }
+            if (s.args.size() != args.size()) {
+                ctx.setChanges().note(
+                    "some coalesce folded: was {}, now {}", args.size(), s.args.size());
+            }
 
-        if (s.args.size() != args.size()) {
-            ctx.setChanges().note(
-                "some coalesce folded: was {}, now {}", args.size(), s.args.size());
-        }
-
-        if (s.args.empty()) {
-            ctx.note("coalesce folded to a null");
-            self.node = ir::ValueScalar{.value = null};
+            if (s.args.empty()) {
+                ctx.note("coalesce folded to a null");
+                self.node = ir::ValueScalar{.value = null};
+            }
         }
 
         return std::move(self);

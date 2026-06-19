@@ -59,7 +59,11 @@ inline ir::Scalar null(ValueType value_type = ValueType::Null) {
 
 inline ir::Scalar coalesce(std::vector<ir::Scalar> args, ValueType value_type) {
     return ir::Scalar{
-        .node = ir::CoalesceScalar{.args = std::move(args)},
+        .node =
+            ir::FnCallScalar{
+                .function = func::Coalesce(),
+                .args = std::move(args),
+            },
         .value_type = value_type,
     };
 }
@@ -157,11 +161,14 @@ inline ir::Relation project(ir::Relation source, ir::Projector projector, Schema
 }
 
 inline ir::Aggregate min(FieldId id, ir::Scalar expr) {
+    std::vector<ir::Scalar> args;
+    args.push_back(std::move(expr));
+
     return ir::Aggregate{
         .node =
-            ir::UnaryAggregate{
-                .type = UnaryAggregateType::Min,
-                .expr = box(std::move(expr)),
+            ir::FnCallAggregate{
+                .function = func::Min{.arg_type = ValueType::Integer},
+                .args = std::move(args),
             },
         .output_field_id = id,
         .value_type = ValueType::Integer,

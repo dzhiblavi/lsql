@@ -1,25 +1,17 @@
 #pragma once
 
-#include "core/value/Value.h"
 #include "ir/Aggregate.h"
 #include "ir/Scalar.h"
 
-#include "core/exprs/UnaryAggregate.h"
+#include "core/function/Function.h"
 #include "core/schema/types.h"
-#include "core/types.h"
+#include "core/value/Value.h"
 
 namespace lsql::ir {
 
-struct UnaryAggregate {
-    UnaryAggregateType type;
-    Box<Scalar> expr;
-};
-
-struct CountAllAggregate {};
-
-struct PercentileAggregate {
-    Box<Scalar> expr;
-    std::vector<float> percentiles;
+struct FnCallAggregate {
+    func::Function function;
+    std::vector<Scalar> args;
 };
 
 struct ConstAggregate {

@@ -2,10 +2,6 @@
 
 #include "back/exec/expr/Scalar.h"
 
-#include "core/value/cast.h"
-
-#include <reflex/stdmatcher.h>
-
 namespace lsql::back::exec {
 
 template <typename Op>
@@ -42,51 +38,6 @@ struct BooleanNegationOp {
     Value apply(Value val) const { return !val.get<bool>(); }
     ValueType valueType() const { return ValueType::Boolean; }
     ValueType argType() const { return ValueType::Boolean; }
-};
-
-struct LikeOp {
-    explicit LikeOp(const std::string& regex) : pattern(regex) {}
-
-    Value apply(const Value& value) const {
-        auto view = value.get<std::string_view>();
-        auto input = reflex::Input(view.data(), view.size());
-        return reflex::Matcher(&pattern, input).matches() != 0;
-    }
-
-    ValueType valueType() const { return ValueType::Boolean; }
-    ValueType argType() const { return ValueType::String; }
-
-    reflex::Pattern pattern;
-};
-
-struct RSubstrOp {
-    explicit RSubstrOp(const std::string& regex) : pattern(regex) {}
-
-    Value apply(const Value& value) const {
-        auto view = value.get<std::string_view>();
-        auto input = reflex::Input(view.data(), view.size());
-        reflex::Matcher matcher(&pattern, input);
-
-        size_t group = matcher.find();
-        if (group == 0) {
-            return null;
-        }
-
-        return value.substr(matcher.first(), matcher.size());
-    }
-
-    ValueType valueType() const { return ValueType::String; }
-    ValueType argType() const { return ValueType::String; }
-
-    const reflex::Pattern pattern;
-};
-
-struct CastOp {
-    ValueType valueType() const { return to; }
-    ValueType argType() const { return from; }
-    Value apply(Value val) const { return cast(std::move(val), to).value_or(null); }
-
-    ValueType from, to;
 };
 
 }  // namespace lsql::back::exec

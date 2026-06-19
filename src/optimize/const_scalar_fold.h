@@ -6,6 +6,6 @@
 
 namespace lsql::opt {
 
-ir::Program aggregateFold(ir::Program program, Context& ctx);
+ir::Program constScalarFold(ir::Program program, Context& ctx);
 
 }  // namespace lsql::opt

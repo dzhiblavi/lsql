@@ -15,6 +15,7 @@ std::string formatBuildSettings() {
         "  storage.command_stderr_buffer_size: {}\n"
         "  storage.command_stderr_tail_size: {}\n"
         "  optimizer.default_passes: {}\n"
+        "  optimizer.fn_call_cost_overhead: {}\n"
         "  optimizer.coalesce_cost_overhead: {}\n"
         "  optimizer.unary_op_cost_overhead: {}\n"
         "  optimizer.binary_op_cost_overhead: {}\n"
@@ -32,6 +33,7 @@ std::string formatBuildSettings() {
         Storage::CommandStderrBufferSize,
         Storage::CommandStderrTailSize,
         Optimizer::DefaultPasses,
+        Optimizer::FnCallCostOverhead,
         Optimizer::CoalesceCostOverhead,
         Optimizer::UnaryOpCostOverhead,
         Optimizer::BinaryOpCostOverhead,
