@@ -6,11 +6,9 @@
 
 namespace lsql::func {
 
-class Executor {
- public:
-    virtual ~Executor() = default;
-
-    virtual Value execute(std::span<Value> values) const = 0;
+template <typename E>
+concept Executor = requires(const E& e, std::span<Value> args) {
+    { e.execute(args) } -> std::same_as<Value>;
 };
 
 }  // namespace lsql::func

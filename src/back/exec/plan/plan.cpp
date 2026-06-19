@@ -2,8 +2,8 @@
 
 #include "back/exec/expr/BinaryScalar.h"
 #include "back/exec/expr/ConstAggregate.h"
-#include "back/exec/expr/FnCallAggregate.h"
-#include "back/exec/expr/FnCallScalar.h"
+#include "back/exec/expr/FnAggregate.h"
+#include "back/exec/expr/FnScalar.h"
 #include "back/exec/expr/IdentifierScalar.h"
 #include "back/exec/expr/UnaryScalar.h"
 #include "back/exec/expr/ValueScalar.h"
@@ -475,10 +475,11 @@ class Planner {
     }
 
     ScalarPtr planScalar(ir::FnCallScalar s, auto& info, auto& schema) {
-        return arc<FnCallScalar>(
-            info.value_type,
-            func::buildScalar(s.function),
-            expressionList(std::move(s.args), schema));
+        auto args = expressionList(std::move(s.args), schema);
+
+        return func::buildScalar<ScalarPtr>(s.function, [&]<func::Executor E>(E e) {
+            return arc<FnScalar<E>>(info.value_type, std::move(e), std::move(args));
+        });
     }
 
     ScalarPtr planScalar(ir::UnaryScalar e, auto& /*info*/, auto& schema) {
@@ -526,8 +527,11 @@ class Planner {
 
     Arc<AggregateProjector> planAggregate(ir::FnCallAggregate a, auto& info, auto& schema) {
         auto args = expressionList(std::move(a.args), schema);
-        auto aggregate = arc<FnCallAggregate>(
-            info.value_type, func::buildAggregate(a.function), std::move(args));
+
+        auto aggregate =
+            func::buildAggregate<AggregatePtr>(a.function, [&]<func::Aggregate A>(A a) {
+                return arc<FnAggregate<A>>(info.value_type, std::move(a), std::move(args));
+            });
 
         return box(
             AggregateProjector{

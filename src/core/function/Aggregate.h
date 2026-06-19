@@ -6,19 +6,16 @@
 
 namespace lsql::func {
 
-class Aggregator {
- public:
-    virtual ~Aggregator() = default;
-
-    virtual Value get() = 0;  // one-shot
-    virtual void feed(std::span<Value> values) = 0;
+template <typename A>
+concept Aggregator = requires(A& a, std::span<Value> args) {
+    { std::move(a).get() } -> std::same_as<Value>;
+    { a.feed(args) } -> std::same_as<void>;
 };
 
-class Aggregate {
- public:
-    virtual ~Aggregate() = default;
-
-    virtual Box<Aggregator> aggregator() const = 0;
+template <typename A>
+concept Aggregate = requires(A& a) {
+    typename A::Aggregator;
+    { a.aggregator() } -> std::same_as<typename A::Aggregator>;
 };
 
 }  // namespace lsql::func

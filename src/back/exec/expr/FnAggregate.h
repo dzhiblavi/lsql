@@ -3,17 +3,21 @@
 #include "back/exec/expr/Aggregate.h"
 
 #include "back/exec/expr/Scalar.h"
+
 #include "core/function/Aggregate.h"
 
 #include <ranges>
 
 namespace lsql::back::exec {
 
-class FnCallAggregate : public Aggregate {
+template <func::Aggregate A>
+class FnAggregate : public exec::Aggregate {
+    using FnAggregator = typename A::Aggregator;
+
     struct Aggregator : exec::Aggregator {
-        Aggregator(const std::vector<Arc<Scalar>>* args, Arc<func::Aggregator> aggregator)
+        Aggregator(const std::vector<Arc<Scalar>>* args, FnAggregator aggregator)
             : args(args)
-            , aggregator(aggregator) {
+            , aggregator(std::move(aggregator)) {
             values.assign(args->size(), vnull);
         }
 
@@ -21,22 +25,21 @@ class FnCallAggregate : public Aggregate {
             for (auto&& [arg, value] : std::views::zip(*args, values)) {
                 value = arg->eval(record);
             }
-            aggregator->feed(values);
+            aggregator.feed(values);
         }
 
-        Value get() override { return aggregator->get(); }
+        Value get() override { return std::move(aggregator).get(); }
 
         const std::vector<Arc<Scalar>>* args;
-        Arc<func::Aggregator> aggregator;
         mutable std::vector<Value> values;
+        [[no_unique_address]] FnAggregator aggregator;
     };
 
  public:
-    FnCallAggregate(
-        ValueType value_type, Arc<func::Aggregate> aggregate, std::vector<Arc<Scalar>> args)
+    FnAggregate(ValueType value_type, A aggregate, std::vector<Arc<Scalar>> args)
         : value_type_(value_type)
-        , aggregate_(std::move(aggregate))
-        , args_(std::move(args)) {}
+        , args_(std::move(args))
+        , aggregate_(std::move(aggregate)) {}
 
     FieldSet requiredFields() const override {
         FieldSet set;
@@ -49,13 +52,13 @@ class FnCallAggregate : public Aggregate {
     ValueType valueType() const override { return value_type_; }
 
     AggregatorPtr aggregator() const override {
-        return arc<Aggregator>(&args_, aggregate_->aggregator());
+        return arc<Aggregator>(&args_, aggregate_.aggregator());
     }
 
  private:
     ValueType value_type_;
-    Arc<func::Aggregate> aggregate_;
     std::vector<Arc<Scalar>> args_;
+    [[no_unique_address]] A aggregate_;
 };
 
 }  // namespace lsql::back::exec

@@ -33,14 +33,15 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
             values.push_back(std::get<ir::ValueScalar>(arg.node).value);
         }
 
-        auto executor = func::buildScalar(s.function);
-        auto result = executor->execute(values);
+        return func::buildScalar<ir::Scalar>(s.function, [&]<func::Executor E>(E executor) {
+            ctx.setChanges().note("folded constant scalar function call");
+            auto result = executor.execute(values);
 
-        ctx.setChanges().note("folded constant scalar function call");
-        return {
-            .node = ir::ValueScalar{.value = std::move(result)},
-            .value_type = self.value_type,
-        };
+            return ir::Scalar{
+                .node = ir::ValueScalar{.value = std::move(result)},
+                .value_type = self.value_type,
+            };
+        });
     }
 
     ir::Scalar optimize(ir::UnaryScalar& s, auto& self) {

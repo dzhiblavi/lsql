@@ -7,12 +7,13 @@
 
 namespace lsql::back::exec {
 
-class FnCallScalar : public Scalar {
+template <func::Executor E>
+class FnScalar : public Scalar {
  public:
-    FnCallScalar(ValueType value_type, Arc<func::Executor> executor, std::vector<Arc<Scalar>> args)
+    FnScalar(ValueType value_type, E executor, std::vector<Arc<Scalar>> args)
         : value_type_(value_type)
-        , executor_(std::move(executor))
-        , args_(std::move(args)) {
+        , args_(std::move(args))
+        , executor_(std::move(executor)) {
         values_.assign(args_.size(), vnull);
     }
 
@@ -30,14 +31,14 @@ class FnCallScalar : public Scalar {
         for (auto&& [arg, value] : std::views::zip(args_, values_)) {
             value = arg->eval(record);
         }
-        return executor_->execute(values_);
+        return executor_.execute(values_);
     }
 
  private:
     ValueType value_type_;
-    Arc<func::Executor> executor_;
     std::vector<Arc<Scalar>> args_;
     mutable std::vector<Value> values_;
+    [[no_unique_address]] E executor_;
 };
 
 }  // namespace lsql::back::exec

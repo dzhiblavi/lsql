@@ -14,7 +14,6 @@ add_library(
     schema/FieldBinding.cpp
     schema/FieldSet.cpp
     schema/Schema.cpp
-    function/build.cpp
 )
 
 target_link_libraries(
