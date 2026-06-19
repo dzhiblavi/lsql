@@ -62,19 +62,9 @@
 %token TOKEN_TRUE.
 %token TOKEN_FALSE.
 %token TOKEN_NULL.
-%token TOKEN_STRING.
-%token TOKEN_INT.
-%token TOKEN_FLOAT.
-%token TOKEN_BOOL.
 %token TOKEN_COUNT.
-%token TOKEN_MIN.
-%token TOKEN_MAX.
-%token TOKEN_SUM.
-%token TOKEN_PERCENTILE.
-%token TOKEN_COALESCE.
-%token TOKEN_RSUBSTR.
-%token TOKEN_PARSE_TIMESTAMP.
 %token TOKEN_IDENTIFIER.
+%token TOKEN_FIELD_IDENTIFIER.
 %token TOKEN_PATH.
 %token TOKEN_INTEGER.
 %token TOKEN_FLOATING.
@@ -113,7 +103,6 @@
 %type stage           {ast::Stage*}
 %type stage_list      {std::vector<ast::Stage>*}
 %type expression      {ast::Expr*}
-%type function_name   {Token*}
 %type expression_list {std::vector<ast::Expr>*}
 %type projector       {ast::Projector*}
 %type projector_list  {std::vector<ast::Projector>*}
@@ -332,6 +321,13 @@ projector(P) ::= TOKEN_IDENTIFIER(Id). {
     };
 }
 
+projector(P) ::= TOKEN_FIELD_IDENTIFIER(Id). {
+    P = new ast::Projector{
+        .node = ast::IdentifierProjector{ .identifier = Id.text },
+        .span = Id.span,
+    };
+}
+
 projector(P) ::= expression(E) TOKEN_AS alias(A). {
     auto span = merge(E->span, A->span);
     P = new ast::Projector{
@@ -370,6 +366,13 @@ expression(E) ::= value(V). {
 }
 
 expression(E) ::= TOKEN_IDENTIFIER(Id). {
+    E = new ast::Expr{
+        .node = ast::IdentifierExpr{ .identifier = Id.text },
+        .span = Id.span,
+    };
+}
+
+expression(E) ::= TOKEN_FIELD_IDENTIFIER(Id). {
     E = new ast::Expr{
         .node = ast::IdentifierExpr{ .identifier = Id.text },
         .span = Id.span,
@@ -532,30 +535,17 @@ expression(E) ::= TOKEN_COUNT(I) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP
     delete L;
 }
 
-expression(E) ::= function_name(Fn) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
+expression(E) ::= TOKEN_IDENTIFIER(Fn) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = functionName(Fn->text),
+            .func = functionName(Fn.text),
             .args = std::move(*L),
         },
-        .span = merge(Fn->span, RP.span),
+        .span = merge(Fn.span, RP.span),
     };
 
-    delete Fn;
     delete L;
 }
-
-function_name(F) ::= TOKEN_STRING(T). { F = new Token(T); }
-function_name(F) ::= TOKEN_INT(T). { F = new Token(T); }
-function_name(F) ::= TOKEN_FLOAT(T). { F = new Token(T); }
-function_name(F) ::= TOKEN_BOOL(T). { F = new Token(T); }
-function_name(F) ::= TOKEN_MIN(T). { F = new Token(T); }
-function_name(F) ::= TOKEN_MAX(T). { F = new Token(T); }
-function_name(F) ::= TOKEN_SUM(T). { F = new Token(T); }
-function_name(F) ::= TOKEN_PERCENTILE(T). { F = new Token(T); }
-function_name(F) ::= TOKEN_COALESCE(T). { F = new Token(T); }
-function_name(F) ::= TOKEN_RSUBSTR(T). { F = new Token(T); }
-function_name(F) ::= TOKEN_PARSE_TIMESTAMP(T). { F = new Token(T); }
 
 value_list(L) ::= value(V). {
     L = new std::vector<Literal>();

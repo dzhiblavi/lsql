@@ -24,3 +24,7 @@
 {"test_index":7,"ts_offset":1,"uid":"aaa"}
 {"test_index":7,"ts_offset":2,"uid":"bbb"}
 {"test_index":7,"ts_offset":3,"uid":"ccc"}
+
+{"month":"May","test_index":8,"timestamp_lower":"2026-may-06 12:00:01","uid":"aaa"}
+{"month":"May","test_index":8,"timestamp_lower":"2026-may-06 12:00:02","uid":"bbb"}
+{"month":"May","test_index":8,"timestamp_lower":"2026-may-06 12:00:03","uid":"ccc"}

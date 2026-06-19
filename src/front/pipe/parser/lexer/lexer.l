@@ -34,7 +34,8 @@ void pipeSetLocPtr(lsql::front::SourceSpan* ptr) {
 %}
 
 WHITESPACE       [ \t\n]+
-IDENTIFIER       \.?[a-zA-Z_][a-zA-Z0-9_]*
+FIELD_IDENTIFIER \.[a-zA-Z_][a-zA-Z0-9_]*
+IDENTIFIER       [a-zA-Z_][a-zA-Z0-9_]*
 PATH             [/\\]?([a-zA-Z0-9_\-\.]+[/\\]+)*[a-zA-Z0-9_\-\.]+
 INTEGER          [0-9]+
 FLOATING         [+-]?[0-9]+\.[0-9]+
@@ -89,24 +90,13 @@ true             { return TOKEN_TRUE; }
 false            { return TOKEN_FALSE; }
 null             { return TOKEN_NULL; }
 
-string           { return TOKEN_STRING; }
-int              { return TOKEN_INT; }
-float            { return TOKEN_FLOAT; }
-bool             { return TOKEN_BOOL; }
-
 count            { return TOKEN_COUNT; }
-min              { return TOKEN_MIN; }
-max              { return TOKEN_MAX; }
-sum              { return TOKEN_SUM; }
-percentile       { return TOKEN_PERCENTILE; }
-coalesce         { return TOKEN_COALESCE; }
-rsubstr          { return TOKEN_RSUBSTR; }
-parse_timestamp  { return TOKEN_PARSE_TIMESTAMP; }
 
 {TIMESTAMP}      { return TOKEN_TIMESTAMP; }
 {FLOATING}       { return TOKEN_FLOATING; }
 {INTEGER}        { return TOKEN_INTEGER; }
 {QUOTED_STRING}  { return TOKEN_STR; }
+{FIELD_IDENTIFIER} { return TOKEN_FIELD_IDENTIFIER; }
 {IDENTIFIER}     { return TOKEN_IDENTIFIER; }
 {PATH}           { return TOKEN_PATH; }
 

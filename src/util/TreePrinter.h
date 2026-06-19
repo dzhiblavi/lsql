@@ -22,6 +22,7 @@ template <typename Self>
 struct TreePrinter {
  public:
     StrBuilder print(const std::string& s) { return s; }
+    StrBuilder print(char s) { return std::string(1, s); }
     StrBuilder print(float s) { return std::to_string(s); }
     StrBuilder print(bool s) { return std::to_string(s); }
     StrBuilder print(int s) { return std::to_string(s); }

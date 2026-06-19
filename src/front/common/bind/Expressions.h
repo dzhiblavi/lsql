@@ -80,6 +80,70 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     std::string_view fn_name, std::vector<Arg> args, SourceSpan span, SourceSpan args_span) {
     auto level = composedLevel<Arg>(args, args_span);
 
+    if (fn_name == "lower") {
+        requireAt(args.size() == 1, args_span, "lower expects exactly 1 argument");
+        requireAt(
+            args[0].value_type == ValueType::String,
+            args_span,
+            "lower's argument should be String");
+
+        return {
+            BoundExprInfo{
+                .value_type = ValueType::String,
+                .level = level,
+                .required_fields = args[0].required_fields,
+            },
+            func::Lower{},
+            std::move(args),
+        };
+    }
+
+    if (fn_name == "splitpart") {
+        requireAt(args.size() == 3, args_span, "splitpart expects exactly 3 arguments");
+        requireAt(
+            args[0].value_type == ValueType::String,
+            args_span,
+            "splitpart's first argument should be String");
+        requireAt(
+            args[1].level == bound::ExprKindLevel::Const,
+            args_span,
+            "splitpart's separator must be constant");
+        requireAt(
+            args[1].value_type == ValueType::String,
+            args_span,
+            "splitpart's separator should be String");
+        requireAt(
+            args[2].level == bound::ExprKindLevel::Const,
+            args_span,
+            "splitpart's index must be constant");
+        requireAt(
+            args[2].value_type == ValueType::Integer,
+            args_span,
+            "splitpart's index should be Integer");
+
+        auto separator = getLiteral(args[1], args_span).template get<std::string_view>();
+        requireAt(separator.size() == 1, args_span, "splitpart's separator must be one character");
+
+        auto index = getLiteral(args[2], args_span).template get<int64_t>();
+        requireAt(index >= 0, args_span, "splitpart's index must not be negative");
+
+        std::vector<Arg> dynamic;
+        dynamic.push_back(std::move(args[0]));
+
+        return {
+            BoundExprInfo{
+                .value_type = ValueType::String,
+                .level = dynamic[0].level,
+                .required_fields = dynamic[0].required_fields,
+            },
+            func::SplitPart{
+                .separator = separator[0],
+                .index = static_cast<size_t>(index),
+            },
+            std::move(dynamic),
+        };
+    }
+
     if (fn_name == "substr") {
         requireAt(2 <= args.size() && args.size() <= 3, args_span, "2-3 arguments required");
         requireAt(args[0].value_type == ValueType::String, args_span, "1st arg should be string");

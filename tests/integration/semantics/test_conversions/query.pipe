@@ -48,3 +48,10 @@ $input
     .uid,
     parse_timestamp(.timestamp, 'ORACLE') - parse_timestamp('2026-May-06 12:00:00', 'ORACLE') as ts_offset,
     7 as test_index
+
+$input
+| select
+    .uid,
+    lower(.timestamp) as timestamp_lower,
+    splitpart(.timestamp, '-', 1) as month,
+    8 as test_index

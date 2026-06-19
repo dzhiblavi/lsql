@@ -12,6 +12,7 @@
 #include "core/function/build/Divide.h"
 #include "core/function/build/Equal.h"
 #include "core/function/build/Like.h"
+#include "core/function/build/Lower.h"
 #include "core/function/build/Max.h"
 #include "core/function/build/Min.h"
 #include "core/function/build/NotEqual.h"
@@ -20,6 +21,7 @@
 #include "core/function/build/Percentile.h"
 #include "core/function/build/RSubstr.h"
 #include "core/function/build/Substr.h"
+#include "core/function/build/SplitPart.h"
 #include "core/function/build/Subtract.h"
 #include "core/function/build/Sum.h"
 
@@ -30,6 +32,8 @@ R buildScalar(const Function& func, F&& f) {
     return util::match(
         func,
         util::Overloaded{
+            [&](const Lower& s) -> R { return f(build(s)); },
+            [&](const SplitPart& s) -> R { return f(build(s)); },
             [&](const Substr& s) -> R { return f(build(s)); },
             [&](const Coalesce& s) -> R { return f(build(s)); },
             [&](const RSubstr& s) -> R { return f(build(s)); },

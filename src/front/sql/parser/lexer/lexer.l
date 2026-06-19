@@ -70,24 +70,14 @@ OR               { return TOKEN_OR; }
 LIKE             { return TOKEN_LIKE; }
 MATERIALIZE      { return TOKEN_MATERIALIZE; }
 STREAM           { return TOKEN_STREAM; }
-String           { return TOKEN_STRING; }
-Int              { return TOKEN_INT; }
-Float            { return TOKEN_FLOAT; }
-Bool             { return TOKEN_BOOL; }
 COUNT            { return TOKEN_COUNT; }
 true             { return TOKEN_TRUE; }
 false            { return TOKEN_FALSE; }
 null             { return TOKEN_NULL; }
 ASC              { return TOKEN_ASC; }
 DESC             { return TOKEN_DESC; }
-MIN              { return TOKEN_MIN; }
-MAX              { return TOKEN_MAX; }
-SUM              { return TOKEN_SUM; }
 IN               { return TOKEN_IN; }
 NOT              { return TOKEN_NOT; }
-PERCENTILE       { return TOKEN_PERCENTILE; }
-COALESCE         { return TOKEN_COALESCE; }
-RSUBSTR          { return TOKEN_RSUBSTR; }
 "GROUP BY"       { return TOKEN_GROUP_BY; }
 "ORDER BY"       { return TOKEN_ORDER_BY; }
 "UNION ALL"      { return TOKEN_UNION_ALL; }

@@ -10,6 +10,17 @@
 
 namespace lsql::func {
 
+struct Lower {
+    bool operator==(const Lower&) const = default;
+};
+
+struct SplitPart {
+    char separator;
+    size_t index;
+
+    bool operator==(const SplitPart&) const = default;
+};
+
 struct Substr {
     size_t from;
     size_t length;
@@ -117,6 +128,8 @@ struct Sum {
 };
 
 using Function = std::variant< //
+    Lower, //
+    SplitPart, //
     Substr, //
     Coalesce, //
     RSubstr, //
@@ -143,6 +156,8 @@ inline bool isScalar(const Function& f) {
     return util::match(
         f,
         util::Overloaded{
+            [](const Lower&) { return true; },
+            [](const SplitPart&) { return true; },
             [](const Substr&) { return true; },
             [](const Coalesce&) { return true; },
             [](const RSubstr&) { return true; },

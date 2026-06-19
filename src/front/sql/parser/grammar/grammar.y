@@ -46,7 +46,6 @@
 %token TOKEN_EOF.
 %token TOKEN_AS.
 %token TOKEN_IN.
-%token TOKEN_COALESCE.
 %token TOKEN_COMMA.
 %token TOKEN_STAR.
 %token TOKEN_WHERE.
@@ -55,7 +54,6 @@
 %token TOKEN_FLOATING.
 %token TOKEN_PATH.
 %token TOKEN_STR.
-%token TOKEN_RSUBSTR.
 %token TOKEN_LPAREN.
 %token TOKEN_RPAREN.
 %token TOKEN_AT.
@@ -69,18 +67,10 @@
 %token TOKEN_DOLLAR.
 %token TOKEN_UNION_ALL.
 %token TOKEN_UNION_ALL_SORTED_BY.
-%token TOKEN_MIN.
-%token TOKEN_MAX.
-%token TOKEN_SUM.
-%token TOKEN_PERCENTILE.
 %token TOKEN_PLUS.
 %token TOKEN_MINUS.
 %token TOKEN_LIKE.
 %token TOKEN_MATERIALIZE.
-%token TOKEN_STRING.
-%token TOKEN_INT.
-%token TOKEN_FLOAT.
-%token TOKEN_BOOL.
 %token TOKEN_EXCLAMATION.
 %token TOKEN_NOT.
 %token TOKEN_TIMESTAMP.
@@ -99,7 +89,6 @@
 
 %type value              {Literal*}
 %type expression         {ast::Expr*}
-%type function_name      {lsql::front::sql::parse::Token*}
 %type condition          {ast::Expr*}
 %type group_expression   {ast::Expr*}
 %type select_item        {ast::Projector*}
@@ -519,19 +508,6 @@ expression(E) ::= TOKEN_IDENTIFIER(Fn) TOKEN_LPAREN expression_list(L) TOKEN_RPA
     delete L;
 }
 
-expression(E) ::= function_name(Fn) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = functionName(Fn->text),
-            .args = std::move(*L),
-        },
-        .span = merge(Fn->span, RP.span),
-    };
-
-    delete Fn;
-    delete L;
-}
-
 expression(E) ::= expression(L) TOKEN_LIKE TOKEN_STR(R). {
     auto str = std::string(R.text);
 
@@ -630,17 +606,6 @@ expression(E) ::= expression(L) TOKEN_IN select_source(S). {
         .span = merge(L->span, S->span),
     };
 }
-
-function_name(F) ::= TOKEN_STRING(T). { F = new lsql::front::sql::parse::Token(T); }
-function_name(F) ::= TOKEN_INT(T). { F = new lsql::front::sql::parse::Token(T); }
-function_name(F) ::= TOKEN_FLOAT(T). { F = new lsql::front::sql::parse::Token(T); }
-function_name(F) ::= TOKEN_BOOL(T). { F = new lsql::front::sql::parse::Token(T); }
-function_name(F) ::= TOKEN_MIN(T). { F = new lsql::front::sql::parse::Token(T); }
-function_name(F) ::= TOKEN_MAX(T). { F = new lsql::front::sql::parse::Token(T); }
-function_name(F) ::= TOKEN_SUM(T). { F = new lsql::front::sql::parse::Token(T); }
-function_name(F) ::= TOKEN_COALESCE(T). { F = new lsql::front::sql::parse::Token(T); }
-function_name(F) ::= TOKEN_PERCENTILE(T). { F = new lsql::front::sql::parse::Token(T); }
-function_name(F) ::= TOKEN_RSUBSTR(T). { F = new lsql::front::sql::parse::Token(T); }
 
 value_list(L) ::= value(V). {
     L = new std::vector<Literal>();
