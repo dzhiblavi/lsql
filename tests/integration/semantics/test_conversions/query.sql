@@ -20,3 +20,6 @@ FROM $input
 
 SELECT uid, Int(missing) AS missing_i, Float(missing) AS missing_f, String(missing) AS missing_s, 6 AS test_index
 FROM $input
+
+SELECT uid, parse_timestamp(timestamp, 'ORACLE') - parse_timestamp('2026-May-06 12:00:00', 'ORACLE') AS ts_offset, 7 AS test_index
+FROM $input

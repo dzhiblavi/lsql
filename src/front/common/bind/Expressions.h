@@ -307,6 +307,34 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
         };
     }
 
+    if (fn_name == "parse_timestamp") {
+        requireAt(args.size() == 2, args_span, "function expects 2 arguments");
+        requireAt(args[0].value_type == ValueType::String, args_span, "the first argument must be string");
+        requireAt(
+            args[1].level == bound::ExprKindLevel::Const,
+            args_span,
+            "the second argument must be constant");
+        requireAt(args[1].value_type == ValueType::String, args_span, "the argument must be string");
+
+        auto str_format = getLiteral(args[1], args_span).template get<std::string_view>();
+        auto maybe_format = magic_enum::enum_cast<TimeFormat>(str_format);
+        requireAt(maybe_format.has_value(), args_span, "invalid time format '{}'", str_format);
+
+        std::vector<Arg> dynamic;
+        dynamic.push_back(std::move(args[0]));
+        auto fields = requiredFieldsOf(dynamic);
+
+        return {
+            BoundExprInfo{
+                .value_type = ValueType::Integer,
+                .level = dynamic[0].level,
+                .required_fields = fields,
+            },
+            func::ParseTimestamp{.format = *maybe_format},
+            std::move(dynamic),
+        };
+    }
+
     static constexpr std::array<std::pair<std::string_view, ValueType>, 5> cast_fns{
         std::make_pair("null", ValueType::Null),
         std::make_pair("int", ValueType::Integer),

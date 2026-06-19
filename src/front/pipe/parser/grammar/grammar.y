@@ -73,6 +73,7 @@
 %token TOKEN_PERCENTILE.
 %token TOKEN_COALESCE.
 %token TOKEN_RSUBSTR.
+%token TOKEN_PARSE_TIMESTAMP.
 %token TOKEN_IDENTIFIER.
 %token TOKEN_PATH.
 %token TOKEN_INTEGER.
@@ -544,7 +545,6 @@ expression(E) ::= function_name(Fn) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN
     delete L;
 }
 
-function_name(F) ::= TOKEN_IDENTIFIER(T). { F = new Token(T); }
 function_name(F) ::= TOKEN_STRING(T). { F = new Token(T); }
 function_name(F) ::= TOKEN_INT(T). { F = new Token(T); }
 function_name(F) ::= TOKEN_FLOAT(T). { F = new Token(T); }
@@ -555,6 +555,7 @@ function_name(F) ::= TOKEN_SUM(T). { F = new Token(T); }
 function_name(F) ::= TOKEN_PERCENTILE(T). { F = new Token(T); }
 function_name(F) ::= TOKEN_COALESCE(T). { F = new Token(T); }
 function_name(F) ::= TOKEN_RSUBSTR(T). { F = new Token(T); }
+function_name(F) ::= TOKEN_PARSE_TIMESTAMP(T). { F = new Token(T); }
 
 value_list(L) ::= value(V). {
     L = new std::vector<Literal>();

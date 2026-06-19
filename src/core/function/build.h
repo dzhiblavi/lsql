@@ -16,6 +16,7 @@
 #include "core/function/build/Min.h"
 #include "core/function/build/NotEqual.h"
 #include "core/function/build/Or.h"
+#include "core/function/build/ParseTimestamp.h"
 #include "core/function/build/Percentile.h"
 #include "core/function/build/RSubstr.h"
 #include "core/function/build/Substr.h"
@@ -34,6 +35,7 @@ R buildScalar(const Function& func, F&& f) {
             [&](const RSubstr& s) -> R { return f(build(s)); },
             [&](const Like& s) -> R { return f(build(s)); },
             [&](const Cast& s) -> R { return f(build(s)); },
+            [&](const ParseTimestamp& s) -> R { return f(build(s)); },
             [&](const BooleanNegate& s) -> R { return f(build(s)); },
             [&](const Equal& s) -> R { return f(build(s)); },
             [&](const NotEqual& s) -> R { return f(build(s)); },

@@ -11,7 +11,7 @@ std::string_view timeFormatRegex<TimeFormat::SQL>() {
 
 template <>
 timestamp_t timestampFromString<TimeFormat::SQL>(std::string_view s) {
-    verify_dbg(s.size() == 19);
+    verify_dbg(s.size() >= 19);
 
     struct tm tm = {};
     tm.tm_year =

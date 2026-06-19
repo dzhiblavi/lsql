@@ -20,3 +20,7 @@
 {"missing_f":null,"missing_i":null,"missing_s":null,"test_index":6,"uid":"aaa"}
 {"missing_f":null,"missing_i":null,"missing_s":null,"test_index":6,"uid":"bbb"}
 {"missing_f":null,"missing_i":null,"missing_s":null,"test_index":6,"uid":"ccc"}
+
+{"test_index":7,"ts_offset":1,"uid":"aaa"}
+{"test_index":7,"ts_offset":2,"uid":"bbb"}
+{"test_index":7,"ts_offset":3,"uid":"ccc"}

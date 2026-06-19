@@ -101,6 +101,7 @@ sum              { return TOKEN_SUM; }
 percentile       { return TOKEN_PERCENTILE; }
 coalesce         { return TOKEN_COALESCE; }
 rsubstr          { return TOKEN_RSUBSTR; }
+parse_timestamp  { return TOKEN_PARSE_TIMESTAMP; }
 
 {TIMESTAMP}      { return TOKEN_TIMESTAMP; }
 {FLOATING}       { return TOKEN_FLOATING; }

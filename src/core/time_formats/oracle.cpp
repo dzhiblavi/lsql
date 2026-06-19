@@ -11,7 +11,7 @@ std::string_view timeFormatRegex<TimeFormat::ORACLE>() {
 
 template <>
 timestamp_t timestampFromString<TimeFormat::ORACLE>(std::string_view s) {
-    verify_dbg(s.size() == 20);
+    verify_dbg(s.size() >= 20);
 
     std::tm tm{};
     tm.tm_year = (s[0] - '0') * 1000 + (s[1] - '0') * 100 + (s[2] - '0') * 10 + (s[3] - '0') - 1900;

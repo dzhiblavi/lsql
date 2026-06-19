@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/time_formats.h"
 #include "core/value/ValueType.h"
 #include "util/overloaded.h"
 
@@ -36,6 +37,12 @@ struct Cast {
     ValueType cast_to;
 
     bool operator==(const Cast&) const = default;
+};
+
+struct ParseTimestamp {
+    TimeFormat format;
+
+    bool operator==(const ParseTimestamp&) const = default;
 };
 
 struct BooleanNegate {
@@ -115,6 +122,7 @@ using Function = std::variant< //
     RSubstr, //
     Like, //
     Cast, //
+    ParseTimestamp, //
     BooleanNegate, //
     Equal, //
     NotEqual, //
@@ -135,15 +143,25 @@ inline bool isScalar(const Function& f) {
     return util::match(
         f,
         util::Overloaded{
-            [](const Substr&) { return true; },        [](const Coalesce&) { return true; },
-            [](const RSubstr&) { return true; },       [](const Like&) { return true; },
-            [](const Cast&) { return true; },          [](const BooleanNegate&) { return true; },
-            [](const Equal&) { return true; },         [](const NotEqual&) { return true; },
-            [](const And&) { return true; },           [](const Or&) { return true; },
-            [](const Divide&) { return true; },        [](const Add&) { return true; },
-            [](const Subtract&) { return true; },      [](const Percentile&) { return false; },
-            [](const CountNonNull&) { return false; }, [](const CountAll&) { return false; },
-            [](const Min&) { return false; },          [](const Max&) { return false; },
+            [](const Substr&) { return true; },
+            [](const Coalesce&) { return true; },
+            [](const RSubstr&) { return true; },
+            [](const Like&) { return true; },
+            [](const Cast&) { return true; },
+            [](const ParseTimestamp&) { return true; },
+            [](const BooleanNegate&) { return true; },
+            [](const Equal&) { return true; },
+            [](const NotEqual&) { return true; },
+            [](const And&) { return true; },
+            [](const Or&) { return true; },
+            [](const Divide&) { return true; },
+            [](const Add&) { return true; },
+            [](const Subtract&) { return true; },
+            [](const Percentile&) { return false; },
+            [](const CountNonNull&) { return false; },
+            [](const CountAll&) { return false; },
+            [](const Min&) { return false; },
+            [](const Max&) { return false; },
             [](const Sum&) { return false; },
         });
 }

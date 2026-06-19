@@ -507,6 +507,18 @@ expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP
     delete L;
 }
 
+expression(E) ::= TOKEN_IDENTIFIER(Fn) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = functionName(Fn.text),
+            .args = std::move(*L),
+        },
+        .span = merge(Fn.span, RP.span),
+    };
+
+    delete L;
+}
+
 expression(E) ::= function_name(Fn) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
     E = new ast::Expr{
         .node = ast::FnCallExpr{
@@ -619,7 +631,6 @@ expression(E) ::= expression(L) TOKEN_IN select_source(S). {
     };
 }
 
-function_name(F) ::= TOKEN_IDENTIFIER(T). { F = new lsql::front::sql::parse::Token(T); }
 function_name(F) ::= TOKEN_STRING(T). { F = new lsql::front::sql::parse::Token(T); }
 function_name(F) ::= TOKEN_INT(T). { F = new lsql::front::sql::parse::Token(T); }
 function_name(F) ::= TOKEN_FLOAT(T). { F = new lsql::front::sql::parse::Token(T); }
