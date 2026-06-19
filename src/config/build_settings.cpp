@@ -16,6 +16,10 @@ std::string formatBuildSettings() {
         "  storage.command_stderr_tail_size: {}\n"
         "  optimizer.default_passes: {}\n"
         "  optimizer.coalesce_cost_overhead: {}\n"
+        "  optimizer.lower_cost_overhead: {}\n"
+        "  optimizer.splitpart_cost_overhead: {}\n"
+        "  optimizer.substr_cost_overhead: {}\n"
+        "  optimizer.parse_timestamp_cost_overhead: {}\n"
         "  optimizer.unary_op_cost_overhead: {}\n"
         "  optimizer.binary_op_cost_overhead: {}\n"
         "  optimizer.cast_to_string_cost_overhead: {}\n"
@@ -33,6 +37,10 @@ std::string formatBuildSettings() {
         Storage::CommandStderrTailSize,
         Optimizer::DefaultPasses,
         Optimizer::CoalesceCostOverhead,
+        Optimizer::LowerCostOverhead,
+        Optimizer::SplitPartCostOverhead,
+        Optimizer::SubstrCostOverhead,
+        Optimizer::ParseTimestampCostOverhead,
         Optimizer::UnaryOpCostOverhead,
         Optimizer::BinaryOpCostOverhead,
         Optimizer::CastToStringCostOverhead,

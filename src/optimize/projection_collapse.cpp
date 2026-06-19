@@ -36,6 +36,12 @@ struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
         util::match(
             s.function,
             util::Overloaded{
+                [&](const func::Lower&) { cost += Optimizer::LowerCostOverhead; },
+                [&](const func::SplitPart&) { cost += Optimizer::SplitPartCostOverhead; },
+                [&](const func::Substr&) { cost += Optimizer::SubstrCostOverhead; },
+                [&](const func::ParseTimestamp&) {
+                    cost += Optimizer::ParseTimestampCostOverhead;
+                },
                 [&](const func::Coalesce&) { cost += Optimizer::CoalesceCostOverhead; },
                 [&](const func::Cast& f) {
                     verify_dbg(s.args.size() == 1);
@@ -57,7 +63,12 @@ struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
                 [&](const func::Divide&) { cost += Optimizer::BinaryOpCostOverhead; },
                 [&](const func::Add&) { cost += Optimizer::BinaryOpCostOverhead; },
                 [&](const func::Subtract&) { cost += Optimizer::BinaryOpCostOverhead; },
-                [&](const auto&) {},
+                [&](const func::Percentile&) { cost += Optimizer::BinaryOpCostOverhead; },
+                [&](const func::CountNonNull&) {},
+                [&](const func::CountAll&) {},
+                [&](const func::Min&) {},
+                [&](const func::Max&) {},
+                [&](const func::Sum&) {},
             });
 
         return cost;

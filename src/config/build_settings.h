@@ -24,6 +24,10 @@ struct Storage {
 struct Optimizer {
     static inline constexpr unsigned DefaultPasses = 5;
     static inline constexpr int CoalesceCostOverhead = 1;
+    static inline constexpr int LowerCostOverhead = 1;
+    static inline constexpr int SplitPartCostOverhead = 1;
+    static inline constexpr int SubstrCostOverhead = 1;
+    static inline constexpr int ParseTimestampCostOverhead = 10;
     static inline constexpr int UnaryOpCostOverhead = 1;
     static inline constexpr int BinaryOpCostOverhead = 1;
     static inline constexpr int CastToStringCostOverhead = 2;
