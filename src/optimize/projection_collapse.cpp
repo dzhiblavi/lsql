@@ -25,8 +25,29 @@ struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
 
     int view(const ir::ValueScalar&, auto&) { return 0; }
 
-    int view(const ir::FnCallScalar&, auto&, auto args) {
-        return std::ranges::fold_left(args, Optimizer::FnCallCostOverhead, std::plus());
+    int view(const ir::FnCallScalar& s, auto&, auto args) {
+        int cost = std::ranges::fold_left(args, 0, std::plus());
+
+        util::match(
+            s.function,
+            util::Overloaded{
+                [&](const func::Coalesce&) { cost += Optimizer::CoalesceCostOverhead; },
+                [&](const func::Cast& f) {
+                    verify_dbg(s.args.size() == 1);
+
+                    if (f.cast_to == ValueType::String) {
+                        cost += Optimizer::CastToStringCostOverhead;
+                    }
+                    if (s.args.front().value_type == ValueType::String) {
+                        cost += Optimizer::ParseStringCostOverhead;
+                    }
+                },
+                [&](const func::Like&) { cost += Optimizer::RegexCostOverhead; },
+                [&](const func::RSubstr&) { cost += Optimizer::RegexCostOverhead; },
+                [&](const auto&) {},
+            });
+
+        return cost;
     }
 
     int view(const ir::UnaryScalar&, auto&, int arg) {
