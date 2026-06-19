@@ -10,7 +10,8 @@ class Projection : public OperationBase<Projection> {
  public:
     Projection(int id, std::vector<Arc<Scalar>> scalars)
         : OperationBase(id)
-        , scalars_(std::move(scalars)) {
+        , scalars_(std::move(scalars))
+        , record_(std::vector<Value>(scalars_.size(), vnull)) {
         prof::addEdge(sub_.scopeHandle(), prof_);
     }
 
@@ -22,21 +23,22 @@ class Projection : public OperationBase<Projection> {
             return emit(nullptr);
         }
 
-        std::vector<Value> values;
-        values.reserve(scalars_.size());
-        for (auto&& scalar : scalars_) {
+        auto&& values = record_.mutableValues();
+        for (size_t i = 0; i < scalars_.size(); ++i) {
+            auto&& scalar = scalars_[i];
+            auto&& value = values[i];
+
             if (scalar != nullptr) {
-                values.push_back(scalar->eval(*record));
-            } else {
-                values.emplace_back(null);
+                value = scalar->eval(*record);
             }
         }
 
-        VecRecord rec(std::move(values));
-        return emit(&rec);
+        return emit(&record_);
     }
 
     std::vector<Arc<Scalar>> scalars_;
+    VecRecord record_;
+
     MemberSubscriber<Projection> sub_{
         this,
         &Projection::consume,

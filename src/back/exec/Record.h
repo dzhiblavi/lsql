@@ -59,6 +59,7 @@ class VecRecord : public Record {
     }
 
     ConstRecordPtr cloneImpl() const override { return std::make_shared<VecRecord>(*this); }
+    std::span<Value> mutableValues() { return values_; }
 
  private:
     std::vector<Value> values_;

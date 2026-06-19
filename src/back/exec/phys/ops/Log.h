@@ -24,7 +24,7 @@ class Log : public Source, public OperationBase<Log> {
         , log_(std::move(log))
         , type_(type)
         , slots_(std::move(slots))
-        , num_slots_(num_slots) {
+        , record_(std::vector<Value>(num_slots, vnull)) {
         prof::addEdge(parse_scope_, prof_);
         prof::addEdge(source_read_scope_, prof_);
     }
@@ -47,7 +47,7 @@ class Log : public Source, public OperationBase<Log> {
             }
         } else {
             const size_t max_small_string_size = std::string().capacity();
-            std::vector<Value> values;
+            auto&& values = record_.mutableValues();
             back::storage::Line line;
 
             auto insert = [&](SlotId slot, std::string_view view) {
@@ -72,7 +72,7 @@ class Log : public Source, public OperationBase<Log> {
 
             auto lines = log_->lines();
             for (auto it = lines.begin(); it != lines.end(); /* in body */) {
-                values.assign(num_slots_, vnull);
+                std::ranges::fill(values, null);
                 line = *it;
 
                 {
@@ -100,10 +100,7 @@ class Log : public Source, public OperationBase<Log> {
                     }
                 }
 
-                VecRecord record(std::move(values));
-                values = {};
-
-                if (!emit(&record)) {
+                if (!emit(&record_)) {
                     return;
                 }
 
@@ -121,7 +118,7 @@ class Log : public Source, public OperationBase<Log> {
     Arc<back::storage::LineSource> log_;
     std::optional<back::logfmt::LogType> type_;
     absl::flat_hash_map<std::string_view, SlotId> slots_;
-    uint32_t num_slots_;
+    VecRecord record_;
 
     prof::ScopeHandle<prof::ScopeMetrics<>> source_read_scope_ =
         prof::newScope<prof::ScopeMetrics<>>("read: {}", log_->describe());
