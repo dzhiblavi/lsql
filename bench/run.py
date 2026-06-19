@@ -21,44 +21,6 @@ QUERIES = BENCH / "queries"
 RESULTS = BENCH / "results"
 
 
-def run_command(args, cwd=ROOT, capture=False):
-    if capture:
-        return subprocess.run(
-            args, cwd=cwd, check=True, text=True, capture_output=True
-        ).stdout
-
-    subprocess.run(args, cwd=cwd, check=True)
-
-
-def current_revision():
-    return run_command(["git", "rev-parse", "--short=12", "HEAD"], capture=True).strip()
-
-
-def current_commit_message():
-    return run_command(["git", "log", "-1", "--pretty=%B"], capture=True).strip()
-
-
-def is_dirty():
-    result = subprocess.run(["git", "diff", "--quiet"], cwd=ROOT)
-    return result.returncode != 0
-
-
-def build(build_type, skip_build):
-    if skip_build:
-        return
-
-    run_command(["make", "build", f"BUILD_TYPE={build_type}", "TESTS=OFF"])
-
-
-def binary_for(frontend, build_type):
-    name = "lsql" if frontend == "sql" else "lpipe"
-    path = ROOT / "output" / f"{name}-{build_type}"
-    if not path.exists():
-        raise RuntimeError(f"binary not found: {path}")
-
-    return path
-
-
 def discover_queries(names=None):
     names = set(names or [])
     queries = []
@@ -100,9 +62,13 @@ def prepare_query(query, query_work_dir):
     if prepare.exists():
         env = os.environ.copy()
         env["PYTHONPATH"] = (
-            str(BENCH) if not env.get("PYTHONPATH") else str(BENCH) + os.pathsep + env["PYTHONPATH"]
+            str(BENCH)
+            if not env.get("PYTHONPATH")
+            else str(BENCH) + os.pathsep + env["PYTHONPATH"]
         )
-        subprocess.run([sys.executable, str(prepare)], cwd=query_work_dir, env=env, check=True)
+        subprocess.run(
+            [sys.executable, str(prepare)], cwd=query_work_dir, env=env, check=True
+        )
 
 
 def timed_run(command, cwd):
@@ -173,7 +139,9 @@ def summarize(samples):
     }
 
 
-def check_output_stability(query, frontend, result, output_hash, output_semantic_hash_value):
+def check_output_stability(
+    query, frontend, result, output_hash, output_semantic_hash_value
+):
     sample_hash = hashlib.sha256(result["stdout"]).hexdigest()
     sample_semantic_hash = output_semantic_hash(result["stdout"])
     if output_hash is None:
@@ -251,14 +219,17 @@ def run_query(
     frontend,
     query_file_name,
     query_work_dir,
-    build_type,
+    binaries,
     repeat,
     warmup,
     time_limit_s,
     dump_profiles,
     result_dir,
 ):
-    binary = binary_for(frontend, build_type)
+    binary = binaries.get(frontend)
+    if binary is None:
+        raise RuntimeError(f"no binary provided for {frontend} frontend")
+
     query_file = query_work_dir / query_file_name
     command = [str(binary), "-f", "JSON", str(query_file)]
     samples = []
@@ -323,9 +294,28 @@ def write_json(path, obj):
 def main():
     parser = argparse.ArgumentParser(description="Run logsql benchmark queries")
     parser.add_argument(
-        "--git-tag", default=None, help="result directory tag; defaults to HEAD"
+        "--tag",
+        default=None,
+        help="result directory tag; defaults to '<binary-name>-<timestamp>'",
     )
-    parser.add_argument("--build-type", default="Release")
+    parser.add_argument(
+        "--binary",
+        type=Path,
+        default=None,
+        help="SQL frontend binary path; shorthand for --sql-binary",
+    )
+    parser.add_argument(
+        "--sql-binary",
+        type=Path,
+        default=None,
+        help="lsql binary path for SQL benchmarks",
+    )
+    parser.add_argument(
+        "--pipe-binary",
+        type=Path,
+        default=None,
+        help="lpipe binary path for pipe benchmarks",
+    )
     parser.add_argument(
         "--repeat",
         type=int,
@@ -340,7 +330,6 @@ def main():
     )
     parser.add_argument("--warmup", type=int, default=0)
     parser.add_argument("--dump-profiles", action="store_true")
-    parser.add_argument("--skip-build", action="store_true")
     parser.add_argument(
         "--query",
         action="append",
@@ -356,9 +345,48 @@ def main():
     if args.warmup < 0:
         raise RuntimeError("--warmup should be non-negative")
 
-    revision = current_revision()
-    dirty = is_dirty()
-    tag = args.git_tag or (revision + ("-dirty" if dirty else ""))
+    sql_binary = args.sql_binary or args.binary
+    binaries = {
+        "sql": sql_binary.resolve() if sql_binary else None,
+        "pipe": args.pipe_binary.resolve() if args.pipe_binary else None,
+    }
+    binaries = {
+        frontend: path for frontend, path in binaries.items() if path is not None
+    }
+    if not binaries:
+        raise RuntimeError(
+            "at least one of --binary, --sql-binary, or --pipe-binary is required"
+        )
+    for frontend, path in binaries.items():
+        if not path.exists():
+            raise RuntimeError(f"{frontend} binary not found: {path}")
+        if not path.is_file():
+            raise RuntimeError(f"{frontend} binary is not a file: {path}")
+
+    queries = discover_queries(args.query)
+    if args.query and len(queries) != len(set(args.query)):
+        found = {query["name"] for query in queries}
+        missing = sorted(set(args.query) - found)
+        raise RuntimeError(f"benchmark query not found: {', '.join(missing)}")
+
+    missing_frontends = sorted(
+        {
+            frontend
+            for query in queries
+            for item in query["frontends"]
+            if item is not None
+            for frontend, _ in [item]
+            if frontend not in binaries
+        }
+    )
+    if missing_frontends:
+        raise RuntimeError(
+            "missing binaries for frontend(s): " + ", ".join(missing_frontends)
+        )
+
+    default_tag_binary = binaries.get("sql") or next(iter(binaries.values()))
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    tag = args.tag or f"{default_tag_binary.name}-{timestamp}"
     result_dir = RESULTS / tag
     work_root = result_dir / "_work"
 
@@ -367,14 +395,11 @@ def main():
         shutil.rmtree(work_root)
     work_root.mkdir(parents=True)
 
-    build(args.build_type, args.skip_build)
-
     meta = {
-        "git_revision": revision,
-        "git_commit_message": current_commit_message(),
-        "git_dirty": dirty,
-        "git_tag": tag,
-        "build_type": args.build_type,
+        "tag": tag,
+        "binaries": {
+            frontend: str(path) for frontend, path in sorted(binaries.items())
+        },
         "repeat": args.repeat,
         "auto_repeat": args.repeat is None,
         "time_limit_s": args.time_limit if args.repeat is None else None,
@@ -387,14 +412,9 @@ def main():
     }
     write_json(result_dir / "meta.json", meta)
 
-    queries = discover_queries(args.query)
-    if args.query and len(queries) != len(set(args.query)):
-        found = {query["name"] for query in queries}
-        missing = sorted(set(args.query) - found)
-        raise RuntimeError(f"benchmark query not found: {', '.join(missing)}")
-
     for idx, query in enumerate(queries):
-        print(f"running query #{idx}: '{query["name"]}'")
+        name = query["name"]
+        print(f"running query #{idx}: '{name}'")
         query_work_dir = work_root / query["name"]
         prepare_query(query, query_work_dir)
 
@@ -410,7 +430,7 @@ def main():
                     frontend,
                     query_file_name,
                     query_work_dir,
-                    args.build_type,
+                    binaries,
                     args.repeat,
                     args.warmup,
                     args.time_limit,

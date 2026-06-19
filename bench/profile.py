@@ -13,10 +13,10 @@ RUN = ROOT / "bench" / "run.py"
 def main():
     parser = argparse.ArgumentParser(description="Run one benchmark with profile artifacts")
     parser.add_argument("query", help="benchmark query name")
-    parser.add_argument("--build-type", default="Release")
+    parser.add_argument("--binary", required=True, help="SQL frontend binary path")
+    parser.add_argument("--pipe-binary", default=None, help="pipe frontend binary path")
     parser.add_argument("--warmup", type=int, default=1)
-    parser.add_argument("--git-tag", default=None)
-    parser.add_argument("--skip-build", action="store_true")
+    parser.add_argument("--tag", default=None)
     args = parser.parse_args()
 
     command = [
@@ -24,18 +24,18 @@ def main():
         str(RUN),
         "--query",
         args.query,
-        "--build-type",
-        args.build_type,
+        "--binary",
+        args.binary,
         "--repeat",
         "1",
         "--warmup",
         str(args.warmup),
         "--dump-profiles",
     ]
-    if args.git_tag:
-        command += ["--git-tag", args.git_tag]
-    if args.skip_build:
-        command += ["--skip-build"]
+    if args.pipe_binary:
+        command += ["--pipe-binary", args.pipe_binary]
+    if args.tag:
+        command += ["--tag", args.tag]
 
     subprocess.run(command, cwd=ROOT, check=True)
 

@@ -85,7 +85,7 @@ def resolve_result_dir(s):
 
 
 def meta_label(result_dir, meta):
-    tag = meta.get("git_tag") or result_dir.name
+    tag = meta.get("git_tag") or meta.get("tag") or result_dir.name
     rev = meta.get("git_revision")
     message = meta.get("git_commit_message")
     dirty = "-dirty" if meta.get("git_dirty") else ""

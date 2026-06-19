@@ -37,7 +37,7 @@ By default, `bench/run.py` warms up, runs each query once as a pilot sample, and
 chooses the recorded sample count from `--time-limit`:
 
 ```sh
-python3 bench/run.py --warmup 3 --time-limit 5
+python3 bench/run.py --binary ./output/lsql-Release --warmup 3 --time-limit 5
 ```
 
 Pass `--repeat N` to force an exact recorded sample count instead.
@@ -47,7 +47,7 @@ Pass `--repeat N` to force an exact recorded sample count instead.
 To dump profiles for one benchmark instead of the whole suite:
 
 ```sh
-python3 bench/profile.py regex_extract --warmup 3
+python3 bench/profile.py regex_extract --binary ./output/lsql-Release --warmup 3
 ```
 
 This writes the usual result JSON plus `prof.dot`, folded flamegraph files, and
