@@ -6,9 +6,7 @@
 namespace lsql::func {
 
 struct CountNonNullAggregator {
-    void feed(const Value& value) {
-        count += value != vnull;
-    }
+    void feed(const Value& value) { count += value != vnull; }
 
     Value get() { return count; }
 

@@ -373,12 +373,16 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
 
     if (fn_name == "parse_timestamp") {
         requireAt(args.size() == 2, args_span, "function expects 2 arguments");
-        requireAt(args[0].value_type == ValueType::String, args_span, "the first argument must be string");
+        requireAt(
+            args[0].value_type == ValueType::String,
+            args_span,
+            "the first argument must be string");
         requireAt(
             args[1].level == bound::ExprKindLevel::Const,
             args_span,
             "the second argument must be constant");
-        requireAt(args[1].value_type == ValueType::String, args_span, "the argument must be string");
+        requireAt(
+            args[1].value_type == ValueType::String, args_span, "the argument must be string");
 
         auto str_format = getLiteral(args[1], args_span).template get<std::string_view>();
         auto maybe_format = magic_enum::enum_cast<TimeFormat>(str_format);

@@ -203,10 +203,7 @@ class CommandStream : public Stream {
         }
 
         if (WIFEXITED(status)) {
-            throwError(
-                "stream command exited with code {}: {}",
-                WEXITSTATUS(status),
-                stderrTail());
+            throwError("stream command exited with code {}: {}", WEXITSTATUS(status), stderrTail());
         }
 
         if (WIFSIGNALED(status)) {

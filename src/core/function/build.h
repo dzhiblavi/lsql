@@ -20,8 +20,8 @@
 #include "core/function/build/ParseTimestamp.h"
 #include "core/function/build/Percentile.h"
 #include "core/function/build/RSubstr.h"
-#include "core/function/build/Substr.h"
 #include "core/function/build/SplitPart.h"
+#include "core/function/build/Substr.h"
 #include "core/function/build/Subtract.h"
 #include "core/function/build/Sum.h"
 

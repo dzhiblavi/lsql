@@ -15,11 +15,9 @@ struct LowerExecutor {
         }
 
         auto copy = std::string(value.get<std::string_view>());
-        std::transform(
-            copy.begin(),
-            copy.end(),
-            copy.begin(),
-            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        std::transform(copy.begin(), copy.end(), copy.begin(), [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        });
 
         return Value(std::move(copy));
     }
