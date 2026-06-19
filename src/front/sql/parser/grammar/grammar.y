@@ -32,6 +32,10 @@
         });
         return text;
     }
+
+    std::string functionName(std::string text) {
+        return tolower(std::move(text));
+    }
 }
 
 %token TOKEN_SELECT.
@@ -95,6 +99,7 @@
 
 %type value              {Literal*}
 %type expression         {ast::Expr*}
+%type function_name      {lsql::front::sql::parse::Token*}
 %type condition          {ast::Expr*}
 %type group_expression   {ast::Expr*}
 %type select_item        {ast::Projector*}
@@ -460,62 +465,6 @@ expression(E) ::= TOKEN_IDENTIFIER(Id). {
     };
 }
 
-expression(E) ::= TOKEN_STRING(Str) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
-    auto args = std::vector<ast::Expr>();
-    args.push_back(std::move(*S));
-    delete S;
-
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "string",
-            .args = std::move(args),
-        },
-        .span = merge(Str.span, RP.span),
-    };
-}
-
-expression(E) ::= TOKEN_INT(I) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
-    auto args = std::vector<ast::Expr>();
-    args.push_back(std::move(*S));
-    delete S;
-
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "int",
-            .args = std::move(args),
-        },
-        .span = merge(I.span, RP.span),
-    };
-}
-
-expression(E) ::= TOKEN_FLOAT(F) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
-    auto args = std::vector<ast::Expr>();
-    args.push_back(std::move(*S));
-    delete S;
-
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "float",
-            .args = std::move(args),
-        },
-        .span = merge(F.span, RP.span),
-    };
-}
-
-expression(E) ::= TOKEN_BOOL(B) TOKEN_LPAREN expression(S) TOKEN_RPAREN(RP). {
-    auto args = std::vector<ast::Expr>();
-    args.push_back(std::move(*S));
-    delete S;
-
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "bool",
-            .args = std::move(args),
-        },
-        .span = merge(B.span, RP.span),
-    };
-}
-
 expression(E) ::= TOKEN_EXCLAMATION(Ex) expression(S). {
     E = new ast::Expr{
         .node = ast::UnaryExpr{
@@ -536,20 +485,6 @@ expression(E) ::= TOKEN_NOT(N) expression(S). {
     };
 }
 
-expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto args = std::vector<ast::Expr>();
-    args.push_back(std::move(*X));
-    delete X;
-
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "count_nonnull",
-            .args = std::move(args),
-        },
-        .span = merge(C.span, RP.span),
-    };
-}
-
 expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN(RP). {
     E = new ast::Expr{
         .node = ast::FnCallExpr{
@@ -560,57 +495,28 @@ expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN(RP). {
     };
 }
 
-expression(E) ::= TOKEN_MIN(M) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto args = std::vector<ast::Expr>();
-    args.push_back(std::move(*X));
-    delete X;
-
+expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = "min",
-            .args = std::move(args),
-        },
-        .span = merge(M.span, RP.span),
-    };
-}
-
-expression(E) ::= TOKEN_MAX(M) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto args = std::vector<ast::Expr>();
-    args.push_back(std::move(*X));
-    delete X;
-
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "max",
-            .args = std::move(args),
-        },
-        .span = merge(M.span, RP.span),
-    };
-}
-
-expression(E) ::= TOKEN_SUM(S) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto args = std::vector<ast::Expr>();
-    args.push_back(std::move(*X));
-    delete X;
-
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "sum",
-            .args = std::move(args),
-        },
-        .span = merge(S.span, RP.span),
-    };
-}
-
-expression(E) ::= TOKEN_IDENTIFIER(Id) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = tolower(Id.text),
+            .func = "count_nonnull",
             .args = std::move(*L),
         },
-        .span = merge(Id.span, RP.span),
+        .span = merge(C.span, RP.span),
     };
 
+    delete L;
+}
+
+expression(E) ::= function_name(Fn) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = functionName(Fn->text),
+            .args = std::move(*L),
+        },
+        .span = merge(Fn->span, RP.span),
+    };
+
+    delete Fn;
     delete L;
 }
 
@@ -703,71 +609,6 @@ expression(E) ::= expression(L) TOKEN_MINUS expression(R). {
     };
 }
 
-expression(E) ::= TOKEN_COALESCE(C) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "coalesce",
-            .args = std::move(*L),
-        },
-        .span = merge(C.span, RP.span),
-    };
-
-    delete L;
-}
-
-expression(E) ::= TOKEN_PERCENTILE(Pe) TOKEN_LPAREN expression(X) TOKEN_COMMA value_list(P) TOKEN_RPAREN(RP). {
-    auto args = std::vector<ast::Expr>();
-    args.reserve(P->size() + 1);
-
-    args.push_back(std::move(*X));
-    delete X;
-
-    for (auto&& literal : *P) {
-        auto span = literal.span;
-        args.push_back(ast::Expr{
-            .node = ast::LiteralExpr{ .literal = std::move(literal) },
-            .span = span,
-        });
-    }
-
-    delete P;
-
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "percentile",
-            .args = std::move(args),
-        },
-        .span = merge(Pe.span, RP.span),
-    };
-}
-
-expression(E) ::= TOKEN_RSUBSTR(Rs) TOKEN_LPAREN expression(A) TOKEN_COMMA TOKEN_STR(P) TOKEN_RPAREN(RP). {
-    auto args = std::vector<ast::Expr>();
-    args.reserve(2);
-
-    args.push_back(std::move(*A));
-    args.push_back(ast::Expr{
-        .node = ast::LiteralExpr{
-            .literal = Literal{
-                .type = ValueType::String,
-                .value_str = P.text,
-                .span = P.span,
-            },
-        },
-        .span = P.span,
-    });
-
-    delete A;
-
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "rsubstr",
-            .args = std::move(args),
-        },
-        .span = merge(Rs.span, RP.span),
-    };
-}
-
 expression(E) ::= expression(L) TOKEN_IN select_source(S). {
     E = new ast::Expr{
         .node = ast::InExpr{
@@ -777,6 +618,18 @@ expression(E) ::= expression(L) TOKEN_IN select_source(S). {
         .span = merge(L->span, S->span),
     };
 }
+
+function_name(F) ::= TOKEN_IDENTIFIER(T). { F = new lsql::front::sql::parse::Token(T); }
+function_name(F) ::= TOKEN_STRING(T). { F = new lsql::front::sql::parse::Token(T); }
+function_name(F) ::= TOKEN_INT(T). { F = new lsql::front::sql::parse::Token(T); }
+function_name(F) ::= TOKEN_FLOAT(T). { F = new lsql::front::sql::parse::Token(T); }
+function_name(F) ::= TOKEN_BOOL(T). { F = new lsql::front::sql::parse::Token(T); }
+function_name(F) ::= TOKEN_MIN(T). { F = new lsql::front::sql::parse::Token(T); }
+function_name(F) ::= TOKEN_MAX(T). { F = new lsql::front::sql::parse::Token(T); }
+function_name(F) ::= TOKEN_SUM(T). { F = new lsql::front::sql::parse::Token(T); }
+function_name(F) ::= TOKEN_COALESCE(T). { F = new lsql::front::sql::parse::Token(T); }
+function_name(F) ::= TOKEN_PERCENTILE(T). { F = new lsql::front::sql::parse::Token(T); }
+function_name(F) ::= TOKEN_RSUBSTR(T). { F = new lsql::front::sql::parse::Token(T); }
 
 value_list(L) ::= value(V). {
     L = new std::vector<Literal>();

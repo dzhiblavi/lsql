@@ -34,6 +34,10 @@
         }
         return s;
     }
+
+    std::string functionName(std::string text) {
+        return text;
+    }
 }
 
 %token TOKEN_FILE.
@@ -108,6 +112,7 @@
 %type stage           {ast::Stage*}
 %type stage_list      {std::vector<ast::Stage>*}
 %type expression      {ast::Expr*}
+%type function_name   {Token*}
 %type expression_list {std::vector<ast::Expr>*}
 %type projector       {ast::Projector*}
 %type projector_list  {std::vector<ast::Projector>*}
@@ -504,76 +509,6 @@ expression(E) ::= expression(X) TOKEN_IN TOKEN_LPAREN pipeline(P) TOKEN_RPAREN(R
     };
 }
 
-expression(E) ::= TOKEN_STRING(Str) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto span = merge(Str.span, RP.span);
-    std::vector<ast::Expr> args;
-    args.push_back(std::move(*X));
-    delete X;
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "string",
-            .args = std::move(args),
-        },
-        .span = span,
-    };
-}
-
-expression(E) ::= TOKEN_INT(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto span = merge(I.span, RP.span);
-    std::vector<ast::Expr> args;
-    args.push_back(std::move(*X));
-    delete X;
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "int",
-            .args = std::move(args),
-        },
-        .span = span,
-    };
-}
-
-expression(E) ::= TOKEN_FLOAT(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto span = merge(I.span, RP.span);
-    std::vector<ast::Expr> args;
-    args.push_back(std::move(*X));
-    delete X;
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "float",
-            .args = std::move(args),
-        },
-        .span = span,
-    };
-}
-
-expression(E) ::= TOKEN_BOOL(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto span = merge(I.span, RP.span);
-    std::vector<ast::Expr> args;
-    args.push_back(std::move(*X));
-    delete X;
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "bool",
-            .args = std::move(args),
-        },
-        .span = span,
-    };
-}
-
-expression(E) ::= TOKEN_COUNT(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto span = merge(I.span, RP.span);
-    std::vector<ast::Expr> args;
-    args.push_back(std::move(*X));
-    delete X;
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "count_nonnull",
-            .args = std::move(args),
-        },
-        .span = span,
-    };
-}
-
 expression(E) ::= TOKEN_COUNT(I) TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN(RP). {
     E = new ast::Expr{
         .node = ast::FnCallExpr{
@@ -584,105 +519,42 @@ expression(E) ::= TOKEN_COUNT(I) TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN(RP). {
     };
 }
 
-expression(E) ::= TOKEN_MIN(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto span = merge(I.span, RP.span);
-    std::vector<ast::Expr> args;
-    args.push_back(std::move(*X));
-    delete X;
+expression(E) ::= TOKEN_COUNT(I) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = "min",
-            .args = std::move(args),
-        },
-        .span = span,
-    };
-}
-
-expression(E) ::= TOKEN_MAX(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto span = merge(I.span, RP.span);
-    std::vector<ast::Expr> args;
-    args.push_back(std::move(*X));
-    delete X;
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "max",
-            .args = std::move(args),
-        },
-        .span = span,
-    };
-}
-
-expression(E) ::= TOKEN_SUM(I) TOKEN_LPAREN expression(X) TOKEN_RPAREN(RP). {
-    auto span = merge(I.span, RP.span);
-    std::vector<ast::Expr> args;
-    args.push_back(std::move(*X));
-    delete X;
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "sum",
-            .args = std::move(args),
-        },
-        .span = span,
-    };
-}
-
-expression(E) ::= TOKEN_PERCENTILE(Perc) TOKEN_LPAREN expression(X) TOKEN_COMMA expression_list(L) TOKEN_RPAREN(RP). {
-    auto span = merge(Perc.span, RP.span);
-
-    std::vector<ast::Expr> args;
-    args.push_back(std::move(*X));
-    delete X;
-
-    for (auto&& p : *L) {
-        args.push_back(std::move(p));
-    }
-    delete L;
-
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "percentile",
-            .args = std::move(args),
-        },
-        .span = span,
-    };
-}
-
-expression(E) ::= TOKEN_COALESCE(C) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "coalesce",
+            .func = "count_nonnull",
             .args = std::move(*L),
         },
-        .span = merge(C.span, RP.span),
+        .span = merge(I.span, RP.span),
     };
+
     delete L;
 }
 
-expression(E) ::= TOKEN_RSUBSTR(Rs) TOKEN_LPAREN expression(X) TOKEN_COMMA TOKEN_STR(P) TOKEN_RPAREN(RP). {
-    auto span = merge(Rs.span, RP.span);
-    std::vector<ast::Expr> args;
-    args.push_back(std::move(*X));
-    delete X;
-
-    args.push_back(ast::Expr{
-        .node = ast::LiteralExpr{
-            .literal = Literal{
-                .type = ValueType::String,
-                .value_str = P.text,
-                .span = P.span,
-            },
-        },
-        .span = P.span,
-    });
-
+expression(E) ::= function_name(Fn) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = "rsubstr",
-            .args = std::move(args),
+            .func = functionName(Fn->text),
+            .args = std::move(*L),
         },
-        .span = span,
+        .span = merge(Fn->span, RP.span),
     };
+
+    delete Fn;
+    delete L;
 }
+
+function_name(F) ::= TOKEN_IDENTIFIER(T). { F = new Token(T); }
+function_name(F) ::= TOKEN_STRING(T). { F = new Token(T); }
+function_name(F) ::= TOKEN_INT(T). { F = new Token(T); }
+function_name(F) ::= TOKEN_FLOAT(T). { F = new Token(T); }
+function_name(F) ::= TOKEN_BOOL(T). { F = new Token(T); }
+function_name(F) ::= TOKEN_MIN(T). { F = new Token(T); }
+function_name(F) ::= TOKEN_MAX(T). { F = new Token(T); }
+function_name(F) ::= TOKEN_SUM(T). { F = new Token(T); }
+function_name(F) ::= TOKEN_PERCENTILE(T). { F = new Token(T); }
+function_name(F) ::= TOKEN_COALESCE(T). { F = new Token(T); }
+function_name(F) ::= TOKEN_RSUBSTR(T). { F = new Token(T); }
 
 value_list(L) ::= value(V). {
     L = new std::vector<Literal>();
