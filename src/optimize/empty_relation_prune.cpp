@@ -1,7 +1,7 @@
 #include "optimize/empty_relation_prune.h"
 #include "ir/pass.h"
+#include "util/logging.h"
 
-#include <llog/log.h>
 #include <rfl.hpp>
 
 namespace lsql::opt {

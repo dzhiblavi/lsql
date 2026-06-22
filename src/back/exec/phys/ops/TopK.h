@@ -7,8 +7,6 @@
 #include "core/exceptions.h"
 #include "util/verify.h"
 
-#include <llog/log.h>
-
 #include <queue>
 #include <vector>
 

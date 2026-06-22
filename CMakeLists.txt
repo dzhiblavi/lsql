@@ -18,7 +18,6 @@ include(./cmake/IPO.cmake)
 # Third-party libraries
 include(./cmake/thirdparty/re-flex.cmake)
 include(./cmake/thirdparty/libcoro.cmake)
-include(./cmake/thirdparty/llog-spdlog.cmake)
 include(./cmake/thirdparty/reflect-cpp.cmake)
 
 # Enable warnings for core of the project

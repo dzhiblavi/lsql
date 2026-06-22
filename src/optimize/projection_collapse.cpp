@@ -2,8 +2,8 @@
 #include "ir/pass.h"
 
 #include "config/build_settings.h"
+#include "util/logging.h"
 
-#include <llog/log.h>
 #include <rfl.hpp>
 
 namespace lsql::opt {

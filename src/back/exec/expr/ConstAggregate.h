@@ -2,8 +2,6 @@
 
 #include "back/exec/expr/Aggregate.h"
 
-#include <llog/log.h>
-
 namespace lsql::back::exec {
 
 class ConstAggregate : public Aggregate {

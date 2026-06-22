@@ -21,7 +21,6 @@ target_link_libraries(
     lsql-util
     ReflexLibStatic
     magic_enum::magic_enum
-    llog
     abseil::abseil
     cpptrace::cpptrace
 )

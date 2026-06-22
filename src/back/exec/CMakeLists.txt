@@ -17,6 +17,5 @@ target_link_libraries(
     lsql-profiling
     reflectcpp
     libcoro
-    llog
     abseil::abseil
 )

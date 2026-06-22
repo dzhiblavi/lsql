@@ -3,8 +3,8 @@
 #include "ir/pass.h"
 
 #include "core/function/build.h"
+#include "util/logging.h"
 
-#include <llog/log.h>
 #include <rfl.hpp>
 
 namespace lsql::opt {

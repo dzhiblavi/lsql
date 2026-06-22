@@ -15,7 +15,6 @@ target_link_libraries(
     lsql-util
     lsql-core
     libcoro
-    llog
     ZLIB::ZLIB
     Threads::Threads
 )

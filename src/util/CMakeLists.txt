@@ -1,3 +1,4 @@
+find_package(spdlog REQUIRED)
 find_package(magic_enum REQUIRED)
 
 add_library(
@@ -8,13 +9,13 @@ add_library(
     thread.cpp
     uniq_id.cpp
     OrderedSink.cpp
+    logging.cpp
     instrument/duration.cpp
 )
 
 target_link_libraries(
     lsql-util PUBLIC
-    magic_enum::magic_enum
-    llog
-    magic_enum::magic_enum
     reflectcpp
+    magic_enum::magic_enum
+    spdlog::spdlog
 )

@@ -13,9 +13,7 @@
 #include "core/exceptions.h"
 #include "core/time_formats.h"
 #include "util/build_info.h"
-
-#include <llog/load.h>
-#include <llog/log.h>
+#include "util/logging.h"
 
 #include <cpptrace/utils.hpp>
 #include <magic_enum/magic_enum.hpp>
@@ -51,8 +49,8 @@ TCLAP::ValueArg<std::string> log_level_arg{
     "log-level",
     "log level",
     false,
-    "Warn",
-    "Trace/Debug/Info/Warn/Err/Critical/Off",
+    "warn",
+    "logging level",
 };
 
 TCLAP::ValueArg<unsigned> threads_arg{
@@ -258,9 +256,9 @@ void cliMain(std::span<const char*> argv) {
         return;
     }
 
-    auto log_level = magic_enum::enum_cast<llog::Level>(log_level_arg.getValue());
+    auto log_level = magic_enum::enum_cast<spdlog::level::level_enum>(log_level_arg.getValue());
     require(log_level.has_value(), "invalid value for log-level: {}", log_level_arg.getValue());
-    llog::global()->set_level(static_cast<spdlog::level::level_enum>(*log_level));
+    llog::global()->set_level(*log_level);
 
     auto format = magic_enum::enum_cast<output::Format>(format_arg.getValue());
     require(format.has_value(), "invalid value for format: {}", format_arg.getValue());
@@ -300,13 +298,13 @@ int main(int argc, const char** argv) {
         lsql::cliMain(std::span<const char*>(argv, argc));
         return 0;
     } catch (const cpptrace::exception& e) {
-        llog::err("{}", e.message());
+        lsql::llog::err("{}", e.message());
         return 1;
     } catch (const std::exception& e) {
-        llog::err("{}", e.what());
+        lsql::llog::err("{}", e.what());
         return 1;
     } catch (...) {
-        llog::err("unknown error");
+        lsql::llog::err("unknown error");
         return 2;
     }
 }

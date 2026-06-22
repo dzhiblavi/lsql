@@ -1,7 +1,8 @@
 #include "optimize/const_aggregate_fold.h"
 #include "ir/pass.h"
 
-#include <llog/log.h>
+#include "util/logging.h"
+
 #include <rfl.hpp>
 
 namespace lsql::opt {

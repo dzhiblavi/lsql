@@ -1,7 +1,7 @@
 #include "optimize/scalar_simplify.h"
 #include "ir/pass.h"
+#include "util/logging.h"
 
-#include <llog/log.h>
 #include <rfl.hpp>
 
 namespace lsql::opt {

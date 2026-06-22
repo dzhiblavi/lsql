@@ -1,7 +1,7 @@
 #include "optimize/limit_pushdown.h"
 #include "ir/pass.h"
 
-#include <llog/log.h>
+#include "util/logging.h"
 
 namespace lsql::opt {
 

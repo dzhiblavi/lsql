@@ -2,13 +2,13 @@
 
 #include "util/build_info.h"
 
-#include <llog/log.h>
+#include "util/logging.h"  // IWYU pragma: keep (llog::panic)
 
-#define panic(...)                             \
-    [&] [[noreturn]] {                         \
-        llog::critical("panic: " __VA_ARGS__); \
-        std::terminate();                      \
-        __builtin_unreachable();               \
+#define panic(...)                                     \
+    [&] [[noreturn]] {                                 \
+        ::lsql::llog::critical("panic: " __VA_ARGS__); \
+        std::terminate();                              \
+        __builtin_unreachable();                       \
     }()
 
 #define verify(X, ...)                                      \
