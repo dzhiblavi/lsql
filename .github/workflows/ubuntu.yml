@@ -1,0 +1,32 @@
+name: Ubuntu
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test Linux amd64 release
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Ubuntu 20.04 builder image
+        run: make build-docker-linux-builder
+
+      - name: Build and test
+        run: make PROFILE=amd64-linux.docker build-docker-linux-Release
+
+      - name: Publish Linux amd64 release binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: logsql-linux-amd64-release
+          if-no-files-found: error
+          path: |
+            output/lsql-Release-linux-amd64
+            output/lpipe-Release-linux-amd64

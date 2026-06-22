@@ -31,7 +31,10 @@ configure: deps
 		-DASAN=$(ASAN)             \
 		-DTSAN=$(TSAN)             \
 		-DUBSAN=$(UBSAN)           \
-		-DTESTS=$(TESTS)
+		-DLOGSQL_BUILD_TESTS=$(TESTS)
 
 build: configure
 	cmake --build --preset $(CONAN_PRESET)
+
+test: build
+	ctest --test-dir $(TARGET_DIR) --output-on-failure

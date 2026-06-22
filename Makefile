@@ -39,7 +39,8 @@ configure: deps
 	cmake --preset $(CONAN_PRESET) \
 		-DASAN=$(ASAN)             \
 		-DTSAN=$(TSAN)             \
-		-DUBSAN=$(UBSAN)
+		-DUBSAN=$(UBSAN)           \
+		-DLOGSQL_BUILD_TESTS=$(TESTS)
 
 build: configure
 	cmake --build --preset $(CONAN_PRESET) && \
@@ -52,10 +53,20 @@ build-docker-linux-builder:
 		--build-arg LLVM_VERSION=20 \
 		-f ./build/images/Dockerfile.ubuntu2004 .
 
-build-docker-linux-%:
-	docker run                         \
-		-v $(shell pwd)/output:/output \
-		logsql-builder:latest armv8 $*
+_prepare_output_dir:
+	mkdir -p output
+
+_require_docker_linux_profile:
+	@case "$(PROFILE)" in \
+		*-linux.docker) ;; \
+		*) echo "PROFILE must name a Linux Docker profile, for example amd64-linux.docker"; exit 2 ;; \
+	esac
+
+build-docker-linux-%: _require_docker_linux_profile _prepare_output_dir
+	docker run --rm                         \
+		-v $(shell pwd):/build/lsql           \
+		-v $(shell pwd)/output:/output         \
+		logsql-builder:latest $(PROFILE) $*
 
 gen-doc: deps
 	cd $(TARGET_DIR) && $(CMAKE) --build . --target documentation
