@@ -1,4 +1,3 @@
-LLVM_PATH=/opt/homebrew/opt/llvm@20
 MAKE = make
 CONAN = conan
 CMAKE = cmake
@@ -14,17 +13,23 @@ TESTS ?= ON
 TARGET = target
 TARGET_DIR = ./$(TARGET)/$(PROFILE)/$(BUILD_TYPE)
 
-# Use the specified toolchain (llvm@20)
-export PATH := $(LLVM_PATH)/bin:${PATH}
-
-all:
-	echo "${PATH}"
-
-clean:
-	rm -rf $(TARGET_DIR)
+_all:
+	:
 
 _prepare_target_dirs:
 	mkdir -p $(TARGET_DIR)
+
+_prepare_output_dir:
+	mkdir -p output
+
+_require_docker_linux_profile:
+	@case "$(PROFILE)" in \
+		*-linux.docker) ;; \
+		*) echo "PROFILE must name a Linux Docker profile, for example amd64-linux.docker"; exit 2 ;; \
+	esac
+
+clean:
+	rm -rf $(TARGET_DIR)
 
 deps: _prepare_target_dirs
 	$(CONAN) install .                             \
@@ -52,15 +57,6 @@ build-docker-linux-builder:
 		--tag logsql-builder:latest \
 		--build-arg LLVM_VERSION=20 \
 		-f ./build/images/Dockerfile.ubuntu2004 .
-
-_prepare_output_dir:
-	mkdir -p output
-
-_require_docker_linux_profile:
-	@case "$(PROFILE)" in \
-		*-linux.docker) ;; \
-		*) echo "PROFILE must name a Linux Docker profile, for example amd64-linux.docker"; exit 2 ;; \
-	esac
 
 build-docker-linux-%: _require_docker_linux_profile _prepare_output_dir
 	docker run --rm                         \
@@ -90,12 +86,3 @@ check-format:
 apply-format:
 	find src/ tests/ -type f -name '*.h' -o -name '*.cpp' \
 		| xargs clang-format -i
-
-sync-dev-vm:
-	rsync -av \
-		--exclude=/target \
-		--exclude=/output \
-		--exclude=/_logs  \
-		--exclude=/bench/results  \
-		--exclude=.git   \
-		../logsql/ dev-vm:/home/dzhiblavi/logsql

@@ -11,6 +11,8 @@ __pycache__/
 /Makefile.dev
 /.dvim.lua
 /mirror_to_junk.sh
+/sync.sh
+/make_mac.sh
 
 /*.svg
 /*.out
