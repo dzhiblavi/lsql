@@ -16,9 +16,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check formatting
-        run: make check-format
-
       - name: Build Ubuntu 20.04 builder image
         run: make build-docker-linux-builder
 

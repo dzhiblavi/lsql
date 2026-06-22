@@ -15,6 +15,8 @@ cd /build/lsql
 
 mkdir -p /output || true
 
+make check-format
+
 for type in "${@}"; do
     echo "Building: build_type=${type}, profile=${profile}"
 
