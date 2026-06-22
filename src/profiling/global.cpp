@@ -28,9 +28,9 @@ void reset() {
     }
 }
 
-void addCounter(std::string_view name, int64_t delta) {
+void addCounter(CounterId id, int64_t delta) {
     if (auto scope = ScopeBase::current()) {
-        scope->metrics().counters[name] += delta;
+        scope->metrics().counters.add(id, delta);
     }
 }
 

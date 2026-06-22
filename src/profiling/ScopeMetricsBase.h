@@ -7,6 +7,26 @@
 
 namespace lsql::prof {
 
+struct Counters {
+ public:
+    Counters() = default;
+
+    void reset() { counters_.assign(counters_.size(), 0); }
+
+    void add(size_t id, int64_t delta) {
+        if (id >= counters_.size()) [[unlikely]] {
+            counters_.resize(id + 1);
+        }
+
+        counters_[id] += delta;
+    }
+
+    std::span<const int64_t> view() const { return counters_; }
+
+ private:
+    std::vector<int64_t> counters_;
+};
+
 class ScopeMetricsBase {
  public:
     virtual ~ScopeMetricsBase() = default;
@@ -20,7 +40,7 @@ class ScopeMetricsBase {
     uint64_t count = 0;
     instr::MonotonicDuration self_dur{};
     instr::MonotonicDuration total_dur{};
-    absl::flat_hash_map<std::string, int64_t> counters;
+    Counters counters;
 };
 
 }  // namespace lsql::prof

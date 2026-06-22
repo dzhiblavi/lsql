@@ -70,7 +70,7 @@ struct Settings {
 inline void run(back::exec::phys::Program& program, util::ThreadPool& tp, const Settings& s) {
     verify(!program.phases.empty());
     int max_phase = program.phases.rbegin()->first;
-    std::vector<prof::Profiler::Snapshot> snapshots;
+    std::vector<prof::Snapshot> snapshots;
 
     for (int phase = 0; phase <= max_phase; ++phase) {
         auto it = program.phases.find(phase);

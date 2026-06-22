@@ -17,6 +17,7 @@ target_link_libraries(
     lsql-core
     lsql-config
     lsql-util
+    lsql-profiling
 )
 
 target_link_options(
@@ -39,7 +40,7 @@ target_link_libraries(
     lsql-core
     lsql-config
     lsql-util
-    lsql-front-sql
+    lsql-profiling
 )
 
 target_link_options(

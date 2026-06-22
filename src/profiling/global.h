@@ -1,5 +1,6 @@
 #pragma once
 
+#include "profiling/Counters.h"
 #include "profiling/Profiler.h"
 
 namespace lsql::prof {
@@ -9,7 +10,7 @@ Profiler* globalProfiler();
 
 void reset();
 void addEdge(ScopeHandleBase parent, ScopeHandleBase child);
-void addCounter(std::string_view name, int64_t delta = 1);
+void addCounter(CounterId id, int64_t delta = 1);
 
 template <CScopeMetrics M>
 ScopeHandle<M> newScope(std::string name) {

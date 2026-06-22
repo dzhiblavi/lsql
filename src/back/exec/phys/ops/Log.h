@@ -87,7 +87,7 @@ class Log : public Source, public OperationBase<Log> {
 
                     const bool parsed = parse_func(line.view(), parser);
                     if (!parsed) {
-                        prof::addCounter("log.malformed", 1);
+                        prof::addCounter(malformed_counter);
                         {
                             auto _ = source_read_scope_.scope();
                             ++it;
@@ -124,6 +124,9 @@ class Log : public Source, public OperationBase<Log> {
         prof::newScope<prof::ScopeMetrics<>>("read: {}", log_->describe());
     prof::ScopeHandle<prof::ScopeMetrics<>> parse_scope_ =
         prof::newScope<prof::ScopeMetrics<>>(std::string("parse"));
+
+    inline static prof::CounterId malformed_counter =
+        prof::CounterRegistry::instance().bind("log.malformed");
 };
 
 }  // namespace lsql::back::exec::phys

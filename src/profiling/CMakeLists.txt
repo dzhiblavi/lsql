@@ -6,6 +6,7 @@ add_library(
     ScopeBase.cpp
     presentation.cpp
     Profiler.cpp
+    Counters.cpp
 )
 
 target_link_libraries(

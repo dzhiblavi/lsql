@@ -30,7 +30,7 @@ void Profiler::reset() {
     }
 }
 
-std::unordered_map<const ScopeMetricsBase*, ScopeNodeSnapshot> Profiler::snapshot() const {
+Snapshot Profiler::snapshot() const {
     // metrics -> snapshot node pointer (resides in nodes)
     std::unordered_map<const ScopeMetricsBase*, ScopeNodeSnapshot*> visited;
     // snapsnot metrics -> snapshot node
@@ -52,7 +52,9 @@ std::unordered_map<const ScopeMetricsBase*, ScopeNodeSnapshot> Profiler::snapsho
         }
     }
 
-    return nodes;
+    return {
+        .nodes = std::move(nodes),
+    };
 }
 
 ScopeNodeSnapshot* Profiler::snapshot(const ScopeNode& n, auto& nodes, auto& visited) const {

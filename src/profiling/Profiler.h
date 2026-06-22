@@ -23,10 +23,12 @@ struct ScopeNodeSnapshot {
     std::vector<const ScopeNodeSnapshot*> parents;
 };
 
+struct Snapshot {
+    std::unordered_map<const ScopeMetricsBase*, ScopeNodeSnapshot> nodes;
+};
+
 class Profiler {
  public:
-    using Snapshot = std::unordered_map<const ScopeMetricsBase*, ScopeNodeSnapshot>;
-
     template <CScopeMetrics M, typename... Args>
     ScopeHandle<M> newScope(std::string name, Args&&... args);
 

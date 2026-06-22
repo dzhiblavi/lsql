@@ -2,8 +2,6 @@
 
 #include "profiling/ScopeMetricsBase.h"
 
-#include "util/instrument/duration.h"
-
 namespace lsql::prof {
 
 template <typename... Custom>
@@ -15,18 +13,18 @@ class ScopeMetrics : public ScopeMetricsBase {
         count = 0;
         self_dur = {};
         total_dur = {};
-        counters.clear();
+        counters.reset();
         std::apply([&](auto&&... c) { (callReset(c), ...); }, custom_);
     }
 
     util::StrBuilder report() const override {
-        auto b = baseReport();
+        auto b = util::StrBuilder();
         std::apply([&](auto&&... c) { (b.block(callReport(c)), ...); }, custom_);
         return b;
     }
 
     util::StrBuilder shortReport() const override {
-        auto b = baseReport();
+        auto b = util::StrBuilder();
         std::apply([&](auto&&... c) { (b.block(callShortReport(c)), ...); }, custom_);
         return b;
     }
@@ -52,30 +50,6 @@ class ScopeMetrics : public ScopeMetricsBase {
     }
 
  private:
-    util::StrBuilder baseReport() const {
-        auto b =
-            util::StrBuilder()
-                .line("count: {}", count)
-                .line(
-                    "self: total={} avg={}",
-                    instr::prettyDuration(self_dur),
-                    count == 0 ? "0" : instr::prettyDuration(self_dur / count))
-                .line(
-                    "total: total={} avg={}",
-                    instr::prettyDuration(total_dur),
-                    count == 0 ? "0" : instr::prettyDuration(total_dur / count));
-
-        if (!counters.empty()) {
-            auto cs = util::StrBuilder("counters");
-            for (auto&& [name, value] : counters) {
-                cs.item("{} = {}", name, value);
-            }
-            b.block(cs);
-        }
-
-        return b;
-    }
-
     static util::StrBuilder callReport(auto& metric) {
         if constexpr (requires { metric.report(); }) {
             return metric.report();

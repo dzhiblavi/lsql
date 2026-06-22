@@ -1,6 +1,8 @@
 #include "profiling/presentation.h"
+#include "profiling/Counters.h"
 
 #include "util/StrBuilder.h"
+#include "util/instrument/duration.h"
 
 #include <unordered_set>
 
@@ -19,6 +21,47 @@ std::string join(const std::vector<std::string>& strs, std::string_view sep) {
     }
     ss << strs.back();
     return ss.str();
+}
+
+util::StrBuilder formatCountersList(std::span<const int64_t> counters) {
+    util::StrBuilder s;
+    for (CounterId id = 0; id < counters.size(); ++id) {
+        if (counters[id] == 0) {
+            continue;
+        }
+
+        s.item("{}: {}", CounterRegistry::instance().name(id), counters[id]);
+    }
+    return s;
+}
+
+util::StrBuilder metricsBaseReport(const ScopeMetricsBase& m) {
+    auto b =
+        util::StrBuilder()
+            .line("count: {}", m.count)
+            .line(
+                "self: total={} avg={}",
+                instr::prettyDuration(m.self_dur),
+                m.count == 0 ? "0" : instr::prettyDuration(m.self_dur / m.count))
+            .line(
+                "total: total={} avg={}",
+                instr::prettyDuration(m.total_dur),
+                m.count == 0 ? "0" : instr::prettyDuration(m.total_dur / m.count));
+
+    auto c = formatCountersList(m.counters.view());
+    if (!c.empty()) {
+        b.child(util::StrBuilder("counters").block(c));
+    }
+
+    return b;
+}
+
+util::StrBuilder metricsReport(const ScopeMetricsBase& m) {
+    return metricsBaseReport(m).block(m.report());
+}
+
+util::StrBuilder metricsShortReport(const ScopeMetricsBase& m) {
+    return metricsBaseReport(m).block(m.shortReport());
 }
 
 void appendFoldedStacks(
@@ -105,8 +148,6 @@ double edgeWeight(const ScopeNodeSnapshot& child, int64_t max_total_ns) {
     return 1.0 + 5.0 * x;
 }
 
-using Snapshot = Profiler::Snapshot;
-
 void formatDotSnapshot(util::StrBuilder& b, const Snapshot& p, size_t phase_index) {
     std::string prefix = std::format("p{}_", phase_index);
 
@@ -116,7 +157,7 @@ void formatDotSnapshot(util::StrBuilder& b, const Snapshot& p, size_t phase_inde
     std::vector<int64_t> self_values;
     int64_t max_total_ns = 0;
 
-    for (auto&& [_, node] : p) {
+    for (auto&& [_, node] : p.nodes) {
         if (node.metrics->empty()) {
             continue;
         }
@@ -148,7 +189,7 @@ void formatDotSnapshot(util::StrBuilder& b, const Snapshot& p, size_t phase_inde
     b.line("    style=\"rounded\";");
     b.line("    {}anchor [style=invis, width=0, height=0, label=\"\"];", prefix);
 
-    for (auto&& [_, node] : p) {
+    for (auto&& [_, node] : p.nodes) {
         if (node.metrics->empty()) {
             continue;
         }
@@ -157,7 +198,7 @@ void formatDotSnapshot(util::StrBuilder& b, const Snapshot& p, size_t phase_inde
         auto node_id = std::format("{}n{}", prefix, id);
         auto self_ns = node.metrics->self_dur.count();
         auto style = styleFor(self_ns, p50, p75, p90, p95);
-        auto label = std::format("{}\n{}", node.name, node.metrics->shortReport().render());
+        auto label = std::format("{}\n{}", node.name, metricsShortReport(*node.metrics).render());
 
         b.line(
             "    {} [label=\"{}\", fillcolor=\"{}\", fontcolor=\"{}\"];",
@@ -167,7 +208,7 @@ void formatDotSnapshot(util::StrBuilder& b, const Snapshot& p, size_t phase_inde
             style.font);
     }
 
-    for (auto&& [_, node] : p) {
+    for (auto&& [_, node] : p.nodes) {
         if (node.metrics->empty()) {
             continue;
         }
@@ -189,7 +230,7 @@ void formatDotSnapshot(util::StrBuilder& b, const Snapshot& p, size_t phase_inde
 
 }  // namespace
 
-std::string formatProfile(const Profiler::Snapshot& p) {
+std::string formatProfile(const Snapshot& p) {
     using util::StrBuilder;
 
     std::unordered_map<const ScopeNodeSnapshot*, bool> visible;
@@ -242,7 +283,7 @@ std::string formatProfile(const Profiler::Snapshot& p) {
         }
 
         auto b = StrBuilder(node.name);
-        b.child(StrBuilder("metrics").child(node.metrics->report()));
+        b.child(StrBuilder("metrics").child(metricsReport(*node.metrics)));
 
         if (node.parents.size() > 1) {
             auto pb = StrBuilder("parents");
@@ -281,7 +322,7 @@ std::string formatProfile(const Profiler::Snapshot& p) {
     std::unordered_set<const ScopeNodeSnapshot*> visited;
     auto b = StrBuilder("Profiler report");
 
-    for (auto&& [_, node] : p) {
+    for (auto&& [_, node] : p.nodes) {
         if (!node.is_root) {
             continue;
         }
@@ -293,11 +334,11 @@ std::string formatProfile(const Profiler::Snapshot& p) {
     return b.render();
 }
 
-std::string formatFoldedStacks(const Profiler::Snapshot& p) {
+std::string formatFoldedStacks(const Snapshot& p) {
     std::vector<std::string> lines;
     std::vector<std::string> stack;
 
-    for (auto&& [_, node] : p) {
+    for (auto&& [_, node] : p.nodes) {
         if (node.is_root) {
             appendFoldedStacks(node, stack, lines);
         }

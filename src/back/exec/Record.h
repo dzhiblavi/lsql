@@ -1,5 +1,6 @@
 #pragma once
 
+#include "profiling/Counters.h"
 #include "profiling/global.h"
 
 #include "core/schema/types.h"
@@ -18,16 +19,22 @@ class Record : public std::enable_shared_from_this<Record> {
 
     Arc<const Record> clone() const {
         if (!weak_from_this().expired()) {
-            prof::addCounter("record.share");
+            prof::addCounter(share_counter);
             return shared_from_this();
         }
 
-        prof::addCounter("record.clone");
+        prof::addCounter(clone_counter);
         return cloneImpl();
     }
 
  private:
     virtual Arc<const Record> cloneImpl() const = 0;
+
+    inline static prof::CounterId share_counter =
+        prof::CounterRegistry::instance().bind("record.share");
+
+    inline static prof::CounterId clone_counter =
+        prof::CounterRegistry::instance().bind("record.clone");
 };
 
 using RecordPtr = Arc<Record>;
