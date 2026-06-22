@@ -23,6 +23,7 @@ RUN chmod +x ./install_cmake.sh && ./install_cmake.sh
 
 COPY ./build/scripts/install_llvm.sh .
 RUN chmod +x ./install_llvm.sh && ./install_llvm.sh "${LLVM_VERSION}"
+ENV PATH="/usr/lib/llvm-${LLVM_VERSION}/bin:${PATH}"
 
 COPY ./build/scripts/install_lemon.sh .
 RUN chmod +x ./install_lemon.sh && ./install_lemon.sh
