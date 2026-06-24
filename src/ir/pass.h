@@ -27,6 +27,13 @@ class ConsumePass {
         return util::match(ag.node, [&](auto& s) -> ir::Aggregate { return pass(s, ag); });
     }
 
+    ir::Projector pass(ir::Projector p) {
+        return {
+            .alias_field_id = p.alias_field_id,
+            .expr = box(pass(std::move(*p.expr))),
+        };
+    }
+
  private:
     template <typename E>
     E pass(auto& node, E& self) {
@@ -41,32 +48,12 @@ class ConsumePass {
         return box(pass(std::move(*x)));
     }
 
-    std::vector<ir::Scalar> pass(std::vector<ir::Scalar> ag) {
-        std::vector<ir::Scalar> r;
+    template <typename T>
+    std::vector<T> pass(std::vector<T> ag) {
+        std::vector<T> r;
         r.reserve(ag.size());
         for (auto&& a : ag) {
             r.push_back(pass(std::move(a)));
-        }
-        return r;
-    }
-
-    std::vector<ir::Aggregate> pass(std::vector<ir::Aggregate> ag) {
-        std::vector<ir::Aggregate> r;
-        r.reserve(ag.size());
-        for (auto&& a : ag) {
-            r.push_back(pass(std::move(a)));
-        }
-        return r;
-    }
-
-    std::vector<ir::Projector> pass(std::vector<ir::Projector> ag) {
-        std::vector<ir::Projector> r;
-        r.reserve(ag.size());
-        for (auto&& a : ag) {
-            r.push_back({
-                .alias_field_id = a.alias_field_id,
-                .expr = box(pass(std::move(*a.expr))),
-            });
         }
         return r;
     }
@@ -102,56 +89,20 @@ class ScalarViewPass {
         return pass(*x);
     }
 
-    template <std::same_as<void> U = R>
-    void pass(const std::vector<ir::Scalar>& ag) {
+    template <typename T, std::same_as<void> U = R>
+    void pass(const std::vector<T>& ag) {
         for (auto&& a : ag) {
             pass(a);
         }
     }
 
-    template <typename U = R>
+    template <typename T, typename U = R>
     requires(!std::same_as<U, void>)
-    std::vector<R> pass(const std::vector<ir::Scalar>& ag) {
+    std::vector<R> pass(const std::vector<T>& ag) {
         std::vector<R> r;
         r.reserve(ag.size());
         for (auto&& a : ag) {
             r.push_back(pass(a));
-        }
-        return r;
-    }
-
-    template <std::same_as<void> U = R>
-    void pass(const std::vector<ir::Aggregate>& ag) {
-        for (auto&& a : ag) {
-            pass(a);
-        }
-    }
-
-    template <typename U = R>
-    requires(!std::same_as<U, void>)
-    std::vector<R> pass(const std::vector<ir::Aggregate>& ag) {
-        std::vector<R> r;
-        r.reserve(ag.size());
-        for (auto&& a : ag) {
-            r.push_back(pass(a));
-        }
-        return r;
-    }
-
-    template <std::same_as<void> U = R>
-    void pass(const std::vector<ir::Projector>& ag) {
-        for (auto&& a : ag) {
-            pass(a);
-        }
-    }
-
-    template <typename U = R>
-    requires(!std::same_as<U, void>)
-    std::vector<R> pass(const std::vector<ir::Projector>& ag) {
-        std::vector<R> r;
-        r.reserve(ag.size());
-        for (auto&& a : ag) {
-            r.push_back(pass(*a.expr));
         }
         return r;
     }
