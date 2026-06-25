@@ -32,6 +32,8 @@ class ConsumerBridge : public back::exec::phys::Subscriber {
 
  private:
     bool consume(const back::exec::Record* record) override {
+        auto _ = consume_scope_.scope();
+
         if (record == nullptr) {
             consumer_->done();
             return false;
@@ -45,10 +47,13 @@ class ConsumerBridge : public back::exec::phys::Subscriber {
         return true;
     }
 
-    prof::ScopeHandleBase scopeHandle() const override { return {}; }
+    prof::ScopeHandleBase scopeHandle() const override { return consume_scope_; }
 
     output::Record rec_;
     Box<output::Consumer> consumer_;
+
+    prof::ScopeHandle<prof::ScopeMetrics<>> consume_scope_ =
+        prof::newScope<prof::ScopeMetrics<>>(std::string("Output"));
 };
 
 struct Settings {
