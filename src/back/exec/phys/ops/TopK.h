@@ -13,7 +13,12 @@
 namespace lsql::back::exec::phys {
 
 struct TopKMetrics {
-    void reset() { seen_count = 0; }
+    void reset() {
+        seen_count = 0;
+        inserted_count = 0;
+        replaced_count = 0;
+    }
+
     util::StrBuilder report() const { return shortReport(); }
 
     util::StrBuilder shortReport() const {

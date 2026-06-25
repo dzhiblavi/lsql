@@ -50,7 +50,7 @@ util::StrBuilder metricsBaseReport(const ScopeMetricsBase& m) {
 
     auto c = formatCountersList(m.counters.view());
     if (!c.empty()) {
-        b.child(util::StrBuilder("counters").block(c));
+        b.block(util::StrBuilder("counters").block(c));
     }
 
     return b;

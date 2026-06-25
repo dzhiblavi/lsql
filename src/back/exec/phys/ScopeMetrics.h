@@ -25,6 +25,8 @@ struct CustomScopeMetrics {
             .line("total_hist: {}", to_string<Duration>(hist_total));
     }
 
+    util::StrBuilder shortReport() const { return util::StrBuilder(); }
+
     instr::Histogram<> hist_total = {};
     instr::Histogram<> hist_this = {};
 };

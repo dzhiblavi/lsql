@@ -12,6 +12,7 @@ namespace lsql::back::exec::phys {
 
 struct MarkJoinMetrics {
     void reset() { match_set_size.set(0); }
+
     util::StrBuilder report() const { return shortReport(); }
 
     util::StrBuilder shortReport() const {

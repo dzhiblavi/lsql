@@ -7,10 +7,11 @@ namespace lsql::prof {
 template <typename... Custom>
 class ScopeMetrics : public ScopeMetricsBase {
  public:
-    bool empty() const override { return count == 0; }
+    bool empty() const override { return count == 0 && !force_non_empty_; }
 
     void reset() override {
         count = 0;
+        force_non_empty_ = false;
         self_dur = {};
         total_dur = {};
         counters.reset();
@@ -45,7 +46,13 @@ class ScopeMetrics : public ScopeMetricsBase {
     }
 
     template <typename C>
+    const C& custom() const {
+        return std::get<C>(custom_);
+    }
+
+    template <typename C>
     C& custom() {
+        force_non_empty_ = true;
         return std::get<C>(custom_);
     }
 
@@ -53,6 +60,8 @@ class ScopeMetrics : public ScopeMetricsBase {
     static util::StrBuilder callReport(auto& metric) {
         if constexpr (requires { metric.report(); }) {
             return metric.report();
+        } else if constexpr (requires { metric.shortReport(); }) {
+            return metric.shortReport();
         } else {
             return util::StrBuilder();
         }
@@ -86,6 +95,7 @@ class ScopeMetrics : public ScopeMetricsBase {
     }
 
     std::tuple<Custom...> custom_;
+    bool force_non_empty_ = false;
 };
 
 template <typename M>

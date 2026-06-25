@@ -1,6 +1,8 @@
 #pragma once
 
+#include "back/exec/phys/ScopeMetrics.h"
 #include "back/exec/phys/Subscriber.h"
+
 #include "util/string.h"
 
 #include <absl/container/flat_hash_set.h>
@@ -14,9 +16,9 @@ class Operation {
     virtual void output(Subscriber* subscriber) = 0;
 };
 
-template <typename Self, typename... CustomScopeMetrics>
+template <typename Self, typename... OperationMetrics>
 class OperationBase : public virtual Operation {
-    using MetricsType = prof::ScopeMetrics<CustomScopeMetrics...>;
+    using MetricsType = prof::ScopeMetrics<CustomScopeMetrics, OperationMetrics...>;
 
  public:
     explicit OperationBase(int id)
