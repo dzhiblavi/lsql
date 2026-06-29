@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/function/Aggregate.h"
+#include "core/function/Concepts.h"
 #include "core/function/Function.h"
 
 namespace lsql::func {

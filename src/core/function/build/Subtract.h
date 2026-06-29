@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/function/Concepts.h"
 #include "core/function/Executor.h"
 #include "core/function/Function.h"
 
