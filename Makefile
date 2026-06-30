@@ -31,7 +31,7 @@ _require_docker_linux_profile:
 clean:
 	rm -rf $(TARGET_DIR)
 
-deps: _prepare_target_dirs
+install_dependencies: _prepare_target_dirs
 	$(CONAN) install .                             \
 		--output-folder=$(TARGET_DIR)              \
 		--build=missing                            \
@@ -40,7 +40,7 @@ deps: _prepare_target_dirs
 		--settings:host=build_type=$(BUILD_TYPE)   \
 		--settings:build=build_type=$(BUILD_TYPE)
 
-configure: deps
+configure: install_dependencies
 	cmake --preset $(CONAN_PRESET) \
 		-DASAN=$(ASAN)             \
 		-DTSAN=$(TSAN)             \
@@ -64,20 +64,11 @@ build-docker-linux-%: _require_docker_linux_profile _prepare_output_dir
 		-v $(shell pwd)/output:/output         \
 		logsql-builder:latest $(PROFILE) $*
 
-gen-doc: deps
+gen-doc: install_dependencies
 	cd $(TARGET_DIR) && $(CMAKE) --build . --target documentation
 
 test: build
 	cd $(TARGET_DIR) && ctest --output-on-failure -V $(args)
-
-check-tidy: configure
-	run-clang-tidy          \
-		-quiet              \
-		-use-color          \
-		-j `nproc`          \
-		-p $(TARGET_DIR)    \
-		-header-filter=src/ \
-		`find src/ -name '*.cpp' -o -name '*.h'
 
 check-format:
 	find src/ tests/ -type f -name '*.h' -o -name '*.cpp' \
