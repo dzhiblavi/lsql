@@ -53,3 +53,15 @@ SELECT
 FROM $input
 GROUP BY region
 ORDER BY max_latency DESC
+
+SELECT status, COUNT(*) AS cnt, 9 AS test_index
+FROM $input
+GROUP BY status
+HAVING cnt >= 3
+ORDER BY status
+
+SELECT status, 10 AS test_index
+FROM $input
+GROUP BY status
+HAVING COUNT(*) > 3
+ORDER BY status

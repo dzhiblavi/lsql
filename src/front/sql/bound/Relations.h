@@ -53,6 +53,7 @@ struct SelectRelation {
     Box<Relation> source;
     std::optional<Limit> limit;
     std::optional<Where> where;
+    std::optional<Where> having;
     std::optional<OrderBy> order_by;
     std::optional<GroupBy> group_by;
     bool aggregate;

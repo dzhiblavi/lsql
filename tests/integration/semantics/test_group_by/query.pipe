@@ -71,3 +71,22 @@ $input
     8 as test_index
   group by .region
 | sort by .max_latency desc
+
+$input
+| select
+    .status,
+    count(*) as cnt,
+    9 as test_index
+  group by .status
+| where .cnt >= 3
+| sort by .status
+
+$input
+| select
+    .status,
+    count(*) as count,
+    10 as test_index
+  group by .status
+| where .count > 3
+| sort by .status
+| select .status, .test_index

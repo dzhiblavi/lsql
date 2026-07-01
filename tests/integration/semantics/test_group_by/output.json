@@ -44,3 +44,8 @@
 {"max_latency":700,"region":"eu","test_index":8}
 {"max_latency":450,"region":"us","test_index":8}
 {"max_latency":300,"region":"apac","test_index":8}
+
+{"cnt":3,"status":"fail","test_index":9}
+{"cnt":5,"status":"ok","test_index":9}
+
+{"status":"ok","test_index":10}

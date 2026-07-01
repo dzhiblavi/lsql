@@ -49,6 +49,7 @@
 %token TOKEN_COMMA.
 %token TOKEN_STAR.
 %token TOKEN_WHERE.
+%token TOKEN_HAVING.
 %token TOKEN_LIMIT.
 %token TOKEN_INTEGER.
 %token TOKEN_FLOATING.
@@ -105,6 +106,7 @@
 %type group_by_list      {std::vector<ast::Projector>*}
 
 %type where_opt          {std::optional<ast::Where>*}
+%type having_opt         {std::optional<ast::Where>*}
 %type group_by_opt       {std::optional<ast::GroupBy>*}
 %type order_by_opt       {std::optional<ast::OrderBy>*}
 %type limit_opt          {std::optional<ast::Limit>*}
@@ -238,11 +240,13 @@ select_statement(A) ::= TOKEN_SELECT(S) select_list(L)
                         TOKEN_FROM select_source(F)
                         where_opt(Wh)
                         group_by_opt(Gr)
+                        having_opt(Hav)
                         order_by_opt(Ord)
                         limit_opt(Lim).
 {
     auto end_span = Lim->has_value() ? (*Lim)->span
         : Ord->has_value() ? (*Ord)->span
+        : Hav->has_value() ? (*Hav)->span
         : Gr->has_value() ? (*Gr)->span
         : Wh->has_value() ? (*Wh)->span
         : F->span;
@@ -253,6 +257,7 @@ select_statement(A) ::= TOKEN_SELECT(S) select_list(L)
             .source = Box<ast::Relation>(F),
             .limit = std::move(*Lim),
             .where = std::move(*Wh),
+            .having = std::move(*Hav),
             .order_by = std::move(*Ord),
             .group_by = std::move(*Gr),
         },
@@ -262,6 +267,7 @@ select_statement(A) ::= TOKEN_SELECT(S) select_list(L)
     delete L;
     delete Lim;
     delete Wh;
+    delete Hav;
     delete Ord;
     delete Gr;
 }
@@ -310,6 +316,15 @@ where_opt(A) ::= TOKEN_WHERE(W) condition(C). {
     A = new std::optional<ast::Where>(ast::Where{
         .condition = Box<ast::Expr>(C),
         .span = merge(W.span, C->span),
+    });
+}
+
+having_opt(A) ::= . { A = new std::optional<ast::Where>(); }
+
+having_opt(A) ::= TOKEN_HAVING(H) condition(C). {
+    A = new std::optional<ast::Where>(ast::Where{
+        .condition = Box<ast::Expr>(C),
+        .span = merge(H.span, C->span),
     });
 }
 

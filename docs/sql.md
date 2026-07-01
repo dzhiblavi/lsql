@@ -103,6 +103,7 @@ SELECT select_list
 FROM source
 WHERE condition
 GROUP BY group_list
+HAVING condition
 ORDER BY order_list [ASC|DESC]
 LIMIT n
 ```
@@ -144,6 +145,18 @@ SELECT status, kind, COUNT(*) AS count
 FROM $input
 GROUP BY status, kind
 ORDER BY count, kind DESC
+```
+
+`HAVING` filters grouped rows after aggregation. In `logsql`, `HAVING` is only
+valid together with `GROUP BY`. It can reference grouping keys, aggregate
+expressions, and `SELECT` aliases.
+
+```sql
+SELECT status, COUNT(*) AS count
+FROM $input
+GROUP BY status
+HAVING count > 10
+ORDER BY count DESC
 ```
 
 ## ORDER BY and LIMIT

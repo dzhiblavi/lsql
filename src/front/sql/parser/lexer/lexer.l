@@ -68,6 +68,7 @@ SELECT           { return TOKEN_SELECT; }
 FROM             { return TOKEN_FROM; }
 AS               { return TOKEN_AS; }
 WHERE            { return TOKEN_WHERE; }
+HAVING           { return TOKEN_HAVING; }
 LIMIT            { return TOKEN_LIMIT; }
 AND              { return TOKEN_AND; }
 OR               { return TOKEN_OR; }

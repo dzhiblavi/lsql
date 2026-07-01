@@ -112,6 +112,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
     FieldSetNodePtr order_by_visible_fields = nullptr;
     std::vector<bound::Projector> projectors;
     bool aggregate = false;
+    std::optional<bound::Where> having;
 
     std::optional<bound::GroupBy> group_by;
     if (r.group_by.has_value()) {
@@ -133,10 +134,10 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
                 [](auto&&) {});
         }
         auto group_key_map = buildMap(group_key);
+        auto group_key_fields = FieldSetNode::make(outputFieldsOf(group_key));
 
         projectors = [&] {
             // Projectors see group keys and source visible fields
-            auto group_key_fields = FieldSetNode::make(outputFieldsOf(group_key));
             auto proj_visible_fields = FieldSetChain(group_key_fields, &source_visible_fields);
             auto _ = ctx.scopedFieldSet(&proj_visible_fields);
 
@@ -170,6 +171,33 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
                 });
         }
 
+        if (r.having) {
+            auto having_key_fields = FieldSetNode::make(
+                FieldSet::merge(outputFieldsOf(projectors), outputFieldsOf(group_key)));
+            auto having_visible_fields = FieldSetChain(having_key_fields, &source_visible_fields);
+            auto _ = ctx.scopedFieldSet(&having_visible_fields);
+            auto cond = bindExpr(std::move(*r.having->condition), ctx);
+
+            requireAt(
+                cond.value_type == ValueType::Boolean,
+                r.having->span,
+                "HAVING condition must be boolean");
+
+            if (cond.level == ExprKindLevel::Row) {
+                auto allowed_row_fields =
+                    FieldSet::merge(outputFieldsOf(projectors), outputFieldsOf(group_key));
+                for (auto id : cond.required_fields.fieldIds()) {
+                    requireAt(
+                        allowed_row_fields.contains(id),
+                        r.having->span,
+                        "GROUP BY: unknown identifier {}",
+                        to_string(id, *ctx.binding()));
+                }
+            }
+
+            having = bound::Where{.condition = box(std::move(cond))};
+        }
+
         // Projectors' and group key fields are visible to order by
         order_by_visible_fields = FieldSetNode::make(
             FieldSet::merge(outputFieldsOf(projectors), outputFieldsOf(group_key)));
@@ -199,6 +227,8 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
                 [&](const bound::IdentifierProjector&) {},
                 [&](const bound::StarProjector&) { has_star_projector = true; });
         }
+
+        requireAt(!r.having, r.having->span, "HAVING requires GROUP BY");
 
         if (has_group_projector) {
             // Aggregate SELECT
@@ -273,6 +303,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
                 .source = box(std::move(source)),
                 .limit = std::move(limit),
                 .where = std::move(where),
+                .having = std::move(having),
                 .order_by = std::move(order_by),
                 .group_by = std::move(group_by),
                 .aggregate = aggregate,

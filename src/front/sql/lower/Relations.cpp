@@ -26,6 +26,12 @@ FieldSet referencedFieldIdsBy(const std::vector<ir::Scalar>& ss) {
     return collector.referenced;
 }
 
+FieldSet referencedFieldIdsBy(const ir::Scalar& s) {
+    FieldRefCollector collector;
+    collector.pass(s);
+    return collector.referenced;
+}
+
 void lowerToIR(
     bound::Projector p,
     std::vector<ir::Projector>& exprs,
@@ -193,6 +199,42 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
         verify(group_key_aggregates.empty());
 
         auto group_key_output_fields = schemaFor(group_key);
+        visible_fields = FieldSet::merge(
+            source_schema.fieldSet(),
+            FieldSet::merge(projectors_output_fields.fieldSet(), group_key_output_fields.fieldSet()));
+
+        std::optional<ir::Scalar> having_condition;
+        if (r.having) {
+            auto [cond, having_aggregates] = lowerToIR(std::move(*r.having->condition), ctx);
+            having_condition = std::move(cond);
+            util::append(proj_aggregates, std::move(having_aggregates));
+            proj_aggregates_output_fields = schemaFor(proj_aggregates);
+        }
+
+        auto final_projectors = identityProjectorsFor(projectors, ctx);
+        auto final_fields_out = projectors_output_fields;
+
+        auto required_projection_fields = FieldSet::emptySet();
+        if (having_condition) {
+            required_projection_fields.merge(referencedFieldIdsBy(*having_condition));
+        }
+
+        std::vector<ir::Scalar> order_list;
+        if (r.order_by) {
+            visible_fields = FieldSet::merge(
+                projectors_output_fields.fieldSet(), group_key_output_fields.fieldSet());
+            auto [exprs, order_aggregates] = lowerToIR(std::move(r.order_by->order_list), ctx);
+            verify(order_aggregates.empty());
+            order_list = std::move(exprs);
+
+            // Forcibly add all group keys that are required by ORDER BY to projectors.
+            // Projector aliases are already present.
+            required_projection_fields.merge(FieldSet::intersection(
+                group_key_output_fields.fieldSet(), referencedFieldIdsBy(order_list)));
+        }
+        addAllAsFieldScalars(required_projection_fields, projectors, ctx);
+
+        auto projection_fields_out = schemaFor(projectors);
         auto group_rel = ir::Relation{
             .node =
                 ir::GroupRelation{
@@ -203,29 +245,27 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
             .schema = Schema::concat(proj_aggregates_output_fields, group_key_output_fields),
         };
 
-        visible_fields = FieldSet::merge(
-            projectors_output_fields.fieldSet(), group_key_output_fields.fieldSet());
+        ctx.setRelation({
+            .node =
+                ir::ProjectionRelation{
+                    .source = box(std::move(group_rel)),
+                    .projectors = std::move(projectors),
+                },
+            .schema = projection_fields_out,
+        });
 
-        if (r.order_by) {
-            auto [order_list, order_aggregates] = lowerToIR(std::move(r.order_by->order_list), ctx);
-            verify(order_aggregates.empty());
-
-            auto final_projectors = identityProjectorsFor(projectors, ctx);
-
-            // Forcibly add all group keys that are required by ORDER BY to projectors
-            auto required_group_keys = FieldSet::intersection(
-                group_key_output_fields.fieldSet(), referencedFieldIdsBy(order_list));
-            addAllAsFieldScalars(required_group_keys, projectors, ctx);
-
-            auto projection_fields_out = schemaFor(projectors);
+        if (having_condition) {
             ctx.setRelation({
                 .node =
-                    ir::ProjectionRelation{
-                        .source = box(std::move(group_rel)),
-                        .projectors = std::move(projectors),
+                    ir::FilterRelation{
+                        .source = box(ctx.pullRelation()),
+                        .condition = box(std::move(*having_condition)),
                     },
                 .schema = projection_fields_out,
             });
+        }
+
+        if (r.order_by) {
             ctx.setRelation({
                 .node =
                     ir::SortRelation{
@@ -235,27 +275,21 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
                     },
                 .schema = projection_fields_out,
             });
+        }
+
+        if (r.order_by || having_condition) {
             ctx.setRelation({
                 .node =
                     ir::ProjectionRelation{
                         .source = box(ctx.pullRelation()),
                         .projectors = std::move(final_projectors),
                     },
-                .schema = projectors_output_fields,
-            });
-        } else {
-            ctx.setRelation({
-                .node =
-                    ir::ProjectionRelation{
-                        .source = box(std::move(group_rel)),
-                        .projectors = std::move(projectors),
-                    },
-                .schema = projectors_output_fields,
+                .schema = final_fields_out,
             });
         }
     } else if (r.aggregate) {
-        verify(!proj_aggregates.empty());
         verify(!r.order_by);
+        verify(!proj_aggregates.empty());
 
         auto aggregate = ir::Relation{
             .node =
