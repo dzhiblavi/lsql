@@ -7,6 +7,7 @@
 #include "core/function/build/BooleanNegate.h"
 #include "core/function/build/Cast.h"
 #include "core/function/build/Coalesce.h"
+#include "core/function/build/Comparison.h"
 #include "core/function/build/CountAll.h"
 #include "core/function/build/CountNonNull.h"
 #include "core/function/build/Divide.h"
@@ -43,6 +44,26 @@ R buildScalar(const Function& func, F&& f) {
             [&](const BooleanNegate& s) -> R { return f(build(s)); },
             [&](const Equal& s) -> R { return f(build(s)); },
             [&](const NotEqual& s) -> R { return f(build(s)); },
+            [&](const Less& s) -> R {
+                return dispatch<R>(
+                    [&]<Comparable T>(std::type_identity<T>) -> R { return f(build<T>(s)); },
+                    s.arg_type);
+            },
+            [&](const Greater& s) -> R {
+                return dispatch<R>(
+                    [&]<Comparable T>(std::type_identity<T>) -> R { return f(build<T>(s)); },
+                    s.arg_type);
+            },
+            [&](const LessEqual& s) -> R {
+                return dispatch<R>(
+                    [&]<Comparable T>(std::type_identity<T>) -> R { return f(build<T>(s)); },
+                    s.arg_type);
+            },
+            [&](const GreaterEqual& s) -> R {
+                return dispatch<R>(
+                    [&]<Comparable T>(std::type_identity<T>) -> R { return f(build<T>(s)); },
+                    s.arg_type);
+            },
             [&](const And& s) -> R { return f(build(s)); },
             [&](const Or& s) -> R { return f(build(s)); },
             [&](const Divide& s) -> R {

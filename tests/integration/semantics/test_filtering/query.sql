@@ -29,3 +29,19 @@ WHERE path LIKE '/api/.*'
 SELECT uid, missing, 7 AS test_index
 FROM $input
 WHERE missing = null
+
+SELECT uid, 8 AS test_index
+FROM $input
+WHERE uid < 'ccc'
+
+SELECT uid, 9 AS test_index
+FROM $input
+WHERE uid > 'bbb'
+
+SELECT uid, 10 AS test_index
+FROM $input
+WHERE uid <= 'bbb'
+
+SELECT uid, 11 AS test_index
+FROM $input
+WHERE uid >= 'ccc'

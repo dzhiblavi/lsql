@@ -69,6 +69,10 @@
 %token TOKEN_UNION_ALL_SORTED_BY.
 %token TOKEN_PLUS.
 %token TOKEN_MINUS.
+%token TOKEN_LT.
+%token TOKEN_GT.
+%token TOKEN_LTE.
+%token TOKEN_GTE.
 %token TOKEN_LIKE.
 %token TOKEN_MATERIALIZE.
 %token TOKEN_EXCLAMATION.
@@ -84,7 +88,7 @@
 %left TOKEN_PLUS.
 %left TOKEN_MINUS.
 %left TOKEN_DIVIDE.
-%left TOKEN_EQ TOKEN_NEQ.
+%left TOKEN_EQ TOKEN_NEQ TOKEN_LT TOKEN_GT TOKEN_LTE TOKEN_GTE.
 %right TOKEN_EXCLAMATION.
 
 %type value              {Literal*}
@@ -535,6 +539,50 @@ expression(E) ::= expression(L) TOKEN_NEQ expression(R). {
     E = new ast::Expr{
         .node = ast::BinaryExpr{
             .type = common::ast::BinaryExprType::NotEqual,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
+}
+
+expression(E) ::= expression(L) TOKEN_LT expression(R). {
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Less,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
+}
+
+expression(E) ::= expression(L) TOKEN_GT expression(R). {
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Greater,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
+}
+
+expression(E) ::= expression(L) TOKEN_LTE expression(R). {
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::LessEqual,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = merge(L->span, R->span),
+    };
+}
+
+expression(E) ::= expression(L) TOKEN_GTE expression(R). {
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::GreaterEqual,
             .left = Box<ast::Expr>(L),
             .right = Box<ast::Expr>(R),
         },

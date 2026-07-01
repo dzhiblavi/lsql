@@ -8,6 +8,10 @@ namespace lsql::front::common::bound {
 enum class BinaryExprType {
     Equal,
     NotEqual,
+    Less,
+    Greater,
+    LessEqual,
+    GreaterEqual,
     And,
     Or,
     Divide,
@@ -42,6 +46,50 @@ struct BinaryExprTraits<BinaryExprType::NotEqual> {
         }
 
         return std::same_as<L, R>;
+    }
+
+    template <typename L, typename R>
+    using ValueType = bool;
+};
+
+template <>
+struct BinaryExprTraits<BinaryExprType::Less> {
+    template <typename L, typename R>
+    static constexpr bool allowed() {
+        return std::same_as<L, R> && Comparable<L>;
+    }
+
+    template <typename L, typename R>
+    using ValueType = bool;
+};
+
+template <>
+struct BinaryExprTraits<BinaryExprType::Greater> {
+    template <typename L, typename R>
+    static constexpr bool allowed() {
+        return std::same_as<L, R> && Comparable<L>;
+    }
+
+    template <typename L, typename R>
+    using ValueType = bool;
+};
+
+template <>
+struct BinaryExprTraits<BinaryExprType::LessEqual> {
+    template <typename L, typename R>
+    static constexpr bool allowed() {
+        return std::same_as<L, R> && Comparable<L>;
+    }
+
+    template <typename L, typename R>
+    using ValueType = bool;
+};
+
+template <>
+struct BinaryExprTraits<BinaryExprType::GreaterEqual> {
+    template <typename L, typename R>
+    static constexpr bool allowed() {
+        return std::same_as<L, R> && Comparable<L>;
     }
 
     template <typename L, typename R>

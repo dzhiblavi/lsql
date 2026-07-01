@@ -12,6 +12,14 @@ inline func::Function function(bound::BinaryExprType type, ValueType arg_type) {
             return func::Equal{};
         case bound::BinaryExprType::NotEqual:
             return func::NotEqual{};
+        case bound::BinaryExprType::Less:
+            return func::Less{.arg_type = arg_type};
+        case bound::BinaryExprType::Greater:
+            return func::Greater{.arg_type = arg_type};
+        case bound::BinaryExprType::LessEqual:
+            return func::LessEqual{.arg_type = arg_type};
+        case bound::BinaryExprType::GreaterEqual:
+            return func::GreaterEqual{.arg_type = arg_type};
         case bound::BinaryExprType::And:
             return func::And{};
         case bound::BinaryExprType::Or:

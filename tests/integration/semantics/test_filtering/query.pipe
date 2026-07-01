@@ -31,3 +31,19 @@ $input
 $input
 | where .missing = null
 | select .uid, .missing, 7 as test_index
+
+$input
+| where .uid < 'ccc'
+| select .uid, 8 as test_index
+
+$input
+| where .uid > 'bbb'
+| select .uid, 9 as test_index
+
+$input
+| where .uid <= 'bbb'
+| select .uid, 10 as test_index
+
+$input
+| where .uid >= 'ccc'
+| select .uid, 11 as test_index

@@ -77,6 +77,10 @@
 %token TOKEN_RPAREN.
 %token TOKEN_EQ.
 %token TOKEN_NEQ.
+%token TOKEN_LT.
+%token TOKEN_GT.
+%token TOKEN_LTE.
+%token TOKEN_GTE.
 %token TOKEN_EXCLAMATION.
 %token TOKEN_PLUS.
 %token TOKEN_MINUS.
@@ -89,7 +93,7 @@
 %left TOKEN_OR.
 %left TOKEN_AND.
 %right TOKEN_NOT.
-%left TOKEN_EQ TOKEN_NEQ TOKEN_LIKE TOKEN_IN.
+%left TOKEN_EQ TOKEN_NEQ TOKEN_LT TOKEN_GT TOKEN_LTE TOKEN_GTE TOKEN_LIKE TOKEN_IN.
 %left TOKEN_PLUS TOKEN_MINUS.
 %left TOKEN_DIVIDE.
 %right TOKEN_EXCLAMATION.
@@ -423,6 +427,54 @@ expression(E) ::= expression(L) TOKEN_NEQ expression(R). {
     E = new ast::Expr{
         .node = ast::BinaryExpr{
             .type = common::ast::BinaryExprType::NotEqual,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = span,
+    };
+}
+
+expression(E) ::= expression(L) TOKEN_LT expression(R). {
+    auto span = merge(L->span, R->span);
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Less,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = span,
+    };
+}
+
+expression(E) ::= expression(L) TOKEN_GT expression(R). {
+    auto span = merge(L->span, R->span);
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::Greater,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = span,
+    };
+}
+
+expression(E) ::= expression(L) TOKEN_LTE expression(R). {
+    auto span = merge(L->span, R->span);
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::LessEqual,
+            .left = Box<ast::Expr>(L),
+            .right = Box<ast::Expr>(R),
+        },
+        .span = span,
+    };
+}
+
+expression(E) ::= expression(L) TOKEN_GTE expression(R). {
+    auto span = merge(L->span, R->span);
+    E = new ast::Expr{
+        .node = ast::BinaryExpr{
+            .type = common::ast::BinaryExprType::GreaterEqual,
             .left = Box<ast::Expr>(L),
             .right = Box<ast::Expr>(R),
         },

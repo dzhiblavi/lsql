@@ -20,3 +20,15 @@
 {"missing":null,"test_index":7,"uid":"bbb"}
 {"missing":null,"test_index":7,"uid":"ccc"}
 {"missing":null,"test_index":7,"uid":"ddd"}
+
+{"test_index":8,"uid":"aaa"}
+{"test_index":8,"uid":"bbb"}
+
+{"test_index":9,"uid":"ccc"}
+{"test_index":9,"uid":"ddd"}
+
+{"test_index":10,"uid":"aaa"}
+{"test_index":10,"uid":"bbb"}
+
+{"test_index":11,"uid":"ccc"}
+{"test_index":11,"uid":"ddd"}

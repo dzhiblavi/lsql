@@ -68,6 +68,30 @@ struct NotEqual {
     bool operator==(const NotEqual&) const = default;
 };
 
+struct Less {
+    ValueType arg_type;
+
+    bool operator==(const Less&) const = default;
+};
+
+struct Greater {
+    ValueType arg_type;
+
+    bool operator==(const Greater&) const = default;
+};
+
+struct LessEqual {
+    ValueType arg_type;
+
+    bool operator==(const LessEqual&) const = default;
+};
+
+struct GreaterEqual {
+    ValueType arg_type;
+
+    bool operator==(const GreaterEqual&) const = default;
+};
+
 struct And {
     bool operator==(const And&) const = default;
 };
@@ -139,6 +163,10 @@ using Function = std::variant< //
     BooleanNegate, //
     Equal, //
     NotEqual, //
+    Less, //
+    Greater, //
+    LessEqual, //
+    GreaterEqual, //
     And, //
     Or, //
     Divide, //
@@ -167,6 +195,10 @@ inline bool isScalar(const Function& f) {
             [](const BooleanNegate&) { return true; },
             [](const Equal&) { return true; },
             [](const NotEqual&) { return true; },
+            [](const Less&) { return true; },
+            [](const Greater&) { return true; },
+            [](const LessEqual&) { return true; },
+            [](const GreaterEqual&) { return true; },
             [](const And&) { return true; },
             [](const Or&) { return true; },
             [](const Divide&) { return true; },

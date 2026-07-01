@@ -54,6 +54,10 @@ TIMESTAMP        [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}
 ")"              { return TOKEN_RPAREN; }
 "="              { return TOKEN_EQ; }
 "!="             { return TOKEN_NEQ; }
+"<="             { return TOKEN_LTE; }
+">="             { return TOKEN_GTE; }
+"<"              { return TOKEN_LT; }
+">"              { return TOKEN_GT; }
 "!"              { return TOKEN_EXCLAMATION; }
 "+"              { return TOKEN_PLUS; }
 "-"              { return TOKEN_MINUS; }

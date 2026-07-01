@@ -134,6 +134,7 @@ LowerExprResult lowerToIR(bound::LikeExpr e, auto& info, Context& ctx) {
 LowerExprResult lowerToIR(bound::BinaryExpr e, auto& info, Context& ctx) {
     auto [left, al] = lowerToIR(std::move(*e.left), ctx);
     auto [right, ar] = lowerToIR(std::move(*e.right), ctx);
+    auto arg_type = left.value_type;
 
     std::vector<ir::Scalar> args;
     args.push_back(std::move(left));
@@ -143,7 +144,7 @@ LowerExprResult lowerToIR(bound::BinaryExpr e, auto& info, Context& ctx) {
         {
             .node =
                 ir::FnCallScalar{
-                    .function = common::lower::function(e.type, info.value_type),
+                    .function = common::lower::function(e.type, arg_type),
                     .args = std::move(args),
                 },
             .value_type = info.value_type,

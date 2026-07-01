@@ -24,6 +24,14 @@ bound::BinaryExprType exprType(ast::BinaryExprType ast) {
             return bound::BinaryExprType::Equal;
         case NotEqual:
             return bound::BinaryExprType::NotEqual;
+        case Less:
+            return bound::BinaryExprType::Less;
+        case Greater:
+            return bound::BinaryExprType::Greater;
+        case LessEqual:
+            return bound::BinaryExprType::LessEqual;
+        case GreaterEqual:
+            return bound::BinaryExprType::GreaterEqual;
         case And:
             return bound::BinaryExprType::And;
         case Or:
