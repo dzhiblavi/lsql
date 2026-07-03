@@ -201,7 +201,8 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
         auto group_key_output_fields = schemaFor(group_key);
         visible_fields = FieldSet::merge(
             source_schema.fieldSet(),
-            FieldSet::merge(projectors_output_fields.fieldSet(), group_key_output_fields.fieldSet()));
+            FieldSet::merge(
+                projectors_output_fields.fieldSet(), group_key_output_fields.fieldSet()));
 
         std::optional<ir::Scalar> having_condition;
         if (r.having) {
@@ -229,8 +230,9 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
 
             // Forcibly add all group keys that are required by ORDER BY to projectors.
             // Projector aliases are already present.
-            required_projection_fields.merge(FieldSet::intersection(
-                group_key_output_fields.fieldSet(), referencedFieldIdsBy(order_list)));
+            required_projection_fields.merge(
+                FieldSet::intersection(
+                    group_key_output_fields.fieldSet(), referencedFieldIdsBy(order_list)));
         }
         addAllAsFieldScalars(required_projection_fields, projectors, ctx);
 
