@@ -1,6 +1,7 @@
 /target
 /CMakeUserPresets.json
 /_logs
+/_queries
 /*.sql
 /*.pipe
 /ref.out
