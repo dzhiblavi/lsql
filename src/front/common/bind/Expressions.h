@@ -121,7 +121,8 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
             args_span,
             "splitpart's index should be Integer");
 
-        auto separator = getLiteral(args[1], args_span).template get<std::string_view>();
+        auto separator_value = getLiteral(args[1], args_span);
+        auto separator = separator_value.template get<std::string_view>();
         requireAt(separator.size() == 1, args_span, "splitpart's separator must be one character");
 
         auto index = getLiteral(args[2], args_span).template get<int64_t>();
@@ -384,7 +385,8 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
         requireAt(
             args[1].value_type == ValueType::String, args_span, "the argument must be string");
 
-        auto str_format = getLiteral(args[1], args_span).template get<std::string_view>();
+        auto str_format_value = getLiteral(args[1], args_span);
+        auto str_format = str_format_value.template get<std::string_view>();
         auto maybe_format = magic_enum::enum_cast<TimeFormat>(str_format);
         requireAt(maybe_format.has_value(), args_span, "invalid time format '{}'", str_format);
 
