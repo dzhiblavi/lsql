@@ -69,6 +69,7 @@ class Log : public Source, public OperationBase<Log> {
             back::logfmt::ParseKeyValueFunc<decltype(parser)&> parse_func = nullptr;
             const auto line_slot = slots_.find(config::Language::LineIdentifier);
             const bool has_line = line_slot != slots_.end();
+            const bool only_line = has_line && slots_.size() == 1;
 
             auto lines = log_->lines();
             for (auto it = lines.begin(); it != lines.end(); /* in body */) {
@@ -77,26 +78,31 @@ class Log : public Source, public OperationBase<Log> {
 
                 {
                     auto _ = parse_scope_.scope();
-                    if (parse_func == nullptr) {
-                        if (!type_.has_value()) {
-                            type_ = back::logfmt::detectLogType(line.view());
-                        }
-                        require(type_.has_value(), "failed to detect log type in {}", line.view());
-                        parse_func = back::logfmt::parseKeyValueFunc<decltype(parser)&>(*type_);
-                    }
-
-                    const bool parsed = parse_func(line.view(), parser);
-                    if (!parsed) {
-                        prof::addCounter(malformed_counter);
-                        {
-                            auto _ = source_read_scope_.scope();
-                            ++it;
-                        }
-                        continue;
-                    }
-
-                    if (has_line) {
+                    if (only_line) {
                         insert(line_slot->second, line.view());
+                    } else {
+                        if (parse_func == nullptr) {
+                            if (!type_.has_value()) {
+                                type_ = back::logfmt::detectLogType(line.view());
+                            }
+                            require(
+                                type_.has_value(), "failed to detect log type in {}", line.view());
+                            parse_func = back::logfmt::parseKeyValueFunc<decltype(parser)&>(*type_);
+                        }
+
+                        const bool parsed = parse_func(line.view(), parser);
+                        if (!parsed) {
+                            prof::addCounter(malformed_counter);
+                            {
+                                auto _ = source_read_scope_.scope();
+                                ++it;
+                            }
+                            continue;
+                        }
+
+                        if (has_line) {
+                            insert(line_slot->second, line.view());
+                        }
                     }
                 }
 

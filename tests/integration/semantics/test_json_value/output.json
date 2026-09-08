@@ -1,0 +1,4 @@
+{"container":"[{\"title\":\"Hello\\nworld\"}]","count":"42","count_i":42,"enabled":"true","missing":null,"nothing":null,"object":"{\"a/b\":\"slash\",\"til~de\":\"tilde\"}","slash":"slash","tilde":"tilde","title":"Hello\nworld"}
+{"container":"[]","count":"-7","count_i":-7,"enabled":"false","missing":null,"nothing":null,"object":"{}","slash":null,"tilde":null,"title":null}
+{"container":null,"count":null,"count_i":null,"enabled":null,"missing":null,"nothing":null,"object":null,"slash":null,"tilde":null,"title":null}
+{"container":"[{\"title\":\"Привет\"}]","count":"1e3","count_i":null,"enabled":"true","missing":null,"nothing":null,"object":null,"slash":null,"tilde":null,"title":"Привет"}

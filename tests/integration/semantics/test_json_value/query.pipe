@@ -1,0 +1,16 @@
+input = file input.1.jsonl
+
+---------------------
+
+$input
+| select
+    json_value(._line, 'messages[0].title') as title,
+    json_value(._line, '$.count') as count,
+    int(json_value(._line, '$.count')) as count_i,
+    json_value(._line, 'enabled') as enabled,
+    json_value(._line, 'nothing') as nothing,
+    json_value(._line, 'messages') as container,
+    json_value(._line, 'meta') as object,
+    json_value(._line, 'missing') as missing,
+    json_value(._line, 'meta.a/b') as slash,
+    json_value(._line, '/meta/til~0de') as tilde

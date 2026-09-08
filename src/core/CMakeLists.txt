@@ -23,4 +23,5 @@ target_link_libraries(
     magic_enum::magic_enum
     abseil::abseil
     cpptrace::cpptrace
+    simdjson
 )

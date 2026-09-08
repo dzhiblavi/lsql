@@ -96,6 +96,7 @@ Build and development docs:
 
 - [Build](docs/build.md)
 - [Development](docs/dev.md)
+- [Release notes](RELEASE_NOTES.md)
 
 ## Log Input
 

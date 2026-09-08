@@ -19,6 +19,7 @@ include(./cmake/IPO.cmake)
 include(./cmake/thirdparty/re-flex.cmake)
 include(./cmake/thirdparty/libcoro.cmake)
 include(./cmake/thirdparty/reflect-cpp.cmake)
+include(./cmake/thirdparty/simdjson.cmake)
 
 # Enable warnings for core of the project
 include(./cmake/CompileOptions.cmake)

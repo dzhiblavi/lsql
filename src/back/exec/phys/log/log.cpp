@@ -20,14 +20,20 @@ namespace {
 
 using namespace exec;
 
-back::logfmt::LogType getLogType(const back::storage::LineSource& source) {
+std::optional<back::logfmt::LogType> detectLogType(const back::storage::LineSource& source) {
     for (auto&& line : source.lines()) {
         if (auto type = back::logfmt::detectLogType(line.view())) {
-            return *type;
+            return type;
         }
     }
 
-    throwError("failed to detect log type");
+    return std::nullopt;
+}
+
+back::logfmt::LogType getLogType(const back::storage::LineSource& source) {
+    auto type = detectLogType(source);
+    require(type.has_value(), "failed to detect log type");
+    return *type;
 }
 
 LogFile getFileSourceWhole(std::string path) {
@@ -43,7 +49,7 @@ LogFile getFileSourceWhole(std::string path) {
 
     return {
         .lines = line_source,
-        .type = getLogType(*line_source),
+        .type = detectLogType(*line_source),
     };
 }
 

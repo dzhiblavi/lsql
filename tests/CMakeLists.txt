@@ -11,3 +11,5 @@ add_unit_test(optimize/TestScalarSimplify.cpp lsql-optimize)
 add_unit_test(back/exec/phys/ops/TestMergeSorted.cpp lsql-back-exec)
 add_unit_test(back/exec/phys/ops/TestUnionAll.cpp lsql-back-exec)
 add_unit_test(back/exec/phys/ops/TestLimit.cpp lsql-back-exec)
+
+add_unit_test(output/TestPrettyTableFormatter.cpp lsql-output)

@@ -40,6 +40,7 @@ struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
                 [&](const func::SplitPart&) { cost += Optimizer::SplitPartCostOverhead; },
                 [&](const func::Substr&) { cost += Optimizer::SubstrCostOverhead; },
                 [&](const func::ParseTimestamp&) { cost += Optimizer::ParseTimestampCostOverhead; },
+                [&](const func::JSONValue&) { cost += Optimizer::JSONValueCostOverhead; },
                 [&](const func::Coalesce&) { cost += Optimizer::CoalesceCostOverhead; },
                 [&](const func::Cast& f) {
                     verify_dbg(s.args.size() == 1);

@@ -20,6 +20,7 @@ std::string formatBuildSettings() {
         "  optimizer.splitpart_cost_overhead: {}\n"
         "  optimizer.substr_cost_overhead: {}\n"
         "  optimizer.parse_timestamp_cost_overhead: {}\n"
+        "  optimizer.json_value_cost_overhead: {}\n"
         "  optimizer.unary_op_cost_overhead: {}\n"
         "  optimizer.binary_op_cost_overhead: {}\n"
         "  optimizer.cast_to_string_cost_overhead: {}\n"
@@ -41,6 +42,7 @@ std::string formatBuildSettings() {
         Optimizer::SplitPartCostOverhead,
         Optimizer::SubstrCostOverhead,
         Optimizer::ParseTimestampCostOverhead,
+        Optimizer::JSONValueCostOverhead,
         Optimizer::UnaryOpCostOverhead,
         Optimizer::BinaryOpCostOverhead,
         Optimizer::CastToStringCostOverhead,

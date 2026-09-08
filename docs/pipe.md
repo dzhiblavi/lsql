@@ -208,7 +208,19 @@ Other scalar functions:
 ```text
 coalesce(expr, ...)
 rsubstr(expr, 'regex')
+json_value(json, 'messages[0].title')
 ```
+
+The JSON path must be constant. Dot-separated object fields and bracketed array
+indexes are supported, with an optional `$` prefix. RFC 6901 JSON Pointer paths
+are also accepted.
+
+`json_value` returns a nullable string. JSON strings are decoded, while numbers,
+booleans, objects, and arrays retain their JSON representation. Missing paths,
+malformed JSON, and JSON `null` produce `null`. Use a cast such as
+`int(json_value(json, 'count'))` when a typed result is needed. Queries that only
+require `._line` can process arbitrary line-oriented input, including JSON Lines
+files.
 
 Aggregates:
 

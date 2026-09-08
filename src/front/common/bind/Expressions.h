@@ -10,6 +10,7 @@
 #include "front/common/source/require_at.h"
 
 #include "core/function/Function.h"
+#include "util/json.h"
 
 #include <algorithm>
 
@@ -277,6 +278,40 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
             func::RSubstr{.regex = std::move(regex)},
             std::move(dynamic),
 
+        };
+    }
+
+    if (fn_name == "json_value") {
+        requireAt(args.size() == 2, args_span, "json_value expects exactly 2 arguments");
+        requireAt(
+            args[0].value_type == ValueType::String,
+            args_span,
+            "json_value's first argument should be String");
+        requireAt(
+            args[1].level == bound::ExprKindLevel::Const,
+            args_span,
+            "json_value's path must be constant");
+        requireAt(
+            args[1].value_type == ValueType::String,
+            args_span,
+            "json_value's path should be String");
+
+        auto path_value = getLiteral(args[1], args_span);
+        auto path = path_value.template get<std::string_view>();
+        auto pointer = util::jsonPathToPointer(path);
+        requireAt(pointer.has_value(), args_span, "invalid JSON path '{}'", path);
+
+        std::vector<Arg> dynamic;
+        dynamic.push_back(std::move(args[0]));
+
+        return {
+            BoundExprInfo{
+                .value_type = ValueType::String,
+                .level = dynamic[0].level,
+                .required_fields = dynamic[0].required_fields,
+            },
+            func::JSONValue{.path = std::move(*pointer)},
+            std::move(dynamic),
         };
     }
 

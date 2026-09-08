@@ -12,6 +12,7 @@
 #include "core/function/build/CountNonNull.h"
 #include "core/function/build/Divide.h"
 #include "core/function/build/Equal.h"
+#include "core/function/build/JSONValue.h"
 #include "core/function/build/Like.h"
 #include "core/function/build/Lower.h"
 #include "core/function/build/Max.h"
@@ -40,6 +41,7 @@ R buildScalar(const Function& func, F&& f) {
             [&](const RSubstr& s) -> R { return f(build(s)); },
             [&](const Like& s) -> R { return f(build(s)); },
             [&](const Cast& s) -> R { return f(build(s)); },
+            [&](const JSONValue& s) -> R { return f(build(s)); },
             [&](const ParseTimestamp& s) -> R { return f(build(s)); },
             [&](const BooleanNegate& s) -> R { return f(build(s)); },
             [&](const Equal& s) -> R { return f(build(s)); },

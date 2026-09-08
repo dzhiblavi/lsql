@@ -28,6 +28,7 @@ struct Optimizer {
     static inline constexpr int SplitPartCostOverhead = 1;
     static inline constexpr int SubstrCostOverhead = 1;
     static inline constexpr int ParseTimestampCostOverhead = 10;
+    static inline constexpr int JSONValueCostOverhead = 10;
     static inline constexpr int UnaryOpCostOverhead = 1;
     static inline constexpr int BinaryOpCostOverhead = 1;
     static inline constexpr int CastToStringCostOverhead = 2;

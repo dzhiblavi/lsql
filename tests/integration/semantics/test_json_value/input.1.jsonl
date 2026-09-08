@@ -1,0 +1,4 @@
+{"messages":[{"title":"Hello\nworld"}],"count":42,"ratio":1.25,"enabled":true,"nothing":null,"meta":{"a/b":"slash","til~de":"tilde"}}
+{"messages":[],"count":-7,"enabled":false,"meta":{}}
+not json
+{"messages":[{"title":"Привет"}],"count":1e3,"enabled":true}

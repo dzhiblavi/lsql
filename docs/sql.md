@@ -259,6 +259,26 @@ Float(expr)
 Bool(expr)
 ```
 
+JSON value extraction:
+
+```sql
+JSON_VALUE(json, 'messages[0].title')
+JSON_VALUE(json, '$.messages[0].title')
+JSON_VALUE(json, '/messages/0/title')
+```
+
+The path must be a constant string. Dot-separated object fields and bracketed
+array indexes are supported, with an optional `$` prefix. RFC 6901 JSON Pointer
+paths are also accepted.
+
+`JSON_VALUE` returns a nullable string. JSON strings are decoded, while numbers,
+booleans, objects, and arrays retain their JSON representation. Missing paths,
+malformed JSON, and JSON `null` produce `null`. Use a cast such as
+`Int(JSON_VALUE(json, 'count'))` when a typed result is needed.
+
+Queries that only require `_line` can process arbitrary line-oriented input, so
+JSON Lines files do not need to be configured as a log format.
+
 Other scalar functions:
 
 ```sql

@@ -50,6 +50,12 @@ struct Cast {
     bool operator==(const Cast&) const = default;
 };
 
+struct JSONValue {
+    std::string path;
+
+    bool operator==(const JSONValue&) const = default;
+};
+
 struct ParseTimestamp {
     TimeFormat format;
 
@@ -159,6 +165,7 @@ using Function = std::variant< //
     RSubstr, //
     Like, //
     Cast, //
+    JSONValue, //
     ParseTimestamp, //
     BooleanNegate, //
     Equal, //
@@ -191,6 +198,7 @@ inline bool isScalar(const Function& f) {
             [](const RSubstr&) { return true; },
             [](const Like&) { return true; },
             [](const Cast&) { return true; },
+            [](const JSONValue&) { return true; },
             [](const ParseTimestamp&) { return true; },
             [](const BooleanNegate&) { return true; },
             [](const Equal&) { return true; },

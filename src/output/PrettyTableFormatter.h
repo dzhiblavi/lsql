@@ -6,12 +6,73 @@
 #include "core/schema/FieldBinding.h"
 
 #include <algorithm>
+#include <format>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace lsql::output {
+
+namespace detail {
+
+inline std::string escapeForPrettyTable(std::string_view input) {
+    std::string result;
+    result.reserve(input.size());
+
+    constexpr std::string_view HexDigits = "0123456789abcdef";
+    for (unsigned char c : input) {
+        switch (c) {
+            case '\b':
+                result += "\\b";
+                break;
+            case '\f':
+                result += "\\f";
+                break;
+            case '\n':
+                result += "\\n";
+                break;
+            case '\r':
+                result += "\\r";
+                break;
+            case '\t':
+                result += "\\t";
+                break;
+            default:
+                if (c < 0x20 || c == 0x7f) {
+                    result += "\\x";
+                    result.push_back(HexDigits[c >> 4]);
+                    result.push_back(HexDigits[c & 0x0f]);
+                } else {
+                    result.push_back(static_cast<char>(c));
+                }
+                break;
+        }
+    }
+
+    return result;
+}
+
+inline size_t prettyTableDisplayWidth(std::string_view value) {
+    try {
+        const size_t padded_size = std::formatted_size("{:<{}}", value, value.size());
+        return value.size() - (padded_size - value.size());
+    } catch (const std::format_error&) {
+        return value.size();
+    }
+}
+
+inline std::string prettyTablePad(std::string_view value, size_t width) {
+    try {
+        return std::format("{:<{}}", value, width);
+    } catch (const std::format_error&) {
+        std::string result(value);
+        result.append(width - std::min(width, value.size()), ' ');
+        return result;
+    }
+}
+
+}  // namespace detail
 
 template <Sink S>
 class PrettyTableFormatter : public Consumer {
@@ -29,7 +90,7 @@ class PrettyTableFormatter : public Consumer {
         std::vector<std::string> row;
         row.reserve(r.size());
         for (auto&& [_, value] : r) {
-            row.push_back(to_string(std::move(value)));
+            row.push_back(detail::escapeForPrettyTable(to_string(std::move(value))));
         }
 
         rows_.push_back(std::move(row));
@@ -53,14 +114,14 @@ class PrettyTableFormatter : public Consumer {
     void readHeader(const Record& r) {
         header_.reserve(r.size());
         for (auto&& [id, _] : r) {
-            header_.emplace_back(binding_->name(id));
+            header_.push_back(detail::escapeForPrettyTable(binding_->name(id)));
         }
     }
 
     std::vector<size_t> columnWidths() const {
         std::vector<size_t> widths(header_.size(), 0);
         for (size_t i = 0; i < header_.size(); ++i) {
-            widths[i] = header_[i].size();
+            widths[i] = detail::prettyTableDisplayWidth(header_[i]);
         }
 
         for (const auto& row : rows_) {
@@ -68,7 +129,7 @@ class PrettyTableFormatter : public Consumer {
                 widths.resize(row.size(), 0);
             }
             for (size_t i = 0; i < row.size(); ++i) {
-                widths[i] = std::max(widths[i], row[i].size());
+                widths[i] = std::max(widths[i], detail::prettyTableDisplayWidth(row[i]));
             }
         }
 
@@ -83,8 +144,7 @@ class PrettyTableFormatter : public Consumer {
             }
 
             if (i < row.size()) {
-                ss << row[i];
-                ss << std::string(widths[i] - row[i].size(), ' ');
+                ss << detail::prettyTablePad(row[i], widths[i]);
             } else {
                 ss << std::string(widths[i], ' ');
             }

@@ -14,6 +14,7 @@ __pycache__/
 /mirror_to_junk.sh
 /sync.sh
 /make_mac.sh
+/ARC_RELEASES.md
 
 /*.svg
 /*.out
