@@ -2,6 +2,7 @@
 
 #include "config/build_settings.h"
 #include "core/exceptions.h"
+#include "util/logging.h"
 
 #include <array>
 #include <atomic>
@@ -104,7 +105,9 @@ class CommandStream : public Stream {
         while (true) {
             auto n = ::read(stdout_fd_.get(), dest.data(), max_count);
             if (n > 0) {
-                return static_cast<size_t>(n);
+                auto count = static_cast<size_t>(n);
+                bytes_received_ += count;
+                return count;
             }
 
             if (n == 0) {
@@ -197,6 +200,7 @@ class CommandStream : public Stream {
 
         finished_ = true;
         joinStderr();
+        llog::info("received {} bytes from stream command '{}'", bytes_received_, command_);
 
         if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
             return;
@@ -230,6 +234,7 @@ class CommandStream : public Stream {
     std::string command_;
     pid_t pid_ = -1;
     bool finished_ = false;
+    size_t bytes_received_ = 0;
 
     Fd stdout_fd_;
     Fd stderr_fd_;
