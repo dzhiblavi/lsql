@@ -47,7 +47,7 @@ configure: install_dependencies
 		-DUBSAN=$(UBSAN)           \
 		-DLOGSQL_BUILD_TESTS=$(TESTS)
 
-build: configure
+build: configure _prepare_output_dir
 	cmake --build --preset $(CONAN_PRESET) && \
 	cp $(TARGET_DIR)/src/cli/lsql output/lsql-$(BUILD_TYPE) && \
 	cp $(TARGET_DIR)/src/cli/lpipe output/lpipe-$(BUILD_TYPE)

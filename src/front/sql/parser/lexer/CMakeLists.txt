@@ -10,11 +10,11 @@ set_source_files_properties(
 
 add_custom_command(
     OUTPUT ${LEXER_OUTPUT_SOURCE_FILE} ${LEXER_OUTPUT_HEADER_FILE}  # ← List BOTH outputs
-    COMMAND reflex --flex
+    COMMAND $<TARGET_FILE:Reflex> --flex
         --header-file=${LEXER_OUTPUT_HEADER_FILE}
         --outfile=${LEXER_OUTPUT_SOURCE_FILE}
         ${LEXER_SOURCE_FILE}
-    DEPENDS ${LEXER_SOURCE_FILE}
+    DEPENDS ${LEXER_SOURCE_FILE} Reflex
     COMMENT "Generating lexer from ${LEXER_SOURCE_FILE}"
     VERBATIM
 )

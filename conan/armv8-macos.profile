@@ -9,4 +9,3 @@ compiler.libcxx=libc++
 [buildenv]
 CC=clang
 CXX=clang++
-LD=ld64.lld

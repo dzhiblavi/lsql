@@ -1,0 +1,43 @@
+name: macOS
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: 1
+
+jobs:
+  build:
+    name: Build and test macOS arm64 release
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: brew install llvm@20 lemon conan
+
+      - name: Select LLVM 20
+        run: echo "$(brew --prefix llvm@20)/bin" >> "$GITHUB_PATH"
+
+      - name: Build and test
+        run: make PROFILE=armv8-macos BUILD_TYPE=Release test
+
+      - name: Name release binaries
+        run: |
+          mv output/lsql-Release output/lsql-Release-macos-arm64
+          mv output/lpipe-Release output/lpipe-Release-macos-arm64
+
+      - name: Publish macOS arm64 release binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: logsql-macos-arm64-release
+          if-no-files-found: error
+          path: |
+            output/lsql-Release-macos-arm64
+            output/lpipe-Release-macos-arm64
