@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, for example v1.2.3
+        required: true
+        type: string
+      prerelease:
+        description: Mark the release as a prerelease
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build-linux:
+    name: Build Linux amd64
+    uses: ./.github/workflows/ubuntu.yml
+
+  build-macos:
+    name: Build macOS arm64
+    uses: ./.github/workflows/macos.yml
+
+  publish:
+    name: Publish GitHub release
+    needs:
+      - build-linux
+      - build-macos
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Linux archive
+        uses: actions/download-artifact@v4
+        with:
+          name: logsql-linux-amd64-release
+          path: dist
+
+      - name: Download macOS archive
+        uses: actions/download-artifact@v4
+        with:
+          name: logsql-macos-arm64-release
+          path: dist
+
+      - name: Generate checksums
+        working-directory: dist
+        run: sha256sum logsql-*.tar.gz > SHA256SUMS
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          release_args=(
+            "$RELEASE_TAG"
+            dist/logsql-linux-amd64-release.tar.gz
+            dist/logsql-macos-arm64-release.tar.gz
+            dist/SHA256SUMS
+            --target "$GITHUB_SHA"
+            --generate-notes
+          )
+
+          if [[ "$PRERELEASE" == "true" ]]; then
+            release_args+=(--prerelease)
+          fi
+
+          gh release create "${release_args[@]}"

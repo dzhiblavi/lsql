@@ -1,9 +1,8 @@
 name: macOS
 
 on:
-  push:
-  pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -33,11 +32,16 @@ jobs:
           mv output/lsql-Release output/lsql-Release-macos-arm64
           mv output/lpipe-Release output/lpipe-Release-macos-arm64
 
-      - name: Publish macOS arm64 release binaries
+      - name: Package macOS arm64 release binaries
+        run: |
+          tar -czf output/logsql-macos-arm64-release.tar.gz \
+            -C output \
+            lsql-Release-macos-arm64 \
+            lpipe-Release-macos-arm64
+
+      - name: Publish macOS arm64 release archive
         uses: actions/upload-artifact@v4
         with:
           name: logsql-macos-arm64-release
           if-no-files-found: error
-          path: |
-            output/lsql-Release-macos-arm64
-            output/lpipe-Release-macos-arm64
+          path: output/logsql-macos-arm64-release.tar.gz
