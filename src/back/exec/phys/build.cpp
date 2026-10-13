@@ -50,11 +50,12 @@ struct Builder {
     Program build() {
         for (auto&& op : plan.top_operations) {
             build(*op);
-
-            program.phases[op->min_phase].outputs.push_back({
+            auto output = Output{
                 .schema = op->schema,
                 .operation = get(*op, op->min_phase),
-            });
+            };
+            program.phases[op->min_phase].outputs.push_back(output);
+            program.top_operations.push_back(std::move(output));
         }
 
         return std::move(program);

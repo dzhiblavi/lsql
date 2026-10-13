@@ -194,24 +194,23 @@ inline void run(ir::Program ir, Settings s) {
     std::mutex print_lock;
     std::vector<Box<util::OrderedSink>> sinks;
     std::vector<Box<ConsumerBridge>> ops;
-    for (auto&& [_, phase] : phys.phases) {
-        for (auto&& [schema, operation] : phase.outputs) {
-            auto sink = box<util::OrderedSink>(
-                &std::cout, &print_lock, s.keep_output_order && !sinks.empty());
 
-            if (!sinks.empty()) {
-                sinks.back()->setNext(sink.get());
-            }
+    for (auto&& [schema, operation] : phys.top_operations) {
+        auto sink =
+            box<util::OrderedSink>(&std::cout, &print_lock, s.keep_output_order && !sinks.empty());
 
-            auto consumer = box<ConsumerBridge>(
-                schema,
-                output::makeConsumer<util::OrderedSink>(
-                    sink.get(), s.out_format, plan.field_binding));
-
-            operation->output(consumer.get());
-            ops.push_back(std::move(consumer));
-            sinks.push_back(std::move(sink));
+        if (!sinks.empty()) {
+            sinks.back()->setNext(sink.get());
         }
+
+        auto consumer = box<ConsumerBridge>(
+            schema,
+            output::makeConsumer<util::OrderedSink>(
+                sink.get(), s.out_format, plan.field_binding, schema));
+
+        operation->output(consumer.get());
+        ops.push_back(std::move(consumer));
+        sinks.push_back(std::move(sink));
     }
 
     util::ThreadPool pool(s.num_threads);

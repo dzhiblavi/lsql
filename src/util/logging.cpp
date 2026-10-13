@@ -1,11 +1,12 @@
 #include "util/logging.h"
 
-#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace lsql::llog {
 
 LoggerPtr global() {
-    return spdlog::default_logger();
+    static auto logger = spdlog::stderr_color_mt("logsql");
+    return logger;
 }
 
 }  // namespace lsql::llog

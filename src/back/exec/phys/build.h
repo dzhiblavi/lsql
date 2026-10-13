@@ -20,6 +20,7 @@ struct Phase {
 struct Program {
     std::vector<Arc<const void>> anchors;
     std::map<int, Phase> phases;
+    std::vector<Output> top_operations;
 };
 
 Program build(const plan::Plan& plan);

@@ -4,22 +4,20 @@
 #include "output/Sink.h"
 
 #include "core/schema/FieldBinding.h"
+#include "core/schema/Schema.h"
 
 namespace lsql::output {
 
 template <Sink S>
 class CSVHeaderFormatter : public Consumer {
  public:
-    CSVHeaderFormatter(S* sink, ConstFieldBindingPtr binding)
+    CSVHeaderFormatter(S* sink, ConstFieldBindingPtr binding, const Schema& schema)
         : binding_(std::move(binding))
-        , sink_(sink) {}
+        , sink_(sink) {
+        writeHeader(schema);
+    }
 
     void consume(Record& r) override {
-        if (!header_written_) {
-            writeHeader(r);
-            header_written_ = true;
-        }
-
         if (r.empty()) {
             sink_->push("");
             return;
@@ -38,14 +36,14 @@ class CSVHeaderFormatter : public Consumer {
     void done() override { sink_->done(); }
 
  private:
-    void writeHeader(const Record& r) {
-        if (r.empty()) {
+    void writeHeader(const Schema& schema) {
+        if (schema.columns() == 0) {
             sink_->push("");
             return;
         }
 
         std::stringstream ss;
-        for (auto&& [id, _] : r) {
+        for (auto id : schema.fieldIds()) {
             ss << binding_->name(id) << ',';
         }
 
@@ -54,7 +52,6 @@ class CSVHeaderFormatter : public Consumer {
         sink_->push(str);
     }
 
-    bool header_written_ = false;
     ConstFieldBindingPtr binding_;
     S* sink_;
 };

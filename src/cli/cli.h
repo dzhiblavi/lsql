@@ -256,6 +256,8 @@ void cliMain(std::span<const char*> argv) {
         return;
     }
 
+    require(threads_arg > 0, "invalid value for threads: 0");
+
     auto log_level = magic_enum::enum_cast<spdlog::level::level_enum>(log_level_arg.getValue());
     require(log_level.has_value(), "invalid value for log-level: {}", log_level_arg.getValue());
     llog::global()->set_level(*log_level);

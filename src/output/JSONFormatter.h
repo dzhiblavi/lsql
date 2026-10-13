@@ -39,8 +39,9 @@ inline std::string escapeForJSON(std::string_view input) {
             default:
                 // Control characters (0x00-0x1F) should be escaped as \uXXXX
                 if (static_cast<unsigned char>(c) < 0x20) {
-                    oss << "\\u00" << std::hex << std::uppercase
-                        << static_cast<int>(static_cast<unsigned char>(c));
+                    constexpr std::string_view hex = "0123456789ABCDEF";
+                    auto byte = static_cast<unsigned char>(c);
+                    oss << "\\u00" << hex[byte >> 4] << hex[byte & 0x0F];
                 } else {
                     oss << c;
                 }
@@ -82,7 +83,7 @@ class JSONFormatter : public Consumer {
         ss << '{';
 
         for (auto&& [id, value] : r) {
-            ss << '"' << binding_->name(id) << '"';
+            ss << '"' << escapeForJSON(binding_->name(id)) << '"';
             ss << ':' << toJSONStr(value) << ',';
         }
 
