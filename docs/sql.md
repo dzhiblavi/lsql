@@ -74,6 +74,22 @@ $input
 $filtered
 ```
 
+Relations can be aliased with `AS`. Their fields receive the alias prefix:
+
+```sql
+SELECT r.uid AS uid, r.status AS status
+FROM $input AS r
+
+qualified = $input AS r
+SELECT r.uid
+FROM $qualified
+```
+
+Use qualified names such as `r.uid` to access aliased fields. Without a projection
+alias, the qualified name is also the output column name. `SELECT *` includes the
+currently bound fields with their alias prefixes. Aliases preserve field types
+and can be applied to files, named relations, subqueries, and command streams.
+
 Materialized relation:
 
 ```sql

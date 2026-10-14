@@ -6,6 +6,7 @@ namespace lsql::front::sql::bound {
 
 struct AdhocRelation;
 struct SelectRelation;
+struct AliasRelation;
 struct UnionAllRelation;
 struct UnionAllSortedByRelation;
 struct FileRelation;
@@ -17,6 +18,7 @@ struct MaterializeRelation;
 using RelationNode = std::variant< //
     AdhocRelation, //
     SelectRelation, //
+    AliasRelation,
     UnionAllRelation, //
     UnionAllSortedByRelation, //
     FileRelation, //

@@ -4,6 +4,8 @@
 
 #include "util/verify.h"
 
+#include <optional>
+#include <string>
 #include <vector>
 
 namespace lsql::front::common::bound {
@@ -35,6 +37,49 @@ class OpenRelationFieldSet : public RelationFieldSet {
  private:
     ConstFieldBindingPtr binding_;
     FieldSet fields_;
+};
+
+class AliasRelationFieldSet : public RelationFieldSet {
+ public:
+    AliasRelationFieldSet(std::string alias, RelationFieldSetPtr source, FieldBindingPtr binding)
+        : prefix_(std::move(alias) + ".")
+        , source_(std::move(source))
+        , binding_(std::move(binding)) {}
+
+    FieldSet fields() const override {
+        auto source_fields = source_->fields();
+        FieldSet fields;
+        for (auto id : source_fields.fieldIds()) {
+            auto name = prefix_ + std::string(binding_->name(id));
+            fields.add(binding_->getOrAdd(name, binding_->type(id)));
+        }
+        return fields;
+    }
+
+    bool canProvide(FieldId id) const override {
+        auto source_id = sourceField(id);
+        return source_id && source_->canProvide(*source_id);
+    }
+
+    void require(FieldId id) override {
+        auto source_id = sourceField(id);
+        verify(source_id.has_value());
+        source_->require(*source_id);
+    }
+
+ private:
+    std::optional<FieldId> sourceField(FieldId id) const {
+        auto name = binding_->name(id);
+        if (!name.starts_with(prefix_) || name.size() == prefix_.size()) {
+            return std::nullopt;
+        }
+        auto source_name = std::string(name.substr(prefix_.size()));
+        return binding_->getOrAdd(source_name, binding_->type(id));
+    }
+
+    std::string prefix_;
+    RelationFieldSetPtr source_;
+    FieldBindingPtr binding_;
 };
 
 class CombinedRelationFieldSet : public RelationFieldSet {
@@ -90,4 +135,4 @@ class CombinedRelationFieldSet : public RelationFieldSet {
     std::vector<RelationFieldSetPtr> sources_;
 };
 
-}
+}  // namespace lsql::front::common::bound

@@ -381,6 +381,36 @@ ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
     return ctx.pullRelation();
 }
 
+ir::Relation lowerToIR(bound::AliasRelation r, auto&, Context& ctx) {
+    auto source = lowerToIR(std::move(*r.source), ctx);
+
+    std::vector<ir::Projector> projectors;
+    for (auto id : source.schema.fieldIds()) {
+        auto name = std::format("{}.{}", r.alias, ctx.binding()->name(id));
+        auto type = ctx.binding()->type(id);
+
+        projectors.push_back({
+            .alias_field_id = ctx.binding()->getOrAdd(name, type),
+            .expr =
+                box(ir::Scalar{
+                    .node = ir::FieldScalar{.field_id = id},
+                    .value_type = type,
+                }),
+        });
+    }
+
+    auto schema = schemaFor(projectors);
+
+    return {
+        .node =
+            ir::ProjectionRelation{
+                .source = box(std::move(source)),
+                .projectors = std::move(projectors),
+            },
+        .schema = schema,
+    };
+}
+
 ir::Relation lowerToIR(bound::UnionAllRelation r, auto& /*info*/, Context& ctx) {
     auto left = lowerToIR(std::move(*r.left), ctx);
     auto right = lowerToIR(std::move(*r.right), ctx);

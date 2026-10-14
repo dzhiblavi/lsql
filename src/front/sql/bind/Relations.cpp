@@ -23,6 +23,7 @@ namespace lsql::front::sql::bind {
 namespace {
 
 using common::bind::FieldSetChain;
+using common::bound::AliasRelationFieldSet;
 using common::bound::CombinedRelationFieldSet;
 using common::bound::ExprKindLevel;
 using common::bound::FixedRelationFieldSet;
@@ -314,6 +315,19 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
                 .aggregate = aggregate,
             },
         .fields_out = fields_out,
+    };
+}
+
+bound::Relation bindRelation(ast::AliasRelation r, auto&&, Context& ctx) {
+    auto source = bindRelation(std::move(*r.source), ctx);
+    auto fields = arc<AliasRelationFieldSet>(r.alias, source.fields_out, ctx.binding());
+    return {
+        .node =
+            bound::AliasRelation{
+                .alias = std::move(r.alias),
+                .source = box(std::move(source)),
+            },
+        .fields_out = std::move(fields),
     };
 }
 

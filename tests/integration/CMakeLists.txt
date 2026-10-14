@@ -36,3 +36,8 @@ add_error_test(errors/bind/test_aggregate_in_where)
 add_frontend_error_test(errors/bind/test_having_without_group_by sql)
 add_error_test(errors/bind/test_in_match_multiple_columns)
 add_error_test(errors/bind/test_archive_time_range)
+
+add_sql_test(semantics/test_alias)
+add_frontend_error_test(errors/bind/test_alias_unknown_qualifier sql)
+add_frontend_error_test(errors/bind/test_alias_unqualified_field sql)
+add_frontend_error_test(errors/bind/test_alias_unknown_field sql)

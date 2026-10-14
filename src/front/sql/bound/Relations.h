@@ -59,6 +59,11 @@ struct SelectRelation {
     bool aggregate;
 };
 
+struct AliasRelation {
+    std::string alias;
+    Box<Relation> source;
+};
+
 struct UnionAllRelation {
     Box<Relation> left;
     Box<Relation> right;

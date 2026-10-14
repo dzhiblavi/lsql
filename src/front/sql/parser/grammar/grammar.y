@@ -42,6 +42,7 @@
 %token TOKEN_COUNT.
 %token TOKEN_FROM.
 %token TOKEN_IDENTIFIER.
+%token TOKEN_QUALIFIED_IDENTIFIER.
 %token TOKEN_SEMICOLON.
 %token TOKEN_EOF.
 %token TOKEN_AS.
@@ -117,6 +118,9 @@
 %type adhoc_relation     {ast::Relation*}
 %type file_source        {ast::Relation*}
 %type select_source      {ast::Relation*}
+%type from_source        {ast::Relation*}
+%type alias_relation     {ast::Relation*}
+%type file_path          {lsql::front::sql::parse::Token}
 %type select_statement   {ast::Relation*}
 
 %start_symbol input
@@ -147,7 +151,7 @@ statement(S) ::= relation(R). {
     };
 }
 
-statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ select_source(R). {
+statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ from_source(R). {
     S = new ast::Statement{
         .node = ast::NamedRelationStatement{
             .name = Name.text,
@@ -182,6 +186,7 @@ immediate_relation(R) ::= TOKEN_MATERIALIZE(m) TOKEN_LPAREN relation(S) TOKEN_RP
 // all kinds of relations that can be used on top level
 relation(R) ::= immediate_relation(A). { R = A; }
 relation(R) ::= select_statement(A). { R = A; }
+relation(R) ::= alias_relation(A). { R = A; }
 
 relation(A) ::= relation(L) TOKEN_UNION_ALL relation(R). {
     A = new ast::Relation{
@@ -237,7 +242,7 @@ adhoc_relation(A) ::= TOKEN_LPAREN(LP) value_list(L) TOKEN_RPAREN(RP). {
 }
 
 select_statement(A) ::= TOKEN_SELECT(S) select_list(L)
-                        TOKEN_FROM select_source(F)
+                        TOKEN_FROM from_source(F)
                         where_opt(Wh)
                         group_by_opt(Gr)
                         having_opt(Hav)
@@ -281,7 +286,23 @@ select_source(S) ::= TOKEN_LPAREN(LP) relation(R) TOKEN_RPAREN(RP). {
 // immediate relations as is
 select_source(S) ::= immediate_relation(R). { S = R; }
 
-file_source(F) ::= TOKEN_PATH(File). {
+from_source(S) ::= select_source(R). { S = R; }
+from_source(S) ::= alias_relation(R). { S = R; }
+
+alias_relation(S) ::= select_source(R) TOKEN_AS TOKEN_IDENTIFIER(A). {
+    S = new ast::Relation{
+        .node = ast::AliasRelation{
+            .alias = A.text,
+            .source = Box<ast::Relation>(R),
+        },
+        .span = merge(R->span, A.span),
+    };
+}
+
+file_path(F) ::= TOKEN_PATH(P). { F = P; }
+file_path(F) ::= TOKEN_QUALIFIED_IDENTIFIER(P). { F = P; }
+
+file_source(F) ::= file_path(File). {
     F = new ast::Relation{
         .node = ast::FileRelation{
             .path = File.text,
@@ -290,7 +311,7 @@ file_source(F) ::= TOKEN_PATH(File). {
     };
 }
 
-file_source(F) ::= TOKEN_PATH(File) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKEN_INTEGER(Interval). {
+file_source(F) ::= file_path(File) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKEN_INTEGER(Interval). {
     F = new ast::Relation{
         .node = ast::FileIntervalRelation{
             .path = File.text,
@@ -418,6 +439,13 @@ select_item(A) ::= TOKEN_IDENTIFIER(Id). {
     };
 }
 
+select_item(A) ::= TOKEN_QUALIFIED_IDENTIFIER(Id). {
+    A = new ast::Projector{
+        .node = ast::IdentifierProjector{ .identifier = Id.text },
+        .span = Id.span,
+    };
+}
+
 select_item(A) ::= expression(E) TOKEN_AS TOKEN_IDENTIFIER(Id). {
     A = new ast::Projector{
         .node = ast::ExprProjector{
@@ -467,6 +495,13 @@ expression(E) ::= TOKEN_LPAREN(LP) expression(X) TOKEN_RPAREN(RP). {
 }
 
 expression(E) ::= TOKEN_IDENTIFIER(Id). {
+    E = new ast::Expr{
+        .node = ast::IdentifierExpr{ .identifier = Id.text },
+        .span = Id.span,
+    };
+}
+
+expression(E) ::= TOKEN_QUALIFIED_IDENTIFIER(Id). {
     E = new ast::Expr{
         .node = ast::IdentifierExpr{ .identifier = Id.text },
         .span = Id.span,

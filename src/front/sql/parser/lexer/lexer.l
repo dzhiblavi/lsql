@@ -35,6 +35,7 @@ void sqlSetLocPtr(lsql::front::SourceSpan* ptr) {
 
 WHITESPACE       [ \t\n]+
 IDENTIFIER       [a-zA-Z_][a-zA-Z0-9_]*
+QUALIFIED_IDENTIFIER {IDENTIFIER}(\.{IDENTIFIER})+
 PATH             [/\\]?([a-zA-Z0-9_\-\.]+[/\\]+)*[a-zA-Z0-9_\-\.]+
 INTEGER          [0-9]+
 FLOATING         [+-]?[0-9]+\.[0-9]+
@@ -90,6 +91,7 @@ NOT              { return TOKEN_NOT; }
 {INTEGER}        { return TOKEN_INTEGER; }
 {FLOATING}       { return TOKEN_FLOATING; }
 {IDENTIFIER}     { return TOKEN_IDENTIFIER; }
+{QUALIFIED_IDENTIFIER} { return TOKEN_QUALIFIED_IDENTIFIER; }
 {PATH}           { return TOKEN_PATH; }
 {QUOTED_STRING}  { return TOKEN_STR; }
 {TIMESTAMP}      { return TOKEN_TIMESTAMP; }
