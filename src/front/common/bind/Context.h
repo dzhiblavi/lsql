@@ -30,7 +30,7 @@ class Context {
         };
     }
 
-    [[nodiscard]] bool insert(const std::string& name, bound::FieldSetNodePtr p) {
+    [[nodiscard]] bool insert(const std::string& name, bound::RelationFieldSetPtr p) {
         if (named_.contains(name)) {
             return false;
         }
@@ -38,7 +38,7 @@ class Context {
         return true;
     }
 
-    bound::FieldSetNodePtr find(const std::string& name) {
+    bound::RelationFieldSetPtr find(const std::string& name) {
         auto it = named_.find(name);
         return it == named_.end() ? nullptr : it->second;
     }
@@ -46,7 +46,7 @@ class Context {
  private:
     FieldBindingPtr binding_;
     FieldSetChain* curr_field_set_slot_ = nullptr;
-    std::unordered_map<std::string, bound::FieldSetNodePtr> named_;
+    std::unordered_map<std::string, bound::RelationFieldSetPtr> named_;
 };
 
 }  // namespace lsql::front::common::bind

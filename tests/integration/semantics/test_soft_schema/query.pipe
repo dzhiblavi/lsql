@@ -16,6 +16,26 @@ right_only =
     | sort by .timestamp
     | select *
 
+known_fields =
+    $input1
+    | select .uid as user_id, 7 as rank
+
+forwarded_known =
+    $known_fields
+    | select *
+
+augmented =
+    $input1
+    | select *, 'fixed' as marker
+
+late_input = file input.2.txt
+late_pass =
+    $late_input
+    | select *, 'fixed' as marker
+
+union_left = file input.1.txt
+union_right = file input.2.txt
+
 ---------------------
 
 $only_uid
@@ -29,3 +49,33 @@ $star_from_source
 
 $right_only
 | select *, 3 as test_index
+
+
+$known_fields
+| sort by .rank, .user_id
+| select .user_id, 4 as test_index
+
+values (1, 2, 3)
+| select string(4 - .anon) as anon, 5 as test_index
+| sort by .anon
+
+$forwarded_known
+| where .rank = 7
+| sort by .user_id
+| select .user_id, 6 as test_index
+
+$augmented
+| sort by .uid
+| select .marker, .uid, 7 as test_index
+
+$late_pass
+| where .uid = 'xxx'
+| select *, 8 as test_index
+
+$union_left
+| sort by .uid
+| select .uid, 9 as test_index
+
+union ($union_left) ($union_right)
+| sort by .uid
+| select .uid, 10 as test_index

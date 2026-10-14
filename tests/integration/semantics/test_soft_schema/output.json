@@ -6,3 +6,31 @@
 
 {"test_index":3,"timestamp":"2026-May-06 12:00:04"}
 {"test_index":3,"timestamp":"2026-May-06 12:00:05"}
+
+{"user_id": "aaa", "test_index": 4}
+{"user_id": "bbb", "test_index": 4}
+{"user_id": "ccc", "test_index": 4}
+
+{"anon": "1", "test_index": 5}
+{"anon": "2", "test_index": 5}
+{"anon": "3", "test_index": 5}
+
+{"user_id": "aaa", "test_index": 6}
+{"user_id": "bbb", "test_index": 6}
+{"user_id": "ccc", "test_index": 6}
+
+{"marker": "fixed", "uid": "aaa", "test_index": 7}
+{"marker": "fixed", "uid": "bbb", "test_index": 7}
+{"marker": "fixed", "uid": "ccc", "test_index": 7}
+
+{"marker": "fixed", "uid": "xxx", "test_index": 8}
+
+{"uid": "aaa", "test_index": 9}
+{"uid": "bbb", "test_index": 9}
+{"uid": "ccc", "test_index": 9}
+
+{"uid": "aaa", "test_index": 10}
+{"uid": "bbb", "test_index": 10}
+{"uid": "ccc", "test_index": 10}
+{"uid": "xxx", "test_index": 10}
+{"uid": "yyy", "test_index": 10}

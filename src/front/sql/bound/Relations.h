@@ -1,6 +1,6 @@
 #pragma once
 
-#include "front/common/bound/FieldSetNode.h"
+#include "front/common/bound/RelationFieldSet.h"
 #include "front/sql/bound/fwd/Expr.h"
 #include "front/sql/bound/fwd/Relation.h"
 
@@ -92,11 +92,11 @@ struct MaterializeRelation {
     Box<Relation> relation;
 };
 
-using common::bound::FieldSetNodePtr;
+using common::bound::RelationFieldSetPtr;
 
 struct Relation {
     RelationNode node;
-    FieldSetNodePtr fields_out;
+    RelationFieldSetPtr fields_out;
 };
 
 }  // namespace lsql::front::sql::bound

@@ -11,6 +11,7 @@
 #include "front/pipe/bound/Sources.h"      // IWYU pragma: keep
 #include "front/pipe/bound/Stages.h"       // IWYU pragma: keep
 
+#include "front/common/bound/RelationFieldSets.h"
 #include "front/common/source/require_at.h"
 
 #include "core/time_formats.h"
@@ -21,7 +22,9 @@ namespace lsql::front::pipe::bind {
 namespace {
 
 using common::bind::FieldSetChain;
-using common::bound::FieldSetNode;
+using common::bound::CombinedRelationFieldSet;
+using common::bound::FixedRelationFieldSet;
+using common::bound::OpenRelationFieldSet;
 
 bound::Source bindSource(ast::AdhocSource s, auto&& self, Context& ctx) {
     std::vector<Value> values;
@@ -46,7 +49,7 @@ bound::Source bindSource(ast::AdhocSource s, auto&& self, Context& ctx) {
                 .values = std::move(values),
                 .output_field_id = id,
             },
-        .fields_out = FieldSetNode::make(FieldSet::withField(id)),
+        .fields_out = arc<FixedRelationFieldSet>(FieldSet::withField(id)),
     };
 }
 
@@ -56,18 +59,18 @@ bound::Source bindSource(ast::NamedPipelineReferenceSource s, auto&& self, Conte
 
     return {
         .node = bound::NamedPipelineReferenceSource{.name = s.name},
-        .fields_out = FieldSetNode::proxy(child_node_ptr),
+        .fields_out = child_node_ptr,
     };
 }
 
-bound::Source bindSource(ast::FileSource s, auto&& /*self*/, Context& /*ctx*/) {
+bound::Source bindSource(ast::FileSource s, auto&& /*self*/, Context& ctx) {
     return {
         .node = bound::FileSource{.path = std::move(s.path)},
-        .fields_out = FieldSetNode::unknownSet(),
+        .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
     };
 }
 
-bound::Source bindSource(ast::FileIntervalSource s, auto&& self, Context& /*ctx*/) {
+bound::Source bindSource(ast::FileIntervalSource s, auto&& self, Context& ctx) {
     requireAt(
         !util::isProbablyArchive(s.path),
         self.span,
@@ -83,21 +86,22 @@ bound::Source bindSource(ast::FileIntervalSource s, auto&& self, Context& /*ctx*
                 .ts_from = ts_from,
                 .ts_to = ts_from + s.interval_s,
             },
-        .fields_out = FieldSetNode::unknownSet(),
+        .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
     };
 }
 
-bound::Source bindSource(ast::StreamSource s, auto&& /*self*/, Context& /*ctx*/) {
+bound::Source bindSource(ast::StreamSource s, auto&& /*self*/, Context& ctx) {
     return {
         .node = bound::StreamSource{.command = std::move(s.command)},
-        .fields_out = FieldSetNode::unknownSet(),
+        .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
     };
 }
 
 bound::Source bindSource(ast::UnionAllSource s, auto&& /*self*/, Context& ctx) {
     auto left = bindPipeline(std::move(*s.left), ctx);
     auto right = bindPipeline(std::move(*s.right), ctx);
-    auto fields = FieldSetNode::proxy(left.fields_out, right.fields_out);
+    auto fields = arc<CombinedRelationFieldSet>(
+        FieldSet::emptySet(), std::vector{left.fields_out, right.fields_out});
 
     return {
         .node =
@@ -112,7 +116,8 @@ bound::Source bindSource(ast::UnionAllSource s, auto&& /*self*/, Context& ctx) {
 bound::Source bindSource(ast::UnionAllSortedBySource s, auto&& self, Context& ctx) {
     auto left = bindPipeline(std::move(*s.left), ctx);
     auto right = bindPipeline(std::move(*s.right), ctx);
-    auto fields = FieldSetNode::proxy(left.fields_out, right.fields_out);
+    auto fields = arc<CombinedRelationFieldSet>(
+        FieldSet::emptySet(), std::vector{left.fields_out, right.fields_out});
 
     FieldSetChain visible_fields(fields, nullptr);
     auto _ = ctx.scopedFieldSet(&visible_fields);

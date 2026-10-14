@@ -13,6 +13,7 @@
 #include "front/pipe/bound/Stages.h"
 
 #include "front/common/bind/helpers.h"
+#include "front/common/bound/RelationFieldSets.h"
 #include "front/common/source/require_at.h"
 
 namespace lsql::front::pipe::bind {
@@ -20,9 +21,10 @@ namespace lsql::front::pipe::bind {
 namespace {
 
 using common::bind::FieldSetChain;
+using common::bound::CombinedRelationFieldSet;
 using common::bound::ExprKindLevel;
-using common::bound::FieldSetNode;
-using common::bound::FieldSetNodePtr;
+using common::bound::FixedRelationFieldSet;
+using common::bound::RelationFieldSetPtr;
 
 void bindProjector(ast::Projector pp, std::vector<bound::Projector>& out, Context& ctx) {
     util::match(
@@ -56,7 +58,7 @@ bound::Stage bindStage(ast::FilterStage r, auto&& /*self*/, Context& ctx) {
 
     return {
         .node = bound::FilterStage{.condition = box(std::move(cond))},
-        .fields_out = FieldSetNode::proxy(ctx.currFieldSet().top()),
+        .fields_out = ctx.currFieldSet().top(),
     };
 }
 
@@ -68,9 +70,10 @@ bound::Stage bindStage(ast::WhereInStage r, auto&& /*self*/, Context& ctx) {
 
     auto match_span = r.match->span;
     auto match = bindPipeline(std::move(*r.match), ctx);
-    auto count = match.fields_out->fieldSet().fieldIds().size();
+    auto match_fields = match.fields_out->fields();
+    auto count = match_fields.size();
     requireAt(count == 1, match_span, "in match should contain one column, got {}", count);
-    auto match_field_id = *match.fields_out->fieldSet().fieldIds().begin();
+    auto match_field_id = *match_fields.fieldIds().begin();
     requireAt(
         expr.value_type == ctx.binding()->type(match_field_id), expr_span, "in key type mismatch");
 
@@ -81,7 +84,7 @@ bound::Stage bindStage(ast::WhereInStage r, auto&& /*self*/, Context& ctx) {
                 .match = box(std::move(match)),
                 .match_field_id = match_field_id,
             },
-        .fields_out = FieldSetNode::proxy(ctx.currFieldSet().top()),
+        .fields_out = ctx.currFieldSet().top(),
     };
 }
 
@@ -90,7 +93,7 @@ bound::Stage bindStage(ast::TakeStage r, auto&& self, Context& ctx) {
 
     return {
         .node = bound::TakeStage{.count = r.count},
-        .fields_out = FieldSetNode::proxy(ctx.currFieldSet().top()),
+        .fields_out = ctx.currFieldSet().top(),
     };
 }
 
@@ -110,7 +113,7 @@ bound::Stage bindStage(ast::SortStage r, auto&& self, Context& ctx) {
                 .order_list = std::move(order_list),
                 .desc = r.desc,
             },
-        .fields_out = FieldSetNode::proxy(ctx.currFieldSet().top()),
+        .fields_out = ctx.currFieldSet().top(),
     };
 }
 
@@ -155,15 +158,16 @@ bound::Stage bindStage(ast::SelectStage r, auto&& self, Context& ctx) {
     }
 
     auto output_fields = outputFieldsOf(projectors);
-    FieldSetNodePtr fields_out;
+    RelationFieldSetPtr fields_out;
 
     if (has_aggregates) {
-        fields_out = FieldSetNode::make(output_fields);
+        fields_out = arc<FixedRelationFieldSet>(output_fields);
     } else {
         if (has_star) {
-            fields_out = FieldSetNode::make(output_fields, ctx.currFieldSet().top());
+            fields_out =
+                arc<CombinedRelationFieldSet>(output_fields, std::vector{ctx.currFieldSet().top()});
         } else {
-            fields_out = FieldSetNode::make(output_fields);
+            fields_out = arc<FixedRelationFieldSet>(output_fields);
         }
     }
 
@@ -217,7 +221,7 @@ bound::Stage bindStage(ast::GroupStage r, auto&& /*self*/, Context& ctx) {
                 .projectors = std::move(projectors),
                 .group_list = std::move(group_list),
             },
-        .fields_out = FieldSetNode::make(projectors_fields),
+        .fields_out = arc<FixedRelationFieldSet>(projectors_fields),
     };
 }
 

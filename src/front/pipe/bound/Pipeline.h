@@ -3,7 +3,7 @@
 #include "front/pipe/bound/fwd/Source.h"  // IWYU pragma: keep
 #include "front/pipe/bound/fwd/Stage.h"   // IWYU pragma: keep
 
-#include "front/common/bound/FieldSetNode.h"
+#include "front/common/bound/RelationFieldSet.h"
 
 #include "core/types.h"
 
@@ -11,12 +11,12 @@
 
 namespace lsql::front::pipe::bound {
 
-using common::bound::FieldSetNodePtr;
+using common::bound::RelationFieldSetPtr;
 
 struct Pipeline {
     Box<Source> source;
     std::vector<Stage> stages;
-    FieldSetNodePtr fields_out;
+    RelationFieldSetPtr fields_out;
 };
 
 }  // namespace lsql::front::pipe::bound

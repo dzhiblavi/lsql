@@ -15,7 +15,6 @@
 namespace lsql::front::pipe::bind {
 
 using common::bind::FieldSetChain;
-using common::bound::FieldSetNode;
 
 bound::Pipeline bindPipeline(ast::Pipeline st, Context& ctx) {
     auto source = box([&] {
@@ -41,7 +40,7 @@ bound::Pipeline bindPipeline(ast::Pipeline st, Context& ctx) {
         p.stages.push_back(std::move(bound_stage));
     }
 
-    p.fields_out = FieldSetNode::proxy(prev_fields_out);
+    p.fields_out = prev_fields_out;
     return p;
 }
 

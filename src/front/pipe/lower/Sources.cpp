@@ -31,7 +31,7 @@ ir::Relation lowerToIR(bound::NamedPipelineReferenceSource s, auto& /*self*/, Co
 }
 
 ir::Relation lowerToIR(bound::FileSource s, auto& self, Context& ctx) {
-    auto fields = self.fields_out->fieldSet();
+    auto fields = self.fields_out->fields();
     llog::info("path={}, requested fields: {}", s.path, to_string(fields, *ctx.binding()));
 
     return {
@@ -41,7 +41,7 @@ ir::Relation lowerToIR(bound::FileSource s, auto& self, Context& ctx) {
 }
 
 ir::Relation lowerToIR(bound::FileIntervalSource s, auto& self, Context& ctx) {
-    auto fields = self.fields_out->fieldSet();
+    auto fields = self.fields_out->fields();
     llog::info(
         "(interval) path={}, requested fields: {}", s.path, to_string(fields, *ctx.binding()));
 
@@ -57,7 +57,7 @@ ir::Relation lowerToIR(bound::FileIntervalSource s, auto& self, Context& ctx) {
 }
 
 ir::Relation lowerToIR(bound::StreamSource s, auto& self, Context& ctx) {
-    auto fields = self.fields_out->fieldSet();
+    auto fields = self.fields_out->fields();
     llog::info(
         "stream command={}, requested fields: {}", s.command, to_string(fields, *ctx.binding()));
 

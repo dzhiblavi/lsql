@@ -1,31 +1,32 @@
 #pragma once
 
-#include "front/common/bound/FieldSetNode.h"
+#include "front/common/bound/RelationFieldSet.h"
 
 namespace lsql::front::common::bind {
 
 struct FieldSetChain {
-    FieldSetChain(bound::FieldSetNodePtr top, FieldSetChain* parent)
+    FieldSetChain(bound::RelationFieldSetPtr top, FieldSetChain* parent)
         : current_(top)
         , parent_(parent) {}
 
-    bound::FieldSetNodePtr top() { return current_; }
+    bound::RelationFieldSetPtr top() { return current_; }
 
     std::optional<ValueType> typeOfSourceField(std::string_view name, FieldBindingPtr binding) {
         if (current_ == nullptr) {
             return std::nullopt;
         }
 
-        for (auto id : current_->fieldSet().fieldIds()) {
+        auto fields = current_->fields();
+        for (auto id : fields.fieldIds()) {
             if (binding->name(id) == name) {
+                current_->require(id);
                 return binding->type(id);
             }
         }
 
-        if (current_->hasUnknown()) {
-            // Some sources do not know which fields they contain.
-            // They are modeled like they contain fields of any name with String type.
-            current_->addUnknown(binding->getOrAdd(name, ValueType::String));
+        auto id = binding->getOrAdd(name, ValueType::String);
+        if (current_->canProvide(id)) {
+            current_->require(id);
             return ValueType::String;
         }
 
@@ -37,7 +38,7 @@ struct FieldSetChain {
     }
 
  private:
-    bound::FieldSetNodePtr current_;
+    bound::RelationFieldSetPtr current_;
     FieldSetChain* parent_;
 };
 

@@ -10,6 +10,7 @@
 #include "front/sql/bound/Relations.h"
 
 #include "front/common/bind/helpers.h"
+#include "front/common/bound/RelationFieldSets.h"
 #include "front/common/source/require_at.h"
 
 #include "core/time_formats.h"
@@ -22,9 +23,11 @@ namespace lsql::front::sql::bind {
 namespace {
 
 using common::bind::FieldSetChain;
+using common::bound::CombinedRelationFieldSet;
 using common::bound::ExprKindLevel;
-using common::bound::FieldSetNode;
-using common::bound::FieldSetNodePtr;
+using common::bound::FixedRelationFieldSet;
+using common::bound::OpenRelationFieldSet;
+using common::bound::RelationFieldSetPtr;
 
 void bindProjector(ast::Projector pp, std::vector<bound::Projector>& out, Context& ctx) {
     util::match(
@@ -72,7 +75,7 @@ bound::Relation bindRelation(ast::AdhocRelation r, auto&& self, Context& ctx) {
                 .values = std::move(values),
                 .output_field_id = id,
             },
-        .fields_out = FieldSetNode::make(FieldSet::withField(id)),
+        .fields_out = arc<FixedRelationFieldSet>(FieldSet::withField(id)),
     };
 }
 
@@ -108,8 +111,9 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
     auto projectors_span = spanOf(r.projectors);
 
     // The following code should fill these
-    FieldSetNodePtr fields_out = nullptr;
-    FieldSetNodePtr order_by_visible_fields = nullptr;
+    RelationFieldSetPtr fields_out = nullptr;
+    RelationFieldSetPtr order_by_visible_fields = nullptr;
+    FieldSetChain* order_by_parent = nullptr;
     std::vector<bound::Projector> projectors;
     bool aggregate = false;
     std::optional<bound::Where> having;
@@ -134,7 +138,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
                 [](auto&&) {});
         }
         auto group_key_map = buildMap(group_key);
-        auto group_key_fields = FieldSetNode::make(outputFieldsOf(group_key));
+        auto group_key_fields = arc<FixedRelationFieldSet>(outputFieldsOf(group_key));
 
         projectors = [&] {
             // Projectors see group keys and source visible fields
@@ -172,7 +176,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
         }
 
         if (r.having) {
-            auto having_key_fields = FieldSetNode::make(
+            auto having_key_fields = arc<FixedRelationFieldSet>(
                 FieldSet::merge(outputFieldsOf(projectors), outputFieldsOf(group_key)));
             auto having_visible_fields = FieldSetChain(having_key_fields, &source_visible_fields);
             auto _ = ctx.scopedFieldSet(&having_visible_fields);
@@ -199,11 +203,11 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
         }
 
         // Projectors' and group key fields are visible to order by
-        order_by_visible_fields = FieldSetNode::make(
+        order_by_visible_fields = arc<FixedRelationFieldSet>(
             FieldSet::merge(outputFieldsOf(projectors), outputFieldsOf(group_key)));
 
         // Only projectors' fields are in output
-        fields_out = FieldSetNode::make(outputFieldsOf(projectors));
+        fields_out = arc<FixedRelationFieldSet>(outputFieldsOf(projectors));
 
         group_by = bound::GroupBy{.group_list = std::move(group_key)};
         aggregate = true;
@@ -252,22 +256,23 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
             }
 
             // Order by sees projectors' fields only
-            order_by_visible_fields = FieldSetNode::make(outputFieldsOf(projectors));
+            order_by_visible_fields = arc<FixedRelationFieldSet>(outputFieldsOf(projectors));
             // Only projectors' fields are in output
-            fields_out = FieldSetNode::make(outputFieldsOf(projectors));
+            fields_out = arc<FixedRelationFieldSet>(outputFieldsOf(projectors));
         } else {
             // Simple SELECT
 
             // Order by sees both projectors and source's visible fields
-            order_by_visible_fields =
-                FieldSetNode::make(outputFieldsOf(projectors), source.fields_out);
+            order_by_visible_fields = arc<FixedRelationFieldSet>(outputFieldsOf(projectors));
+            order_by_parent = &source_visible_fields;
 
             if (has_star_projector) {
                 // Both source and projectors' fields are in output (because * is present)
-                fields_out = FieldSetNode::make(outputFieldsOf(projectors), source.fields_out);
+                fields_out = arc<CombinedRelationFieldSet>(
+                    outputFieldsOf(projectors), std::vector{source.fields_out});
             } else {
                 // Only projectors' fields are in output (no * in select list)
-                fields_out = FieldSetNode::make(outputFieldsOf(projectors));
+                fields_out = arc<FixedRelationFieldSet>(outputFieldsOf(projectors));
             }
         }
     }
@@ -277,7 +282,7 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
         auto order_list_spans = spansOf(r.order_by->order_list);
 
         auto order_list = [&] {
-            auto visible_fields = FieldSetChain(order_by_visible_fields, nullptr);
+            auto visible_fields = FieldSetChain(order_by_visible_fields, order_by_parent);
             auto _ = ctx.scopedFieldSet(&visible_fields);
 
             return bindExprs(std::move(r.order_by->order_list), ctx);
@@ -315,7 +320,8 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
 bound::Relation bindRelation(ast::UnionAllRelation r, auto&& /*self*/, Context& ctx) {
     auto left = bindRelation(std::move(*r.left), ctx);
     auto right = bindRelation(std::move(*r.right), ctx);
-    auto fields = FieldSetNode::proxy(left.fields_out, right.fields_out);
+    auto fields = arc<CombinedRelationFieldSet>(
+        FieldSet::emptySet(), std::vector{left.fields_out, right.fields_out});
 
     return {
         .node =
@@ -330,7 +336,8 @@ bound::Relation bindRelation(ast::UnionAllRelation r, auto&& /*self*/, Context& 
 bound::Relation bindRelation(ast::UnionAllSortedByRelation r, auto&& self, Context& ctx) {
     auto left = bindRelation(std::move(*r.left), ctx);
     auto right = bindRelation(std::move(*r.right), ctx);
-    auto fields = FieldSetNode::proxy(left.fields_out, right.fields_out);
+    auto fields = arc<CombinedRelationFieldSet>(
+        FieldSet::emptySet(), std::vector{left.fields_out, right.fields_out});
 
     FieldSetChain fields_set(fields, nullptr);
     auto _ = ctx.scopedFieldSet(&fields_set);
@@ -353,14 +360,14 @@ bound::Relation bindRelation(ast::UnionAllSortedByRelation r, auto&& self, Conte
     };
 }
 
-bound::Relation bindRelation(ast::FileRelation r, auto&& /*self*/, Context& /*ctx*/) {
+bound::Relation bindRelation(ast::FileRelation r, auto&& /*self*/, Context& ctx) {
     return {
         .node = bound::FileRelation{.path = std::move(r.path)},
-        .fields_out = FieldSetNode::unknownSet(),
+        .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
     };
 }
 
-bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& self, Context& /*ctx*/) {
+bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& self, Context& ctx) {
     requireAt(
         !util::isProbablyArchive(r.path),
         self.span,
@@ -376,14 +383,14 @@ bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& self, Context& 
                 .ts_from = ts_from,
                 .ts_to = ts_from + r.interval_s,
             },
-        .fields_out = FieldSetNode::unknownSet(),
+        .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
     };
 }
 
-bound::Relation bindRelation(ast::StreamRelation r, auto&& /*self*/, Context& /*ctx*/) {
+bound::Relation bindRelation(ast::StreamRelation r, auto&& /*self*/, Context& ctx) {
     return {
         .node = bound::StreamRelation{.command = std::move(r.command)},
-        .fields_out = FieldSetNode::unknownSet(),
+        .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
     };
 }
 
@@ -393,13 +400,13 @@ bound::Relation bindRelation(ast::NamedRelationReferenceRelation r, auto&& self,
 
     return {
         .node = bound::NamedRelationReferenceRelation{.name = std::move(r.name)},
-        .fields_out = FieldSetNode::proxy(child_node_ptr),
+        .fields_out = child_node_ptr,
     };
 }
 
 bound::Relation bindRelation(ast::MaterializeRelation r, auto&& /*self*/, Context& ctx) {
     auto arg = bindRelation(std::move(*r.relation), ctx);
-    auto fields = FieldSetNode::proxy(arg.fields_out);
+    auto fields = arg.fields_out;
 
     return {
         .node = bound::MaterializeRelation{.relation = box(std::move(arg))},

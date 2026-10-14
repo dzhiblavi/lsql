@@ -40,7 +40,7 @@ concept BoundExpr = requires(const E& e) {
 
 template <typename R>
 concept BoundRel = requires(const R& r) {
-    { r.fields_out } -> std::same_as<const bound::FieldSetNodePtr&>;
+    { r.fields_out } -> std::same_as<const bound::RelationFieldSetPtr&>;
 };
 
 struct BoundExprInfo {
@@ -476,10 +476,11 @@ std::pair<BoundExprInfo, FieldId> bindInExpr(
         "in key expression cannot be aggregate");
     auto req_fields = arg.required_fields;
 
-    auto count = match.fields_out->fieldSet().fieldIds().size();
+    auto match_fields = match.fields_out->fields();
+    auto count = match_fields.size();
     requireAt(count == 1, match_span, "in match should contain one column, got {}", count);
 
-    auto match_field_id = *match.fields_out->fieldSet().fieldIds().begin();
+    auto match_field_id = *match_fields.fieldIds().begin();
     requireAt(
         arg.value_type == ctx.binding()->type(match_field_id), arg_span, "in key type mismatch");
 

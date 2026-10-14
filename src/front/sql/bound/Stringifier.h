@@ -21,10 +21,8 @@ struct Stringifier : TreePrinter<Stringifier> {
         return b.render();
     }
 
-    StrBuilder print(FieldSetNodePtr node) {
-        return StrBuilder()
-            .block(StrBuilder("this: {}", to_string(node->fieldSet(), *binding)))
-            .block(StrBuilder("subtree: {}", to_string(node->subtreeFieldSet(), *binding)));
+    StrBuilder print(RelationFieldSetPtr node) {
+        return StrBuilder("fields: {}", to_string(node->fields(), *binding));
     }
 };
 
