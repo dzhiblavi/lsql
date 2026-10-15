@@ -8,7 +8,12 @@ namespace lsql::func {
 
 template <Subtractable T>
 struct SubtractExecutor {
-    Value execute(const Value& l, const Value& r) const { return l.get<T>() - r.get<T>(); }
+    Value execute(const Value& l, const Value& r) const {
+        if (l == vnull || r == vnull) {
+            return vnull;
+        }
+        return l.get<T>() - r.get<T>();
+    }
 };
 
 static_assert(BinaryExecutor<SubtractExecutor<int64_t>>);

@@ -9,6 +9,9 @@ namespace lsql::func {
 template <Dividable T>
 struct DivideExecutor {
     Value execute(const Value& l, const Value& r) const {
+        if (l == vnull || r == vnull) {
+            return vnull;
+        }
         auto divisor = r.get<T>();
         return divisor == T(0) ? null : Value(l.get<T>() / divisor);
     }
