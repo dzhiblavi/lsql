@@ -36,11 +36,13 @@ concept BoundExpr = requires(const E& e) {
     { e.value_type } -> std::same_as<const ValueType&>;
     { e.level } -> std::same_as<const bound::ExprKindLevel&>;
     { e.required_fields } -> std::same_as<const FieldSet&>;
+    { e.span } -> std::same_as<const SourceSpan&>;
 };
 
 template <typename R>
 concept BoundRel = requires(const R& r) {
     { r.fields_out } -> std::same_as<const bound::RelationFieldSetPtr&>;
+    { r.span } -> std::same_as<const SourceSpan&>;
 };
 
 struct BoundExprInfo {
@@ -59,33 +61,36 @@ FieldSet requiredFieldsOf(const std::vector<E>& exprs) {
 }
 
 template <BoundExpr Arg>
-Value getLiteral(const Arg& arg, SourceSpan span) {
+Value getLiteral(const Arg& arg) {
     return util::match(
         arg.node,
         [](bound::ValueExpr e) -> Value { return e.value; },
-        [&](auto&&) -> Value { throwAt(span, "expected literal argument"); });
+        [&](auto&&) -> Value { throwAt(arg.span, "expected literal argument"); });
 }
 
 template <BoundExpr Arg>
-bound::ExprKindLevel composedLevel(std::span<const Arg> args, SourceSpan span) {
+bound::ExprKindLevel composedLevel(std::span<const Arg> args) {
     auto level = common::bound::ExprKindLevel::Const;
+    auto span = spanOf(args);
+
     for (auto&& arg : args) {
         requireAt(composable(level, arg.level), span, "different expression kinds not allowed");
         level = composed(level, arg.level);
     }
+
     return level;
 }
 
 template <BoundExpr Arg>
 std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
-    std::string_view fn_name, std::vector<Arg> args, SourceSpan span, SourceSpan args_span) {
-    auto level = composedLevel<Arg>(args, args_span);
+    std::string_view fn_name, std::vector<Arg> args, SourceSpan span) {
+    auto level = composedLevel<Arg>(args);
 
     if (fn_name == "lower") {
-        requireAt(args.size() == 1, args_span, "lower expects exactly 1 argument");
+        requireAt(args.size() == 1, spanOf(args), "lower expects exactly 1 argument");
         requireAt(
             args[0].value_type == ValueType::String,
-            args_span,
+            args[0].span,
             "lower's argument should be String");
 
         return {
@@ -100,34 +105,35 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     }
 
     if (fn_name == "splitpart") {
-        requireAt(args.size() == 3, args_span, "splitpart expects exactly 3 arguments");
+        requireAt(args.size() == 3, spanOf(args), "splitpart expects exactly 3 arguments");
         requireAt(
             args[0].value_type == ValueType::String,
-            args_span,
+            args[0].span,
             "splitpart's first argument should be String");
         requireAt(
             args[1].level == bound::ExprKindLevel::Const,
-            args_span,
+            args[1].span,
             "splitpart's separator must be constant");
         requireAt(
             args[1].value_type == ValueType::String,
-            args_span,
+            args[1].span,
             "splitpart's separator should be String");
         requireAt(
             args[2].level == bound::ExprKindLevel::Const,
-            args_span,
+            args[2].span,
             "splitpart's index must be constant");
         requireAt(
             args[2].value_type == ValueType::Integer,
-            args_span,
+            args[2].span,
             "splitpart's index should be Integer");
 
-        auto separator_value = getLiteral(args[1], args_span);
+        auto separator_value = getLiteral(args[1]);
         auto separator = separator_value.template get<std::string_view>();
-        requireAt(separator.size() == 1, args_span, "splitpart's separator must be one character");
+        requireAt(
+            separator.size() == 1, args[1].span, "splitpart's separator must be one character");
 
-        auto index = getLiteral(args[2], args_span).template get<int64_t>();
-        requireAt(index >= 0, args_span, "splitpart's index must not be negative");
+        auto index = getLiteral(args[2]).template get<int64_t>();
+        requireAt(index >= 0, args[2].span, "splitpart's index must not be negative");
 
         std::vector<Arg> dynamic;
         dynamic.push_back(std::move(args[0]));
@@ -147,24 +153,28 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     }
 
     if (fn_name == "substr") {
-        requireAt(2 <= args.size() && args.size() <= 3, args_span, "2-3 arguments required");
-        requireAt(args[0].value_type == ValueType::String, args_span, "1st arg should be string");
-        requireAt(args[1].value_type == ValueType::Integer, args_span, "2nd arg should be integer");
+        requireAt(2 <= args.size() && args.size() <= 3, spanOf(args), "2-3 arguments required");
+        requireAt(
+            args[0].value_type == ValueType::String, args[0].span, "1st arg should be string");
+        requireAt(
+            args[1].value_type == ValueType::Integer, args[1].span, "2nd arg should be integer");
         if (args.size() == 3) {
             requireAt(
-                args[2].value_type == ValueType::Integer, args_span, "3rd arg should be integer");
+                args[2].value_type == ValueType::Integer,
+                args[2].span,
+                "3rd arg should be integer");
         }
 
         std::vector<Arg> dynamic;
         dynamic.push_back(std::move(args[0]));
 
-        auto from = getLiteral(args[1], args_span).template get<int64_t>();
-        requireAt(from >= 0, args_span, "negative pos is not allowed");
+        auto from = getLiteral(args[1]).template get<int64_t>();
+        requireAt(from >= 0, args[1].span, "negative pos is not allowed");
 
         auto length = std::string::npos;
         if (args.size() == 3) {
-            length = getLiteral(args[2], args_span).template get<int64_t>();
-            requireAt(length >= 0, args_span, "negative length is not allowed");
+            length = getLiteral(args[2]).template get<int64_t>();
+            requireAt(length >= 0, args[2].span, "negative length is not allowed");
         }
 
         auto substr = func::Substr{
@@ -191,7 +201,7 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
                 types.insert(arg.value_type);
             }
         }
-        requireAt(types.size() <= 1, args_span, "coalesce arguments must have the same type");
+        requireAt(types.size() <= 1, spanOf(args), "coalesce arguments must have the same type");
 
         return {
             BoundExprInfo{
@@ -205,16 +215,17 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     }
 
     if (fn_name == "percentile") {
-        requireAt(args.size() > 1, args_span, "percentile must be given at least one percentile");
+        requireAt(
+            args.size() > 1, spanOf(args), "percentile must be given at least one percentile");
         requireAt(
             args[0].level != common::bound::ExprKindLevel::Group,
-            args_span,
+            args[0].span,
             "percentile does not accept aggregates");
         requireAt(
             dispatch<bool>(
                 []<typename T>(std::type_identity<T>) { return Comparable<T>; },
                 args[0].value_type),
-            args_span,
+            args[0].span,
             "percentile argument must be comparable");
 
         std::vector<float> percentiles;
@@ -222,11 +233,11 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
         for (size_t i = 1; i < args.size(); ++i) {
             requireAt(
                 args[i].value_type == ValueType::Floating,
-                args_span,
+                args[i].span,
                 "percentile's arguments in positions >=1 must be floating");
 
-            auto p = getLiteral(args[i], args_span).template get<float>();
-            requireAt(p >= 0.0f && p <= 1.0f, args_span, "percentile value must be in [0, 1]");
+            auto p = getLiteral(args[i]).template get<float>();
+            requireAt(p >= 0.0f && p <= 1.0f, args[i].span, "percentile value must be in [0, 1]");
             percentiles.push_back(p);
         }
 
@@ -250,21 +261,21 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     }
 
     if (fn_name == "rsubstr") {
-        requireAt(args.size() == 2, args_span, "rsubstr expects exactly 2 arguments");
+        requireAt(args.size() == 2, spanOf(args), "rsubstr expects exactly 2 arguments");
         requireAt(
             args[0].value_type == ValueType::String,
-            args_span,
+            args[0].span,
             "rsubstr's first argument should be String");
         requireAt(
             args[1].level == common::bound::ExprKindLevel::Const,
-            args_span,
+            args[1].span,
             "rsubstr's second argument should be a constant");
         requireAt(
             args[1].value_type == ValueType::String,
-            args_span,
+            args[1].span,
             "rsubstr's second argument should be String");
 
-        auto regex = std::string(getLiteral(args[1], args_span).template get<std::string_view>());
+        auto regex = std::string(getLiteral(args[1]).template get<std::string_view>());
         std::vector<Arg> dynamic;
         dynamic.push_back(std::move(args[0]));
         auto fields = requiredFieldsOf(dynamic);
@@ -282,24 +293,24 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     }
 
     if (fn_name == "json_value") {
-        requireAt(args.size() == 2, args_span, "json_value expects exactly 2 arguments");
+        requireAt(args.size() == 2, spanOf(args), "json_value expects exactly 2 arguments");
         requireAt(
             args[0].value_type == ValueType::String,
-            args_span,
+            args[0].span,
             "json_value's first argument should be String");
         requireAt(
             args[1].level == bound::ExprKindLevel::Const,
-            args_span,
+            args[1].span,
             "json_value's path must be constant");
         requireAt(
             args[1].value_type == ValueType::String,
-            args_span,
+            args[1].span,
             "json_value's path should be String");
 
-        auto path_value = getLiteral(args[1], args_span);
+        auto path_value = getLiteral(args[1]);
         auto path = path_value.template get<std::string_view>();
         auto pointer = util::jsonPathToPointer(path);
-        requireAt(pointer.has_value(), args_span, "invalid JSON path '{}'", path);
+        requireAt(pointer.has_value(), args[1].span, "invalid JSON path '{}'", path);
 
         std::vector<Arg> dynamic;
         dynamic.push_back(std::move(args[0]));
@@ -316,7 +327,7 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     }
 
     if (fn_name == "count_all") {
-        requireAt(args.size() == 0, args_span, "no arguments expected for count_all");
+        requireAt(args.size() == 0, spanOf(args), "no arguments expected for count_all");
 
         return {
             BoundExprInfo{
@@ -330,7 +341,7 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     }
 
     if (fn_name == "count_nonnull") {
-        requireAt(args.size() == 1, args_span, "1 argument expected for count_nonnull");
+        requireAt(args.size() == 1, spanOf(args), "1 argument expected for count_nonnull");
         auto fields = args[0].required_fields;
 
         return {
@@ -345,10 +356,10 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     }
 
     if (fn_name == "min") {
-        requireAt(args.size() == 1, args_span, "function expects 1 argument");
+        requireAt(args.size() == 1, spanOf(args), "function expects 1 argument");
         requireAt(
             args[0].level != common::bound::ExprKindLevel::Group,
-            args_span,
+            args[0].span,
             "min operation does not accept aggregates");
 
         auto type = args[0].value_type;
@@ -366,10 +377,10 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     }
 
     if (fn_name == "max") {
-        requireAt(args.size() == 1, args_span, "function expects 1 argument");
+        requireAt(args.size() == 1, spanOf(args), "function expects 1 argument");
         requireAt(
             args[0].level != common::bound::ExprKindLevel::Group,
-            args_span,
+            args[0].span,
             "max operation does not accept aggregates");
 
         auto type = args[0].value_type;
@@ -387,10 +398,10 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     }
 
     if (fn_name == "sum") {
-        requireAt(args.size() == 1, args_span, "function expects 1 argument");
+        requireAt(args.size() == 1, spanOf(args), "function expects 1 argument");
         requireAt(
             args[0].level != common::bound::ExprKindLevel::Group,
-            args_span,
+            args[0].span,
             "sum operation does not accept aggregates");
 
         auto type = args[0].value_type;
@@ -408,22 +419,22 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     }
 
     if (fn_name == "parse_timestamp") {
-        requireAt(args.size() == 2, args_span, "function expects 2 arguments");
+        requireAt(args.size() == 2, spanOf(args), "function expects 2 arguments");
         requireAt(
             args[0].value_type == ValueType::String,
-            args_span,
+            args[0].span,
             "the first argument must be string");
         requireAt(
             args[1].level == bound::ExprKindLevel::Const,
-            args_span,
+            args[1].span,
             "the second argument must be constant");
         requireAt(
-            args[1].value_type == ValueType::String, args_span, "the argument must be string");
+            args[1].value_type == ValueType::String, args[1].span, "the argument must be string");
 
-        auto str_format_value = getLiteral(args[1], args_span);
+        auto str_format_value = getLiteral(args[1]);
         auto str_format = str_format_value.template get<std::string_view>();
         auto maybe_format = magic_enum::enum_cast<TimeFormat>(str_format);
-        requireAt(maybe_format.has_value(), args_span, "invalid time format '{}'", str_format);
+        requireAt(maybe_format.has_value(), args[1].span, "invalid time format '{}'", str_format);
 
         std::vector<Arg> dynamic;
         dynamic.push_back(std::move(args[0]));
@@ -450,7 +461,7 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
 
     if (auto it = std::ranges::find(cast_fns, fn_name, [](auto&& p) { return p.first; });
         it != cast_fns.end()) {
-        requireAt(args.size() == 1, args_span, "'{}' expects 1 argument", fn_name);
+        requireAt(args.size() == 1, spanOf(args), "'{}' expects 1 argument", fn_name);
         auto fields = requiredFieldsOf(args);
 
         return {
@@ -467,30 +478,17 @@ std::tuple<BoundExprInfo, func::Function, std::vector<Arg>> bindFnCallExpr(
     throwAt(span, "unknown function name '{}'", fn_name);
 }
 
-template <BoundExpr Arg, BoundRel Match>
-std::pair<BoundExprInfo, FieldId> bindInExpr(
-    const Arg& arg, const Match& match, auto& ctx, SourceSpan arg_span, SourceSpan match_span) {
+template <BoundExpr Arg>
+BoundExprInfo bindInExpr(const Arg& arg) {
     requireAt(
         arg.level != common::bound::ExprKindLevel::Group,
-        arg_span,
+        arg.span,
         "in key expression cannot be aggregate");
-    auto req_fields = arg.required_fields;
-
-    auto match_fields = match.fields_out->fields();
-    auto count = match_fields.size();
-    requireAt(count == 1, match_span, "in match should contain one column, got {}", count);
-
-    auto match_field_id = *match_fields.fieldIds().begin();
-    requireAt(
-        arg.value_type == ctx.binding()->type(match_field_id), arg_span, "in key type mismatch");
 
     return {
-        BoundExprInfo{
-            .value_type = ValueType::Boolean,
-            .level = bound::ExprKindLevel::Row,
-            .required_fields = req_fields,
-        },
-        match_field_id,
+        .value_type = ValueType::Boolean,
+        .level = bound::ExprKindLevel::Row,
+        .required_fields = arg.required_fields,
     };
 }
 

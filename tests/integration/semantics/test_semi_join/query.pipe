@@ -14,6 +14,11 @@ renamed_only =
     $input
     | select .uid as user_id
 
+late_users = file input.1.txt
+late_forwarded =
+    $late_users
+    | select *
+
 ---------------------
 
 $input
@@ -50,3 +55,12 @@ $input
 
 $renamed_only
 | select *, 6 as test_index
+
+$input
+| where .uid in (
+    $late_forwarded
+)
+| select .uid, 7 as test_index
+
+$late_forwarded
+| select .uid, 8 as test_index

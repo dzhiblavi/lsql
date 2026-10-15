@@ -17,6 +17,11 @@ renamed_only = (
     FROM $input
 )
 
+late_users = input.1.txt
+late_forwarded = (
+    SELECT * FROM $late_users
+)
+
 ---------------------
 
 SELECT uid, 1 AS test_index
@@ -45,3 +50,19 @@ WHERE uid IN (
 
 SELECT *, 6 AS test_index
 FROM $renamed_only
+
+SELECT uid, 7 AS test_index
+FROM $input
+WHERE uid IN $late_forwarded
+
+SELECT uid, 8 AS test_index
+FROM $late_forwarded
+
+SELECT uid, 9 AS test_index
+FROM $input
+WHERE uid IN (
+    SELECT uid FROM $input WHERE uid IN ('aaa', 'ccc')
+)
+
+SELECT uid, (uid IN ('aaa', 'ccc')) IN (true) AS is_selected, 10 AS test_index
+FROM $input

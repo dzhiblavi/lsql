@@ -1,0 +1,9 @@
+users = file input.txt
+
+file input.txt
+| select .uid in (
+    $users
+) as is_known
+
+$users
+| select .uid, .status

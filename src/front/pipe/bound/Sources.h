@@ -4,6 +4,8 @@
 #include "front/pipe/bound/fwd/Expr.h"
 #include "front/pipe/bound/fwd/Source.h"  // IWYU pragma: keep
 
+#include "front/common/source/SourceSpan.h"
+
 #include "core/value/Value.h"
 
 #include <string>
@@ -49,6 +51,7 @@ struct UnionAllSortedBySource {
 struct Source {
     SourceNode node;
     common::bound::RelationFieldSetPtr fields_out;
+    SourceSpan span;
 };
 
 }  // namespace lsql::front::pipe::bound

@@ -16,3 +16,21 @@
 {"test_index":6,"user_id":"bbb"}
 {"test_index":6,"user_id":"ccc"}
 {"test_index": 6, "user_id": "ddd"}
+
+{"test_index":7,"uid":"aaa"}
+{"test_index":7,"uid":"bbb"}
+{"test_index":7,"uid":"ccc"}
+{"test_index":7,"uid":"ddd"}
+
+{"test_index":8,"uid":"aaa"}
+{"test_index":8,"uid":"bbb"}
+{"test_index":8,"uid":"ccc"}
+{"test_index":8,"uid":"ddd"}
+
+{"test_index":9,"uid":"aaa"}
+{"test_index":9,"uid":"ccc"}
+
+{"test_index":10,"uid":"aaa","is_selected":true}
+{"test_index":10,"uid":"bbb","is_selected":false}
+{"test_index":10,"uid":"ccc","is_selected":true}
+{"test_index":10,"uid":"ddd","is_selected":false}

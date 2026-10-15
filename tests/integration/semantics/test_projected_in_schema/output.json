@@ -1,3 +1,11 @@
 {"uid":"aaa","is_ok":true}
 {"uid":"bbb","is_ok":false}
 {"uid":"ccc","is_ok":true}
+
+{"uid":"aaa","is_known":true,"test_index":1}
+{"uid":"bbb","is_known":true,"test_index":1}
+{"uid":"ccc","is_known":true,"test_index":1}
+
+{"uid":"aaa","test_index":2}
+{"uid":"bbb","test_index":2}
+{"uid":"ccc","test_index":2}

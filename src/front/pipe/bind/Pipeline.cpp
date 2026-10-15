@@ -27,6 +27,7 @@ bound::Pipeline bindPipeline(ast::Pipeline st, Context& ctx) {
         .source = std::move(source),
         .stages = {},
         .fields_out = nullptr,
+        .span = st.span,
     };
 
     auto prev_fields_out = p.source->fields_out;

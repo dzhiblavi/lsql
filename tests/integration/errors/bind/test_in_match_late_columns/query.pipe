@@ -1,0 +1,13 @@
+users =
+    file input.txt
+    | where .uid = 'aaa'
+    | select *
+
+file input.txt
+| where .uid in (
+    $users
+)
+| select .uid
+
+$users
+| select .status

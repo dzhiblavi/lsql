@@ -3,6 +3,7 @@
 #include "front/common/bound/BinaryExpr.h"
 #include "front/common/bound/ExprKindLevel.h"
 #include "front/common/bound/UnaryExpr.h"
+#include "front/common/source/SourceSpan.h"
 #include "front/pipe/bound/Pipeline.h"
 #include "front/pipe/bound/fwd/Expr.h"
 
@@ -25,7 +26,7 @@ struct FnCallExpr {
 struct InExpr {
     Box<Expr> expr;
     Box<Pipeline> match;
-    FieldId match_field_id;
+    FieldId match_field_id = UnknownFieldId;
 };
 
 struct LikeExpr {
@@ -49,6 +50,7 @@ struct Expr {
     ValueType value_type;
     common::bound::ExprKindLevel level;
     FieldSet required_fields;
+    SourceSpan span;
 };
 
 }  // namespace lsql::front::pipe::bound

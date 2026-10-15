@@ -31,10 +31,11 @@ bound::Expr bindExpr(ast::IdentifierExpr e, auto&& self, Context& ctx) {
         .value_type = *maybe_type,
         .level = common::bound::ExprKindLevel::Row,
         .required_fields = FieldSet::withField(id),
+        .span = self.span,
     };
 }
 
-bound::Expr bindExpr(ast::LiteralExpr e, auto&& /*self*/, Context& /*ctx*/) {
+bound::Expr bindExpr(ast::LiteralExpr e, auto&& self, Context& /*ctx*/) {
     auto value = parseLiteral(e.literal);
     requireAt(
         value.has_value(), e.literal.span, "invalid literal expression '{}'", e.literal.value_str);
@@ -44,30 +45,29 @@ bound::Expr bindExpr(ast::LiteralExpr e, auto&& /*self*/, Context& /*ctx*/) {
         .value_type = value->type(),
         .level = common::bound::ExprKindLevel::Const,
         .required_fields = FieldSet::emptySet(),
+        .span = self.span,
     };
 }
 
-bound::Expr bindExpr(ast::InExpr e, auto&& /*self*/, Context& ctx) {
-    auto expr_span = e.expr->span;
+bound::Expr bindExpr(ast::InExpr e, auto&& self, Context& ctx) {
     auto expr = bindExpr(std::move(*e.expr), ctx);
-    auto match_span = e.match->span;
-    auto match = bindPipeline(std::move(*e.match), ctx);
-    auto [info, match_field_id] = common::bind::bindInExpr(expr, match, ctx, expr_span, match_span);
+    auto match = box(bindPipeline(std::move(*e.match), ctx));
+    auto info = common::bind::bindInExpr(expr);
 
     return {
         .node =
             bound::InExpr{
                 .expr = box(std::move(expr)),
-                .match = box(std::move(match)),
-                .match_field_id = match_field_id,
+                .match = std::move(match),
             },
         .value_type = info.value_type,
         .level = info.level,
         .required_fields = info.required_fields,
+        .span = self.span,
     };
 }
 
-bound::Expr bindExpr(ast::LikeExpr e, auto&& /*self*/, Context& ctx) {
+bound::Expr bindExpr(ast::LikeExpr e, auto&& self, Context& ctx) {
     auto arg_span = e.expr->span;
     auto arg = bindExpr(std::move(*e.expr), ctx);
     auto info = common::bind::bindLikeExpr(arg, arg_span);
@@ -81,15 +81,14 @@ bound::Expr bindExpr(ast::LikeExpr e, auto&& /*self*/, Context& ctx) {
         .value_type = info.value_type,
         .level = info.level,
         .required_fields = info.required_fields,
+        .span = self.span,
     };
 }
 
 bound::Expr bindExpr(ast::FnCallExpr e, auto&& self, Context& ctx) {
-    auto args_span = spanOf(e.args);
     auto args = bindExprs(std::move(e.args), ctx);
 
-    auto [info, func, dynamic] =
-        common::bind::bindFnCallExpr(e.func, std::move(args), self.span, args_span);
+    auto [info, func, dynamic] = common::bind::bindFnCallExpr(e.func, std::move(args), self.span);
 
     return {
         .node =
@@ -100,6 +99,7 @@ bound::Expr bindExpr(ast::FnCallExpr e, auto&& self, Context& ctx) {
         .value_type = info.value_type,
         .level = info.level,
         .required_fields = info.required_fields,
+        .span = self.span,
     };
 }
 
@@ -118,6 +118,7 @@ bound::Expr bindExpr(ast::BinaryExpr e, auto&& self, Context& ctx) {
         .value_type = info.value_type,
         .level = info.level,
         .required_fields = info.required_fields,
+        .span = self.span,
     };
 }
 
@@ -134,6 +135,7 @@ bound::Expr bindExpr(ast::UnaryExpr e, auto&& self, Context& ctx) {
         .value_type = info.value_type,
         .level = info.level,
         .required_fields = info.required_fields,
+        .span = self.span,
     };
 }
 

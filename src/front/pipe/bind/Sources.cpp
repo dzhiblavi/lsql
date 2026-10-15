@@ -50,6 +50,7 @@ bound::Source bindSource(ast::AdhocSource s, auto&& self, Context& ctx) {
                 .output_field_id = id,
             },
         .fields_out = arc<FixedRelationFieldSet>(FieldSet::withField(id)),
+        .span = self.span,
     };
 }
 
@@ -60,13 +61,15 @@ bound::Source bindSource(ast::NamedPipelineReferenceSource s, auto&& self, Conte
     return {
         .node = bound::NamedPipelineReferenceSource{.name = s.name},
         .fields_out = child_node_ptr,
+        .span = self.span,
     };
 }
 
-bound::Source bindSource(ast::FileSource s, auto&& /*self*/, Context& ctx) {
+bound::Source bindSource(ast::FileSource s, auto&& self, Context& ctx) {
     return {
         .node = bound::FileSource{.path = std::move(s.path)},
         .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
+        .span = self.span,
     };
 }
 
@@ -87,17 +90,19 @@ bound::Source bindSource(ast::FileIntervalSource s, auto&& self, Context& ctx) {
                 .ts_to = ts_from + s.interval_s,
             },
         .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
+        .span = self.span,
     };
 }
 
-bound::Source bindSource(ast::StreamSource s, auto&& /*self*/, Context& ctx) {
+bound::Source bindSource(ast::StreamSource s, auto&& self, Context& ctx) {
     return {
         .node = bound::StreamSource{.command = std::move(s.command)},
         .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
+        .span = self.span,
     };
 }
 
-bound::Source bindSource(ast::UnionAllSource s, auto&& /*self*/, Context& ctx) {
+bound::Source bindSource(ast::UnionAllSource s, auto&& self, Context& ctx) {
     auto left = bindPipeline(std::move(*s.left), ctx);
     auto right = bindPipeline(std::move(*s.right), ctx);
     auto fields = arc<CombinedRelationFieldSet>(
@@ -110,6 +115,7 @@ bound::Source bindSource(ast::UnionAllSource s, auto&& /*self*/, Context& ctx) {
                 .right = box(std::move(right)),
             },
         .fields_out = std::move(fields),
+        .span = self.span,
     };
 }
 
@@ -134,6 +140,7 @@ bound::Source bindSource(ast::UnionAllSortedBySource s, auto&& self, Context& ct
                 .desc = s.desc,
             },
         .fields_out = std::move(fields),
+        .span = self.span,
     };
 }
 

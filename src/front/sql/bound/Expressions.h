@@ -1,8 +1,11 @@
 #pragma once
 
 #include "core/function/Function.h"
+
 #include "front/sql/bound/fwd/Expr.h"
 #include "front/sql/bound/fwd/Relation.h"
+
+#include "front/common/source/SourceSpan.h"
 
 #include "front/common/bound/BinaryExpr.h"
 #include "front/common/bound/ExprKindLevel.h"
@@ -24,7 +27,7 @@ struct IdentifierExpr {
 struct InExpr {
     Box<Expr> expr;
     Box<Relation> match;
-    FieldId match_field_id;
+    FieldId match_field_id = UnknownFieldId;
 };
 
 struct FnCallExpr {
@@ -53,6 +56,7 @@ struct Expr {
     ValueType value_type;
     common::bound::ExprKindLevel level;
     FieldSet required_fields;
+    SourceSpan span;
 };
 
 }  // namespace lsql::front::sql::bound

@@ -12,6 +12,7 @@
 #include "front/pipe/bound/Sources.h"  // IWYU pragma: keep
 #include "front/pipe/bound/Stages.h"
 
+#include "front/common/bind/Expressions.h"
 #include "front/common/bind/helpers.h"
 #include "front/common/bound/RelationFieldSets.h"
 #include "front/common/source/require_at.h"
@@ -50,7 +51,7 @@ void bindProjector(ast::Projector pp, std::vector<bound::Projector>& out, Contex
 
 }  // namespace
 
-bound::Stage bindStage(ast::FilterStage r, auto&& /*self*/, Context& ctx) {
+bound::Stage bindStage(ast::FilterStage r, auto&& self, Context& ctx) {
     auto cond_span = r.condition->span;
     auto cond = bindExpr(std::move(*r.condition), ctx);
     requireAt(cond.value_type == ValueType::Boolean, cond_span, "WHERE condition must be boolean");
@@ -59,32 +60,23 @@ bound::Stage bindStage(ast::FilterStage r, auto&& /*self*/, Context& ctx) {
     return {
         .node = bound::FilterStage{.condition = box(std::move(cond))},
         .fields_out = ctx.currFieldSet().top(),
+        .span = self.span,
     };
 }
 
-bound::Stage bindStage(ast::WhereInStage r, auto&& /*self*/, Context& ctx) {
-    auto expr_span = r.expr->span;
+bound::Stage bindStage(ast::WhereInStage r, auto&& self, Context& ctx) {
     auto expr = bindExpr(std::move(*r.expr), ctx);
-    requireAt(
-        expr.level != ExprKindLevel::Group, expr_span, "in key expression cannot be aggregate");
-
-    auto match_span = r.match->span;
-    auto match = bindPipeline(std::move(*r.match), ctx);
-    auto match_fields = match.fields_out->fields();
-    auto count = match_fields.size();
-    requireAt(count == 1, match_span, "in match should contain one column, got {}", count);
-    auto match_field_id = *match_fields.fieldIds().begin();
-    requireAt(
-        expr.value_type == ctx.binding()->type(match_field_id), expr_span, "in key type mismatch");
+    auto match = box(bindPipeline(std::move(*r.match), ctx));
+    common::bind::bindInExpr(expr);
 
     return {
         .node =
             bound::WhereInStage{
                 .expr = box(std::move(expr)),
-                .match = box(std::move(match)),
-                .match_field_id = match_field_id,
+                .match = std::move(match),
             },
         .fields_out = ctx.currFieldSet().top(),
+        .span = self.span,
     };
 }
 
@@ -94,6 +86,7 @@ bound::Stage bindStage(ast::TakeStage r, auto&& self, Context& ctx) {
     return {
         .node = bound::TakeStage{.count = r.count},
         .fields_out = ctx.currFieldSet().top(),
+        .span = self.span,
     };
 }
 
@@ -114,6 +107,7 @@ bound::Stage bindStage(ast::SortStage r, auto&& self, Context& ctx) {
                 .desc = r.desc,
             },
         .fields_out = ctx.currFieldSet().top(),
+        .span = self.span,
     };
 }
 
@@ -174,10 +168,11 @@ bound::Stage bindStage(ast::SelectStage r, auto&& self, Context& ctx) {
     return {
         .node = bound::SelectStage{.projectors = std::move(projectors)},
         .fields_out = fields_out,
+        .span = self.span,
     };
 }
 
-bound::Stage bindStage(ast::GroupStage r, auto&& /*self*/, Context& ctx) {
+bound::Stage bindStage(ast::GroupStage r, auto&& self, Context& ctx) {
     auto group_list_span = spanOf(r.group_list);
     auto group_list = bindProjectors<bound::Projector>(std::move(r.group_list), bindProjector, ctx);
     requireAt(!group_list.empty(), group_list_span, "group list cannot be empty");
@@ -222,6 +217,7 @@ bound::Stage bindStage(ast::GroupStage r, auto&& /*self*/, Context& ctx) {
                 .group_list = std::move(group_list),
             },
         .fields_out = arc<FixedRelationFieldSet>(projectors_fields),
+        .span = self.span,
     };
 }
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "front/common/bound/RelationFieldSet.h"
+#include "front/common/source/SourceSpan.h"
+
 #include "front/sql/bound/fwd/Expr.h"
 #include "front/sql/bound/fwd/Relation.h"
 
@@ -102,6 +104,7 @@ using common::bound::RelationFieldSetPtr;
 struct Relation {
     RelationNode node;
     RelationFieldSetPtr fields_out;
+    SourceSpan span;
 };
 
 }  // namespace lsql::front::sql::bound

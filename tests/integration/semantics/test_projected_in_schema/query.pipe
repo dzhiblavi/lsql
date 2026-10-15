@@ -1,4 +1,8 @@
 input = file input.1.txt
+late_users = file input.1.txt
+late_forwarded =
+    $late_users
+    | select *
 
 ok_users =
     $input
@@ -12,4 +16,14 @@ $input
     $ok_users
 ) as is_ok
 | where .uid != 'missing'
+| sort by .uid
+
+$input
+| select .uid, .uid in (
+    $late_forwarded
+) as is_known, 1 as test_index
+| sort by .uid
+
+$late_forwarded
+| select .uid, 2 as test_index
 | sort by .uid

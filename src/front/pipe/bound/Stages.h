@@ -1,6 +1,7 @@
 #pragma once
 
 #include "front/common/bound/RelationFieldSet.h"
+#include "front/common/source/SourceSpan.h"
 #include "front/pipe/bound/Pipeline.h"
 #include "front/pipe/bound/fwd/Expr.h"
 
@@ -30,7 +31,7 @@ struct FilterStage {
 struct WhereInStage {
     Box<Expr> expr;
     Box<Pipeline> match;
-    FieldId match_field_id;
+    FieldId match_field_id = UnknownFieldId;
 };
 
 struct TakeStage {
@@ -56,6 +57,7 @@ using common::bound::RelationFieldSetPtr;
 struct Stage {
     StageNode node;
     RelationFieldSetPtr fields_out;
+    SourceSpan span;
 };
 
 }  // namespace lsql::front::pipe::bound

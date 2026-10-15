@@ -43,7 +43,7 @@ inline SourceSpan merge(SourceSpan a, SourceSpan b) {
 }
 
 template <typename T>
-SourceSpan spanOf(const std::vector<T>& args) {
+SourceSpan spanOf(T& args) {
     auto span = SourceSpan({-1, -1}, {-1, -1});
     for (auto&& a : args) {
         span = merge(span, a.span);

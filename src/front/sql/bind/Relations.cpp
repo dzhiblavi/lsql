@@ -77,10 +77,11 @@ bound::Relation bindRelation(ast::AdhocRelation r, auto&& self, Context& ctx) {
                 .output_field_id = id,
             },
         .fields_out = arc<FixedRelationFieldSet>(FieldSet::withField(id)),
+        .span = self.span,
     };
 }
 
-bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ctx) {
+bound::Relation bindRelation(ast::SelectRelation r, auto&& self, Context& ctx) {
     auto source = bindRelation(std::move(*r.source), ctx);
     auto source_visible_fields = FieldSetChain(source.fields_out, nullptr);
 
@@ -315,10 +316,11 @@ bound::Relation bindRelation(ast::SelectRelation r, auto&& /*self*/, Context& ct
                 .aggregate = aggregate,
             },
         .fields_out = fields_out,
+        .span = self.span,
     };
 }
 
-bound::Relation bindRelation(ast::AliasRelation r, auto&&, Context& ctx) {
+bound::Relation bindRelation(ast::AliasRelation r, auto&& self, Context& ctx) {
     auto source = bindRelation(std::move(*r.source), ctx);
     auto fields = arc<AliasRelationFieldSet>(r.alias, source.fields_out, ctx.binding());
     return {
@@ -328,10 +330,11 @@ bound::Relation bindRelation(ast::AliasRelation r, auto&&, Context& ctx) {
                 .source = box(std::move(source)),
             },
         .fields_out = std::move(fields),
+        .span = self.span,
     };
 }
 
-bound::Relation bindRelation(ast::UnionAllRelation r, auto&& /*self*/, Context& ctx) {
+bound::Relation bindRelation(ast::UnionAllRelation r, auto&& self, Context& ctx) {
     auto left = bindRelation(std::move(*r.left), ctx);
     auto right = bindRelation(std::move(*r.right), ctx);
     auto fields = arc<CombinedRelationFieldSet>(
@@ -344,6 +347,7 @@ bound::Relation bindRelation(ast::UnionAllRelation r, auto&& /*self*/, Context& 
                 .right = box(std::move(right)),
             },
         .fields_out = std::move(fields),
+        .span = self.span,
     };
 }
 
@@ -371,13 +375,15 @@ bound::Relation bindRelation(ast::UnionAllSortedByRelation r, auto&& self, Conte
                     },
             },
         .fields_out = std::move(fields),
+        .span = self.span,
     };
 }
 
-bound::Relation bindRelation(ast::FileRelation r, auto&& /*self*/, Context& ctx) {
+bound::Relation bindRelation(ast::FileRelation r, auto&& self, Context& ctx) {
     return {
         .node = bound::FileRelation{.path = std::move(r.path)},
         .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
+        .span = self.span,
     };
 }
 
@@ -398,13 +404,15 @@ bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& self, Context& 
                 .ts_to = ts_from + r.interval_s,
             },
         .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
+        .span = self.span,
     };
 }
 
-bound::Relation bindRelation(ast::StreamRelation r, auto&& /*self*/, Context& ctx) {
+bound::Relation bindRelation(ast::StreamRelation r, auto&& self, Context& ctx) {
     return {
         .node = bound::StreamRelation{.command = std::move(r.command)},
         .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
+        .span = self.span,
     };
 }
 
@@ -415,16 +423,18 @@ bound::Relation bindRelation(ast::NamedRelationReferenceRelation r, auto&& self,
     return {
         .node = bound::NamedRelationReferenceRelation{.name = std::move(r.name)},
         .fields_out = child_node_ptr,
+        .span = self.span,
     };
 }
 
-bound::Relation bindRelation(ast::MaterializeRelation r, auto&& /*self*/, Context& ctx) {
+bound::Relation bindRelation(ast::MaterializeRelation r, auto&& self, Context& ctx) {
     auto arg = bindRelation(std::move(*r.relation), ctx);
     auto fields = arg.fields_out;
 
     return {
         .node = bound::MaterializeRelation{.relation = box(std::move(arg))},
         .fields_out = std::move(fields),
+        .span = self.span,
     };
 }
 
