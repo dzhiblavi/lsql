@@ -411,6 +411,61 @@ ir::Relation lowerToIR(bound::AliasRelation r, auto&, Context& ctx) {
     };
 }
 
+ir::Relation lowerToIR(bound::LeftJoinRelation r, auto&, Context& ctx) {
+    auto lower_input = [&](bound::Relation source, bound::Expr expr) {
+        auto relation_scope = ctx.scopedRelation(lowerToIR(std::move(source), ctx));
+        auto output_schema = ctx.currRelation().schema;
+        auto fields = output_schema.fieldSet();
+        auto fields_scope = ctx.scopedFieldSet(&fields);
+        auto [key, aggregates] = lowerToIR(std::move(expr), ctx);
+        verify(aggregates.empty());
+        return std::tuple{ctx.pullRelation(), std::move(key), std::move(output_schema)};
+    };
+
+    // clang-format off
+    auto [left, left_key, left_output] = lower_input(std::move(*r.left), std::move(*r.left_key));
+    auto [right, right_key, right_output] = lower_input(std::move(*r.right), std::move(*r.right_key));
+    // clang-format on
+
+    auto schema = Schema::concat(left.schema, right.schema);
+    auto output_schema = Schema::concat(left_output, right_output);
+
+    auto joined = ir::Relation{
+        .node =
+            ir::LeftJoinRelation{
+                .left = box(std::move(left)),
+                .right = box(std::move(right)),
+                .left_key = box(std::move(left_key)),
+                .right_key = box(std::move(right_key)),
+            },
+        .schema = std::move(schema),
+    };
+    if (joined.schema == output_schema) {
+        return joined;
+    }
+
+    std::vector<ir::Projector> projectors;
+    for (auto id : output_schema.fieldIds()) {
+        projectors.push_back({
+            .alias_field_id = id,
+            .expr =
+                box(ir::Scalar{
+                    .node = ir::FieldScalar{.field_id = id},
+                    .value_type = ctx.binding()->type(id),
+                }),
+        });
+    }
+
+    return {
+        .node =
+            ir::ProjectionRelation{
+                .source = box(std::move(joined)),
+                .projectors = std::move(projectors),
+            },
+        .schema = std::move(output_schema),
+    };
+}
+
 ir::Relation lowerToIR(bound::UnionAllRelation r, auto& /*info*/, Context& ctx) {
     auto left = lowerToIR(std::move(*r.left), ctx);
     auto right = lowerToIR(std::move(*r.right), ctx);

@@ -12,6 +12,7 @@ struct Limit;
 struct Log;
 struct Stream;
 struct MarkJoin;
+struct LeftJoin;
 struct Materialize;
 struct MergeSorted;
 struct SemiJoin;
@@ -29,6 +30,7 @@ using OperationNode = std::variant< //
     Log,
     Stream,
     MarkJoin,
+    LeftJoin,
     Materialize,
     MergeSorted,
     SemiJoin,

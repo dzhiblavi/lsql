@@ -24,6 +24,10 @@ coro::generator<Line> PagedLineSource::lines() const {
         end_,
         end_ - begin_);
 
+    if (begin_ >= end_) {
+        co_return;
+    }
+
     size_t page_index = begin_ / util::pageSize();
     size_t pos = begin_;  // global position
     auto page = file_->page(page_index);

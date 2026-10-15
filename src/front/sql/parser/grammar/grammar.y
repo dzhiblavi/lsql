@@ -41,6 +41,9 @@
 %token TOKEN_SELECT.
 %token TOKEN_COUNT.
 %token TOKEN_FROM.
+%token TOKEN_LEFT.
+%token TOKEN_JOIN.
+%token TOKEN_ON.
 %token TOKEN_IDENTIFIER.
 %token TOKEN_QUALIFIED_IDENTIFIER.
 %token TOKEN_SEMICOLON.
@@ -119,6 +122,8 @@
 %type file_source        {ast::Relation*}
 %type select_source      {ast::Relation*}
 %type from_source        {ast::Relation*}
+%type join_source        {ast::Relation*}
+%type left_join_relation {ast::Relation*}
 %type alias_relation     {ast::Relation*}
 %type file_path          {lsql::front::sql::parse::Token}
 %type select_statement   {ast::Relation*}
@@ -187,6 +192,7 @@ immediate_relation(R) ::= TOKEN_MATERIALIZE(m) TOKEN_LPAREN relation(S) TOKEN_RP
 relation(R) ::= immediate_relation(A). { R = A; }
 relation(R) ::= select_statement(A). { R = A; }
 relation(R) ::= alias_relation(A). { R = A; }
+relation(R) ::= left_join_relation(A). { R = A; }
 
 relation(A) ::= relation(L) TOKEN_UNION_ALL relation(R). {
     A = new ast::Relation{
@@ -288,6 +294,21 @@ select_source(S) ::= immediate_relation(R). { S = R; }
 
 from_source(S) ::= select_source(R). { S = R; }
 from_source(S) ::= alias_relation(R). { S = R; }
+from_source(S) ::= left_join_relation(R). { S = R; }
+
+join_source(S) ::= select_source(R). { S = R; }
+join_source(S) ::= alias_relation(R). { S = R; }
+
+left_join_relation(S) ::= from_source(L) TOKEN_LEFT TOKEN_JOIN join_source(R) TOKEN_ON expression(E). {
+    S = new ast::Relation{
+        .node = ast::LeftJoinRelation{
+            .left = Box<ast::Relation>(L),
+            .right = Box<ast::Relation>(R),
+            .condition = Box<ast::Expr>(E),
+        },
+        .span = merge(L->span, E->span),
+    };
+}
 
 alias_relation(S) ::= select_source(R) TOKEN_AS TOKEN_IDENTIFIER(A). {
     S = new ast::Relation{

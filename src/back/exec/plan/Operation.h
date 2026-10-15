@@ -61,6 +61,13 @@ struct MarkJoin {
     FieldId output_field_id;
 };
 
+struct LeftJoin {
+    Arc<Operation> left;
+    Arc<Operation> right;
+    ScalarPtr left_key;
+    ScalarPtr right_key;
+};
+
 struct Materialize {
     Arc<Operation> source;
 };

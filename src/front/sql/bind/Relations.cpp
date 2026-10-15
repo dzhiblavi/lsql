@@ -9,6 +9,7 @@
 #include "front/sql/bound/Expressions.h"
 #include "front/sql/bound/Relations.h"
 
+#include "front/common/bind/Expressions.h"
 #include "front/common/bind/helpers.h"
 #include "front/common/bound/RelationFieldSets.h"
 #include "front/common/source/require_at.h"
@@ -328,6 +329,42 @@ bound::Relation bindRelation(ast::AliasRelation r, auto&& self, Context& ctx) {
             bound::AliasRelation{
                 .alias = std::move(r.alias),
                 .source = box(std::move(source)),
+            },
+        .fields_out = std::move(fields),
+        .span = self.span,
+    };
+}
+
+bound::Relation bindRelation(ast::LeftJoinRelation r, auto&& self, Context& ctx) {
+    auto left = bindRelation(std::move(*r.left), ctx);
+    auto right = bindRelation(std::move(*r.right), ctx);
+    auto fields = arc<CombinedRelationFieldSet>(
+        FieldSet::emptySet(), std::vector{left.fields_out, right.fields_out});
+
+    auto* condition = std::get_if<ast::BinaryExpr>(&r.condition->node);
+    requireAt(
+        condition && condition->type == common::ast::BinaryExprType::Equal,
+        r.condition->span,
+        "LEFT JOIN ON requires a single equality");
+
+    auto visible_fields = FieldSetChain(fields, nullptr);
+    auto scope = ctx.scopedFieldSet(&visible_fields);
+    auto first = bindExpr(std::move(*condition->left), ctx);
+    auto second = bindExpr(std::move(*condition->right), ctx);
+    requireAt(
+        first.level != ExprKindLevel::Group && second.level != ExprKindLevel::Group,
+        r.condition->span,
+        "LEFT JOIN keys cannot be aggregate expressions");
+    common::bind::bindBinaryExpr(
+        first, second, common::ast::BinaryExprType::Equal, r.condition->span);
+
+    return {
+        .node =
+            bound::LeftJoinRelation{
+                .left = box(std::move(left)),
+                .right = box(std::move(right)),
+                .left_key = box(std::move(first)),
+                .right_key = box(std::move(second)),
             },
         .fields_out = std::move(fields),
         .span = self.span,

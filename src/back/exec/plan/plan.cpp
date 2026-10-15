@@ -97,6 +97,18 @@ void init(MarkJoin& node, Arc<Operation> op, int phase) {
     }
 }
 
+void init(LeftJoin& node, Arc<Operation> op, int phase) {
+    auto left_fields =
+        FieldSet::intersection(op->required_fields[phase], node.left->schema.fieldSet());
+    left_fields.merge(node.left_key->requiredFields());
+    requestOutput(node.left, phase, std::move(left_fields));
+
+    auto right_fields =
+        FieldSet::intersection(op->required_fields[phase], node.right->schema.fieldSet());
+    right_fields.merge(node.right_key->requiredFields());
+    requestOutput(node.right, node.right->min_phase, std::move(right_fields));
+}
+
 void init(Materialize& node, Arc<Operation> op, int phase) {
     requestOutput(node.source, op->min_phase, op->required_fields[phase]);
 }
@@ -373,6 +385,26 @@ class Planner {
                         .output_field_id = r.output_field_id,
                     },
                 .min_phase = std::max(match->min_phase + 1, source->min_phase),
+                .schema = info.schema,
+            });
+    }
+
+    Arc<Operation> planRelation(ir::LeftJoinRelation r, auto& info) {
+        auto left = planRelation(std::move(*r.left));
+        auto right = planRelation(std::move(*r.right));
+        auto left_key = planScalar(std::move(*r.left_key), left->schema);
+        auto right_key = planScalar(std::move(*r.right_key), right->schema);
+
+        return arc(
+            Operation{
+                .node =
+                    LeftJoin{
+                        .left = left,
+                        .right = right,
+                        .left_key = std::move(left_key),
+                        .right_key = std::move(right_key),
+                    },
+                .min_phase = std::max(left->min_phase, right->min_phase + 1),
                 .schema = info.schema,
             });
     }

@@ -4,6 +4,7 @@
 #include "back/exec/phys/ops/Aggregate.h"
 #include "back/exec/phys/ops/Filter.h"
 #include "back/exec/phys/ops/Group.h"
+#include "back/exec/phys/ops/LeftJoin.h"
 #include "back/exec/phys/ops/Limit.h"
 #include "back/exec/phys/ops/Log.h"
 #include "back/exec/phys/ops/MarkJoin.h"
@@ -168,6 +169,23 @@ struct Builder {
         for (auto&& [phase, _] : op.required_fields) {
             auto matcher = arc<MarkJoinMatcher>(op.id, state, n.scalar, *output_slot);
             get(*n.source, phase)->output(matcher->sub());
+            insert(op, phase, matcher);
+        }
+    }
+
+    void build(const plan::LeftJoin& n, const plan::Operation& op) {
+        build(*n.right);
+        build(*n.left);
+
+        auto state = arc<LeftJoinState>();
+        auto collector = arc<LeftJoinCollector>(op.id, state, n.right_key);
+        get(*n.right, n.right->min_phase)->output(collector->sub());
+        program.anchors.push_back(collector);
+
+        for (auto&& [phase, _] : op.required_fields) {
+            auto matcher =
+                arc<LeftJoinMatcher>(op.id, state, n.left_key, SlotId(n.left->schema.columns()));
+            get(*n.left, phase)->output(matcher->sub());
             insert(op, phase, matcher);
         }
     }

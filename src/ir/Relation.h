@@ -15,6 +15,7 @@ struct SortRelation;
 struct TopKRelation;
 struct SemiJoinRelation;
 struct MarkJoinRelation;
+struct LeftJoinRelation;
 struct UnionAllRelation;
 struct UnionAllSortedByRelation;
 struct FileRelation;
@@ -35,6 +36,7 @@ using RelationNode = std::variant< //
     TopKRelation, //
     SemiJoinRelation, //
     MarkJoinRelation, //
+    LeftJoinRelation, //
     UnionAllRelation, //
     UnionAllSortedByRelation, //
     FileRelation, //

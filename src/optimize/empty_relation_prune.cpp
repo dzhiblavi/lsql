@@ -82,6 +82,14 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         return std::move(self);
     }
 
+    ir::Relation prune(ir::LeftJoinRelation& rel, auto& self) {
+        if (isEmpty(*rel.left)) {
+            ctx.setChanges().note("empty left-join source pruned");
+            self.node = ir::EmptyRelation{};
+        }
+        return std::move(self);
+    }
+
     ir::Relation prune(ir::MarkJoinRelation& rel, auto& self) {
         if (isEmpty(*rel.source)) {
             ctx.setChanges().note("empty mark-join source pruned");

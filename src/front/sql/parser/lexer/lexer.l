@@ -67,6 +67,9 @@ TIMESTAMP        [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}
 
 SELECT           { return TOKEN_SELECT; }
 FROM             { return TOKEN_FROM; }
+LEFT             { return TOKEN_LEFT; }
+JOIN             { return TOKEN_JOIN; }
+ON               { return TOKEN_ON; }
 AS               { return TOKEN_AS; }
 WHERE            { return TOKEN_WHERE; }
 HAVING           { return TOKEN_HAVING; }

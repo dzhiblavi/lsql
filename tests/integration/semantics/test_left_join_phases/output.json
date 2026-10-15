@@ -1,0 +1,25 @@
+{"id": "long_key_a_1234567890", "left_value": "left_a_12345678901234567890", "test_index": 1}
+{"id": "long_key_a_1234567890", "left_value": "left_a_12345678901234567890", "test_index": 1}
+{"id": "long_key_b_1234567890", "left_value": "left_b_12345678901234567890", "test_index": 1}
+
+{"id": "long_key_a_1234567890", "right_value": "right_a1_12345678901234567890", "test_index": 2}
+{"id": "long_key_a_1234567890", "right_value": "right_a2_12345678901234567890", "test_index": 2}
+{"id": "long_key_b_1234567890", "right_value": null, "test_index": 2}
+
+{"left_value": "left_a_12345678901234567890", "right_value": "right_a1_12345678901234567890", "test_index": 3}
+{"left_value": "left_a_12345678901234567890", "right_value": "right_a2_12345678901234567890", "test_index": 3}
+{"left_value": "left_b_12345678901234567890", "right_value": null, "test_index": 3}
+
+{"right_value": "right_a1_12345678901234567890", "value": "right_a1_12345678901234567890", "test_index": 4}
+{"right_value": "right_a1_12345678901234567890", "value": "right_a2_12345678901234567890", "test_index": 4}
+{"right_value": "right_a2_12345678901234567890", "value": "right_a1_12345678901234567890", "test_index": 4}
+{"right_value": "right_a2_12345678901234567890", "value": "right_a2_12345678901234567890", "test_index": 4}
+{"right_value": null, "value": null, "test_index": 4}
+
+{"id": "long_key_a_1234567890", "value": "right_a1_12345678901234567890", "test_index": 5}
+{"id": "long_key_a_1234567890", "value": "right_a2_12345678901234567890", "test_index": 5}
+
+{"rows": 3, "matches": 2, "test_index": 6}
+
+{"id": "a", "value": "one", "test_index": 7}
+{"id": "b", "value": null, "test_index": 7}

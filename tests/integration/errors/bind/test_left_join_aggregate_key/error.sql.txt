@@ -1,0 +1,1 @@
+contains: LEFT JOIN keys cannot be aggregate expressions

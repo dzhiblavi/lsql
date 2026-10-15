@@ -71,6 +71,13 @@ struct UnionAllRelation {
     Box<Relation> right;
 };
 
+struct LeftJoinRelation {
+    Box<Relation> left;
+    Box<Relation> right;
+    Box<Expr> left_key;
+    Box<Expr> right_key;
+};
+
 struct UnionAllSortedByRelation {
     Box<Relation> left;
     Box<Relation> right;

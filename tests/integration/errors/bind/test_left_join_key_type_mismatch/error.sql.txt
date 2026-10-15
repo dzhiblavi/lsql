@@ -1,0 +1,1 @@
+contains: unsupported operand types Integer, String for binary operation Equal

@@ -1,0 +1,5 @@
+[2026-May-06 12:00:01.000000] id=a value=right_a1
+[2026-May-06 12:00:02.000000] id=a value=right_a2
+[2026-May-06 12:00:03.000000] id=b value=right_b
+[2026-May-06 12:00:04.000000] id=d value=right_d
+[2026-May-06 12:00:05.000000] value=right_null

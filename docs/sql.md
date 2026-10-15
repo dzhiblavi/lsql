@@ -90,6 +90,27 @@ alias, the qualified name is also the output column name. `SELECT *` includes th
 currently bound fields with their alias prefixes. Aliases preserve field types
 and can be applied to files, named relations, subqueries, and command streams.
 
+`LEFT JOIN` supports one equality between expressions computed on the two inputs:
+
+```sql
+SELECT l.uid AS uid, r.status AS status
+FROM requests.log AS l
+LEFT JOIN responses.log AS r ON LOWER(l.uid) = LOWER(r.uid)
+```
+
+Each expression can reference fields from its own input. The operands can be
+written in either order; constants are also allowed. Aggregates must be computed
+in a subquery before the join. Key types follow the usual equality rules.
+
+The inputs must have disjoint output field IDs after the whole program is bound.
+Aliases give fields distinct names; explicit projections with different output
+names also allow joins without aliases. Joins can be chained or nested.
+
+Each matching right row produces an output row, including duplicate keys. A left
+row without a match produces one row with `null` in every right column. Null keys
+never match, including another null key. The right input is collected in memory
+before reading the left input, so the right input must be finite.
+
 Materialized relation:
 
 ```sql

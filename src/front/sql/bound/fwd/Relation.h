@@ -8,6 +8,7 @@ struct AdhocRelation;
 struct SelectRelation;
 struct AliasRelation;
 struct UnionAllRelation;
+struct LeftJoinRelation;
 struct UnionAllSortedByRelation;
 struct FileRelation;
 struct FileIntervalRelation;
@@ -20,6 +21,7 @@ using RelationNode = std::variant< //
     SelectRelation, //
     AliasRelation,
     UnionAllRelation, //
+    LeftJoinRelation,
     UnionAllSortedByRelation, //
     FileRelation, //
     FileIntervalRelation, //

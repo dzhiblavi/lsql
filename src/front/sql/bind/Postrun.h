@@ -7,6 +7,8 @@
 
 #include "util/TreeWalker.h"
 
+#include <algorithm>
+
 namespace lsql::front::sql::bind {
 
 struct PostrunWalker : util::TreeWalker<PostrunWalker> {
@@ -27,6 +29,35 @@ struct PostrunWalker : util::TreeWalker<PostrunWalker> {
             "in key type mismatch");
 
         in.match_field_id = match_field;
+    }
+
+    void visit(bound::LeftJoinRelation& join) {
+        Base::visit(join);
+
+        auto left_fields = join.left->fields_out->fields();
+        auto right_fields = join.right->fields_out->fields();
+        for (auto id : left_fields.fieldIds()) {
+            requireAt(
+                !right_fields.contains(id),
+                join.right->span,
+                "LEFT JOIN inputs have overlapping field '{}'; use aliases or explicit projections",
+                binding->name(id));
+        }
+
+        auto fits = [](const bound::Expr& key, const FieldSet& fields) {
+            return std::ranges::all_of(
+                key.required_fields.fieldIds(), [&](auto id) { return fields.contains(id); });
+        };
+        auto forward = fits(*join.left_key, left_fields) && fits(*join.right_key, right_fields);
+        auto reverse = fits(*join.right_key, left_fields) && fits(*join.left_key, right_fields);
+        requireAt(
+            forward || reverse,
+            merge(join.left_key->span, join.right_key->span),
+            "LEFT JOIN keys must each reference only their own input");
+
+        if (!forward) {
+            std::swap(join.left_key, join.right_key);
+        }
     }
 
     ConstFieldBindingPtr binding;
