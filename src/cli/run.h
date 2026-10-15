@@ -171,7 +171,7 @@ inline void run(ir::Program ir, Settings s) {
         profiler.emplace();
         prof::setGlobalProfiler(&profiler.value());
     } else {
-        llog::info("profiling disabled");
+        llog::trace("profiling disabled");
     }
 
     llog::info("optimizing");

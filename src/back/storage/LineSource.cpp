@@ -17,7 +17,7 @@ PagedLineSource::PagedLineSource(Arc<PagedFile> file)
 }
 
 coro::generator<Line> PagedLineSource::lines() const {
-    llog::info(
+    llog::trace(
         "scanning lines of '{}' in range [{}, {}) ({} bytes)",
         file_->path().c_str(),
         begin_,

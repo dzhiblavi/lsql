@@ -438,7 +438,7 @@ ir::Relation lowerToIR(bound::UnionAllSortedByRelation r, auto& /*info*/, Contex
 
 ir::Relation lowerToIR(bound::FileRelation r, auto& info, Context& ctx) {
     auto fields = info.fields_out->fields();
-    llog::info("path={}, requested fields: {}", r.path, to_string(fields, *ctx.binding()));
+    llog::trace("path={}, requested fields: {}", r.path, to_string(fields, *ctx.binding()));
 
     return {
         .node = ir::FileRelation{.path = std::move(r.path)},
@@ -448,7 +448,7 @@ ir::Relation lowerToIR(bound::FileRelation r, auto& info, Context& ctx) {
 
 ir::Relation lowerToIR(bound::FileIntervalRelation r, auto& info, Context& ctx) {
     auto fields = info.fields_out->fields();
-    llog::info(
+    llog::trace(
         "(interval) path={}, requested fields: {}", r.path, to_string(fields, *ctx.binding()));
 
     return {
@@ -464,7 +464,7 @@ ir::Relation lowerToIR(bound::FileIntervalRelation r, auto& info, Context& ctx) 
 
 ir::Relation lowerToIR(bound::StreamRelation r, auto& info, Context& ctx) {
     auto fields = info.fields_out->fields();
-    llog::info(
+    llog::trace(
         "stream command={}, requested fields: {}", r.command, to_string(fields, *ctx.binding()));
 
     return {

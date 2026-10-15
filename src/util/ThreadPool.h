@@ -88,7 +88,7 @@ class ThreadPool {
  private:
     void worker(size_t index) {
         setThreadName(std::format("worker-{}", index));
-        llog::info("started worker thread [thread={}]", threadName());
+        llog::trace("started worker thread [thread={}]", threadName());
 
         for (;;) {
             auto task = tasks_.pop();
@@ -105,7 +105,7 @@ class ThreadPool {
             }
         }
 
-        llog::info("stopping worker thread [thread={}]", threadName());
+        llog::trace("stopping worker thread [thread={}]", threadName());
         setThreadName("");
     }
 
