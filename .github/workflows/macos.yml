@@ -30,14 +30,12 @@ jobs:
       - name: Name release binaries
         run: |
           mv output/lsql-Release output/lsql-Release-macos-arm64
-          mv output/lpipe-Release output/lpipe-Release-macos-arm64
 
       - name: Package macOS arm64 release binaries
         run: |
           tar -czf output/logsql-macos-arm64-release.tar.gz \
             -C output \
-            lsql-Release-macos-arm64 \
-            lpipe-Release-macos-arm64
+            lsql-Release-macos-arm64
 
       - name: Publish macOS arm64 release archive
         uses: actions/upload-artifact@v4

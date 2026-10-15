@@ -1,2 +1,0 @@
-contains: in match should contain one column, got 2
-contains: $users

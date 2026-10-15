@@ -29,8 +29,7 @@ def discover_queries(names=None):
             continue
 
         has_sql = (query_dir / "query.sql").exists()
-        has_pipe = (query_dir / "query.pipe").exists()
-        if not has_sql and not has_pipe:
+        if not has_sql:
             continue
 
         queries.append(
@@ -38,10 +37,7 @@ def discover_queries(names=None):
                 "name": query_dir.name,
                 "source_dir": query_dir,
                 "metadata": query_metadata(query_dir),
-                "frontends": [
-                    ("sql", "query.sql") if has_sql else None,
-                    ("pipe", "query.pipe") if has_pipe else None,
-                ],
+                "frontends": [("sql", "query.sql")],
             }
         )
 
@@ -311,12 +307,6 @@ def main():
         help="lsql binary path for SQL benchmarks",
     )
     parser.add_argument(
-        "--pipe-binary",
-        type=Path,
-        default=None,
-        help="lpipe binary path for pipe benchmarks",
-    )
-    parser.add_argument(
         "--repeat",
         type=int,
         default=None,
@@ -348,14 +338,13 @@ def main():
     sql_binary = args.sql_binary or args.binary
     binaries = {
         "sql": sql_binary.resolve() if sql_binary else None,
-        "pipe": args.pipe_binary.resolve() if args.pipe_binary else None,
     }
     binaries = {
         frontend: path for frontend, path in binaries.items() if path is not None
     }
     if not binaries:
         raise RuntimeError(
-            "at least one of --binary, --sql-binary, or --pipe-binary is required"
+            "at least one of --binary or --sql-binary is required"
         )
     for frontend, path in binaries.items():
         if not path.exists():

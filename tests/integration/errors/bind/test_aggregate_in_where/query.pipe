@@ -1,5 +1,0 @@
-input = file input.1.txt
-
-$input
-| where count(*) = 1
-| select .uid

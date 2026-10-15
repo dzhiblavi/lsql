@@ -1,5 +1,0 @@
-file input.txt
-| where .uid in (
-    values (1, 2)
-)
-| select .uid

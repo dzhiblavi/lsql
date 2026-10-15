@@ -3,14 +3,7 @@
 `logsql` is a small query engine for text logs. It reads log files as streams of
 records, extracts key/value fields, and runs query plans over them.
 
-The project currently exposes two command-line tools over the same execution
-engine:
-
-- `lsql`: SQL style.
-- `lpipe`: unix pipe style.
-
-The two languages are mostly functionally equivalent, so queries can be written
-in whichever style is clearer for the task.
+The `lsql` command-line tool runs SQL-style queries over the execution engine.
 
 ## Status
 
@@ -36,26 +29,13 @@ FROM $input
 WHERE status = 'ok'
 ```
 
-Unix pipe style:
-
-```text
-input = file input.1.txt
-
-$input
-| where .status = 'ok'
-| select .uid, .status
-```
-
-Run them with:
+Run it with:
 
 ```sh
 ./output/lsql-Debug -f JSON query.sql
-./output/lpipe-Debug -f JSON query.pipe
 ```
 
 ## Command-Line Options
-
-Both `lsql` and `lpipe` share the same CLI flags.
 
 ```text
 <path>                    query file; stdin is used when omitted
@@ -82,15 +62,11 @@ Both `lsql` and `lpipe` share the same CLI flags.
 When diagnostic flags such as `--print-ast` or `--explain` are used, the query is
 not executed unless `--run` is also passed.
 
-## Query Languages
+## Query Language
 
 See:
 
 - [SQL style](docs/sql.md)
-- [Unix pipe style](docs/pipe.md)
-
-The two languages are intended to cover the same core operations. Choose SQL
-style or unix pipe style by preference and by the shape of the query.
 
 Build and development docs:
 

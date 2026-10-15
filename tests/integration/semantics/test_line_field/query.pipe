@@ -1,7 +1,0 @@
-input = file input.1.txt
-
----------------------
-
-$input
-| where .uid = 'aaa'
-| select .uid, ._line, 1 as test_index

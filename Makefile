@@ -49,8 +49,7 @@ configure: install_dependencies
 
 build: configure _prepare_output_dir
 	cmake --build --preset $(CONAN_PRESET) && \
-	cp $(TARGET_DIR)/src/cli/lsql output/lsql-$(BUILD_TYPE) && \
-	cp $(TARGET_DIR)/src/cli/lpipe output/lpipe-$(BUILD_TYPE)
+	cp $(TARGET_DIR)/src/cli/lsql output/lsql-$(BUILD_TYPE)
 
 build-docker-linux-builder:
 	docker build                    \

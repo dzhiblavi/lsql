@@ -22,5 +22,4 @@ for type in "${@}"; do
 
     make BUILD_TYPE="${type}" PROFILE="${profile}" test
     cp "./target/${profile}/${type}/src/cli/lsql" "./output/lsql-${type}-linux-${arch}"
-    cp "./target/${profile}/${type}/src/cli/lpipe" "./output/lpipe-${type}-linux-${arch}"
 done

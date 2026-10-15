@@ -25,8 +25,7 @@ jobs:
         run: |
           tar -czf output/logsql-linux-amd64-release.tar.gz \
             -C output \
-            lsql-Release-linux-amd64 \
-            lpipe-Release-linux-amd64
+            lsql-Release-linux-amd64
 
       - name: Publish Linux amd64 release archive
         uses: actions/upload-artifact@v4

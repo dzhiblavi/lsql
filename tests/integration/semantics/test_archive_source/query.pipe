@@ -1,6 +1,0 @@
-input = file input.1.txt.gz
-
----------------------
-
-$input
-| select .uid, .status, .action

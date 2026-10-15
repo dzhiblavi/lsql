@@ -25,26 +25,3 @@ target_link_options(
     "-stdlib=libc++"
     "-static-libstdc++"
 )
-
-add_executable(lpipe lpipe.cpp)
-generate_dsym(lpipe)
-target_link_libraries(
-    lpipe PRIVATE
-    tclap::tclap
-    magic_enum::magic_enum
-    lsql-front-pipe
-    lsql-back-exec
-    lsql-back-storage
-    lsql-back-logfmt
-    lsql-optimize
-    lsql-core
-    lsql-config
-    lsql-util
-    lsql-profiling
-)
-
-target_link_options(
-    lpipe PRIVATE
-    "-stdlib=libc++"
-    "-static-libstdc++"
-)

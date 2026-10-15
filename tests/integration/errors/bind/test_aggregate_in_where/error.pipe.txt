@@ -1,2 +1,0 @@
-contains: WHERE condition cannot be aggregate
-contains: where count(*) = 1

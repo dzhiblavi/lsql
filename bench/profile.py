@@ -14,7 +14,6 @@ def main():
     parser = argparse.ArgumentParser(description="Run one benchmark with profile artifacts")
     parser.add_argument("query", help="benchmark query name")
     parser.add_argument("--binary", required=True, help="SQL frontend binary path")
-    parser.add_argument("--pipe-binary", default=None, help="pipe frontend binary path")
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument("--tag", default=None)
     args = parser.parse_args()
@@ -32,8 +31,6 @@ def main():
         str(args.warmup),
         "--dump-profiles",
     ]
-    if args.pipe_binary:
-        command += ["--pipe-binary", args.pipe_binary]
     if args.tag:
         command += ["--tag", args.tag]
 
