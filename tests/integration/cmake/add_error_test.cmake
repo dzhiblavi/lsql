@@ -14,7 +14,7 @@ function(add_frontend_error_test TEST_DIR FRONTEND)
         message(FATAL_ERROR "Query file not found for ${TEST_DIR}: ${QUERY_FILE_SOURCE}")
     endif()
 
-    set(TEST_NAME "${TEST_DIR}_${FRONTEND}")
+    set(TEST_NAME "integration/${TEST_DIR}_${FRONTEND}")
     set(EXPECTED_ERROR_FILE_SOURCE "${TEST_DIR_SOURCE}/error.${FRONTEND}.txt")
 
     if(NOT EXISTS "${EXPECTED_ERROR_FILE_SOURCE}")
@@ -23,10 +23,8 @@ function(add_frontend_error_test TEST_DIR FRONTEND)
 
     file(COPY "${TEST_DIR_SOURCE}/" DESTINATION "${TEST_DIR_BINARY}")
 
-    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" SAFE_TEST_NAME "${TEST_NAME}")
-
     add_test(
-        NAME ${SAFE_TEST_NAME}
+        NAME ${TEST_NAME}
         COMMAND ${CMAKE_COMMAND}
             -DCLI=$<TARGET_FILE:${CLI_TARGET}>
             -DQUERY_FILE=${TEST_DIR_BINARY}/${QUERY_FILE_NAME}
@@ -35,7 +33,7 @@ function(add_frontend_error_test TEST_DIR FRONTEND)
     )
 
     set_tests_properties(
-        ${SAFE_TEST_NAME}
+        ${TEST_NAME}
         PROPERTIES
         TIMEOUT 10
         WORKING_DIRECTORY "${TEST_DIR_BINARY}"

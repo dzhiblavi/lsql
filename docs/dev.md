@@ -14,7 +14,7 @@ src/back           planning, storage, log parsing, execution operators
 src/output         output formatters
 src/cli            CLI and SQL entrypoint
 tests/integration  SQL behavior tests over log fixtures
-tests/exec         execution-operator unit tests
+tests/unit         execution, optimizer, and output unit tests
 ```
 
 ## Test Layout

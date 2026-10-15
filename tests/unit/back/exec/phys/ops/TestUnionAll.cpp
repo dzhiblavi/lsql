@@ -1,5 +1,5 @@
-#include "tests/back/exec/phys/MockOperation.h"
-#include "tests/back/exec/phys/ops/OperationTest.h"
+#include "tests/unit/back/exec/phys/MockOperation.h"
+#include "tests/unit/back/exec/phys/ops/OperationTest.h"
 
 #include "back/exec/phys/ops/UnionAll.h"
 

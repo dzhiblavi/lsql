@@ -1,6 +1,6 @@
 #include "ir/equal.h"
 #include "optimize/optimize.h"
-#include "tests/optimize/IR.h"
+#include "tests/unit/optimize/IR.h"
 
 #include <catch2/catch_all.hpp>
 
@@ -8,20 +8,18 @@
 
 namespace lsql::opt {
 
-TEST_CASE("Constant binary scalar is folded inside projection") {
+TEST_CASE("Min over constant scalar is folded to constant aggregate") {
     auto input = test::query(
-        test::project(
-            test::file(),
-            test::projector(test::Output, test::add(test::integer(1), test::integer(2))),
-            test::schema({test::Output})));
+        test::aggregate(
+            test::file(), test::min(test::Output, test::integer(5)), test::schema({test::Output})));
 
     Context ctx;
     auto optimized = optimize(std::move(input), ctx);
 
     auto expected = test::query(
-        test::project(
+        test::aggregate(
             test::file(),
-            test::projector(test::Output, test::integer(3)),
+            test::constant(test::Output, Value(int64_t(5)), true),
             test::schema({test::Output})));
 
     CHECK(ctx.changes());

@@ -11,15 +11,18 @@ if(LOGSQL_BUILD_TESTS)
         include(Catch)
         find_package(Catch2 CONFIG REQUIRED)
 
-        string(REPLACE ".cpp" "" name ${path})
-        string(REPLACE "/" "_" name ${name})
+        file(RELATIVE_PATH test_path "${PROJECT_SOURCE_DIR}/tests"
+             "${CMAKE_CURRENT_SOURCE_DIR}/${path}")
+        string(REGEX REPLACE "\\.cpp$" "" test_name "${test_path}")
+        string(REPLACE "/" "_" target_name "${test_name}")
 
-        add_executable("${name}" "${path}")
+        add_executable("${target_name}" "${path}")
 
-        target_link_libraries(${name} PRIVATE Catch2::Catch2WithMain ${ARGN})
-        target_include_directories(${name} PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/>)
+        target_link_libraries(${target_name} PRIVATE Catch2::Catch2WithMain ${ARGN})
+        target_include_directories(${target_name} PRIVATE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/>)
 
-        catch_discover_tests(${name} DISCOVERY_MODE PRE_TEST WORKING_DIRECTORY
+        catch_discover_tests(${target_name} TEST_PREFIX "${test_name}/"
+                             DISCOVERY_MODE PRE_TEST WORKING_DIRECTORY
                              ${CMAKE_CURRENT_SOURCE_DIR})
     endfunction(add_unit_test)
 

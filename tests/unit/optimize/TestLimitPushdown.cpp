@@ -1,6 +1,6 @@
 #include "ir/equal.h"
 #include "optimize/optimize.h"
-#include "tests/optimize/IR.h"
+#include "tests/unit/optimize/IR.h"
 
 #include <catch2/catch_all.hpp>
 
