@@ -11,11 +11,11 @@ struct Group;
 struct Limit;
 struct Log;
 struct Stream;
-struct MarkJoin;
-struct LeftJoin;
+struct HashMarkJoin;
+struct HashLeftJoin;
 struct Materialize;
 struct MergeSorted;
-struct SemiJoin;
+struct HashSemiJoin;
 struct Sort;
 struct TopK;
 struct UnionAll;
@@ -29,11 +29,11 @@ using OperationNode = std::variant< //
     Limit,
     Log,
     Stream,
-    MarkJoin,
-    LeftJoin,
+    HashMarkJoin,
+    HashLeftJoin,
     Materialize,
     MergeSorted,
-    SemiJoin,
+    HashSemiJoin,
     Sort,
     TopK,
     UnionAll,

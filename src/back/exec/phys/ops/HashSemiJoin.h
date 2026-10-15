@@ -10,7 +10,7 @@
 
 namespace lsql::back::exec::phys {
 
-struct SemiJoinMetrics {
+struct HashSemiJoinMetrics {
     void reset() { match_set_size.set(0); }
     util::StrBuilder report() const { return shortReport(); }
 
@@ -21,13 +21,13 @@ struct SemiJoinMetrics {
     instr::Counter<size_t> match_set_size{0};
 };
 
-struct SemiJoinState {
+struct HashSemiJoinState {
     absl::flat_hash_set<Value> values;
 };
 
-class SemiJoinMatchCollector : public OperationBase<SemiJoinMatchCollector, SemiJoinMetrics> {
+class HashSemiJoinBuild : public OperationBase<HashSemiJoinBuild, HashSemiJoinMetrics> {
  public:
-    SemiJoinMatchCollector(int id, Arc<SemiJoinState> state)
+    HashSemiJoinBuild(int id, Arc<HashSemiJoinState> state)
         : OperationBase(id)
         , state_(std::move(state)) {
         prof::addEdge(sub_.scopeHandle(), prof_);
@@ -48,21 +48,21 @@ class SemiJoinMatchCollector : public OperationBase<SemiJoinMatchCollector, Semi
 
     void updateMetrics() {
         if (auto m = prof_.metrics()) {
-            m->custom<SemiJoinMetrics>().match_set_size.set(state_->values.size());
+            m->custom<HashSemiJoinMetrics>().match_set_size.set(state_->values.size());
         }
     }
 
-    Arc<SemiJoinState> state_;
-    MemberSubscriber<SemiJoinMatchCollector> sub_{
+    Arc<HashSemiJoinState> state_;
+    MemberSubscriber<HashSemiJoinBuild> sub_{
         this,
-        &SemiJoinMatchCollector::consume,
+        &HashSemiJoinBuild::consume,
         prof::newScope<ScopeMetrics>("{} match set input", name()),
     };
 };
 
-class SemiJoinMatcher : public OperationBase<SemiJoinMatcher> {
+class HashSemiJoinProbe : public OperationBase<HashSemiJoinProbe> {
  public:
-    SemiJoinMatcher(int id, Arc<SemiJoinState> state, Arc<Scalar> join_key)
+    HashSemiJoinProbe(int id, Arc<HashSemiJoinState> state, Arc<Scalar> join_key)
         : OperationBase(id)
         , state_(std::move(state))
         , join_key_(std::move(join_key)) {
@@ -91,11 +91,11 @@ class SemiJoinMatcher : public OperationBase<SemiJoinMatcher> {
         return true;
     }
 
-    Arc<SemiJoinState> state_;
+    Arc<HashSemiJoinState> state_;
     Arc<Scalar> join_key_;
-    MemberSubscriber<SemiJoinMatcher> sub_{
+    MemberSubscriber<HashSemiJoinProbe> sub_{
         this,
-        &SemiJoinMatcher::consume,
+        &HashSemiJoinProbe::consume,
         prof::newScope<ScopeMetrics>("{} src input", name()),
     };
 };

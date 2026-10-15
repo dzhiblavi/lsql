@@ -10,7 +10,7 @@
 
 namespace lsql::back::exec::phys {
 
-struct MarkJoinMetrics {
+struct HashMarkJoinMetrics {
     void reset() { match_set_size.set(0); }
 
     util::StrBuilder report() const { return shortReport(); }
@@ -22,9 +22,9 @@ struct MarkJoinMetrics {
     instr::Counter<size_t> match_set_size{0};
 };
 
-class MarkJoinRecord : public Record {
+class HashMarkJoinRecord : public Record {
  public:
-    MarkJoinRecord(Value value, SlotId slot, RecordRef child)
+    HashMarkJoinRecord(Value value, SlotId slot, RecordRef child)
         : child_(std::move(child))
         , value_(std::move(value))
         , value_slot_(slot) {}
@@ -35,7 +35,7 @@ class MarkJoinRecord : public Record {
 
  private:
     std::shared_ptr<const Record> cloneImpl() const override {
-        return std::make_shared<MarkJoinRecord>(value_, value_slot_, pin(child_));
+        return std::make_shared<HashMarkJoinRecord>(value_, value_slot_, pin(child_));
     }
 
     RecordRef child_;
@@ -43,13 +43,13 @@ class MarkJoinRecord : public Record {
     SlotId value_slot_;
 };
 
-struct MarkJoinState {
+struct HashMarkJoinState {
     absl::flat_hash_set<Value> values;
 };
 
-class MarkJoinMatchCollector : public OperationBase<MarkJoinMatchCollector, MarkJoinMetrics> {
+class HashMarkJoinBuild : public OperationBase<HashMarkJoinBuild, HashMarkJoinMetrics> {
  public:
-    MarkJoinMatchCollector(int id, Arc<MarkJoinState> state)
+    HashMarkJoinBuild(int id, Arc<HashMarkJoinState> state)
         : OperationBase(id)
         , state_(std::move(state)) {
         prof::addEdge(sub_.scopeHandle(), prof_);
@@ -70,21 +70,22 @@ class MarkJoinMatchCollector : public OperationBase<MarkJoinMatchCollector, Mark
 
     void updateMetrics() {
         if (auto m = prof_.metrics()) {
-            m->custom<MarkJoinMetrics>().match_set_size.set(state_->values.size());
+            m->custom<HashMarkJoinMetrics>().match_set_size.set(state_->values.size());
         }
     }
 
-    Arc<MarkJoinState> state_;
-    MemberSubscriber<MarkJoinMatchCollector> sub_{
+    Arc<HashMarkJoinState> state_;
+    MemberSubscriber<HashMarkJoinBuild> sub_{
         this,
-        &MarkJoinMatchCollector::consume,
+        &HashMarkJoinBuild::consume,
         prof::newScope<ScopeMetrics>("{} match set input", name()),
     };
 };
 
-class MarkJoinMatcher : public OperationBase<MarkJoinMatcher> {
+class HashMarkJoinProbe : public OperationBase<HashMarkJoinProbe> {
  public:
-    MarkJoinMatcher(int id, Arc<MarkJoinState> state, Arc<Scalar> join_key, SlotId output_slot_id)
+    HashMarkJoinProbe(
+        int id, Arc<HashMarkJoinState> state, Arc<Scalar> join_key, SlotId output_slot_id)
         : OperationBase(id)
         , state_(std::move(state))
         , join_key_(std::move(join_key))
@@ -101,7 +102,7 @@ class MarkJoinMatcher : public OperationBase<MarkJoinMatcher> {
         }
 
         bool value = state_->values.contains(join_key_->eval(*record));
-        MarkJoinRecord marked_record(value, output_slot_id_, record);
+        HashMarkJoinRecord marked_record(value, output_slot_id_, record);
 
         if (!emit(&marked_record)) {
             return false;
@@ -110,13 +111,13 @@ class MarkJoinMatcher : public OperationBase<MarkJoinMatcher> {
         return true;
     }
 
-    Arc<MarkJoinState> state_;
+    Arc<HashMarkJoinState> state_;
     Arc<Scalar> join_key_;
     SlotId output_slot_id_;
 
-    MemberSubscriber<MarkJoinMatcher> sub_{
+    MemberSubscriber<HashMarkJoinProbe> sub_{
         this,
-        &MarkJoinMatcher::consume,
+        &HashMarkJoinProbe::consume,
         prof::newScope<ScopeMetrics>("{} src input", name()),
     };
 };

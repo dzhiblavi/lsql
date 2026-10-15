@@ -53,7 +53,7 @@ struct Stream {
     std::string command;
 };
 
-struct MarkJoin {
+struct HashMarkJoin {
     Arc<Operation> match;
     Arc<Operation> source;
     ScalarPtr scalar;
@@ -61,7 +61,7 @@ struct MarkJoin {
     FieldId output_field_id;
 };
 
-struct LeftJoin {
+struct HashLeftJoin {
     Arc<Operation> left;
     Arc<Operation> right;
     ScalarPtr left_key;
@@ -84,7 +84,7 @@ struct Projection {
     std::vector<Arc<ScalarProjector>> projectors;
 };
 
-struct SemiJoin {
+struct HashSemiJoin {
     Arc<Operation> match;
     Arc<Operation> source;
     ScalarPtr scalar;

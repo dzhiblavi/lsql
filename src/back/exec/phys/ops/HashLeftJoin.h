@@ -10,7 +10,7 @@
 
 namespace lsql::back::exec::phys {
 
-struct LeftJoinMetrics {
+struct HashLeftJoinMetrics {
     void reset() {
         distinct_keys.set(0);
         stored_rows.set(0);
@@ -27,9 +27,9 @@ struct LeftJoinMetrics {
     instr::Counter<size_t> stored_rows{0};
 };
 
-class LeftJoinRecord : public Record {
+class HashLeftJoinRecord : public Record {
  public:
-    LeftJoinRecord(RecordRef left, ConstRecordPtr right, SlotId left_columns)
+    HashLeftJoinRecord(RecordRef left, ConstRecordPtr right, SlotId left_columns)
         : left_(std::move(left))
         , right_(std::move(right))
         , left_columns_(left_columns) {}
@@ -43,7 +43,7 @@ class LeftJoinRecord : public Record {
 
  private:
     ConstRecordPtr cloneImpl() const override {
-        return arc<LeftJoinRecord>(pin(left_), right_, left_columns_);
+        return arc<HashLeftJoinRecord>(pin(left_), right_, left_columns_);
     }
 
     RecordRef left_;
@@ -51,14 +51,14 @@ class LeftJoinRecord : public Record {
     SlotId left_columns_;
 };
 
-struct LeftJoinState {
+struct HashLeftJoinState {
     absl::flat_hash_map<Value, std::vector<ConstRecordPtr>> rows;
     size_t stored_rows = 0;
 };
 
-class LeftJoinCollector : public OperationBase<LeftJoinCollector, LeftJoinMetrics> {
+class HashLeftJoinBuild : public OperationBase<HashLeftJoinBuild, HashLeftJoinMetrics> {
  public:
-    LeftJoinCollector(int id, Arc<LeftJoinState> state, ScalarPtr key)
+    HashLeftJoinBuild(int id, Arc<HashLeftJoinState> state, ScalarPtr key)
         : OperationBase(id)
         , state_(std::move(state))
         , key_(std::move(key)) {
@@ -71,7 +71,7 @@ class LeftJoinCollector : public OperationBase<LeftJoinCollector, LeftJoinMetric
     bool consume(const Record* record) {
         if (record == nullptr) {
             if (auto metrics = prof_.metrics()) {
-                auto& custom = metrics->custom<LeftJoinMetrics>();
+                auto& custom = metrics->custom<HashLeftJoinMetrics>();
                 custom.distinct_keys.set(state_->rows.size());
                 custom.stored_rows.set(state_->stored_rows);
             }
@@ -87,18 +87,18 @@ class LeftJoinCollector : public OperationBase<LeftJoinCollector, LeftJoinMetric
         return true;
     }
 
-    Arc<LeftJoinState> state_;
+    Arc<HashLeftJoinState> state_;
     ScalarPtr key_;
-    MemberSubscriber<LeftJoinCollector> sub_{
+    MemberSubscriber<HashLeftJoinBuild> sub_{
         this,
-        &LeftJoinCollector::consume,
+        &HashLeftJoinBuild::consume,
         prof::newScope<ScopeMetrics>("{} right input", name()),
     };
 };
 
-class LeftJoinMatcher : public OperationBase<LeftJoinMatcher> {
+class HashLeftJoinProbe : public OperationBase<HashLeftJoinProbe> {
  public:
-    LeftJoinMatcher(int id, Arc<LeftJoinState> state, ScalarPtr key, SlotId left_columns)
+    HashLeftJoinProbe(int id, Arc<HashLeftJoinState> state, ScalarPtr key, SlotId left_columns)
         : OperationBase(id)
         , state_(std::move(state))
         , key_(std::move(key))
@@ -117,12 +117,12 @@ class LeftJoinMatcher : public OperationBase<LeftJoinMatcher> {
         auto key = key_->eval(*record);
         auto matches = state_->rows.find(key);
         if (key.type() == ValueType::Null || matches == state_->rows.end()) {
-            LeftJoinRecord joined(record, nullptr, left_columns_);
+            HashLeftJoinRecord joined(record, nullptr, left_columns_);
             return emit(&joined);
         }
 
         for (const auto& right : matches->second) {
-            LeftJoinRecord joined(record, right, left_columns_);
+            HashLeftJoinRecord joined(record, right, left_columns_);
 
             if (!emit(&joined)) {
                 return false;
@@ -132,12 +132,12 @@ class LeftJoinMatcher : public OperationBase<LeftJoinMatcher> {
         return true;
     }
 
-    Arc<LeftJoinState> state_;
+    Arc<HashLeftJoinState> state_;
     ScalarPtr key_;
     SlotId left_columns_;
-    MemberSubscriber<LeftJoinMatcher> sub_{
+    MemberSubscriber<HashLeftJoinProbe> sub_{
         this,
-        &LeftJoinMatcher::consume,
+        &HashLeftJoinProbe::consume,
         prof::newScope<ScopeMetrics>("{} left input", name()),
     };
 };

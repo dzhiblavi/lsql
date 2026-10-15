@@ -84,7 +84,7 @@ void init(Stream& /*node*/, Arc<Operation> /*op*/, int /*phase*/) {
     // nothing to do
 }
 
-void init(MarkJoin& node, Arc<Operation> op, int phase) {
+void init(HashMarkJoin& node, Arc<Operation> op, int phase) {
     {  // match
         auto upstream = FieldSet::withField(node.match_field_id);
         requestOutput(node.match, node.match->min_phase, upstream);
@@ -97,7 +97,7 @@ void init(MarkJoin& node, Arc<Operation> op, int phase) {
     }
 }
 
-void init(LeftJoin& node, Arc<Operation> op, int phase) {
+void init(HashLeftJoin& node, Arc<Operation> op, int phase) {
     auto left_fields =
         FieldSet::intersection(op->required_fields[phase], node.left->schema.fieldSet());
     left_fields.merge(node.left_key->requiredFields());
@@ -124,7 +124,7 @@ void init(Projection& node, Arc<Operation> op, int phase) {
     requestOutput(node.source, phase, upstream);
 }
 
-void init(SemiJoin& node, Arc<Operation> op, int phase) {
+void init(HashSemiJoin& node, Arc<Operation> op, int phase) {
     {  // match
         auto upstream = FieldSet::withField(node.match_field_id);
         requestOutput(node.match, node.match->min_phase, upstream);
@@ -358,7 +358,7 @@ class Planner {
         return arc(
             Operation{
                 .node =
-                    SemiJoin{
+                    HashSemiJoin{
                         .match = match,
                         .source = source,
                         .scalar = scalar,
@@ -377,7 +377,7 @@ class Planner {
         return arc(
             Operation{
                 .node =
-                    MarkJoin{
+                    HashMarkJoin{
                         .match = match,
                         .source = source,
                         .scalar = scalar,
@@ -398,7 +398,7 @@ class Planner {
         return arc(
             Operation{
                 .node =
-                    LeftJoin{
+                    HashLeftJoin{
                         .left = left,
                         .right = right,
                         .left_key = std::move(left_key),

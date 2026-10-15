@@ -4,14 +4,14 @@
 #include "back/exec/phys/ops/Aggregate.h"
 #include "back/exec/phys/ops/Filter.h"
 #include "back/exec/phys/ops/Group.h"
-#include "back/exec/phys/ops/LeftJoin.h"
+#include "back/exec/phys/ops/HashLeftJoin.h"
+#include "back/exec/phys/ops/HashMarkJoin.h"
+#include "back/exec/phys/ops/HashSemiJoin.h"
 #include "back/exec/phys/ops/Limit.h"
 #include "back/exec/phys/ops/Log.h"
-#include "back/exec/phys/ops/MarkJoin.h"
 #include "back/exec/phys/ops/Materialize.h"
 #include "back/exec/phys/ops/MergeSorted.h"
 #include "back/exec/phys/ops/Projection.h"
-#include "back/exec/phys/ops/SemiJoin.h"
 #include "back/exec/phys/ops/Sort.h"
 #include "back/exec/phys/ops/TopK.h"
 #include "back/exec/phys/ops/UnionAll.h"
@@ -154,39 +154,39 @@ struct Builder {
         }
     }
 
-    void build(const plan::MarkJoin& n, const plan::Operation& op) {
+    void build(const plan::HashMarkJoin& n, const plan::Operation& op) {
         build(*n.match);
         build(*n.source);
 
         auto output_slot = op.schema.slot(n.output_field_id);
         verify(output_slot.has_value());
 
-        auto state = arc<MarkJoinState>();
-        auto collector = arc<MarkJoinMatchCollector>(op.id, state);
-        get(*n.match, n.match->min_phase)->output(collector->sub());
-        program.anchors.push_back(collector);
+        auto state = arc<HashMarkJoinState>();
+        auto build_op = arc<HashMarkJoinBuild>(op.id, state);
+        get(*n.match, n.match->min_phase)->output(build_op->sub());
+        program.anchors.push_back(build_op);
 
         for (auto&& [phase, _] : op.required_fields) {
-            auto matcher = arc<MarkJoinMatcher>(op.id, state, n.scalar, *output_slot);
-            get(*n.source, phase)->output(matcher->sub());
-            insert(op, phase, matcher);
+            auto probe_op = arc<HashMarkJoinProbe>(op.id, state, n.scalar, *output_slot);
+            get(*n.source, phase)->output(probe_op->sub());
+            insert(op, phase, probe_op);
         }
     }
 
-    void build(const plan::LeftJoin& n, const plan::Operation& op) {
+    void build(const plan::HashLeftJoin& n, const plan::Operation& op) {
         build(*n.right);
         build(*n.left);
 
-        auto state = arc<LeftJoinState>();
-        auto collector = arc<LeftJoinCollector>(op.id, state, n.right_key);
-        get(*n.right, n.right->min_phase)->output(collector->sub());
-        program.anchors.push_back(collector);
+        auto state = arc<HashLeftJoinState>();
+        auto build_op = arc<HashLeftJoinBuild>(op.id, state, n.right_key);
+        get(*n.right, n.right->min_phase)->output(build_op->sub());
+        program.anchors.push_back(build_op);
 
         for (auto&& [phase, _] : op.required_fields) {
-            auto matcher =
-                arc<LeftJoinMatcher>(op.id, state, n.left_key, SlotId(n.left->schema.columns()));
-            get(*n.left, phase)->output(matcher->sub());
-            insert(op, phase, matcher);
+            auto probe_op =
+                arc<HashLeftJoinProbe>(op.id, state, n.left_key, SlotId(n.left->schema.columns()));
+            get(*n.left, phase)->output(probe_op->sub());
+            insert(op, phase, probe_op);
         }
     }
 
@@ -233,19 +233,19 @@ struct Builder {
         }
     }
 
-    void build(const plan::SemiJoin& n, const plan::Operation& op) {
+    void build(const plan::HashSemiJoin& n, const plan::Operation& op) {
         build(*n.match);
         build(*n.source);
 
-        auto state = arc<SemiJoinState>();
-        auto collector = arc<SemiJoinMatchCollector>(op.id, state);
-        get(*n.match, n.match->min_phase)->output(collector->sub());
-        program.anchors.push_back(collector);
+        auto state = arc<HashSemiJoinState>();
+        auto build_op = arc<HashSemiJoinBuild>(op.id, state);
+        get(*n.match, n.match->min_phase)->output(build_op->sub());
+        program.anchors.push_back(build_op);
 
         for (auto&& [phase, _] : op.required_fields) {
-            auto matcher = arc<SemiJoinMatcher>(op.id, state, n.scalar);
-            get(*n.source, phase)->output(matcher->sub());
-            insert(op, phase, matcher);
+            auto probe_op = arc<HashSemiJoinProbe>(op.id, state, n.scalar);
+            get(*n.source, phase)->output(probe_op->sub());
+            insert(op, phase, probe_op);
         }
     }
 
