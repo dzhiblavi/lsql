@@ -18,14 +18,6 @@ struct FieldRefCollector : ir::ScalarViewPass<FieldRefCollector, void> {
     FieldSet referenced = FieldSet::emptySet();
 };
 
-FieldSet referencedFieldIdsBy(const std::vector<ir::Scalar>& ss) {
-    FieldRefCollector collector;
-    for (auto&& s : ss) {
-        collector.pass(s);
-    }
-    return collector.referenced;
-}
-
 FieldSet referencedFieldIdsBy(const ir::Scalar& s) {
     FieldRefCollector collector;
     collector.pass(s);
@@ -36,11 +28,12 @@ void lowerToIR(
     bound::Projector p,
     std::vector<ir::Projector>& exprs,
     std::vector<ir::Aggregate>& aggrs,
+    const FieldSet& star_fields,
     Context& ctx) {
     util::match(
         std::move(p),
         [&](bound::StarProjector) {
-            for (auto id : ctx.currFieldSet().fieldIds()) {
+            for (auto id : star_fields.fieldIds()) {
                 exprs.push_back(
                     ir::Projector{
                         .alias_field_id = id,
@@ -77,12 +70,12 @@ void lowerToIR(
 }
 
 std::pair<std::vector<ir::Projector>, std::vector<ir::Aggregate>> lowerToIR(
-    std::vector<bound::Projector> projectors, Context& ctx) {
+    std::vector<bound::Projector> projectors, const FieldSet& star_fields, Context& ctx) {
     std::vector<ir::Projector> exprs;
     std::vector<ir::Aggregate> aggrs;
     exprs.reserve(projectors.size());
     for (auto&& p : projectors) {
-        lowerToIR(std::move(p), exprs, aggrs, ctx);
+        lowerToIR(std::move(p), exprs, aggrs, star_fields, ctx);
     }
     return std::make_pair(std::move(exprs), std::move(aggrs));
 }
@@ -140,244 +133,193 @@ void addAllAsFieldScalars(const FieldSet& from, std::vector<ir::Projector>& to, 
     }
 }
 
-ir::Relation lowerToIR(bound::SelectRelation r, auto& /*info*/, Context& ctx) {
-    auto scope = ctx.scopedRelation(lowerToIR(std::move(*r.source), ctx));
-
-    auto source_schema = ctx.currRelation().schema;
-    auto visible_fields = source_schema.fieldSet();
-    auto _ = ctx.scopedFieldSet(&visible_fields);
-
-    auto [projectors, proj_aggregates] = lowerToIR(std::move(r.projectors), ctx);
-    auto projectors_output_fields = schemaFor(projectors);
-    auto proj_aggregates_output_fields = schemaFor(proj_aggregates);
-
-    // Update relation because it could've changed after lowering projectors (e.g. markJoin)
-    source_schema = ctx.currRelation().schema;
-    visible_fields = source_schema.fieldSet();
-
-    if (r.where) {
-        util::match(
-            r.where->condition->node,
-            [&](bound::InExpr& e) {
-                auto match = lowerToIR(std::move(*e.match), ctx);
-                verify(
-                    match.schema.contains(e.match_field_id),
-                    "unknown identifier {}",
-                    to_string(e.match_field_id, *ctx.binding()));
-
-                auto [key, key_aggregates] = lowerToIR(std::move(*e.expr), ctx);
-                verify(key_aggregates.empty());
-
-                ctx.setRelation({
-                    .node =
-                        ir::SemiJoinRelation{
-                            .source = box(ctx.pullRelation()),
-                            .match = box(std::move(match)),
-                            .expr = box(std::move(key)),
-                            .match_field_id = e.match_field_id,
-                        },
-                    .schema = source_schema,
-                });
+void setProjection(std::vector<ir::Projector> projectors, Context& ctx) {
+    auto schema = schemaFor(projectors);
+    ctx.setRelation({
+        .node =
+            ir::ProjectionRelation{
+                .source = box(ctx.pullRelation()),
+                .projectors = std::move(projectors),
             },
-            [&](const auto&) {
-                auto [cond, cond_aggregates] = lowerToIR(std::move(*r.where->condition), ctx);
-                verify(cond_aggregates.empty());
+        .schema = std::move(schema),
+    });
+}
 
-                ctx.setRelation({
-                    .node =
-                        ir::FilterRelation{
-                            .source = box(ctx.pullRelation()),
-                            .condition = box(std::move(cond)),
-                        },
-                    .schema = source_schema,
-                });
-            });
-    }
+void lowerWhere(bound::Where where, Context& ctx) {
+    auto schema = ctx.currRelation().schema;
+    auto fields = schema.fieldSet();
+    auto field_scope = ctx.scopedFieldSet(&fields);
 
-    if (r.group_by.has_value()) {
-        auto [group_key, group_key_aggregates] = lowerToIR(std::move(r.group_by->group_list), ctx);
-        verify(group_key_aggregates.empty());
+    if (auto* in = std::get_if<bound::InExpr>(&where.condition->node)) {
+        auto match = lowerToIR(std::move(*in->match), ctx);
+        verify(match.schema.contains(in->match_field_id));
 
-        auto group_key_output_fields = schemaFor(group_key);
-        visible_fields = FieldSet::merge(
-            source_schema.fieldSet(),
-            FieldSet::merge(
-                projectors_output_fields.fieldSet(), group_key_output_fields.fieldSet()));
-
-        std::optional<ir::Scalar> having_condition;
-        if (r.having) {
-            auto [cond, having_aggregates] = lowerToIR(std::move(*r.having->condition), ctx);
-            having_condition = std::move(cond);
-            util::append(proj_aggregates, std::move(having_aggregates));
-            proj_aggregates_output_fields = schemaFor(proj_aggregates);
-        }
-
-        auto final_projectors = identityProjectorsFor(projectors, ctx);
-        auto final_fields_out = projectors_output_fields;
-
-        auto required_projection_fields = FieldSet::emptySet();
-        if (having_condition) {
-            required_projection_fields.merge(referencedFieldIdsBy(*having_condition));
-        }
-
-        std::vector<ir::Scalar> order_list;
-        if (r.order_by) {
-            visible_fields = FieldSet::merge(
-                projectors_output_fields.fieldSet(), group_key_output_fields.fieldSet());
-            auto [exprs, order_aggregates] = lowerToIR(std::move(r.order_by->order_list), ctx);
-            verify(order_aggregates.empty());
-            order_list = std::move(exprs);
-
-            // Forcibly add all group keys that are required by ORDER BY to projectors.
-            // Projector aliases are already present.
-            required_projection_fields.merge(
-                FieldSet::intersection(
-                    group_key_output_fields.fieldSet(), referencedFieldIdsBy(order_list)));
-        }
-        addAllAsFieldScalars(required_projection_fields, projectors, ctx);
-
-        auto projection_fields_out = schemaFor(projectors);
-        auto group_rel = ir::Relation{
-            .node =
-                ir::GroupRelation{
-                    .source = box(ctx.pullRelation()),
-                    .aggregates = std::move(proj_aggregates),
-                    .group_list = std::move(group_key),
-                },
-            .schema = Schema::concat(proj_aggregates_output_fields, group_key_output_fields),
-        };
-
+        auto [key, aggregates] = lowerToIR(std::move(*in->expr), ctx);
+        verify(aggregates.empty());
         ctx.setRelation({
             .node =
-                ir::ProjectionRelation{
-                    .source = box(std::move(group_rel)),
-                    .projectors = std::move(projectors),
+                ir::SemiJoinRelation{
+                    .source = box(ctx.pullRelation()),
+                    .match = box(std::move(match)),
+                    .expr = box(std::move(key)),
+                    .match_field_id = in->match_field_id,
                 },
-            .schema = projection_fields_out,
+            .schema = std::move(schema),
         });
+    } else {
+        auto [condition, aggregates] = lowerToIR(std::move(*where.condition), ctx);
+        verify(aggregates.empty());
+        ctx.setRelation({
+            .node =
+                ir::FilterRelation{
+                    .source = box(ctx.pullRelation()),
+                    .condition = box(std::move(condition)),
+                },
+            .schema = std::move(schema),
+        });
+    }
+}
 
-        if (having_condition) {
-            ctx.setRelation({
-                .node =
-                    ir::FilterRelation{
-                        .source = box(ctx.pullRelation()),
-                        .condition = box(std::move(*having_condition)),
-                    },
-                .schema = projection_fields_out,
-            });
+std::vector<ir::Projector> prepareGroupKeys(bound::GroupBy group_by, Context& ctx) {
+    auto fields = ctx.currRelation().schema.fieldSet();
+    auto field_scope = ctx.scopedFieldSet(&fields);
+    auto [keys, aggregates] = lowerToIR(std::move(group_by.group_list), fields, ctx);
+    verify(aggregates.empty());
+
+    auto group_keys = identityProjectorsFor(keys, ctx);
+    addAllAsFieldScalars(ctx.currRelation().schema.fieldSet(), keys, ctx);
+    setProjection(std::move(keys), ctx);
+    return group_keys;
+}
+
+void lowerSelectOutput(
+    std::vector<ir::Projector> projectors,
+    std::optional<ir::Scalar> having_condition,
+    std::optional<bound::OrderBy> order_by,
+    Context& ctx) {
+    auto final_projectors = identityProjectorsFor(projectors, ctx);
+    auto required_fields = FieldSet::emptySet();
+    if (having_condition) {
+        required_fields.merge(referencedFieldIdsBy(*having_condition));
+    }
+    if (order_by) {
+        for (auto& expression : order_by->order_list) {
+            required_fields.merge(expression.required_fields);
         }
+    }
+    addAllAsFieldScalars(required_fields, projectors, ctx);
+    setProjection(std::move(projectors), ctx);
 
-        if (r.order_by) {
-            ctx.setRelation({
-                .node =
-                    ir::SortRelation{
-                        .source = box(ctx.pullRelation()),
-                        .order_list = std::move(order_list),
-                        .desc = r.order_by->desc,
-                    },
-                .schema = projection_fields_out,
-            });
-        }
+    if (having_condition) {
+        auto schema = ctx.currRelation().schema;
+        ctx.setRelation({
+            .node =
+                ir::FilterRelation{
+                    .source = box(ctx.pullRelation()),
+                    .condition = box(std::move(*having_condition)),
+                },
+            .schema = std::move(schema),
+        });
+    }
+    if (order_by) {
+        auto fields = ctx.currRelation().schema.fieldSet();
+        auto field_scope = ctx.scopedFieldSet(&fields);
+        auto [order_list, aggregates] = lowerToIR(std::move(order_by->order_list), ctx);
+        verify(aggregates.empty());
 
-        if (r.order_by || having_condition) {
-            ctx.setRelation({
-                .node =
-                    ir::ProjectionRelation{
-                        .source = box(ctx.pullRelation()),
-                        .projectors = std::move(final_projectors),
-                    },
-                .schema = final_fields_out,
-            });
-        }
-    } else if (r.aggregate) {
-        verify(!r.order_by);
-        verify(!proj_aggregates.empty());
+        auto schema = ctx.currRelation().schema;
+        ctx.setRelation({
+            .node =
+                ir::SortRelation{
+                    .source = box(ctx.pullRelation()),
+                    .order_list = std::move(order_list),
+                    .desc = order_by->desc,
+                },
+            .schema = std::move(schema),
+        });
+    }
+    if (having_condition || order_by) {
+        setProjection(std::move(final_projectors), ctx);
+    }
+}
 
-        auto aggregate = ir::Relation{
+void lowerGroupedSelect(bound::SelectRelation& select, Context& ctx) {
+    auto group_keys = prepareGroupKeys(std::move(*select.group_by), ctx);
+    auto group_schema = schemaFor(group_keys);
+    auto input_fields = ctx.currRelation().schema.fieldSet();
+    auto input_scope = ctx.scopedFieldSet(&input_fields);
+    auto [projectors, aggregates] =
+        lowerToIR(std::move(select.projectors), group_schema.fieldSet(), ctx);
+
+    std::optional<ir::Scalar> having_condition;
+    if (select.having) {
+        auto having_fields = FieldSet::merge(input_fields, schemaFor(projectors).fieldSet());
+        auto having_scope = ctx.scopedFieldSet(&having_fields);
+        auto [condition, having_aggregates] = lowerToIR(std::move(*select.having->condition), ctx);
+        having_condition = std::move(condition);
+        util::append(aggregates, std::move(having_aggregates));
+    }
+
+    auto schema = Schema::concat(schemaFor(aggregates), group_schema);
+    ctx.setRelation({
+        .node =
+            ir::GroupRelation{
+                .source = box(ctx.pullRelation()),
+                .aggregates = std::move(aggregates),
+                .group_list = std::move(group_keys),
+            },
+        .schema = std::move(schema),
+    });
+    lowerSelectOutput(
+        std::move(projectors), std::move(having_condition), std::move(select.order_by), ctx);
+}
+
+void lowerUngroupedSelect(
+    bound::SelectRelation& select, const FieldSet& source_fields, Context& ctx) {
+    auto fields = ctx.currRelation().schema.fieldSet();
+    auto field_scope = ctx.scopedFieldSet(&fields);
+    auto [projectors, aggregates] = lowerToIR(std::move(select.projectors), source_fields, ctx);
+
+    if (select.aggregate) {
+        verify(!select.order_by);
+        verify(!aggregates.empty());
+        auto schema = schemaFor(aggregates);
+        ctx.setRelation({
             .node =
                 ir::AggregateRelation{
                     .source = box(ctx.pullRelation()),
-                    .aggregates = std::move(proj_aggregates),
+                    .aggregates = std::move(aggregates),
                 },
-            .schema = proj_aggregates_output_fields,
-        };
-
-        ctx.setRelation({
-            .node =
-                ir::ProjectionRelation{
-                    .source = box(std::move(aggregate)),
-                    .projectors = std::move(projectors),
-                },
-            .schema = projectors_output_fields,
+            .schema = std::move(schema),
         });
-
-        // Old visible fields are dropped
-        visible_fields = projectors_output_fields.fieldSet();
     } else {
-        verify(proj_aggregates.empty());
-
-        if (r.order_by) {
-            // Append to current visible fields
-            visible_fields.merge(projectors_output_fields.fieldSet());
-            auto [order_list, order_aggregates] = lowerToIR(std::move(r.order_by->order_list), ctx);
-            verify(order_aggregates.empty());
-
-            auto final_projectors = identityProjectorsFor(projectors, ctx);
-
-            // Forcibly add all source keys that are required by ORDER BY to projectors
-            auto required_source_keys = FieldSet::intersection(
-                ctx.currRelation().schema.fieldSet(), referencedFieldIdsBy(order_list));
-            addAllAsFieldScalars(required_source_keys, projectors, ctx);
-
-            auto projection_fields_out = schemaFor(projectors);
-            ctx.setRelation({
-                .node =
-                    ir::ProjectionRelation{
-                        .source = box(ctx.pullRelation()),
-                        .projectors = std::move(projectors),
-                    },
-                .schema = projection_fields_out,
-            });
-            ctx.setRelation({
-                .node =
-                    ir::SortRelation{
-                        .source = box(ctx.pullRelation()),
-                        .order_list = std::move(order_list),
-                        .desc = r.order_by->desc,
-                    },
-                .schema = projection_fields_out,
-            });
-            ctx.setRelation({
-                .node =
-                    ir::ProjectionRelation{
-                        .source = box(ctx.pullRelation()),
-                        .projectors = std::move(final_projectors),
-                    },
-                .schema = projectors_output_fields,
-            });
-        } else {
-            ctx.setRelation({
-                .node =
-                    ir::ProjectionRelation{
-                        .source = box(ctx.pullRelation()),
-                        .projectors = std::move(projectors),
-                    },
-                .schema = projectors_output_fields,
-            });
-        }
+        verify(aggregates.empty());
     }
+    lowerSelectOutput(std::move(projectors), std::nullopt, std::move(select.order_by), ctx);
+}
 
-    if (r.limit) {
+ir::Relation lowerToIR(bound::SelectRelation select, auto&, Context& ctx) {
+    auto relation_scope = ctx.scopedRelation(lowerToIR(std::move(*select.source), ctx));
+    auto source_fields = ctx.currRelation().schema.fieldSet();
+    if (select.where) {
+        lowerWhere(std::move(*select.where), ctx);
+    }
+    if (select.group_by) {
+        lowerGroupedSelect(select, ctx);
+    } else {
+        lowerUngroupedSelect(select, source_fields, ctx);
+    }
+    if (select.limit) {
+        auto schema = ctx.currRelation().schema;
         ctx.setRelation({
             .node =
                 ir::LimitRelation{
                     .source = box(ctx.pullRelation()),
-                    .limit = r.limit->limit,
+                    .limit = select.limit->limit,
                 },
-            .schema = projectors_output_fields,
+            .schema = std::move(schema),
         });
     }
-
     return ctx.pullRelation();
 }
 
