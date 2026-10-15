@@ -2,7 +2,6 @@
 
 #include "front/sql/lower/Expressions.h"
 
-#include "ir/pass.h"
 #include "ir/tools.h"
 
 #include "util/containers.h"
@@ -10,19 +9,6 @@
 namespace lsql::front::sql::lower {
 
 namespace {
-
-struct FieldRefCollector : ir::ScalarViewPass<FieldRefCollector, void> {
-    void view(const ir::FieldScalar& s, auto&&) { referenced.add(s.field_id); }
-    void view(auto&&...) {}
-
-    FieldSet referenced = FieldSet::emptySet();
-};
-
-FieldSet referencedFieldIdsBy(const ir::Scalar& s) {
-    FieldRefCollector collector;
-    collector.pass(s);
-    return collector.referenced;
-}
 
 void lowerToIR(
     bound::Projector p,
@@ -156,6 +142,7 @@ void lowerWhere(bound::Where where, Context& ctx) {
 
         auto [key, aggregates] = lowerToIR(std::move(*in->expr), ctx);
         verify(aggregates.empty());
+
         ctx.setRelation({
             .node =
                 ir::SemiJoinRelation{
@@ -169,6 +156,7 @@ void lowerWhere(bound::Where where, Context& ctx) {
     } else {
         auto [condition, aggregates] = lowerToIR(std::move(*where.condition), ctx);
         verify(aggregates.empty());
+
         ctx.setRelation({
             .node =
                 ir::FilterRelation{
@@ -194,33 +182,29 @@ std::vector<ir::Projector> prepareGroupKeys(bound::GroupBy group_by, Context& ct
 
 void lowerSelectOutput(
     std::vector<ir::Projector> projectors,
-    std::optional<ir::Scalar> having_condition,
+    std::optional<bound::Where> having,
     std::optional<bound::OrderBy> order_by,
     Context& ctx) {
     auto final_projectors = identityProjectorsFor(projectors, ctx);
     auto required_fields = FieldSet::emptySet();
-    if (having_condition) {
-        required_fields.merge(referencedFieldIdsBy(*having_condition));
+
+    if (having) {
+        required_fields.merge(having->condition->required_fields);
     }
+
     if (order_by) {
         for (auto& expression : order_by->order_list) {
             required_fields.merge(expression.required_fields);
         }
     }
+
     addAllAsFieldScalars(required_fields, projectors, ctx);
     setProjection(std::move(projectors), ctx);
 
-    if (having_condition) {
-        auto schema = ctx.currRelation().schema;
-        ctx.setRelation({
-            .node =
-                ir::FilterRelation{
-                    .source = box(ctx.pullRelation()),
-                    .condition = box(std::move(*having_condition)),
-                },
-            .schema = std::move(schema),
-        });
+    if (having) {
+        lowerWhere(std::move(*having), ctx);
     }
+
     if (order_by) {
         auto fields = ctx.currRelation().schema.fieldSet();
         auto field_scope = ctx.scopedFieldSet(&fields);
@@ -238,7 +222,8 @@ void lowerSelectOutput(
             .schema = std::move(schema),
         });
     }
-    if (having_condition || order_by) {
+
+    if (having || order_by) {
         setProjection(std::move(final_projectors), ctx);
     }
 }
@@ -248,16 +233,12 @@ void lowerGroupedSelect(bound::SelectRelation& select, Context& ctx) {
     auto group_schema = schemaFor(group_keys);
     auto input_fields = ctx.currRelation().schema.fieldSet();
     auto input_scope = ctx.scopedFieldSet(&input_fields);
+
     auto [projectors, aggregates] =
         lowerToIR(std::move(select.projectors), group_schema.fieldSet(), ctx);
 
-    std::optional<ir::Scalar> having_condition;
     if (select.having) {
-        auto having_fields = FieldSet::merge(input_fields, schemaFor(projectors).fieldSet());
-        auto having_scope = ctx.scopedFieldSet(&having_fields);
-        auto [condition, having_aggregates] = lowerToIR(std::move(*select.having->condition), ctx);
-        having_condition = std::move(condition);
-        util::append(aggregates, std::move(having_aggregates));
+        util::append(aggregates, extractAggregates(*select.having->condition, ctx));
     }
 
     auto schema = Schema::concat(schemaFor(aggregates), group_schema);
@@ -270,8 +251,9 @@ void lowerGroupedSelect(bound::SelectRelation& select, Context& ctx) {
             },
         .schema = std::move(schema),
     });
+
     lowerSelectOutput(
-        std::move(projectors), std::move(having_condition), std::move(select.order_by), ctx);
+        std::move(projectors), std::move(select.having), std::move(select.order_by), ctx);
 }
 
 void lowerUngroupedSelect(
@@ -295,20 +277,24 @@ void lowerUngroupedSelect(
     } else {
         verify(aggregates.empty());
     }
+
     lowerSelectOutput(std::move(projectors), std::nullopt, std::move(select.order_by), ctx);
 }
 
 ir::Relation lowerToIR(bound::SelectRelation select, auto&, Context& ctx) {
     auto relation_scope = ctx.scopedRelation(lowerToIR(std::move(*select.source), ctx));
     auto source_fields = ctx.currRelation().schema.fieldSet();
+
     if (select.where) {
         lowerWhere(std::move(*select.where), ctx);
     }
+
     if (select.group_by) {
         lowerGroupedSelect(select, ctx);
     } else {
         lowerUngroupedSelect(select, source_fields, ctx);
     }
+
     if (select.limit) {
         auto schema = ctx.currRelation().schema;
         ctx.setRelation({
@@ -320,6 +306,7 @@ ir::Relation lowerToIR(bound::SelectRelation select, auto&, Context& ctx) {
             .schema = std::move(schema),
         });
     }
+
     return ctx.pullRelation();
 }
 

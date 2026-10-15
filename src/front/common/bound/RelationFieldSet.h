@@ -16,4 +16,4 @@ class RelationFieldSet {
 
 using RelationFieldSetPtr = Arc<RelationFieldSet>;
 
-}
+}  // namespace lsql::front::common::bound

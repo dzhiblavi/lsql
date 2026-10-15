@@ -14,5 +14,6 @@ using LowerExprsResult = std::pair<std::vector<ir::Scalar>, std::vector<ir::Aggr
 
 LowerExprResult lowerToIR(bound::Expr expr, Context& ctx);
 LowerExprsResult lowerToIR(std::vector<bound::Expr> exprs, Context& ctx);
+std::vector<ir::Aggregate> extractAggregates(bound::Expr& expr, Context& ctx);
 
 }  // namespace lsql::front::sql::lower

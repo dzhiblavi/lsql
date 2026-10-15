@@ -179,4 +179,46 @@ LowerExprResult lowerToIR(bound::Expr expr, Context& ctx) {
         std::move(expr.node), [&](auto node) { return lowerToIR(std::move(node), expr, ctx); });
 }
 
+std::vector<ir::Aggregate> extractAggregates(bound::Expr& expr, Context& ctx) {
+    if (auto* call = std::get_if<bound::FnCallExpr>(&expr.node);
+        call != nullptr && !func::isScalar(call->func)) {
+        auto span = expr.span;
+        auto [scalar, aggregates] = lowerToIR(std::move(expr), ctx);
+        auto field_id = std::get<ir::FieldScalar>(scalar.node).field_id;
+        expr = {
+            .node = bound::IdentifierExpr{.field_id = field_id},
+            .value_type = scalar.value_type,
+            .level = common::bound::ExprKindLevel::Row,
+            .required_fields = FieldSet::withField(field_id),
+            .span = span,
+        };
+        return aggregates;
+    }
+
+    std::vector<ir::Aggregate> aggregates;
+    expr.required_fields = FieldSet::emptySet();
+    auto extract_child = [&](bound::Expr& child) {
+        util::append(aggregates, extractAggregates(child, ctx));
+        expr.required_fields.merge(child.required_fields);
+    };
+    util::match(
+        expr.node,
+        [&](bound::IdentifierExpr& identifier) { expr.required_fields.add(identifier.field_id); },
+        [&](bound::ValueExpr&) {},
+        [&](bound::FnCallExpr& call) {
+            for (auto& arg : call.args) {
+                extract_child(arg);
+            }
+        },
+        [&](bound::BinaryExpr& binary) {
+            extract_child(*binary.left);
+            extract_child(*binary.right);
+        },
+        [&](auto& node) { extract_child(*node.expr); });
+    if (expr.level == common::bound::ExprKindLevel::Group) {
+        expr.level = common::bound::ExprKindLevel::Row;
+    }
+    return aggregates;
+}
+
 }  // namespace lsql::front::sql::lower
