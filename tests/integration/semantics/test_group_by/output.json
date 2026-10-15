@@ -49,3 +49,12 @@
 {"cnt":5,"status":"ok","test_index":9}
 
 {"status":"ok","test_index":10}
+
+{"key":null,"rows":2,"values":0,"test_index":11}
+{"key":1,"rows":2,"values":2,"test_index":11}
+{"key":2,"rows":1,"values":1,"test_index":11}
+
+{"key":"a","rows":2,"test_index":12}
+{"key":"b","rows":1,"test_index":12}
+
+{"rows":0,"test_index":13}

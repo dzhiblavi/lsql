@@ -34,3 +34,6 @@
 {"uid": "ccc", "test_index": 10}
 {"uid": "xxx", "test_index": 10}
 {"uid": "yyy", "test_index": 10}
+
+{"anon":3,"test_index":11}
+{"anon":4,"test_index":11}

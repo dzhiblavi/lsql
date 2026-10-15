@@ -66,3 +66,29 @@ WHERE uid IN (
 
 SELECT uid, (uid IN ('aaa', 'ccc')) IN (true) AS is_selected, 10 AS test_index
 FROM $input
+
+SELECT anon, anon IN (SELECT anon FROM (1) WHERE false) AS member, 11 AS test_index
+FROM (1, 2)
+
+SELECT COUNT(*) AS rows, 12 AS test_index
+FROM (SELECT anon FROM (1, 2) WHERE anon IN (SELECT anon FROM (1) WHERE false))
+
+SELECT anon, anon IN (1, 1) AS member, 13 AS test_index
+FROM (1, 1, 2)
+ORDER BY anon
+
+SELECT anon, 14 AS test_index
+FROM (1, 1, 2)
+WHERE anon IN (1, 1)
+ORDER BY anon
+
+SELECT
+    anon AS text,
+    Int(anon) IN (SELECT Int(anon) AS key FROM ('bad', '1')) AS member,
+    15 AS test_index
+FROM ('bad', '1', '2')
+
+SELECT anon AS text, 16 AS test_index
+FROM ('bad', '1', '2')
+WHERE Int(anon) IN (SELECT Int(anon) AS key FROM ('bad', '1'))
+ORDER BY anon

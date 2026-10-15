@@ -2,3 +2,15 @@
 {"source":"a","test_index":1,"timestamp":"2026-May-06 12:00:03","uid":"ccc"}
 {"source":"b","test_index":1,"timestamp":"2026-May-06 12:00:02","uid":"bbb"}
 {"source":"a","test_index":1,"timestamp":"2026-May-06 12:00:01","uid":"aaa"}
+
+{"anon":3,"test_index":2}
+{"anon":3,"test_index":2}
+{"anon":3,"test_index":2}
+{"anon":2,"test_index":2}
+{"anon":1,"test_index":2}
+
+{"anon":2,"test_index":3}
+{"anon":1,"test_index":3}
+
+{"anon":2,"test_index":4}
+{"anon":1,"test_index":4}

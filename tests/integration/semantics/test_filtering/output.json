@@ -32,3 +32,9 @@
 
 {"test_index":11,"uid":"ccc"}
 {"test_index":11,"uid":"ddd"}
+
+{"anon":2,"test_index":12}
+
+{"anon":1,"test_index":13}
+
+{"rows":0,"test_index":14}

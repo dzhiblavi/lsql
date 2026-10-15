@@ -28,3 +28,32 @@
 {"month":"May","test_index":8,"timestamp_lower":"2026-may-06 12:00:01","uid":"aaa"}
 {"month":"May","test_index":8,"timestamp_lower":"2026-may-06 12:00:02","uid":"bbb"}
 {"month":"May","test_index":8,"timestamp_lower":"2026-may-06 12:00:03","uid":"ccc"}
+
+{"text":"0","value":0,"test_index":9}
+{"text":"-1","value":-1,"test_index":9}
+{"text":"+1","value":null,"test_index":9}
+{"text":"","value":null,"test_index":9}
+{"text":" 1","value":null,"test_index":9}
+{"text":"1 ","value":null,"test_index":9}
+{"text":"12x","value":null,"test_index":9}
+{"text":"9223372036854775807","value":9223372036854775807,"test_index":9}
+{"text":"-9223372036854775808","value":-9223372036854775808,"test_index":9}
+{"text":"9223372036854775808","value":null,"test_index":9}
+{"text":"-9223372036854775809","value":null,"test_index":9}
+
+{"text":"1.25","value":1.25,"test_index":10}
+{"text":"-2.5","value":-2.5,"test_index":10}
+{"text":"1e2","value":100.0,"test_index":10}
+{"text":"nan","value":null,"test_index":10}
+{"text":"inf","value":null,"test_index":10}
+{"text":"1e1000","value":null,"test_index":10}
+{"text":"bad","value":null,"test_index":10}
+{"text":"2.5ms","value":null,"test_index":10}
+
+{"text":"","value":false,"test_index":11}
+{"text":"0","value":true,"test_index":11}
+{"text":"false","value":true,"test_index":11}
+{"text":"yes","value":true,"test_index":11}
+
+{"flag":true,"number":1,"text":"true","test_index":12}
+{"flag":false,"number":0,"text":"false","test_index":12}

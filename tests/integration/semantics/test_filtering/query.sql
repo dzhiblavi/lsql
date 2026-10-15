@@ -45,3 +45,14 @@ WHERE uid <= 'bbb'
 SELECT uid, 11 AS test_index
 FROM $input
 WHERE uid >= 'ccc'
+
+SELECT anon, 12 AS test_index
+FROM (1, 2, 3)
+WHERE (anon + 1) = 3
+
+SELECT anon, 13 AS test_index
+FROM (1, 2, 3)
+WHERE (anon = 1 OR anon = 2) AND anon != 2
+
+SELECT COUNT(*) AS rows, 14 AS test_index
+FROM (SELECT anon FROM (1, 2) WHERE false)

@@ -3,3 +3,13 @@
 {"status":"late","test_index":1,"timestamp":"2026-May-06 12:00:04","uid":"ddd"}
 
 {"count":3,"test_index":2}
+
+{"uid":"bbb","test_index":3}
+{"uid":"ccc","test_index":3}
+
+{"rows":0,"test_index":4}
+
+{"uid":"aaa","test_index":5}
+{"uid":"bbb","test_index":5}
+{"uid":"ccc","test_index":5}
+{"uid":"ddd","test_index":5}

@@ -13,3 +13,25 @@
 
 {"test_index":4,"timestamp":"2026-May-06 12:00:04","uid":"ddd"}
 {"test_index":4,"timestamp":"2026-May-06 12:00:03","uid":"ccc"}
+
+{"text":"bad","key":null,"test_index":5}
+{"text":"1","key":1,"test_index":5}
+{"text":"02","key":2,"test_index":5}
+{"text":"2","key":2,"test_index":5}
+
+{"text":"2","key":2,"test_index":6}
+{"text":"02","key":2,"test_index":6}
+{"text":"1","key":1,"test_index":6}
+{"text":"bad","key":null,"test_index":6}
+
+{"text":"bad","key":null,"test_index":7}
+{"text":"1","key":1,"test_index":7}
+{"text":"02","key":2,"test_index":7}
+
+{"rows":0,"test_index":8}
+
+{"anon":1,"test_index":9}
+
+{"anon":1,"test_index":10}
+{"anon":2,"test_index":10}
+{"anon":3,"test_index":10}

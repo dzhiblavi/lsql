@@ -81,3 +81,8 @@ ORDER BY uid
 SELECT uid, 10 AS test_index
 FROM ($union_left UNION ALL $union_right)
 ORDER BY uid
+
+SELECT anon, 11 AS test_index
+FROM (SELECT anon + 1 AS anon FROM (3, 1, 2))
+WHERE anon > 2
+ORDER BY anon

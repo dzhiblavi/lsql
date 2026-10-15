@@ -2,3 +2,13 @@
 {"container":"[]","count":"-7","count_i":-7,"enabled":"false","missing":null,"nothing":null,"object":"{}","slash":null,"tilde":null,"title":null}
 {"container":null,"count":null,"count_i":null,"enabled":null,"missing":null,"nothing":null,"object":null,"slash":null,"tilde":null,"title":null}
 {"container":"[{\"title\":\"Привет\"}]","count":"1e3","count_i":null,"enabled":"true","missing":null,"nothing":null,"object":null,"slash":null,"tilde":null,"title":"Привет"}
+
+{"text":"[1,\"x\",null]","first":"1","second":"x","missing":null,"test_index":2}
+{"text":"[]","first":null,"second":null,"missing":null,"test_index":2}
+{"text":"42","first":null,"second":null,"missing":null,"test_index":2}
+
+{"text":"{\"value\":\"\"}","value":"","child":null,"test_index":3}
+{"text":"{\"value\":null}","value":null,"child":null,"test_index":3}
+{"text":"{}","value":null,"child":null,"test_index":3}
+{"text":"{\"value\":false}","value":"false","child":null,"test_index":3}
+{"text":"{\"value\":{\"child\":\"Привет\"}}","value":"{\"child\":\"Привет\"}","child":"Привет","test_index":3}

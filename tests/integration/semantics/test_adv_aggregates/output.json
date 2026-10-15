@@ -6,3 +6,13 @@
 
 {"count":3,"kind":"api","p50":"[20]","test_index":4}
 {"count":3,"kind":"worker","p50":"[15]","test_index":4}
+
+{"percentiles":"[7,7,7]","test_index":5}
+
+{"percentiles":"[1,3,9]","test_index":6}
+
+{"percentiles":null,"test_index":7}
+
+{"percentiles":"[2,4,4]","test_index":8}
+
+{"percentiles":null,"test_index":9}

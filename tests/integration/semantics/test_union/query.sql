@@ -33,3 +33,18 @@ WHERE uid IN ('aaa', 'ddd')
 
 SELECT uid, status, path, 4 AS test_index
 FROM $merged
+
+SELECT anon, 5 AS test_index
+FROM (SELECT anon FROM (9) WHERE false UNION ALL (1, 2))
+ORDER BY anon
+
+SELECT anon, 6 AS test_index
+FROM ((1, 2) UNION ALL SELECT anon FROM (9) WHERE false)
+ORDER BY anon
+
+SELECT COUNT(*) AS rows, 7 AS test_index
+FROM (SELECT anon FROM (1) WHERE false UNION ALL SELECT anon FROM (2) WHERE false)
+
+SELECT anon, 8 AS test_index
+FROM ((1, 1, 2) UNION ALL (1, 3))
+ORDER BY anon

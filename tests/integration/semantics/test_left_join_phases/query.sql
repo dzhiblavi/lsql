@@ -30,3 +30,22 @@ SELECT l.id AS id, r.value AS value, 7 AS test_index
 FROM STREAM 'printf "[2026-May-06 12:00:01.000000] id=a\n[2026-May-06 12:00:02.000000] id=b\n"' AS l
 LEFT JOIN STREAM 'printf "[2026-May-06 12:00:01.000000] id=a value=one\n"' AS r ON l.id = r.id
 ORDER BY l.id
+
+shared_join = (
+    SELECT l.id AS id, l.value AS left_value, r.value AS right_value
+    FROM $left_input AS l LEFT JOIN $right_input AS r ON l.id = r.id
+)
+
+SELECT id, left_value, 8 AS test_index
+FROM $shared_join
+ORDER BY id
+LIMIT 1
+
+SELECT id, right_value, 9 AS test_index
+FROM $shared_join
+ORDER BY id, right_value
+
+SELECT id, left_value, 10 AS test_index
+FROM $shared_join
+WHERE id IN (SELECT id FROM $shared_join WHERE right_value != null)
+ORDER BY id, left_value

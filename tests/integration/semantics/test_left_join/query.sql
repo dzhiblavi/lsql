@@ -129,3 +129,15 @@ FROM (1, 2) AS l LEFT JOIN (1, 3) AS r ON (l.anon IN (1)) = (r.anon IN (1))
 SELECT l.anon AS left_key, r.n AS matches, 33 AS test_index
 FROM (SELECT anon, COUNT(*) AS n FROM (1, 1, 2) GROUP BY anon) AS l
 LEFT JOIN (SELECT 2 AS n FROM (1)) AS r ON l.n = r.n ORDER BY l.anon
+
+SELECT l.anon AS key, r.anon AS matched, 34 AS test_index
+FROM (false, true) AS l
+LEFT JOIN (false, false) AS r
+ON l.anon = r.anon
+ORDER BY l.anon, r.anon
+
+SELECT l.anon AS text, r.anon AS matched, 35 AS test_index
+FROM ('1.5', '2.5', 'bad') AS l
+LEFT JOIN ('1.5', 'bad') AS r
+ON Float(l.anon) = Float(r.anon)
+ORDER BY l.anon

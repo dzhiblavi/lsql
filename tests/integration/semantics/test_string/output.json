@@ -9,3 +9,12 @@
 {"test_index":3,"uid":"aaa","user_id":"user=123"}
 {"test_index":3,"uid":"bbb","user_id":"missing"}
 {"test_index":3,"uid":"ccc","user_id":"user=456"}
+
+{"text":"abcdef","prefix":"ab","suffix":"cdef","at_end":"","empty":"","clipped":"ef","test_index":4}
+{"text":"uvwxyz","prefix":"uv","suffix":"wxyz","at_end":"","empty":"","clipped":"yz","test_index":4}
+
+{"first":"","second":"a","third":"","last":"","missing":null,"test_index":5}
+
+{"text":"","lowered":"","digits":null,"test_index":6}
+{"text":"ABC","lowered":"abc","digits":null,"test_index":6}
+{"text":"ab12cd34","lowered":"ab12cd34","digits":"12","test_index":6}

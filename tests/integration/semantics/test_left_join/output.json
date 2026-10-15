@@ -130,3 +130,11 @@
 
 {"left_key":1,"matches":2,"test_index":33}
 {"left_key":2,"matches":null,"test_index":33}
+
+{"key":false,"matched":false,"test_index":34}
+{"key":false,"matched":false,"test_index":34}
+{"key":true,"matched":null,"test_index":34}
+
+{"text":"1.5","matched":"1.5","test_index":35}
+{"text":"2.5","matched":null,"test_index":35}
+{"text":"bad","matched":null,"test_index":35}

@@ -26,3 +26,15 @@ FROM $input
 
 SELECT uid, lower(timestamp) AS timestamp_lower, splitpart(timestamp, '-', 1) AS month, 8 AS test_index
 FROM $input
+
+SELECT anon AS text, Int(anon) AS value, 9 AS test_index
+FROM ('0', '-1', '+1', '', ' 1', '1 ', '12x', '9223372036854775807', '-9223372036854775808', '9223372036854775808', '-9223372036854775809')
+
+SELECT anon AS text, Float(anon) AS value, 10 AS test_index
+FROM ('1.25', '-2.5', '1e2', 'nan', 'inf', '1e1000', 'bad', '2.5ms')
+
+SELECT anon AS text, Bool(anon) AS value, 11 AS test_index
+FROM ('', '0', 'false', 'yes')
+
+SELECT anon AS flag, Int(anon) AS number, String(anon) AS text, 12 AS test_index
+FROM (true, false)

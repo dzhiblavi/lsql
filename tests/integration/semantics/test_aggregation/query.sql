@@ -17,3 +17,31 @@ FROM $input
 SELECT COUNT(*) AS count, MIN(timestamp) AS min_ts, MAX(timestamp) AS max_ts, 5 AS test_index
 FROM $input
 WHERE status = 'ok'
+
+SELECT
+    COUNT(*) AS rows,
+    COUNT(Int(anon)) AS values,
+    MIN(Int(anon)) AS minimum,
+    MAX(Int(anon)) AS maximum,
+    SUM(Int(anon)) AS total,
+    6 AS test_index
+FROM (1)
+WHERE false
+
+SELECT
+    COUNT(*) AS rows,
+    COUNT(Int(anon)) AS values,
+    MIN(Int(anon)) AS minimum,
+    MAX(Int(anon)) AS maximum,
+    SUM(Int(anon)) AS total,
+    7 AS test_index
+FROM ('bad', '')
+
+SELECT
+    COUNT(*) AS rows,
+    COUNT(Int(anon)) AS values,
+    MIN(Int(anon)) AS minimum,
+    MAX(Int(anon)) AS maximum,
+    SUM(Int(anon)) AS total,
+    8 AS test_index
+FROM ('3', 'bad', '-2', '3')

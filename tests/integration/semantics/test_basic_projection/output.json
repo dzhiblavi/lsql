@@ -8,3 +8,13 @@
 
 {"action":"login","status":"ok","test_index":4,"uid":"aaa","user":"alice"}
 {"action":"logout","status":"fail","test_index":4,"uid":"bbb","user":"bob"}
+
+{"answer":42,"test_index":5}
+{"answer":42,"test_index":5}
+{"answer":42,"test_index":5}
+
+{"first":"aaa","second":"aaa","test_index":6}
+{"first":"bbb","second":"bbb","test_index":6}
+
+{"uid":"fail","status":"bbb","test_index":7}
+{"uid":"ok","status":"aaa","test_index":7}

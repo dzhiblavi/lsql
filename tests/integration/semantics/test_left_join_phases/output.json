@@ -23,3 +23,12 @@
 
 {"id": "a", "value": "one", "test_index": 7}
 {"id": "b", "value": null, "test_index": 7}
+
+{"id":"long_key_a_1234567890","left_value":"left_a_12345678901234567890","test_index":8}
+
+{"id":"long_key_a_1234567890","right_value":"right_a1_12345678901234567890","test_index":9}
+{"id":"long_key_a_1234567890","right_value":"right_a2_12345678901234567890","test_index":9}
+{"id":"long_key_b_1234567890","right_value":null,"test_index":9}
+
+{"id":"long_key_a_1234567890","left_value":"left_a_12345678901234567890","test_index":10}
+{"id":"long_key_a_1234567890","left_value":"left_a_12345678901234567890","test_index":10}

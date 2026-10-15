@@ -7,3 +7,9 @@
 {"test_index":4,"max_uid":"ddd","min_uid":"aaa"}
 
 {"count":2,"max_ts":"2026-May-06 12:00:03","min_ts":"2026-May-06 12:00:02","test_index":5}
+
+{"rows":0,"values":0,"minimum":null,"maximum":null,"total":0,"test_index":6}
+
+{"rows":2,"values":0,"minimum":null,"maximum":null,"total":0,"test_index":7}
+
+{"rows":4,"values":3,"minimum":-2,"maximum":3,"total":4,"test_index":8}

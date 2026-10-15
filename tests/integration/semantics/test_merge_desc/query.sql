@@ -17,3 +17,12 @@ sorted = (
 
 SELECT timestamp, uid, source, 1 AS test_index
 FROM $sorted
+
+SELECT anon, 2 AS test_index
+FROM (SELECT anon FROM (1, 3, 3) ORDER BY anon DESC UNION ALL SORTED BY anon DESC SELECT anon FROM (2, 3) ORDER BY anon DESC)
+
+SELECT anon, 3 AS test_index
+FROM (SELECT anon FROM (9) WHERE false ORDER BY anon DESC UNION ALL SORTED BY anon DESC SELECT anon FROM (1, 2) ORDER BY anon DESC)
+
+SELECT anon, 4 AS test_index
+FROM (SELECT anon FROM (1, 2) ORDER BY anon DESC UNION ALL SORTED BY anon DESC SELECT anon FROM (9) WHERE false ORDER BY anon DESC)

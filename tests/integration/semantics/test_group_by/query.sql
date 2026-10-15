@@ -65,3 +65,16 @@ FROM $input
 GROUP BY status
 HAVING COUNT(*) > 3
 ORDER BY status
+
+SELECT key, COUNT(*) AS rows, COUNT(Int(anon)) AS values, 11 AS test_index
+FROM ('1', '01', 'bad', 'bad', '2')
+GROUP BY Int(anon) AS key
+ORDER BY key
+
+SELECT key, COUNT(*) AS rows, 12 AS test_index
+FROM ('A', 'a', 'B')
+GROUP BY LOWER(anon) AS key
+ORDER BY key
+
+SELECT COUNT(*) AS rows, 13 AS test_index
+FROM (SELECT anon, COUNT(*) AS count FROM (1) WHERE false GROUP BY anon)

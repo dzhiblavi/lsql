@@ -13,3 +13,13 @@
 {"acceptable":true,"test_index":4,"uid":"ccc"}
 
 {"delta":22,"max_latency":25,"min_latency":3,"test_index":5}
+
+{"text":"","value":"","test_index":6}
+{"text":"present","value":"present","test_index":6}
+
+{"text":"bad","value":0,"test_index":7}
+{"text":"0","value":0,"test_index":7}
+{"text":"1","value":1,"test_index":7}
+
+{"flag":false,"value":false,"test_index":8}
+{"flag":true,"value":true,"test_index":8}
