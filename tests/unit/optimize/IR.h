@@ -133,6 +133,18 @@ inline ir::Relation limit(ir::Relation source, int count) {
     };
 }
 
+inline ir::Relation unionAll(ir::Relation first, auto... rest) {
+    auto schema = first.schema;
+    std::vector<ir::Relation> sources;
+    sources.push_back(std::move(first));
+    (sources.push_back(std::move(rest)), ...);
+
+    return ir::Relation{
+        .node = ir::UnionAllRelation{.sources = std::move(sources)},
+        .schema = schema,
+    };
+}
+
 inline ir::Projector projector(FieldId id, ir::Scalar expr) {
     return ir::Projector{
         .alias_field_id = id,

@@ -58,6 +58,23 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         return std::move(self);
     }
 
+    ir::Relation optimize(ir::UnionAllRelation& rel, ir::Relation& self) {
+        std::vector<ir::Relation> sources;
+        for (auto&& source : rel.sources) {
+            if (auto* nested = std::get_if<ir::UnionAllRelation>(&source.node)) {
+                ctx.setChanges().note("nested union-all collapsed");
+                for (auto&& nested_source : nested->sources) {
+                    sources.push_back(std::move(nested_source));
+                }
+            } else {
+                sources.push_back(std::move(source));
+            }
+        }
+
+        rel.sources = std::move(sources);
+        return std::move(self);
+    }
+
     auto construct(auto& node, auto& self) {
         auto pass_name = "relation_simplify";
         auto name = rfl::type_name_t<decltype(node)>().name();
