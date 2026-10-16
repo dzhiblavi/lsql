@@ -1,14 +1,32 @@
 #include "optimize/limit_pushdown.h"
-#include "ir/pass.h"
 
+#include "ir/Aggregates.h"  // IWYU pragma: keep
+#include "ir/Relations.h"
+#include "ir/Scalars.h"  // IWYU pragma: keep
+
+#include "util/TreeWalker.h"
 #include "util/logging.h"
 
 namespace lsql::opt {
 
 namespace {
 
-struct Optimizer : ir::ConsumePass<Optimizer> {
-    Context& ctx;
+struct Optimizer : util::TreeWalker<Optimizer> {
+    using Base = util::TreeWalker<Optimizer>;
+    using Base::visit;
+
+    void visit(ir::Relation& rel) {
+        Base::visit(rel);
+
+        if (auto* limit = std::get_if<ir::LimitRelation>(&rel.node)) {
+            util::match(limit->source->node, [&](auto& src) {
+                if constexpr (requires { pushdown(*limit, src, rel); }) {
+                    llog::trace("applying limit_pushdown step for ir::LimitRelation");
+                    pushdown(*limit, src, rel);
+                }
+            });
+        }
+    }
 
     void ensureLimited(ir::LimitRelation& lim, ir::Relation& node, auto label, auto name) {
         if (auto* limit = std::get_if<ir::LimitRelation>(&node.node)) {
@@ -35,7 +53,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         };
     }
 
-    ir::Relation pushdown(auto& lim, ir::ProjectionRelation& src, auto& self) {
+    void pushdown(auto& lim, ir::ProjectionRelation& src, auto& self) {
         ctx.setChanges().note("limit(projection) -> projection(limit)");
         auto proj_source_fields = src.source->schema;
         self.node = ir::ProjectionRelation{
@@ -50,10 +68,9 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
                 }),
             .projectors = std::move(src.projectors),
         };
-        return std::move(self);
     }
 
-    ir::Relation pushdown(auto& lim, ir::SortRelation& src, auto& self) {
+    void pushdown(auto& lim, ir::SortRelation& src, auto& self) {
         ctx.setChanges().note("sort/limit -> topk");
         self.node = ir::TopKRelation{
             .source = std::move(src.source),
@@ -61,19 +78,17 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
             .desc = src.desc,
             .top_count = lim.limit,
         };
-        return std::move(self);
     }
 
-    ir::Relation pushdown(auto& lim, ir::LimitRelation& src, auto& self) {
+    void pushdown(auto& lim, ir::LimitRelation& src, auto& self) {
         ctx.setChanges().note("limit(limit) -> limit");
         self.node = ir::LimitRelation{
             .source = std::move(src.source),
             .limit = std::min(lim.limit, src.limit),
         };
-        return std::move(self);
     }
 
-    ir::Relation pushdown(auto& lim, ir::TopKRelation& src, auto& self) {
+    void pushdown(auto& lim, ir::TopKRelation& src, auto& self) {
         ctx.setChanges().note("limit(topk) -> topk");
         self.node = ir::TopKRelation{
             .source = std::move(src.source),
@@ -81,49 +96,32 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
             .desc = src.desc,
             .top_count = std::min(lim.limit, src.top_count),
         };
-        return std::move(self);
     }
 
-    ir::Relation pushdown(auto& lim, ir::UnionAllRelation& u, auto& self) {
+    void pushdown(auto& lim, ir::UnionAllRelation& u, auto& /*self*/) {
         for (auto&& src : u.sources) {
             ensureLimited(lim, src, "union_all", "C");
         }
-        return std::move(self);
     }
 
-    ir::Relation pushdown(auto& lim, ir::UnionAllSortedByRelation& src, auto& self) {
+    void pushdown(auto& lim, ir::UnionAllSortedByRelation& src, auto& /*self*/) {
         ensureLimited(lim, *src.left, "union_all_sorted_by", "L");
         ensureLimited(lim, *src.right, "union_all_sorted_by", "R");
-        return std::move(self);
     }
 
-    ir::Relation construct(ir::LimitRelation& rel, ir::Relation& self) {
-        return util::match(rel.source->node, [&](auto& src) {
-            if constexpr (requires { pushdown(rel, src, self); }) {
-                llog::trace("applying limit_pushdown step for ir::LimitRelation");
-                return pushdown(rel, src, self);
-            }
-            return std::move(self);
-        });
-    }
-
-    auto construct(auto& /*node*/, auto& self) { return std::move(self); }
+    Context& ctx;
 };
 
 }  // namespace
 
 ir::Program limitPushdown(ir::Program program, Context& ctx) {
-    ir::Program result{
-        .statements = {},
-        .field_binding = program.field_binding,
-    };
-
     Optimizer opt{.ctx = ctx};
-    for (auto&& statement : program.statements) {
-        result.statements.push_back(opt.pass(std::move(statement)));
+
+    for (auto& statement : program.statements) {
+        opt.visit(statement);
     }
 
-    return result;
+    return program;
 }
 
 }  // namespace lsql::opt

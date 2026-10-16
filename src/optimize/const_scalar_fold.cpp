@@ -1,8 +1,11 @@
 #include "optimize/const_scalar_fold.h"
 
-#include "ir/pass.h"
+#include "ir/Aggregates.h"
+#include "ir/Relations.h"
+#include "ir/Scalars.h"
 
 #include "core/function/build.h"
+#include "util/TreeWalker.h"
 #include "util/logging.h"
 
 #include <rfl.hpp>
@@ -11,12 +14,15 @@ namespace lsql::opt {
 
 namespace {
 
-struct Optimizer : ir::ConsumePass<Optimizer> {
+struct Optimizer : util::TreeWalker<Optimizer> {
+    using Base = util::TreeWalker<Optimizer>;
+    using Base::visit;
+
     Context& ctx;
 
-    ir::Scalar optimize(ir::FnCallScalar& s, auto& self) {
+    void optimize(ir::FnCallScalar& s, auto& self) {
         if (!func::isScalar(s.function)) {
-            return std::move(self);
+            return;
         }
 
         bool all_const = std::ranges::all_of(s.args, [](ir::Scalar& arg) {
@@ -24,7 +30,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         });
 
         if (!all_const) {
-            return std::move(self);
+            return;
         }
 
         std::vector<Value> values;
@@ -33,7 +39,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
             values.push_back(std::get<ir::ValueScalar>(arg.node).value);
         }
 
-        return func::buildScalar<ir::Scalar>(s.function, [&]<typename E>(E executor) {
+        self = func::buildScalar<ir::Scalar>(s.function, [&]<typename E>(E executor) {
             ctx.setChanges().note("folded constant scalar function call");
             auto result = execute(executor, values);
 
@@ -44,33 +50,28 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         });
     }
 
-    auto construct(auto& node, auto& self) {
-        auto step_name = "const_scalar_fold";
-        auto name = rfl::type_name_t<decltype(node)>().name();
+    void visit(ir::Scalar& self) {
+        Base::visit(self);
 
-        if constexpr (requires { optimize(node, self); }) {
-            llog::trace("applying {} step for {}", step_name, name);
-            return optimize(node, self);
-        } else {
-            return std::move(self);
-        }
+        util::match(self.node, [&](auto& node) {
+            if constexpr (requires { optimize(node, self); }) {
+                auto name = rfl::type_name_t<decltype(node)>().name();
+                llog::trace("applying const_scalar_fold step for {}", name);
+                optimize(node, self);
+            }
+        });
     }
 };
 
 }  // namespace
 
 ir::Program constScalarFold(ir::Program program, Context& ctx) {
-    ir::Program result{
-        .statements = {},
-        .field_binding = program.field_binding,
-    };
-
     Optimizer opt{.ctx = ctx};
-    for (auto&& statement : program.statements) {
-        result.statements.push_back(opt.pass(std::move(statement)));
+    for (auto& statement : program.statements) {
+        opt.visit(statement);
     }
 
-    return result;
+    return program;
 }
 
 }  // namespace lsql::opt

@@ -1,63 +1,9 @@
 #pragma once
 
-#include "ir/Aggregates.h"  // IWYU pragma: keep
-#include "ir/Relations.h"   // IWYU pragma: keep
-#include "ir/Scalars.h"     // IWYU pragma: keep
-#include "ir/Statement.h"
+#include "ir/Scalars.h"
 #include "ir/reflect.h"
 
 namespace lsql::ir {
-
-template <typename Self>
-class ConsumePass {
- public:
-    ir::Relation pass(ir::Relation rel) {
-        return util::match(rel.node, [&](auto& r) -> ir::Relation { return pass(r, rel); });
-    }
-
-    ir::Statement pass(ir::Statement st) {
-        return util::match(st, [&](auto& s) -> ir::Statement { return pass(s, st); });
-    }
-
-    ir::Scalar pass(ir::Scalar sc) {
-        return util::match(sc.node, [&](auto& s) -> ir::Scalar { return pass(s, sc); });
-    }
-
-    ir::Aggregate pass(ir::Aggregate ag) {
-        return util::match(ag.node, [&](auto& s) -> ir::Aggregate { return pass(s, ag); });
-    }
-
-    ir::Projector pass(ir::Projector p) {
-        return {
-            .alias_field_id = p.alias_field_id,
-            .expr = box(pass(std::move(*p.expr))),
-        };
-    }
-
- private:
-    template <typename E>
-    E pass(auto& node, E& self) {
-        using Reflection = Reflect<std::decay_t<decltype(node)>>;
-        auto modify = [&](auto field) { node.*field = pass(std::move(node.*field)); };
-        std::apply([&](auto&&... fields) { (modify(fields), ...); }, Reflection::childNodes());
-        return static_cast<Self*>(this)->construct(node, self);
-    }
-
-    template <typename E>
-    Box<E> pass(Box<E> x) {
-        return box(pass(std::move(*x)));
-    }
-
-    template <typename T>
-    std::vector<T> pass(std::vector<T> ag) {
-        std::vector<T> r;
-        r.reserve(ag.size());
-        for (auto&& a : ag) {
-            r.push_back(pass(std::move(a)));
-        }
-        return r;
-    }
-};
 
 template <typename Self, typename R>
 class ScalarViewPass {

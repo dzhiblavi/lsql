@@ -66,7 +66,8 @@ void OrderedSink::prevCompleteLocked() {
     }
 }
 
-SimpleSink::SimpleSink(std::ostream* os, std::mutex* m) : os_(os), m_(m) {}
+SimpleSink::SimpleSink(std::ostream* os, std::mutex* m) : os_(os), m_(m) {
+}
 
 void SimpleSink::push(std::string_view s) {
     std::lock_guard lg(*m_);

@@ -15,7 +15,7 @@ namespace lsql::util {
 template <typename Self>
 class TreeWalker {
  public:
-    // Default visitor for leaf types: does nothing
+    // Default visitor
     template <typename T>
     void visit(T&) {}
 

@@ -1,6 +1,9 @@
 #include "optimize/const_aggregate_fold.h"
-#include "ir/pass.h"
+#include "ir/Aggregates.h"
+#include "ir/Relations.h"
+#include "ir/Scalars.h"
 
+#include "util/TreeWalker.h"
 #include "util/logging.h"
 
 #include <rfl.hpp>
@@ -9,12 +12,15 @@ namespace lsql::opt {
 
 namespace {
 
-struct Optimizer : ir::ConsumePass<Optimizer> {
+struct Optimizer : util::TreeWalker<Optimizer> {
+    using Base = util::TreeWalker<Optimizer>;
+    using Base::visit;
+
     Context& ctx;
 
-    ir::Aggregate optimize(ir::FnCallAggregate& a, auto& self) {
+    void optimize(ir::FnCallAggregate& a, auto& self) {
         if (func::isScalar(a.function)) {
-            return std::move(self);
+            return;
         }
 
         bool all_const = std::ranges::all_of(a.args, [](ir::Scalar& arg) {
@@ -22,7 +28,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         });
 
         if (!all_const) {
-            return std::move(self);
+            return;
         }
 
         if (std::holds_alternative<func::CountNonNull>(a.function)) {
@@ -35,7 +41,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
                     .null_if_empty = false,
                 };
             }
-            return std::move(self);
+            return;
         }
 
         if (std::holds_alternative<func::Min>(a.function)) {
@@ -46,7 +52,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
                 .value = value,
                 .null_if_empty = true,
             };
-            return std::move(self);
+            return;
         }
 
         if (std::holds_alternative<func::Max>(a.function)) {
@@ -57,43 +63,32 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
                 .value = value,
                 .null_if_empty = true,
             };
-            return std::move(self);
+            return;
         }
-
-        if (std::holds_alternative<func::Sum>(a.function)) {
-            return std::move(self);
-        }
-
-        return std::move(self);
     }
 
-    auto construct(auto& node, auto& self) {
-        auto self_name = "const_aggregate_fold";
-        auto name = rfl::type_name_t<decltype(node)>().name();
+    void visit(ir::Aggregate& self) {
+        Base::visit(self);
 
-        if constexpr (requires { optimize(node, self); }) {
-            llog::trace("applying {} step for {}", self_name, name);
-            return optimize(node, self);
-        } else {
-            return std::move(self);
-        }
+        util::match(self.node, [&](auto& node) {
+            if constexpr (requires { optimize(node, self); }) {
+                auto name = rfl::type_name_t<decltype(node)>().name();
+                llog::trace("applying const_aggregate_fold step for {}", name);
+                optimize(node, self);
+            }
+        });
     }
 };
 
 }  // namespace
 
 ir::Program constAggregateFold(ir::Program program, Context& ctx) {
-    ir::Program result{
-        .statements = {},
-        .field_binding = program.field_binding,
-    };
-
     Optimizer opt{.ctx = ctx};
-    for (auto&& statement : program.statements) {
-        result.statements.push_back(opt.pass(std::move(statement)));
+    for (auto& statement : program.statements) {
+        opt.visit(statement);
     }
 
-    return result;
+    return program;
 }
 
 }  // namespace lsql::opt

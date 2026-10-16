@@ -1,5 +1,8 @@
 #include "optimize/relation_simplify.h"
-#include "ir/pass.h"
+#include "ir/Aggregates.h"
+#include "ir/Relations.h"
+#include "ir/Scalars.h"
+#include "util/TreeWalker.h"
 #include "util/logging.h"
 
 #include <rfl.hpp>
@@ -8,7 +11,10 @@ namespace lsql::opt {
 
 namespace {
 
-struct Optimizer : ir::ConsumePass<Optimizer> {
+struct Optimizer : util::TreeWalker<Optimizer> {
+    using Base = util::TreeWalker<Optimizer>;
+    using Base::visit;
+
     Context& ctx;
 
     bool isForwardingProjection(const ir::ProjectionRelation& p, auto& self) {
@@ -33,32 +39,32 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         return true;
     }
 
-    ir::Relation optimize(ir::ProjectionRelation& rel, ir::Relation& self) {
+    void optimize(ir::ProjectionRelation& rel, ir::Relation& self) {
         if (isForwardingProjection(rel, self)) {
             ctx.setChanges().note("forwarding projection collapsed");
-            return std::move(*rel.source);
+            auto source = std::move(*rel.source);
+            self = std::move(source);
         }
-
-        return std::move(self);
     }
 
-    ir::Relation optimize(ir::FilterRelation& rel, ir::Relation& self) {
+    void optimize(ir::FilterRelation& rel, ir::Relation& self) {
         auto* v = std::get_if<ir::ValueScalar>(&rel.condition->node);
         if (!v) {
-            return std::move(self);
+            return;
         }
 
         ctx.setChanges().note("filter condition collapsed empty={}", v->value.get<bool>());
 
         if (v->value == true) {
-            return std::move(*rel.source);
+            auto source = std::move(*rel.source);
+            self = std::move(source);
+            return;
         }
 
         self.node = ir::EmptyRelation{};
-        return std::move(self);
     }
 
-    ir::Relation optimize(ir::UnionAllRelation& rel, ir::Relation& self) {
+    void optimize(ir::UnionAllRelation& rel, ir::Relation&) {
         std::vector<ir::Relation> sources;
         for (auto&& source : rel.sources) {
             if (auto* nested = std::get_if<ir::UnionAllRelation>(&source.node)) {
@@ -72,36 +78,30 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         }
 
         rel.sources = std::move(sources);
-        return std::move(self);
     }
 
-    auto construct(auto& node, auto& self) {
-        auto pass_name = "relation_simplify";
-        auto name = rfl::type_name_t<decltype(node)>().name();
+    void visit(ir::Relation& self) {
+        Base::visit(self);
 
-        if constexpr (requires { optimize(node, self); }) {
-            llog::trace("applying {} step for {}", pass_name, name);
-            return optimize(node, self);
-        } else {
-            return std::move(self);
-        }
+        util::match(self.node, [&](auto& node) {
+            if constexpr (requires { optimize(node, self); }) {
+                auto name = rfl::type_name_t<decltype(node)>().name();
+                llog::trace("applying relation_simplify step for {}", name);
+                optimize(node, self);
+            }
+        });
     }
 };
 
 }  // namespace
 
 ir::Program relationSimplify(ir::Program program, Context& ctx) {
-    ir::Program result{
-        .statements = {},
-        .field_binding = program.field_binding,
-    };
-
     Optimizer opt{.ctx = ctx};
-    for (auto&& statement : program.statements) {
-        result.statements.push_back(opt.pass(std::move(statement)));
+    for (auto& statement : program.statements) {
+        opt.visit(statement);
     }
 
-    return result;
+    return program;
 }
 
 }  // namespace lsql::opt

@@ -2,6 +2,7 @@
 #include "ir/pass.h"
 
 #include "config/build_settings.h"
+#include "util/TreeWalker.h"
 #include "util/logging.h"
 
 #include <rfl.hpp>
@@ -143,16 +144,19 @@ struct ScalarCollapser : CloneScalarView {
     ir::Scalar collapse(const ir::Scalar& s) { return pass(s); }
 };
 
-struct Optimizer : ir::ConsumePass<Optimizer> {
+struct Optimizer : util::TreeWalker<Optimizer> {
+    using Base = util::TreeWalker<Optimizer>;
+    using Base::visit;
+
     Context& ctx;
 
     bool isProjectionProjection(const ir::ProjectionRelation& p) {
         return std::holds_alternative<ir::ProjectionRelation>(p.source->node);
     }
 
-    ir::Relation optimize(ir::ProjectionRelation& rel, ir::Relation& self) {
+    void optimize(ir::ProjectionRelation& rel, ir::Relation& self) {
         if (!isProjectionProjection(rel)) {
-            return std::move(self);
+            return;
         }
 
         auto& inner = std::get<ir::ProjectionRelation>(rel.source->node);
@@ -180,7 +184,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
                 "projection collapse skipped, cost too high: collapsed={}, old={}",
                 collapsed_estimator.totalCost(),
                 total_current_cost);
-            return std::move(self);
+            return;
         }
 
         ctx.setChanges().note(
@@ -209,37 +213,30 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
             .source = std::move(inner.source),
             .projectors = std::move(collapsed),
         };
-
-        return std::move(self);
     }
 
-    auto construct(auto& node, auto& self) {
-        auto pass_name = "projection_collapse";
-        auto name = rfl::type_name_t<decltype(node)>().name();
+    void visit(ir::Relation& self) {
+        Base::visit(self);
 
-        if constexpr (requires { optimize(node, self); }) {
-            llog::trace("applying {} step for {}", pass_name, name);
-            return optimize(node, self);
-        } else {
-            return std::move(self);
-        }
+        util::match(self.node, [&](auto& node) {
+            if constexpr (requires { optimize(node, self); }) {
+                auto name = rfl::type_name_t<decltype(node)>().name();
+                llog::trace("applying projection_collapse step for {}", name);
+                optimize(node, self);
+            }
+        });
     }
 };
 
 }  // namespace
 
 ir::Program projectionCollapse(ir::Program program, Context& ctx) {
-    ir::Program result{
-        .statements = {},
-        .field_binding = program.field_binding,
-    };
-
     Optimizer opt{.ctx = ctx};
-    for (auto&& statement : program.statements) {
-        result.statements.push_back(opt.pass(std::move(statement)));
+    for (auto& statement : program.statements) {
+        opt.visit(statement);
     }
 
-    return result;
+    return program;
 }
 
 }  // namespace lsql::opt
