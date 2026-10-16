@@ -18,7 +18,7 @@ Box<Consumer> makeConsumer(
     S* sink, Format format, ConstFieldBindingPtr binding, const Schema& schema) {
     switch (format) {
         case output::Format::JSON:
-            return box<output::JSONFormatter<S>>(sink, binding);
+            return box<output::JSONFormatter<S>>(sink, binding, schema);
         case output::Format::TSKV:
             return box<output::TSKVFormatter<S>>(sink, binding);
         case output::Format::CSVHeader:

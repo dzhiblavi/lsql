@@ -4,99 +4,107 @@
 #include "output/Sink.h"
 
 #include "core/schema/FieldBinding.h"
+#include "core/schema/Schema.h"
+
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace lsql::output {
 
-inline std::string escapeForJSON(std::string_view input) {
-    std::ostringstream oss;
-
+inline void appendJSONEscaped(std::string& output, std::string_view input) {
     for (char c : input) {
         switch (c) {
             case '"':
-                oss << "\\\"";
+                output += "\\\"";
                 break;
             case '\\':
-                oss << "\\\\";
+                output += "\\\\";
                 break;
             case '/':
-                oss << "\\/";
+                output += "\\/";
                 break;
             case '\b':
-                oss << "\\b";
+                output += "\\b";
                 break;
             case '\f':
-                oss << "\\f";
+                output += "\\f";
                 break;
             case '\n':
-                oss << "\\n";
+                output += "\\n";
                 break;
             case '\r':
-                oss << "\\r";
+                output += "\\r";
                 break;
             case '\t':
-                oss << "\\t";
+                output += "\\t";
                 break;
             default:
-                // Control characters (0x00-0x1F) should be escaped as \uXXXX
                 if (static_cast<unsigned char>(c) < 0x20) {
                     constexpr std::string_view hex = "0123456789ABCDEF";
                     auto byte = static_cast<unsigned char>(c);
-                    oss << "\\u00" << hex[byte >> 4] << hex[byte & 0x0F];
+                    output += "\\u00";
+                    output += hex[byte >> 4];
+                    output += hex[byte & 0x0F];
                 } else {
-                    oss << c;
+                    output += c;
                 }
                 break;
         }
     }
-
-    return oss.str();
 }
 
-inline std::string toJSONStr(const Value& v) {
-    return visit(
+inline void appendJSONValue(std::string& output, const Value& value) {
+    visit(
         util::Overloaded{
-            [](null_t) -> std::string { return "null"; },
-            [](bool x) -> std::string { return x ? "true" : "false"; },
-            [](int64_t x) -> std::string { return std::to_string(x); },
-            [](float x) -> std::string { return std::to_string(x); },
-            [](std::string_view s) -> std::string {
-                return std::format("\"{}\"", escapeForJSON(s));
+            [&](null_t) { output += "null"; },
+            [&](bool x) { output += x ? "true" : "false"; },
+            [&](int64_t x) { output += std::to_string(x); },
+            [&](float x) { output += std::to_string(x); },
+            [&](std::string_view s) {
+                output += '"';
+                appendJSONEscaped(output, s);
+                output += '"';
             },
         },
-        v.variant());
+        value.variant());
 }
 
 template <Sink S>
 class JSONFormatter : public Consumer {
  public:
-    JSONFormatter(S* sink, ConstFieldBindingPtr binding)
-        : binding_(std::move(binding))
-        , sink_(sink) {}
+    JSONFormatter(S* sink, ConstFieldBindingPtr binding, const Schema& schema) : sink_(sink) {
+        field_prefixes_.reserve(schema.columns());
+        for (auto id : schema.fieldIds()) {
+            auto& prefix = field_prefixes_.emplace_back("\"");
+            appendJSONEscaped(prefix, binding->name(id));
+            prefix += "\":";
+        }
+    }
 
     void consume(Record& r) override {
-        if (r.empty()) {
-            sink_->push("{}");
-            return;
+        verify_dbg(r.size() == field_prefixes_.size());
+        buffer_.clear();
+        buffer_ += '{';
+
+        for (size_t i = 0; i < r.size(); ++i) {
+            if (i != 0) {
+                buffer_ += ',';
+            }
+            buffer_ += field_prefixes_[i];
+            appendJSONValue(buffer_, r[i].second);
         }
 
-        std::stringstream ss;
-        ss << '{';
-
-        for (auto&& [id, value] : r) {
-            ss << '"' << escapeForJSON(binding_->name(id)) << '"';
-            ss << ':' << toJSONStr(value) << ',';
-        }
-
-        ss.seekp(-1, std::ios_base::end);
-        ss << '}';
-        sink_->push(ss.str());
+        buffer_ += '}';
+        sink_->push(buffer_);
     }
 
     void done() override { sink_->done(); }
 
  private:
-    ConstFieldBindingPtr binding_;
     S* sink_;
+    std::vector<std::string> field_prefixes_;
+    std::string buffer_;
 };
 
 }  // namespace lsql::output
