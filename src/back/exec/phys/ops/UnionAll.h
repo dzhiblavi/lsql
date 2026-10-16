@@ -2,77 +2,53 @@
 
 #include "back/exec/phys/MemberSubscriber.h"
 #include "back/exec/phys/Operation.h"
-#include "util/verify.h"
 
 namespace lsql::back::exec::phys {
 
 class UnionAll : public OperationBase<UnionAll> {
  public:
-    explicit UnionAll(int id) : OperationBase(id) {
-        prof::addEdge(sub_l_.scopeHandle(), prof_);
-        prof::addEdge(sub_r_.scopeHandle(), prof_);
+    UnionAll(size_t num_inputs, int id) : OperationBase(id) {
+        for (size_t i = 0; i < num_inputs; ++i) {
+            subs_.emplace_back(
+                this,
+                &UnionAll::consume,
+                prof::newScope<ScopeMetrics>("{} input({})", name(), i),
+                &m_);
+
+            prof::addEdge(subs_.back().scopeHandle(), prof_);
+        }
     }
 
-    Subscriber* subLeft() { return &sub_l_; }
-    Subscriber* subRight() { return &sub_r_; }
+    Subscriber* sub(size_t index) { return &subs_[index]; }
 
  private:
-    template <int Index>
     bool consume(const Record* record) {
-        if (done_[Index]) {
-            // the stream has ended prematurely via receiver request
-            verify_dbg(done_[1 - Index]);
-            reset();
+        if (stream_finished_) {
             return false;
         }
 
         if (record == nullptr) {
-            if (finished<Index>()) {
-                // the second subscription finished. no more records
-                reset();
-                [[maybe_unused]] auto res = emit(nullptr);
-                verify_dbg(!res);
+            ++eof_count_;
+            if (eof_count_ == subs_.size()) {
+                stream_finished_ = true;
+                emit(nullptr);
             }
-
-            // we want to cancel current subscription anyhow
-            // this will cancel l OR r only, the second one remains untouched
             return false;
         }
 
         if (!emit(record)) {
-            // the receiver does not want more records
-            // so we set both done_ to true to cancel both subscriptions
-            done_[0] = done_[1] = true;
+            stream_finished_ = true;
             return false;
         }
 
         return true;
     }
 
-    template <int Index>
-    bool finished() {
-        verify_dbg(!done_[Index]);
-        done_[Index] = true;
-        return done_[1 - Index];
-    }
+    bool stream_finished_ = false;
+    size_t eof_count_ = 0;
 
-    void reset() { done_[0] = done_[1] = false; }
-
-    bool done_[2] = {false};
     std::mutex m_;
-
-    MemberSubscriber<UnionAll, LockMixin> sub_l_{
-        this,
-        &UnionAll::consume<0>,
-        prof::newScope<ScopeMetrics>("{} input(L)", name()),
-        &m_,
-    };
-    MemberSubscriber<UnionAll, LockMixin> sub_r_{
-        this,
-        &UnionAll::consume<1>,
-        prof::newScope<ScopeMetrics>("{} input(R)", name()),
-        &m_,
-    };
+    std::vector<MemberSubscriber<UnionAll, LockMixin>> subs_;
 };
 
 }  // namespace lsql::back::exec::phys

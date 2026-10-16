@@ -9,9 +9,9 @@ namespace lsql::back::exec::phys {
 
 struct UnionAllTest : OperationTest {
     UnionAllTest() {
-        auto op = arc<UnionAll>(0);
-        left->output(op->subLeft());
-        right->output(op->subRight());
+        auto op = arc<UnionAll>(2, 0);
+        left->output(op->sub(0));
+        right->output(op->sub(1));
         setOperation(op);
     }
 

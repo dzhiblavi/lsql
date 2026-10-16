@@ -17,7 +17,7 @@ concept SubscriberMixin = requires(F& f) {
 };
 
 template <typename Self, SubscriberMixin... Mixins>
-class MemberSubscriber : public Subscriber, util::Pinned {
+class MemberSubscriber : public Subscriber {
  public:
     using MethodType = bool (Self::*)(const Record*);
 

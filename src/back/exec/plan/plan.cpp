@@ -147,7 +147,6 @@ void init(TopK& node, Arc<Operation> op, int phase) {
 
 void init(UnionAll& node, Arc<Operation> op, int phase) {
     auto upstream = op->required_fields[phase];
-    require(node.sources.size() == 2, "only 2 union-all sources is supported");
 
     for (auto&& src : node.sources) {
         requestOutput(src, phase, upstream);
