@@ -72,7 +72,7 @@ add_error_test(errors/bind/test_left_join_unknown_field)
 add_error_test(errors/bind/test_left_join_unqualified_field)
 
 set(HARDENING_PROFILES balanced uneven uneven empty)
-set(HARDENING_SEEDS 0)
+set(HARDENING_SEEDS 0 1 2 3)
 
 foreach(PROFILE SEED IN ZIP_LISTS HARDENING_PROFILES HARDENING_SEEDS)
     add_hardening_test(union_parallel query.sql ${PROFILE} ${SEED}

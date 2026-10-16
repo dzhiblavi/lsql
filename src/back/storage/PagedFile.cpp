@@ -1,5 +1,6 @@
 #include "back/storage/PagedFile.h"
 
+#include "config/storage_settings.h"
 #include "core/exceptions.h"
 #include "util/PageSize.h"
 #include "util/verify.h"
@@ -61,14 +62,17 @@ std::shared_ptr<NativePagedFile> NativePagedFile::open(std::filesystem::path pat
 }
 
 size_t NativePagedFile::pageCount() const {
-    return util::pageCount(size());
+    return util::pageCount(
+        size(), config::storage().get(config::StorageSetting::PageSizeMultiplier));
 }
 
 std::shared_ptr<Page> NativePagedFile::page(size_t index) const {
-    verify(index * util::pageSize() < size());
+    const auto page_size =
+        util::pageSize(config::storage().get(config::StorageSetting::PageSizeMultiplier));
+    verify(index * page_size < size());
 
-    size_t offset = index * util::pageSize();
-    size_t size = std::min(util::pageSize(), size_ - offset);
+    size_t offset = index * page_size;
+    size_t size = std::min(page_size, size_ - offset);
 
     void* addr = ::mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd_,
                         offset);                // NOLINT

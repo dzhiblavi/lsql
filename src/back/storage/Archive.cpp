@@ -2,8 +2,9 @@
 
 #include "core/exceptions.h"
 
-#include "config/build_settings.h"
+#include "config/storage_settings.h"
 
+#include <vector>
 #include <zlib.h>
 
 namespace lsql::back::storage {
@@ -35,7 +36,9 @@ class ZlibStream {
 
 class NativeArchiveStream : public Stream {
  public:
-    explicit NativeArchiveStream(Arc<File> file) : file_(std::move(file)) {
+    explicit NativeArchiveStream(Arc<File> file)
+        : file_(std::move(file))
+        , inbuf_(config::storage().get(config::StorageSetting::ArchiveInputChunkSize)) {
         verify(file_ != nullptr);
     }
 
@@ -102,7 +105,7 @@ class NativeArchiveStream : public Stream {
 
  private:
     Arc<File> file_;
-    std::array<char, config::Storage::ArchiveInputChunkSize> inbuf_{};
+    std::vector<char> inbuf_;
 
     // state
     bool compressed_eof_ = false;

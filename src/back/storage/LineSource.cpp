@@ -2,7 +2,7 @@
 
 #include "util/PageSize.h"
 
-#include "config/build_settings.h"
+#include "config/storage_settings.h"
 
 #include "util/logging.h"
 
@@ -28,11 +28,13 @@ coro::generator<Line> PagedLineSource::lines() const {
         co_return;
     }
 
-    size_t page_index = begin_ / util::pageSize();
+    const auto page_size =
+        util::pageSize(config::storage().get(config::StorageSetting::PageSizeMultiplier));
+    size_t page_index = begin_ / page_size;
     size_t pos = begin_;  // global position
     auto page = file_->page(page_index);
 
-    auto page_included = [this](size_t page) { return page * util::pageSize() < end_; };
+    auto page_included = [this, page_size](size_t page) { return page * page_size < end_; };
     auto next_page = [&] {
         if (!page_included(page_index + 1)) {
             return false;
@@ -44,7 +46,7 @@ coro::generator<Line> PagedLineSource::lines() const {
     };
 
     while (pos < end_) {
-        auto data = page->data().substr(pos % util::pageSize());
+        auto data = page->data().substr(pos % page_size);
         auto newline = data.find('\n');
 
         if (newline == std::string::npos) {
@@ -69,14 +71,14 @@ coro::generator<Line> PagedLineSource::lines() const {
                 co_yield Line({line, line->data()}, line->size());
 
                 if (newline + 1 < data.size()) {
-                    pos = util::pageSize() * page_index + newline + 1;
+                    pos = page_size * page_index + newline + 1;
                 } else {
                     // \n has been the last character in the page
                     if (!next_page()) {
                         co_return;
                     }
 
-                    pos = util::pageSize() * page_index;
+                    pos = page_size * page_index;
                 }
 
                 break;
@@ -110,9 +112,10 @@ coro::generator<Line> StreamLineSource::lines() const {
     verify(source_ != nullptr);
     auto stream = source_->stream();
     Arc<std::string> partial;
+    const size_t chunk_size = config::storage().get(config::StorageSetting::StreamReadChunkSize);
 
     while (true) {
-        auto chunk = arc<std::string>(config::Storage::StreamReadChunkSize, '\0');
+        auto chunk = arc<std::string>(chunk_size, '\0');
         auto read = stream->read(chunk->size(), std::span<char>(chunk->data(), chunk->size()));
         if (read == 0) {
             if (partial && !partial->empty()) {

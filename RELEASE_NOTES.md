@@ -4,7 +4,8 @@
 
 - Hardening tests and frontend bug fixes.
 - `--no-buffer` flag support.
-- Optimization: added collapse of UnionAll trees into one operation.
+- Added optimization: collapsing UnionAll tree into single operation.
+- Allowed to dynamically override most of the settings.
 
 ## v0.0.2
 

@@ -1,7 +1,8 @@
 #include "cli/run.h"
+#include "cli/settings.h"
+
 #include "output/Formats.h"
 
-#include "config/build_settings.h"
 #include "ir/Aggregates.h"  // IWYU pragma: keep
 #include "ir/Relations.h"   // IWYU pragma: keep
 #include "ir/Scalars.h"     // IWYU pragma: keep
@@ -12,6 +13,7 @@
 
 #include "core/exceptions.h"
 #include "core/time_formats.h"
+
 #include "util/build_info.h"
 #include "util/logging.h"
 
@@ -92,15 +94,6 @@ TCLAP::ValueArg<std::string> time_to_arg{
     "ISO8601 timestamp",
 };
 
-TCLAP::ValueArg<unsigned> optimize_passes_arg{
-    "o",
-    "optimize-passes",
-    "number of optimization passes",
-    false,
-    config::Optimizer::DefaultPasses,
-    "unsigned",
-};
-
 TCLAP::SwitchArg force_run_arg{
     "",
     "run",
@@ -167,12 +160,30 @@ TCLAP::SwitchArg stacktrace_arg{
     "print stacktrace on error",
 };
 
+TCLAP::MultiArg<std::string> options_arg{
+    "o",
+    "option",
+    "override default dynamic setting",
+    false,
+    "list of key=value pairs (see --version)",
+};
+
+std::string versionString() {
+    std::stringstream ss;
+
+    ss << formatBuildInfo() << '\n';
+    ss << "syntax: " << syntaxName() << '\n';
+    ss << config::formatBuildSettings() << '\n';
+    ss << "dynamic_settings:\n";
+    dumpSettings(ss, "  ");
+
+    return ss.str();
+}
+
 bool parseArgs(std::span<const char*> argv) {
-    TCLAP::CmdLine cmd{
-        "tsql",
-        ' ',
-        std::format(
-            "{}\n{}\nsyntax: {}", formatBuildInfo(), config::formatBuildSettings(), syntaxName())};
+    TCLAP::CmdLine cmd{"tsql", ' ', versionString()};
+    cmd.setExceptionHandling(false);
+
     cmd.add(&query_file_arg);
     cmd.add(&format_arg);
     cmd.add(&log_level_arg);
@@ -188,12 +199,11 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&threads_arg);
     cmd.add(&time_from_arg);
     cmd.add(&time_to_arg);
-    cmd.add(&optimize_passes_arg);
     cmd.add(&profile_arg);
     cmd.add(&flamegraph_arg);
     cmd.add(&dot_graph_arg);
     cmd.add(&stacktrace_arg);
-    cmd.setExceptionHandling(false);
+    cmd.add(&options_arg);
 
     try {
         cmd.parse(static_cast<int>(argv.size()), argv.data());
@@ -203,6 +213,7 @@ bool parseArgs(std::span<const char*> argv) {
         return false;
     }
 
+    parseSettings(options_arg.getValue());
     return true;
 }
 
@@ -281,6 +292,10 @@ void cliMain(std::span<const char*> argv) {
             format != output::Format::PrettyTable, "pretty table is incompatible with --no-buffer");
     }
 
+    std::stringstream ss;
+    dumpSettings(ss);
+    llog::info("Dynamic settings:\n{}", ss.view());
+
     auto settings = Settings{
         .print_optimization_report = print_optimization_report_arg,
         .print_ir_optimized = print_ir_optimized_arg,
@@ -292,7 +307,6 @@ void cliMain(std::span<const char*> argv) {
             !force_run_arg &&
             (explain_arg || print_ast_arg || print_bound_arg || print_ir_unoptimized_arg ||
              print_ir_optimized_arg || print_optimization_report_arg),
-        .optimization_passes = optimize_passes_arg,
         .explain = explain_arg,
         .num_threads = threads_arg,
         .keep_output_order = keep_output_order_arg,

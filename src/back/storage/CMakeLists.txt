@@ -14,6 +14,7 @@ target_link_libraries(
     lsql-back-storage PUBLIC
     lsql-util
     lsql-core
+    lsql-config
     libcoro
     ZLIB::ZLIB
     Threads::Threads

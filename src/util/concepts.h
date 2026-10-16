@@ -29,4 +29,7 @@ concept EqualityComparable = requires(const T& l, const T& r) {
 template <typename T>
 concept NotEqualityComparable = !EqualityComparable<T>;
 
+template <typename E>
+concept Enum = std::is_enum_v<E>;
+
 }  // namespace lsql::util

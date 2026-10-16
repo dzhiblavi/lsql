@@ -16,5 +16,6 @@ target_link_libraries(
     lsql-optimize PUBLIC
     lsql-ir
     lsql-core
+    lsql-config
     reflectcpp
 )

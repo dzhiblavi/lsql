@@ -3,8 +3,14 @@ include(${CMAKE_SOURCE_DIR}/cmake/GenerateDsym.cmake)
 find_package(tclap REQUIRED)
 find_package(magic_enum REQUIRED)
 
-add_executable(lsql lsql.cpp)
+add_executable(
+    lsql
+    lsql.cpp
+    settings.cpp
+)
+
 generate_dsym(lsql)
+
 target_link_libraries(
     lsql PRIVATE
     tclap::tclap

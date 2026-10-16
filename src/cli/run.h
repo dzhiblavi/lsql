@@ -13,6 +13,8 @@
 #include "ir/Stringifier.h"
 #include "optimize/optimize.h"
 
+#include "config/optimizer_settings.h"
+
 #include "core/exceptions.h"
 
 #include "util/ThreadPool.h"
@@ -66,7 +68,6 @@ struct Settings {
     bool dump_flamegraphs;
     bool dump_dot_graph;
     bool is_diagnostic;
-    unsigned optimization_passes;
     bool explain;
     unsigned num_threads;
     bool keep_output_order;
@@ -144,7 +145,7 @@ inline ir::Program optimize(ir::Program ir, const Settings& s) {
     }
 
     opt::Context opt_ctx;
-    for (unsigned i = 0; i < s.optimization_passes; ++i) {
+    for (unsigned i = 0; i < config::optimizer().get(config::OptimizerSetting::Passes); ++i) {
         ir = opt::optimize(std::move(ir), opt_ctx);
 
         if (!opt_ctx.changes()) {

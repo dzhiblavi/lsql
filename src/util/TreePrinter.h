@@ -58,8 +58,7 @@ struct TreePrinter {
         return v.has_value() ? call(*v) : StrBuilder();
     }
 
-    template <typename E>
-    requires(std::is_enum_v<E>)
+    template <Enum E>
     StrBuilder print(E e) {
         return StrBuilder(std::string(magic_enum::enum_name(e)));
     }

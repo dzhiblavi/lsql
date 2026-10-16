@@ -1,17 +1,17 @@
 #include "back/exec/phys/log/search/SearchTimestamp.h"
 #include "back/exec/phys/log/search/SearchRegex.h"
 
-#include "config/build_settings.h"
+#include "config/storage_settings.h"
 #include "core/exceptions.h"
 
 #include <algorithm>
-#include <array>
 #include <iterator>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <vector>
 
 namespace lsql::back::exec::phys {
 
@@ -33,7 +33,8 @@ std::optional<char> readChar(const back::storage::File& file, size_t offset) {
     return ch;
 }
 
-std::optional<size_t> findLineBegin(const back::storage::File& file, size_t offset) {
+std::optional<size_t> findLineBegin(
+    const back::storage::File& file, size_t offset, std::span<char> buffer) {
     if (offset >= file.size()) {
         return std::nullopt;
     }
@@ -47,7 +48,6 @@ std::optional<size_t> findLineBegin(const back::storage::File& file, size_t offs
         return offset;
     }
 
-    std::array<char, config::Storage::TimestampSearchBufferSize> buffer{};
     while (offset > 0) {
         size_t chunk_begin = offset > buffer.size() ? offset - buffer.size() : 0;
         size_t chunk_size = offset - chunk_begin;
@@ -66,8 +66,7 @@ std::optional<size_t> findLineBegin(const back::storage::File& file, size_t offs
     return 0;
 }
 
-Line readLine(const back::storage::File& file, size_t begin) {
-    std::array<char, config::Storage::TimestampSearchBufferSize> buffer{};
+Line readLine(const back::storage::File& file, size_t begin, std::span<char> buffer) {
     std::string text;
     size_t offset = begin;
 
@@ -95,13 +94,14 @@ Line readLine(const back::storage::File& file, size_t begin) {
     return Line{.begin = begin, .next_begin = file.size(), .text = std::move(text)};
 }
 
-std::optional<Line> readLineAt(const back::storage::File& file, size_t offset) {
-    auto begin = findLineBegin(file, offset);
+std::optional<Line> readLineAt(
+    const back::storage::File& file, size_t offset, std::span<char> buffer) {
+    auto begin = findLineBegin(file, offset, buffer);
     if (!begin) {
         return std::nullopt;
     }
 
-    return readLine(file, *begin);
+    return readLine(file, *begin, buffer);
 }
 
 timestamp_t lineTimestamp(std::string_view line, TimeFormat format) {
@@ -120,10 +120,12 @@ size_t boundLine(
     size_t begin = 0;
     size_t end = file.size();
     size_t answer = std::string::npos;
+    std::vector<char> buffer(
+        config::storage().get(config::StorageSetting::TimestampSearchBufferSize));
 
     while (begin < end) {
         size_t mid = begin + (end - begin) / 2;
-        auto line = readLineAt(file, mid);
+        auto line = readLineAt(file, mid, buffer);
 
         if (!line) {
             end = mid;

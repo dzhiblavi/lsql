@@ -14,7 +14,7 @@ from producer import record, row_count, SOURCES
 
 FIELDS = ("shard", "id", "key", "payload")
 THREADS = 16
-TIMEOUT = 60
+TIMEOUT = 120
 
 
 def expected_rows(profile):

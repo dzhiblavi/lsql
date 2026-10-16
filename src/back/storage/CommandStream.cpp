@@ -1,6 +1,6 @@
 #include "back/storage/CommandStream.h"
 
-#include "config/build_settings.h"
+#include "config/storage_settings.h"
 #include "core/exceptions.h"
 #include "util/logging.h"
 
@@ -17,6 +17,7 @@
 #include <tuple>
 #include <unistd.h>
 #include <utility>
+#include <vector>
 
 namespace lsql::back::storage {
 
@@ -148,7 +149,8 @@ class CommandStream : public Stream {
     }
 
     void drainStderr() {
-        std::array<char, config::Storage::CommandStderrBufferSize> buf{};
+        std::vector<char> buf(
+            config::storage().get(config::StorageSetting::CommandStderrBufferSize));
         while (true) {
             auto n = ::read(stderr_fd_.get(), buf.data(), buf.size());
             if (n > 0) {
@@ -170,8 +172,10 @@ class CommandStream : public Stream {
     void appendStderr(std::string_view data) {
         std::lock_guard lock(stderr_mutex_);
         stderr_.append(data);
-        if (stderr_.size() > config::Storage::CommandStderrTailSize) {
-            stderr_.erase(0, stderr_.size() - config::Storage::CommandStderrTailSize);
+        const size_t tail_size =
+            config::storage().get(config::StorageSetting::CommandStderrTailSize);
+        if (stderr_.size() > tail_size) {
+            stderr_.erase(0, stderr_.size() - tail_size);
         }
     }
 

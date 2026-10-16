@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 project(
     logsql
-    VERSION 0.0.4
+    VERSION 0.0.3
     LANGUAGES CXX)
 
 set(BUILD_SHARED_LIBS OFF)
