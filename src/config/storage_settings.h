@@ -22,7 +22,7 @@ struct StorageSettings : DynamicSettings<StorageSetting, StorageSettings> {
         set(TimestampSearchBufferSize, 8 * 1024);
         set(ArchiveInputChunkSize, 64 * 1024);
         set(StreamReadChunkSize, 64 * 1024);
-        set(PageSizeMultiplier, 2);
+        set(PageSizeMultiplier, 4096);
         set(CommandStderrBufferSize, 4 * 1024);
         set(CommandStderrTailSize, 16 * 1024);
     }
