@@ -1,12 +1,17 @@
 # Release notes
 
-## 2026-10-15
+## v0.0.3
+
+- Hardening tests and frontend bug fixes.
+- `--no-buffer` flag support.
+
+## v0.0.2
 
 - Removed pipe frontend.
 - Added simplistic JOIN support.
 - Applied minor fixes related to corner cases and diagnostics.
 
-## 2026-09-08 — JSON value extraction
+## v0.0.1
 
 Commit: `36e29c5a9e8fd8a0e3be066add8d7e3be34d08d3`
 

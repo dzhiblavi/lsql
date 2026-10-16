@@ -25,7 +25,42 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         return std::move(self);
     }
 
-    ir::Relation pruneUnion(auto& rel, auto& self) {
+    ir::Relation prune(ir::ProjectionRelation& rel, auto& self) { return pruneSimple(rel, self); }
+    ir::Relation prune(ir::AggregateRelation& /*rel*/, auto& self) { return std::move(self); }
+    ir::Relation prune(ir::GroupRelation& rel, auto& self) { return pruneSimple(rel, self); }
+    ir::Relation prune(ir::FilterRelation& rel, auto& self) { return pruneSimple(rel, self); }
+    ir::Relation prune(ir::SortRelation& rel, auto& self) { return pruneSimple(rel, self); }
+    ir::Relation prune(ir::MaterializeRelation& rel, auto& self) { return pruneSimple(rel, self); }
+
+    ir::Relation prune(ir::UnionAllRelation& rel, auto& self) {
+        std::vector<ir::Relation> non_empty;
+
+        for (auto&& src : rel.sources) {
+            if (!isEmpty(src)) {
+                non_empty.push_back(std::move(src));
+            }
+        }
+
+        if (non_empty.empty()) {
+            ctx.setChanges().note("all union-all sources are empty");
+            self.node = ir::EmptyRelation{};
+            return std::move(self);
+        }
+
+        if (non_empty.size() == 1) {
+            ctx.setChanges().note("only one union-all source is not empty");
+            return std::move(non_empty[0]);
+        }
+
+        if (non_empty.size() != rel.sources.size()) {
+            ctx.setChanges().note("some of union-all sources are empty");
+        }
+
+        rel.sources = std::move(non_empty);
+        return std::move(self);
+    }
+
+    ir::Relation prune(ir::UnionAllSortedByRelation& rel, auto& self) {
         if (isEmpty(*rel.left) && isEmpty(*rel.right)) {
             ctx.setChanges().note("empty union-all sources pruned");
             self.node = ir::EmptyRelation{};
@@ -43,19 +78,6 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         }
 
         return std::move(self);
-    }
-
-    ir::Relation prune(ir::ProjectionRelation& rel, auto& self) { return pruneSimple(rel, self); }
-    ir::Relation prune(ir::AggregateRelation& /*rel*/, auto& self) { return std::move(self); }
-    ir::Relation prune(ir::GroupRelation& rel, auto& self) { return pruneSimple(rel, self); }
-    ir::Relation prune(ir::FilterRelation& rel, auto& self) { return pruneSimple(rel, self); }
-    ir::Relation prune(ir::SortRelation& rel, auto& self) { return pruneSimple(rel, self); }
-    ir::Relation prune(ir::MaterializeRelation& rel, auto& self) { return pruneSimple(rel, self); }
-
-    ir::Relation prune(ir::UnionAllRelation& rel, auto& self) { return pruneUnion(rel, self); }
-
-    ir::Relation prune(ir::UnionAllSortedByRelation& rel, auto& self) {
-        return pruneUnion(rel, self);
     }
 
     ir::Relation prune(ir::TopKRelation& rel, auto& self) {

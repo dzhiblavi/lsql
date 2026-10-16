@@ -105,8 +105,7 @@ struct TopK {
 };
 
 struct UnionAll {
-    Arc<Operation> left;
-    Arc<Operation> right;
+    std::vector<Arc<Operation>> sources;
 };
 
 struct Values {

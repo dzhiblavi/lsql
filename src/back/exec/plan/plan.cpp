@@ -147,8 +147,11 @@ void init(TopK& node, Arc<Operation> op, int phase) {
 
 void init(UnionAll& node, Arc<Operation> op, int phase) {
     auto upstream = op->required_fields[phase];
-    requestOutput(node.left, phase, upstream);
-    requestOutput(node.right, phase, upstream);
+    require(node.sources.size() == 2, "only 2 union-all sources is supported");
+
+    for (auto&& src : node.sources) {
+        requestOutput(src, phase, upstream);
+    }
 }
 
 void init(Values& /*node*/, Arc<Operation> /*op*/, int /*phase*/) {
@@ -410,17 +413,18 @@ class Planner {
     }
 
     Arc<Operation> planRelation(ir::UnionAllRelation r, auto& info) {
-        auto left = planRelation(std::move(*r.left));
-        auto right = planRelation(std::move(*r.right));
+        int min_phase = 0;
+
+        std::vector<Arc<Operation>> sources;
+        for (auto&& src : r.sources) {
+            sources.push_back(planRelation(std::move(src)));
+            min_phase = std::max(min_phase, sources.back()->min_phase);
+        }
 
         return arc(
             Operation{
-                .node =
-                    UnionAll{
-                        .left = left,
-                        .right = right,
-                    },
-                .min_phase = std::max(left->min_phase, right->min_phase),
+                .node = UnionAll{.sources = std::move(sources)},
+                .min_phase = min_phase,
                 .schema = info.schema,
             });
     }

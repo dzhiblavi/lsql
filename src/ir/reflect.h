@@ -186,9 +186,7 @@ struct Reflect<LeftJoinRelation> {
 
 template <>
 struct Reflect<UnionAllRelation> {
-    static auto childNodes() {
-        return std::make_tuple(&UnionAllRelation::left, &UnionAllRelation::right);
-    }
+    static auto childNodes() { return std::make_tuple(&UnionAllRelation::sources); }
     static auto fields() { return std::make_tuple(); }
 };
 

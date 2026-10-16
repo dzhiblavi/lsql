@@ -10,8 +10,8 @@ namespace {
 struct Optimizer : ir::ConsumePass<Optimizer> {
     Context& ctx;
 
-    void ensureLimited(ir::LimitRelation& lim, Box<ir::Relation>& node, auto label, auto name) {
-        if (auto* limit = std::get_if<ir::LimitRelation>(&node->node)) {
+    void ensureLimited(ir::LimitRelation& lim, ir::Relation& node, auto label, auto name) {
+        if (auto* limit = std::get_if<ir::LimitRelation>(&node.node)) {
             if (limit->limit > lim.limit) {
                 ctx.setChanges().note("limit({}(L, R), N): re-limit {} by N", label, name);
                 limit->limit = lim.limit;
@@ -19,7 +19,7 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
             return;
         }
 
-        if (auto* topk = std::get_if<ir::TopKRelation>(&node->node)) {
+        if (auto* topk = std::get_if<ir::TopKRelation>(&node.node)) {
             if (topk->top_count > lim.limit) {
                 ctx.setChanges().note("limit({}(L, R), N): re-topk {} by N", label, name);
                 topk->top_count = lim.limit;
@@ -28,12 +28,11 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         }
 
         ctx.setChanges().note("limit({}(L, R), N): limit {} by N", label, name);
-        auto schema = node->schema;
-        node =
-            box(ir::Relation{
-                .node = ir::LimitRelation{.source = std::move(node), .limit = lim.limit},
-                .schema = schema,
-            });
+        auto schema = node.schema;
+        node = ir::Relation{
+            .node = ir::LimitRelation{.source = box(std::move(node)), .limit = lim.limit},
+            .schema = schema,
+        };
     }
 
     ir::Relation pushdown(auto& lim, ir::ProjectionRelation& src, auto& self) {
@@ -85,15 +84,16 @@ struct Optimizer : ir::ConsumePass<Optimizer> {
         return std::move(self);
     }
 
-    ir::Relation pushdown(auto& lim, ir::UnionAllRelation& src, auto& self) {
-        ensureLimited(lim, src.left, "union_all", "L");
-        ensureLimited(lim, src.right, "union_all", "R");
+    ir::Relation pushdown(auto& lim, ir::UnionAllRelation& u, auto& self) {
+        for (auto&& src : u.sources) {
+            ensureLimited(lim, src, "union_all", "C");
+        }
         return std::move(self);
     }
 
     ir::Relation pushdown(auto& lim, ir::UnionAllSortedByRelation& src, auto& self) {
-        ensureLimited(lim, src.left, "union_all_sorted_by", "L");
-        ensureLimited(lim, src.right, "union_all_sorted_by", "R");
+        ensureLimited(lim, *src.left, "union_all_sorted_by", "L");
+        ensureLimited(lim, *src.right, "union_all_sorted_by", "R");
         return std::move(self);
     }
 

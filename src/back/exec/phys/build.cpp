@@ -270,13 +270,18 @@ struct Builder {
     }
 
     void build(const plan::UnionAll& n, const plan::Operation& op) {
-        build(*n.left);
-        build(*n.right);
+        verify(n.sources.size() == 2);
+
+        for (auto&& src : n.sources) {
+            build(*src);
+        }
 
         for (auto&& [phase, _] : op.required_fields) {
             auto un = arc<UnionAll>(op.id);
-            get(*n.left, phase)->output(un->subLeft());
-            get(*n.right, phase)->output(un->subRight());
+
+            get(*n.sources[0], phase)->output(un->subLeft());
+            get(*n.sources[1], phase)->output(un->subRight());
+
             insert(op, phase, un);
         }
     }

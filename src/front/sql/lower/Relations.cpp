@@ -402,12 +402,12 @@ ir::Relation lowerToIR(bound::UnionAllRelation r, auto& /*info*/, Context& ctx) 
     verify(left.schema == right.schema);
     auto schema = left.schema;
 
+    std::vector<ir::Relation> rels;
+    rels.push_back(std::move(left));
+    rels.push_back(std::move(right));
+
     return {
-        .node =
-            ir::UnionAllRelation{
-                .left = box(std::move(left)),
-                .right = box(std::move(right)),
-            },
+        .node = ir::UnionAllRelation{.sources = std::move(rels)},
         .schema = schema,
     };
 }

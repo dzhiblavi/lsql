@@ -79,8 +79,7 @@ struct MarkJoinRelation {
 };
 
 struct UnionAllRelation {
-    Box<Relation> left;
-    Box<Relation> right;
+    std::vector<Relation> sources;
 };
 
 struct LeftJoinRelation {
