@@ -25,7 +25,7 @@ jobs:
         run: echo "$(brew --prefix llvm@20)/bin" >> "$GITHUB_PATH"
 
       - name: Build and test
-        run: make PROFILE=armv8-macos BUILD_TYPE=Release test
+        run: make PROFILE=armv8-macos BUILD_TYPE=Release test args="-LE hardening"
 
       - name: Name release binaries
         run: |

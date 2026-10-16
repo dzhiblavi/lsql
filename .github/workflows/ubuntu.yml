@@ -19,7 +19,7 @@ jobs:
         run: make build-docker-linux-builder
 
       - name: Build and test
-        run: make PROFILE=amd64-linux.docker build-docker-linux-Release
+        run: make PROFILE=amd64-linux.docker build-docker-linux-Release args="-LE hardening"
 
       - name: Package Linux amd64 release binaries
         run: |

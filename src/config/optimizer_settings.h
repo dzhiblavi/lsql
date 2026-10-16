@@ -42,26 +42,7 @@ struct OptimizerSettings : DynamicSettings<OptimizerSetting, OptimizerSettings> 
     }
 
     void validate(OptimizerSetting setting, int64_t value) {
-        switch (setting) {
-            using enum OptimizerSetting;
-
-            case Passes:
-            case CoalesceCostOverhead:
-            case LowerCostOverhead:
-            case SplitPartCostOverhead:
-            case SubstrCostOverhead:
-            case ParseTimestampCostOverhead:
-            case JSONValueCostOverhead:
-            case UnaryOpCostOverhead:
-            case BinaryOpCostOverhead:
-            case CastToStringCostOverhead:
-            case ParseStringCostOverhead:
-            case RegexCostOverhead:
-            case ProjectionCostOverhead:
-                require(
-                    value >= 0, "value for {} cannot be negative", magic_enum::enum_name(setting));
-                break;
-        }
+        require(value >= 0, "value for {} cannot be negative", magic_enum::enum_name(setting));
     }
 };
 

@@ -59,6 +59,7 @@ build-docker-linux-builder:
 
 build-docker-linux-%: _require_docker_linux_profile _prepare_output_dir
 	docker run --rm                         \
+		-e "args=$(args)"                   \
 		-v $(shell pwd):/build/lsql           \
 		-v $(shell pwd)/output:/output         \
 		logsql-builder:latest $(PROFILE) $*
