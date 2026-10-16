@@ -1,5 +1,8 @@
 #include "optimize/projection_collapse.h"
-#include "ir/pass.h"
+
+#include "ir/Aggregates.h"  // IWYU pragma: keep
+#include "ir/Relations.h"
+#include "ir/Scalars.h"
 
 #include "config/build_settings.h"
 #include "util/TreeWalker.h"
@@ -11,10 +14,19 @@ namespace lsql::opt {
 
 namespace {
 
-struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
+struct ScalarCostEstimator : util::TreeWalker<ScalarCostEstimator> {
     using Optimizer = config::Optimizer;
+    using Base = util::TreeWalker<ScalarCostEstimator>;
+    using Base::visit;
 
     virtual ~ScalarCostEstimator() = default;
+    virtual int view(const ir::FieldScalar&) = 0;
+
+    void visit(const ir::Scalar& s) {
+        Base::visit(s);
+        auto cost = std::visit([&](const auto& c) { return view(c); }, s.node);
+        setScalarCost(&s, cost);
+    }
 
     int cost(FieldId id) const {
         auto it = cost_.find(id);
@@ -22,17 +34,21 @@ struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
         return it->second;
     }
 
-    virtual int view(const ir::FieldScalar&, const ir::Scalar& self) = 0;
+    int view(const ir::ValueScalar&) { return 0; }
 
-    int view(const ir::ValueScalar&, auto&) { return 0; }
-
-    int view(const ir::CoalesceScalar& /*s*/, auto& /*self*/, auto args) {
-        int cost = std::ranges::fold_left(args, 0, std::plus());
-        return cost + Optimizer::CoalesceCostOverhead;
+    int view(const ir::CoalesceScalar& s) {
+        int cost = Optimizer::CoalesceCostOverhead;
+        for (auto&& child : s.args) {
+            cost += scalarCost(&child);
+        }
+        return cost;
     }
 
-    int view(const ir::FnCallScalar& s, auto&, auto args) {
-        int cost = std::ranges::fold_left(args, 0, std::plus());
+    int view(const ir::FnCallScalar& s) {
+        int cost = 0;
+        for (auto&& child : s.args) {
+            cost += scalarCost(&child);
+        }
 
         util::match(
             s.function,
@@ -78,8 +94,9 @@ struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
         return cost;
     }
 
-    void estimateProjector(FieldId id, const auto& s) {
-        int cost = pass(s);
+    void estimateProjector(FieldId id, const ir::Scalar& s) {
+        visit(s);
+        auto cost = scalarCost(&s);
         cost_[id] = cost;
         total_cost_ += cost;
     }
@@ -87,48 +104,86 @@ struct ScalarCostEstimator : ir::ScalarViewPass<ScalarCostEstimator, int> {
     int totalCost() const { return total_cost_; }
 
  protected:
+    int setScalarCost(const ir::Scalar* s, int cost) {
+        verify(!scalar_cost_.contains(s));
+        return scalar_cost_[s] = cost;
+    }
+
+    int scalarCost(const ir::Scalar* s) const {
+        verify(scalar_cost_.contains(s));
+        return scalar_cost_.at(s);
+    }
+
     int total_cost_ = 0;
+    std::unordered_map<const ir::Scalar*, int> scalar_cost_;
     std::unordered_map<FieldId, int> cost_;
 };
 
 struct RawScalarCostEstimator : ScalarCostEstimator {
-    int view(const ir::FieldScalar&, const ir::Scalar&) override { return 0; }
+    int view(const ir::FieldScalar&) override { return 0; }
 };
 
 struct ScalarCollapseCostEstimator : ScalarCostEstimator {
     const ScalarCostEstimator* inner = nullptr;
-
-    int view(const ir::FieldScalar& outer, const ir::Scalar&) override {
-        return inner->cost(outer.field_id);
-    }
+    int view(const ir::FieldScalar& outer) override { return inner->cost(outer.field_id); }
 };
 
-struct CloneScalarView : ir::ScalarViewPass<CloneScalarView, ir::Scalar> {
+struct CloneScalarView : util::TreeWalker<CloneScalarView> {
+    using Base = util::TreeWalker<CloneScalarView>;
+    using Base::visit;
+
     virtual ~CloneScalarView() = default;
+
+    void visit(const ir::Scalar& s) {
+        Base::visit(s);
+        auto scalar = std::visit([&](const auto& node) { return view(node, s); }, s.node);
+        verify(scalars_.emplace(&s, std::move(scalar)).second);
+    }
 
     virtual ir::Scalar view(const ir::FieldScalar& s, const ir::Scalar& self) {
         return {.node = s, .value_type = self.value_type};
     }
 
-    ir::Scalar view(const ir::ValueScalar& s, auto& self) {
+    ir::Scalar view(const ir::ValueScalar& s, const ir::Scalar& self) {
         return ir::Scalar{.node = s, .value_type = self.value_type};
     }
 
-    ir::Scalar view(const ir::CoalesceScalar& /*s*/, auto& self, auto args) {
+    ir::Scalar view(const ir::CoalesceScalar& s, const ir::Scalar& self) {
         return ir::Scalar{
-            .node = ir::CoalesceScalar{.args = std::move(args)},
+            .node = ir::CoalesceScalar{.args = takeArgs(s.args)},
             .value_type = self.value_type,
         };
     }
 
-    ir::Scalar view(const ir::FnCallScalar& s, auto& self, auto args) {
+    ir::Scalar view(const ir::FnCallScalar& s, const ir::Scalar& self) {
         return ir::Scalar{
-            .node = ir::FnCallScalar{.function = s.function, .args = std::move(args)},
+            .node = ir::FnCallScalar{.function = s.function, .args = takeArgs(s.args)},
             .value_type = self.value_type,
         };
     }
 
-    ir::Scalar clone(const ir::Scalar& s) { return pass(s); }
+    ir::Scalar clone(const ir::Scalar& s) {
+        visit(s);
+        return takeScalar(&s);
+    }
+
+ private:
+    ir::Scalar takeScalar(const ir::Scalar* s) {
+        auto scalar = scalars_.extract(s);
+        verify(!scalar.empty());
+        return std::move(scalar.mapped());
+    }
+
+    std::vector<ir::Scalar> takeArgs(const std::vector<ir::Scalar>& args) {
+        std::vector<ir::Scalar> result;
+        result.reserve(args.size());
+        for (const auto& arg : args) {
+            result.push_back(takeScalar(&arg));
+        }
+        return result;
+    }
+
+    std::unordered_map<const ir::Scalar*, ir::Scalar> scalars_;
 };
 
 struct ScalarCollapser : CloneScalarView {
@@ -141,7 +196,7 @@ struct ScalarCollapser : CloneScalarView {
         return clone.clone(*it->second);
     }
 
-    ir::Scalar collapse(const ir::Scalar& s) { return pass(s); }
+    ir::Scalar collapse(const ir::Scalar& s) { return CloneScalarView::clone(s); }
 };
 
 struct Optimizer : util::TreeWalker<Optimizer> {

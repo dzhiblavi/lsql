@@ -1,7 +1,9 @@
 #include "optimize/relation_simplify.h"
-#include "ir/Aggregates.h"
+
+#include "ir/Aggregates.h"  // IWYU pragma: keep
 #include "ir/Relations.h"
 #include "ir/Scalars.h"
+
 #include "util/TreeWalker.h"
 #include "util/logging.h"
 
