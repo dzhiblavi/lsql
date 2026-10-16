@@ -1,6 +1,7 @@
-#include "ir/equal.h"
 #include "optimize/optimize.h"
 #include "tests/unit/optimize/IR.h"
+
+#include "util/equal.h"
 
 #include <catch2/catch_all.hpp>
 
@@ -23,7 +24,7 @@ TEST_CASE("Min over constant scalar is folded to constant aggregate") {
             test::schema({test::Output})));
 
     CHECK(ctx.changes());
-    CHECK(ir::equal(optimized.statements, expected.statements));
+    CHECK(util::equal(optimized.statements, expected.statements));
 }
 
 }  // namespace lsql::opt

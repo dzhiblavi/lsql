@@ -1,7 +1,8 @@
-#include "ir/equal.h"
 #include "optimize/optimize.h"
 #include "optimize/relation_simplify.h"
 #include "tests/unit/optimize/IR.h"
+
+#include "util/equal.h"
 
 #include <catch2/catch_all.hpp>
 
@@ -18,7 +19,7 @@ TEST_CASE("Constant true filter is removed") {
     auto expected = test::query(test::file());
 
     CHECK(ctx.changes());
-    CHECK(ir::equal(optimized.statements, expected.statements));
+    CHECK(util::equal(optimized.statements, expected.statements));
 }
 
 TEST_CASE("Nested UNION ALL is flattened in one pass preserving order and duplicates") {
@@ -41,13 +42,13 @@ TEST_CASE("Nested UNION ALL is flattened in one pass preserving order and duplic
     auto optimized = relationSimplify(std::move(input), ctx);
 
     CHECK(ctx.changes());
-    CHECK(ir::equal(optimized.statements, expected.statements));
+    CHECK(util::equal(optimized.statements, expected.statements));
 
     ctx.nextPass();
     optimized = relationSimplify(std::move(optimized), ctx);
 
     CHECK_FALSE(ctx.changes());
-    CHECK(ir::equal(optimized.statements, expected.statements));
+    CHECK(util::equal(optimized.statements, expected.statements));
 }
 
 }  // namespace lsql::opt
