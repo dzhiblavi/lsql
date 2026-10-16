@@ -68,6 +68,12 @@ TCLAP::SwitchArg keep_output_order_arg{
     "buffer outputs to print them in query order",
 };
 
+TCLAP::SwitchArg no_buffer_arg{
+    "",
+    "no-buffer",
+    "disable per-query output buffering",
+};
+
 TCLAP::ValueArg<std::string> time_from_arg{
     "",
     "time-from",
@@ -171,6 +177,7 @@ bool parseArgs(std::span<const char*> argv) {
     cmd.add(&format_arg);
     cmd.add(&log_level_arg);
     cmd.add(&keep_output_order_arg);
+    cmd.add(&no_buffer_arg);
     cmd.add(&force_run_arg);
     cmd.add(&explain_arg);
     cmd.add(&print_ast_arg);
@@ -265,6 +272,15 @@ void cliMain(std::span<const char*> argv) {
     auto format = magic_enum::enum_cast<output::Format>(format_arg.getValue());
     require(format.has_value(), "invalid value for format: {}", format_arg.getValue());
 
+    require(
+        !(no_buffer_arg && keep_output_order_arg),
+        "cannot use keep out ourder and no buffer args together");
+
+    if (no_buffer_arg) {
+        require(
+            format != output::Format::PrettyTable, "pretty table is incompatible with --no-buffer");
+    }
+
     auto settings = Settings{
         .print_optimization_report = print_optimization_report_arg,
         .print_ir_optimized = print_ir_optimized_arg,
@@ -280,6 +296,7 @@ void cliMain(std::span<const char*> argv) {
         .explain = explain_arg,
         .num_threads = threads_arg,
         .keep_output_order = keep_output_order_arg,
+        .no_buffer = no_buffer_arg,
         .out_format = *format,
         .default_time_range = defaultTimeRange(),
     };

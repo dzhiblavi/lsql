@@ -43,6 +43,7 @@ Run it with:
 -l, --log-level           Trace, Debug, Info, Warn, Err, Critical, Off
 -j, --threads             max worker threads
 -k, --keep-output-order   buffer output groups and print them in query order
+--no-buffer               disable per-query output buffering
 --time-from               default lower timestamp, ISO8601
 --time-to                 default upper timestamp, ISO8601
 -o, --optimize-passes     number of optimization passes; default 5
@@ -109,3 +110,7 @@ Supported output formats:
 Multiple top-level queries produce multiple output groups. The order of those
 groups is unspecified by default. Use `--keep-output-order` to buffer output
 groups and print them in query order.
+
+Use `--no-buffer` to avoid buffering the complete result of a single top-level
+query. It supports JSON, TSKV, and CSVHeader; it cannot be combined with
+`--keep-output-order` or PrettyTable. Standard stdout buffering is retained.

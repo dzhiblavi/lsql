@@ -35,4 +35,16 @@ class OrderedSink {
     State state_;
 };
 
+class SimpleSink {
+ public:
+    SimpleSink(std::ostream* os, std::mutex* lock);
+
+    void push(std::string_view s);
+    void done();
+
+ private:
+    std::ostream* os_;
+    std::mutex* m_;
+};
+
 }  // namespace lsql::util

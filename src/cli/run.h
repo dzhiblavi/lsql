@@ -13,8 +13,10 @@
 #include "ir/Stringifier.h"
 #include "optimize/optimize.h"
 
-#include "util/OrderedSink.h"
+#include "core/exceptions.h"
+
 #include "util/ThreadPool.h"
+#include "util/sinks.h"
 
 #include <fstream>
 #include <latch>
@@ -68,6 +70,7 @@ struct Settings {
     bool explain;
     unsigned num_threads;
     bool keep_output_order;
+    bool no_buffer;
     output::Format out_format;
     std::optional<TimeRange> default_time_range;
 };
@@ -162,6 +165,41 @@ inline ir::Program optimize(ir::Program ir, const Settings& s) {
     return ir;
 }
 
+template <typename Sink>
+Box<Sink> addSink(auto& sinks, std::mutex* lock, const Settings& s) {
+    if constexpr (std::same_as<Sink, util::OrderedSink>) {
+        auto sink = box<util::OrderedSink>(&std::cout, lock, s.keep_output_order && !sinks.empty());
+        if (!sinks.empty()) {
+            sinks.back()->setNext(sink.get());
+        }
+        return sink;
+    } else if constexpr (std::same_as<Sink, util::SimpleSink>) {
+        return box<util::SimpleSink>(&std::cout, lock);
+    }
+}
+
+template <typename Sink>
+void runWithSinks(auto& phys, ConstFieldBindingPtr binding, const Settings& s) {
+    std::mutex print_lock;
+    std::vector<Box<Sink>> sinks;
+    std::vector<Box<ConsumerBridge>> ops;
+
+    for (auto&& [schema, operation] : phys.top_operations) {
+        auto sink = addSink<Sink>(sinks, &print_lock, s);
+        auto consumer = box<ConsumerBridge>(
+            schema, output::makeConsumer<Sink>(sink.get(), s.out_format, binding, schema));
+
+        operation->output(consumer.get());
+        ops.push_back(std::move(consumer));
+        sinks.push_back(std::move(sink));
+    }
+
+    util::ThreadPool pool(s.num_threads);
+    run(phys, pool, s);
+    pool.stop();
+    pool.join();
+}
+
 inline void run(ir::Program ir, Settings s) {
     auto profiling_enabled = s.dump_flamegraphs || s.dump_dot_graph || s.dump_profile;
 
@@ -183,6 +221,10 @@ inline void run(ir::Program ir, Settings s) {
         std::cout << back::exec::plan::Stringifier().print(plan) << std::endl;
     }
 
+    require(
+        !s.no_buffer || plan.top_operations.size() <= 1,
+        "can't use no buffer mode with more than one output");
+
     if (s.is_diagnostic) {
         prof::setGlobalProfiler(nullptr);
         return;
@@ -191,32 +233,12 @@ inline void run(ir::Program ir, Settings s) {
     llog::info("building physical operations");
     auto phys = back::exec::phys::build(plan);
 
-    std::mutex print_lock;
-    std::vector<Box<util::OrderedSink>> sinks;
-    std::vector<Box<ConsumerBridge>> ops;
-
-    for (auto&& [schema, operation] : phys.top_operations) {
-        auto sink =
-            box<util::OrderedSink>(&std::cout, &print_lock, s.keep_output_order && !sinks.empty());
-
-        if (!sinks.empty()) {
-            sinks.back()->setNext(sink.get());
-        }
-
-        auto consumer = box<ConsumerBridge>(
-            schema,
-            output::makeConsumer<util::OrderedSink>(
-                sink.get(), s.out_format, plan.field_binding, schema));
-
-        operation->output(consumer.get());
-        ops.push_back(std::move(consumer));
-        sinks.push_back(std::move(sink));
+    if (s.no_buffer) {
+        runWithSinks<util::SimpleSink>(phys, plan.field_binding, s);
+    } else {
+        runWithSinks<util::OrderedSink>(phys, plan.field_binding, s);
     }
 
-    util::ThreadPool pool(s.num_threads);
-    run(phys, pool, s);
-    pool.stop();
-    pool.join();
     prof::setGlobalProfiler(nullptr);
 }
 

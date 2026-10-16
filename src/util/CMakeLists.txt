@@ -8,7 +8,7 @@ add_library(
     PageSize.cpp
     thread.cpp
     uniq_id.cpp
-    OrderedSink.cpp
+    sinks.cpp
     logging.cpp
     instrument/duration.cpp
 )

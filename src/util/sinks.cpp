@@ -1,4 +1,4 @@
-#include "util/OrderedSink.h"
+#include "util/sinks.h"
 
 #include "util/verify.h"
 
@@ -64,6 +64,16 @@ void OrderedSink::prevCompleteLocked() {
         case DoneComplete:
             return;
     }
+}
+
+SimpleSink::SimpleSink(std::ostream* os, std::mutex* m) : os_(os), m_(m) {}
+
+void SimpleSink::push(std::string_view s) {
+    std::lock_guard lg(*m_);
+    *os_ << s << '\n';
+}
+
+void SimpleSink::done() {
 }
 
 }  // namespace lsql::util
