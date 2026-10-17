@@ -1,5 +1,12 @@
 # Release notes
 
+## v0.0.4
+
+- Filter pushdown through left join.
+- Filter pushdown through projections.
+- Filter pushdown through sorts.
+- Filter pushdown through unions.
+
 ## v0.0.3
 
 - Hardening tests and frontend bug fixes.
