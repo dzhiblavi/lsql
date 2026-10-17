@@ -141,3 +141,40 @@ FROM ('1.5', '2.5', 'bad') AS l
 LEFT JOIN ('1.5', 'bad') AS r
 ON Float(l.anon) = Float(r.anon)
 ORDER BY l.anon
+
+SELECT l.value AS left_value, r.value AS right_value, 36 AS test_index
+FROM input.1.txt AS l LEFT JOIN right.log AS r ON l.id = r.id
+WHERE l.id = 'a' OR l.id = 'c'
+ORDER BY l.value, r.value
+
+SELECT l.value AS value, r.id AS right_id, 37 AS test_index
+FROM input.1.txt AS l LEFT JOIN right.log AS r ON l.id = r.id
+WHERE r.id = null AND (l.value != 'left_null' AND l.value != 'left_b')
+ORDER BY l.value
+
+SELECT l.value AS left_value, r.value AS right_value, 38 AS test_index
+FROM input.1.txt AS l LEFT JOIN right.log AS r ON l.id = r.id
+WHERE (r.value = 'right_a2' OR r.id = null) AND l.value != 'left_b'
+ORDER BY l.value
+
+SELECT l.value AS left_value, r.value AS right_value, 39 AS test_index
+FROM input.1.txt AS l LEFT JOIN right.log AS r ON l.id = r.id
+WHERE l.id = 'b' OR r.value = 'right_a2'
+ORDER BY l.value
+
+SELECT l.value AS value, r.value AS right_value, 40 AS test_index
+FROM input.1.txt AS l LEFT JOIN right.log AS r ON l.id = r.id
+WHERE l.id = null
+
+SELECT l.value AS value, r.value AS right_value, 41 AS test_index
+FROM input.1.txt AS l LEFT JOIN right.log AS r ON l.id = r.id
+WHERE l.value = 'left_c' AND r.value = null
+
+SELECT l.value AS value, r.value AS right_value, t.value AS third_value, 42 AS test_index
+FROM input.1.txt AS l LEFT JOIN right.log AS r ON l.id = r.id
+LEFT JOIN right.log AS t ON r.id = t.id
+WHERE l.id = 'a' AND r.value = 'right_a2' AND t.value = 'right_a1'
+
+SELECT COUNT(*) AS rows, 43 AS test_index
+FROM input.1.txt AS l LEFT JOIN right.log AS r ON l.id = r.id
+WHERE l.value = 'absent' AND r.id = null
