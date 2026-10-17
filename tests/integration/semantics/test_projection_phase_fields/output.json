@@ -1,2 +1,17 @@
 {"action":"login","test_index":1}
 {"action":"read","test_index":1}
+
+{"chosen_id":"aaa","chosen_action":"login","test_index":2}
+
+{"uid":"ok","status":"aaa","test_index":3}
+
+{"first_uid":"aaa","second_uid":"aaa","test_index":4}
+{"first_uid":"ccc","second_uid":"ccc","test_index":4}
+
+{"user_id":"aaa","state":"ok","test_index":5}
+{"user_id":"ccc","state":"ok","test_index":5}
+
+{"rows":0,"test_index":6}
+
+{"user_id":"aaa","test_index":7}
+{"user_id":"login","test_index":7}
