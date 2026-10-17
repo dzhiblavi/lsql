@@ -60,4 +60,18 @@ TEST_CASE("Filter is pushed into the left input of LEFT JOIN") {
     CHECK(util::equal(optimized.statements, expected.statements));
 }
 
+TEST_CASE("Filter is pushed through sort") {
+    auto input = test::query(
+        test::filter(test::sort(test::file()), test::field(test::Timestamp, ValueType::Boolean)));
+    auto expected = test::query(
+        test::sort(test::filter(test::file(), test::field(test::Timestamp, ValueType::Boolean))));
+
+    Context ctx;
+    ctx.nextPass();
+    auto optimized = filterPushdown(std::move(input), ctx);
+
+    CHECK(ctx.changes());
+    CHECK(util::equal(optimized.statements, expected.statements));
+}
+
 }  // namespace lsql::opt

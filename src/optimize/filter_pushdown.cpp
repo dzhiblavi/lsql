@@ -141,6 +141,9 @@ struct Optimizer : util::TreeWalker<Optimizer> {
                 ctx.setChanges();
                 return;
             }
+        } else if (auto* sort = std::get_if<ir::SortRelation>(&filter->source->node)) {
+            addFilter(*sort->source, std::move(*filter->condition));
+            ctx.note("filter pushed through sort");
         } else {
             return;
         }
