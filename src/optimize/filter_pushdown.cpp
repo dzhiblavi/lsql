@@ -100,6 +100,67 @@ struct Optimizer : util::TreeWalker<Optimizer> {
         pushdown(source);
     }
 
+    void removeFilter(ir::FilterRelation& filter, ir::Relation& self) {
+        ctx.setChanges();
+        auto source = std::move(*filter.source);
+        self = std::move(source);
+    }
+
+    void pushdown(ir::FilterRelation& filter, ir::UnionAllRelation& union_all, ir::Relation& self) {
+        for (auto& source : union_all.sources) {
+            addFilter(source, *filter.condition);
+        }
+        ctx.note("filter pushed into union inputs");
+        removeFilter(filter, self);
+    }
+
+    void pushdown(
+        ir::FilterRelation& filter, ir::UnionAllSortedByRelation& merge, ir::Relation& self) {
+        addFilter(*merge.left, *filter.condition);
+        addFilter(*merge.right, *filter.condition);
+        ctx.note("filter pushed into sorted merge inputs");
+        removeFilter(filter, self);
+    }
+
+    void pushdown(
+        ir::FilterRelation& filter, ir::ProjectionRelation& projection, ir::Relation& self) {
+        FieldRebinder rebinder;
+        for (const auto& projector : projection.projectors) {
+            auto* field = std::get_if<ir::FieldScalar>(&projector.expr->node);
+            if (!field) {
+                return;
+            }
+            rebinder.fields.emplace(projector.alias_field_id, field->field_id);
+        }
+
+        rebinder.visit(*filter.condition);
+        addFilter(*projection.source, std::move(*filter.condition));
+        ctx.note("filter pushed through field projection");
+        removeFilter(filter, self);
+    }
+
+    void pushdown(ir::FilterRelation& filter, ir::LeftJoinRelation& join, ir::Relation& self) {
+        auto split = splitLeftCondition(*filter.condition, join.left->schema);
+        if (!split.left) {
+            return;
+        }
+
+        addFilter(*join.left, std::move(*split.left));
+        ctx.note("filter pushed into left join left input");
+        if (split.remaining) {
+            filter.condition = std::move(split.remaining);
+            ctx.setChanges();
+            return;
+        }
+        removeFilter(filter, self);
+    }
+
+    void pushdown(ir::FilterRelation& filter, ir::SortRelation& sort, ir::Relation& self) {
+        addFilter(*sort.source, std::move(*filter.condition));
+        ctx.note("filter pushed through sort");
+        removeFilter(filter, self);
+    }
+
     void pushdown(ir::Relation& self) {
         auto* filter = std::get_if<ir::FilterRelation>(&self.node);
         if (!filter) {
@@ -107,50 +168,16 @@ struct Optimizer : util::TreeWalker<Optimizer> {
         }
 
         if (auto* union_all = std::get_if<ir::UnionAllRelation>(&filter->source->node)) {
-            for (auto& source : union_all->sources) {
-                addFilter(source, *filter->condition);
-            }
-            ctx.note("filter pushed into union inputs");
+            pushdown(*filter, *union_all, self);
         } else if (auto* merge = std::get_if<ir::UnionAllSortedByRelation>(&filter->source->node)) {
-            addFilter(*merge->left, *filter->condition);
-            addFilter(*merge->right, *filter->condition);
-            ctx.note("filter pushed into sorted merge inputs");
+            pushdown(*filter, *merge, self);
         } else if (auto* projection = std::get_if<ir::ProjectionRelation>(&filter->source->node)) {
-            FieldRebinder rebinder;
-            for (const auto& projector : projection->projectors) {
-                auto* field = std::get_if<ir::FieldScalar>(&projector.expr->node);
-                if (!field) {
-                    return;
-                }
-                rebinder.fields.emplace(projector.alias_field_id, field->field_id);
-            }
-
-            rebinder.visit(*filter->condition);
-            addFilter(*projection->source, std::move(*filter->condition));
-            ctx.note("filter pushed through field projection");
+            pushdown(*filter, *projection, self);
         } else if (auto* join = std::get_if<ir::LeftJoinRelation>(&filter->source->node)) {
-            auto split = splitLeftCondition(*filter->condition, join->left->schema);
-            if (!split.left) {
-                return;
-            }
-
-            addFilter(*join->left, std::move(*split.left));
-            ctx.note("filter pushed into left join left input");
-            if (split.remaining) {
-                filter->condition = std::move(split.remaining);
-                ctx.setChanges();
-                return;
-            }
+            pushdown(*filter, *join, self);
         } else if (auto* sort = std::get_if<ir::SortRelation>(&filter->source->node)) {
-            addFilter(*sort->source, std::move(*filter->condition));
-            ctx.note("filter pushed through sort");
-        } else {
-            return;
+            pushdown(*filter, *sort, self);
         }
-
-        ctx.setChanges();
-        auto source = std::move(*filter->source);
-        self = std::move(source);
     }
 
     void visit(ir::Relation& self) {
