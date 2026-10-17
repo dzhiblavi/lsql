@@ -1,6 +1,7 @@
 add_unit_test(optimize/TestAggregateFold.cpp lsql-optimize)
 add_unit_test(optimize/TestConstFold.cpp lsql-optimize)
 add_unit_test(optimize/TestEmptyRelationPrune.cpp lsql-optimize)
+add_unit_test(optimize/TestFilterPushdown.cpp lsql-optimize)
 add_unit_test(optimize/TestLimitPushdown.cpp lsql-optimize)
 add_unit_test(optimize/TestProjectionCollapse.cpp lsql-optimize)
 add_unit_test(optimize/TestRelationSimplify.cpp lsql-optimize)

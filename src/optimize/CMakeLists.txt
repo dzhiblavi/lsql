@@ -8,6 +8,7 @@ target_sources(
     scalar_simplify.cpp
     projection_collapse.cpp
     empty_relation_prune.cpp
+    filter_pushdown.cpp
     limit_pushdown.cpp
     optimize.cpp
 )

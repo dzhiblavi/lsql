@@ -14,3 +14,16 @@
 
 {"anon":2,"test_index":4}
 {"anon":1,"test_index":4}
+
+{"anon":4,"test_index":5}
+{"anon":3,"test_index":5}
+{"anon":3,"test_index":5}
+{"anon":3,"test_index":5}
+
+{"anon":2,"test_index":6}
+{"anon":2,"test_index":6}
+{"anon":3,"test_index":6}
+{"anon":3,"test_index":6}
+{"anon":3,"test_index":6}
+
+{"rows":0,"test_index":7}

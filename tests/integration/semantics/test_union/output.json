@@ -29,3 +29,14 @@
 {"anon":1,"test_index":8}
 {"anon":2,"test_index":8}
 {"anon":3,"test_index":8}
+
+{"anon":1,"test_index":9}
+{"anon":1,"test_index":9}
+{"anon":1,"test_index":9}
+
+{"rows":0,"test_index":10}
+
+{"rows":0,"test_index":11}
+
+{"uid":"bbb","test_index":12}
+{"uid":"ddd","test_index":12}

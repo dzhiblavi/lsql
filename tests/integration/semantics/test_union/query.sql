@@ -48,3 +48,21 @@ FROM (SELECT anon FROM (1) WHERE false UNION ALL SELECT anon FROM (2) WHERE fals
 SELECT anon, 8 AS test_index
 FROM ((1, 1, 2) UNION ALL (1, 3))
 ORDER BY anon
+
+SELECT anon, 9 AS test_index
+FROM ((1, 1) UNION ALL (2) UNION ALL (1, 3))
+WHERE COALESCE(anon, 0) = 1
+ORDER BY anon
+
+SELECT COUNT(*) AS rows, 10 AS test_index
+FROM ((1, 2) UNION ALL (3, 4))
+WHERE anon > 10
+
+SELECT COUNT(*) AS rows, 11 AS test_index
+FROM (SELECT anon FROM ((1, 2) UNION ALL (3, 4)) ORDER BY anon LIMIT 2)
+WHERE anon > 2
+
+SELECT uid, 12 AS test_index
+FROM (input.1.txt UNION ALL input.2.txt)
+WHERE COALESCE(status, 'missing') = 'missing'
+ORDER BY uid
