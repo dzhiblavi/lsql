@@ -38,3 +38,10 @@
 {"anon":1,"test_index":13}
 
 {"rows":0,"test_index":14}
+
+{"anon":"15","test_index":15}
+{"anon":"15","test_index":15}
+
+{"anon":"bad","test_index":16}
+{"anon":"15","test_index":16}
+{"anon":"","test_index":16}

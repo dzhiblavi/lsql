@@ -8,6 +8,7 @@
 #include "util/deep_copy.h"
 
 #include <algorithm>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 
@@ -84,27 +85,33 @@ struct ExpressionCacher : util::TreeWalker<ExpressionCacher> {
     }
 };
 
-int64_t projectorsCost(const std::vector<ir::Projector>& projectors) {
+struct ScopeCostEstimator : util::TreeWalker<ScopeCostEstimator> {
+    using Base = util::TreeWalker<ScopeCostEstimator>;
+    using Base::visit;
+
     ScalarCostEstimator estimator;
-    for (const auto& projector : projectors) {
-        estimator.estimate(*projector.expr);
-    }
-    return estimator.totalCost();
+
+    void visit(const ir::Scalar& scalar) { estimator.estimate(scalar); }
+};
+
+int64_t scopeCost(const auto& scope) {
+    ScopeCostEstimator estimator;
+    estimator.visit(scope);
+    return estimator.estimator.totalCost();
 }
 
-void stripCache(std::vector<ir::Projector>& projectors) {
+void stripCache(auto& scope) {
     CacheStripper stripper;
-    stripper.visit(projectors);
+    stripper.visit(scope);
 }
 
-void buildCache(std::vector<ir::Projector>& projectors) {
-    ScalarCostEstimator estimator;
-    for (const auto& projector : projectors) {
-        estimator.estimate(*projector.expr);
-    }
+void buildCache(auto& scope) {
+    ScopeCostEstimator scope_estimator;
+    scope_estimator.visit(std::as_const(scope));
+    auto& estimator = scope_estimator.estimator;
 
     ExpressionCollector collector{.estimator = estimator, .indices = {}, .expressions = {}};
-    collector.visit(std::as_const(projectors));
+    collector.visit(std::as_const(scope));
     std::stable_sort(
         collector.expressions.begin(),
         collector.expressions.end(),
@@ -119,14 +126,14 @@ void buildCache(std::vector<ir::Projector>& projectors) {
             continue;
         }
 
-        auto candidate = util::deepCopy(projectors);
+        auto candidate = util::deepCopy(scope);
 
         ExpressionCacher cacher{.expression = *expression.scalar};
         cacher.visit(candidate);
 
-        auto candidate_cost = projectorsCost(candidate);
+        auto candidate_cost = scopeCost(candidate);
         if (candidate_cost < cost) {
-            projectors = std::move(candidate);
+            scope = std::move(candidate);
             cost = candidate_cost;
         }
     }
@@ -138,23 +145,32 @@ struct Optimizer : util::TreeWalker<Optimizer> {
 
     Context& ctx;
 
-    void visit(ir::ProjectionRelation& projection) {
-        Base::visit(projection);
-
-        auto current_cost = projectorsCost(projection.projectors);
-        auto candidate = util::deepCopy(projection.projectors);
+    void updateCache(auto& scope, std::string_view name) {
+        auto current_cost = scopeCost(scope);
+        auto candidate = util::deepCopy(scope);
 
         stripCache(candidate);
         buildCache(candidate);
-        auto candidate_cost = projectorsCost(candidate);
+        auto candidate_cost = scopeCost(candidate);
 
         if (candidate_cost < current_cost) {
-            projection.projectors = std::move(candidate);
+            scope = std::move(candidate);
             ctx.setChanges().note(
-                "projection scalar cache updated, cost: new={}, old={}",
+                "{} scalar cache updated, cost: new={}, old={}",
+                name,
                 candidate_cost,
                 current_cost);
         }
+    }
+
+    void visit(ir::ProjectionRelation& projection) {
+        Base::visit(projection);
+        updateCache(projection.projectors, "projection");
+    }
+
+    void visit(ir::FilterRelation& filter) {
+        Base::visit(filter);
+        updateCache(*filter.condition, "filter");
     }
 };
 

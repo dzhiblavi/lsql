@@ -326,7 +326,8 @@ class Planner {
 
     Arc<Operation> planRelation(ir::FilterRelation r, auto& info) {
         auto source = planRelation(std::move(*r.source));
-        auto condition = planScalar(std::move(*r.condition), source->schema);
+        ScalarScope scope;
+        auto condition = planScalar(std::move(*r.condition), source->schema, &scope);
 
         return arc(
             Operation{
@@ -334,6 +335,7 @@ class Planner {
                     Filter{
                         .source = source,
                         .condition = condition,
+                        .scalar_context = std::move(scope.context),
                     },
                 .min_phase = source->min_phase,
                 .schema = info.schema,

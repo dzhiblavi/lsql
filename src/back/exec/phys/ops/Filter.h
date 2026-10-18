@@ -1,6 +1,7 @@
 #pragma once
 
 #include "back/exec/expr/Scalar.h"
+#include "back/exec/expr/ScalarContext.h"
 #include "back/exec/phys/MemberSubscriber.h"
 #include "back/exec/phys/Operation.h"
 
@@ -8,7 +9,10 @@ namespace lsql::back::exec::phys {
 
 class Filter : public OperationBase<Filter> {
  public:
-    Filter(int id, Arc<Scalar> condition) : OperationBase(id), condition_(std::move(condition)) {
+    Filter(int id, Arc<Scalar> condition, Arc<ScalarContext> scalar_context)
+        : OperationBase(id)
+        , condition_(std::move(condition))
+        , scalar_context_(std::move(scalar_context)) {
         prof::addEdge(sub_.scopeHandle(), prof_);
     }
 
@@ -20,6 +24,8 @@ class Filter : public OperationBase<Filter> {
             return emit(nullptr);
         }
 
+        scalar_context_->reset();
+
         if (condition_->eval(*record).get<bool>()) {
             return emit(record);
         }
@@ -28,6 +34,7 @@ class Filter : public OperationBase<Filter> {
     }
 
     Arc<Scalar> condition_;
+    Arc<ScalarContext> scalar_context_;
     MemberSubscriber<Filter> sub_{
         this,
         &Filter::consume,

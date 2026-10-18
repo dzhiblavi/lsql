@@ -95,7 +95,7 @@ struct Builder {
         build(*n.source);
 
         for (auto&& [phase, _] : op.required_fields) {
-            auto opr = arc<Filter>(op.id, n.condition);
+            auto opr = arc<Filter>(op.id, n.condition, n.scalar_context);
             get(*n.source, phase)->output(opr->sub());
             insert(op, phase, opr);
         }

@@ -32,6 +32,7 @@ struct Aggregate {
 struct Filter {
     Arc<Operation> source;
     ScalarPtr condition;
+    Arc<ScalarContext> scalar_context;
 };
 
 struct Group {

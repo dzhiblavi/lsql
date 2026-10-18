@@ -56,3 +56,11 @@ WHERE (anon = 1 OR anon = 2) AND anon != 2
 
 SELECT COUNT(*) AS rows, 14 AS test_index
 FROM (SELECT anon FROM (1, 2) WHERE false)
+
+SELECT anon, 15 AS test_index
+FROM ('5', '15', '25', '15', '1')
+WHERE Int(anon) > 10 AND Int(anon) < 20
+
+SELECT anon, 16 AS test_index
+FROM ('bad', '15', '5', '', '25')
+WHERE Int(anon) = null OR Int(anon) = 15
