@@ -18,7 +18,7 @@ class Scalar {
     virtual FieldSet requiredFields() const = 0;
     virtual ValueType valueType() const = 0;
 
-    virtual Value eval(const back::exec::Record& record) const = 0;
+    virtual Value eval(const Record& record) const = 0;
 };
 
 using ScalarPtr = Arc<Scalar>;

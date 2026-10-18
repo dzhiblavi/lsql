@@ -25,7 +25,7 @@ class NaryFnScalar : public Scalar {
 
     ValueType valueType() const override { return value_type_; }
 
-    Value eval(const back::exec::Record& record) const override {
+    Value eval(const Record& record) const override {
         for (size_t i = 0; i < args_.size(); ++i) {
             values_[i] = args_[i]->eval(record);
         }

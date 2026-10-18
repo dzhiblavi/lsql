@@ -16,7 +16,7 @@ class Aggregator {
     virtual ~Aggregator() = default;
 
     virtual Value get() = 0;  // one-shot
-    virtual void feed(const back::exec::Record& record) = 0;
+    virtual void feed(const Record& record) = 0;
 };
 
 using AggregatorPtr = Arc<Aggregator>;

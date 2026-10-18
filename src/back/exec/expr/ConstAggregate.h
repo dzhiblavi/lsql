@@ -10,7 +10,7 @@ class ConstAggregate : public Aggregate {
             : value_(std::move(value))
             , null_if_empty_(null_if_empty) {}
 
-        void feed(const back::exec::Record& /*record*/) override { ++count_; }
+        void feed(const Record& /*record*/) override { ++count_; }
 
         Value get() override {
             if (null_if_empty_ && count_ == 0) {

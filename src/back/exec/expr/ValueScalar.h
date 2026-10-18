@@ -11,7 +11,7 @@ class ValueScalar : public Scalar {
 
     FieldSet requiredFields() const override { return FieldSet::emptySet(); }
     ValueType valueType() const override { return value_.type(); }
-    Value eval(const back::exec::Record& /*record*/) const override { return value_; }
+    Value eval(const Record& /*record*/) const override { return value_; }
 
  private:
     Value value_;

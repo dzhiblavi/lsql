@@ -17,7 +17,7 @@ class UnaryFnAggregate : public exec::Aggregate {
             : arg(arg)
             , aggregator(std::move(aggregator)) {}
 
-        void feed(const back::exec::Record& record) override { aggregator.feed(arg->eval(record)); }
+        void feed(const Record& record) override { aggregator.feed(arg->eval(record)); }
         Value get() override { return std::move(aggregator).get(); }
 
         const Scalar* arg;

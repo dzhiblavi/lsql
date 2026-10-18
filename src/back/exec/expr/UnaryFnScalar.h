@@ -16,7 +16,7 @@ class UnaryFnScalar : public Scalar {
     FieldSet requiredFields() const override { return arg_->requiredFields(); }
     ValueType valueType() const override { return value_type_; }
 
-    Value eval(const back::exec::Record& record) const override {
+    Value eval(const Record& record) const override {
         return executor_.execute(arg_->eval(record));
     }
 

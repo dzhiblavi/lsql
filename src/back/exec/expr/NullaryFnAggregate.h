@@ -12,7 +12,7 @@ class NullaryFnAggregate : public exec::Aggregate {
 
     struct Aggregator : exec::Aggregator {
         explicit Aggregator(FnAggregator aggregator) : aggregator(std::move(aggregator)) {}
-        void feed(const back::exec::Record& /*record*/) override { aggregator.feed(); }
+        void feed(const Record& /*record*/) override { aggregator.feed(); }
         Value get() override { return std::move(aggregator).get(); }
         [[no_unique_address]] FnAggregator aggregator;
     };

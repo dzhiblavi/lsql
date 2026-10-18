@@ -20,7 +20,7 @@ class CoalesceScalar : public Scalar {
 
     ValueType valueType() const override { return value_type_; }
 
-    Value eval(const back::exec::Record& record) const override {
+    Value eval(const Record& record) const override {
         for (auto&& arg : args_) {
             if (Value val = arg->eval(record); val != vnull) {
                 return val;

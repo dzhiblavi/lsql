@@ -20,7 +20,7 @@ class BinaryFnScalar : public Scalar {
 
     ValueType valueType() const override { return value_type_; }
 
-    Value eval(const back::exec::Record& record) const override {
+    Value eval(const Record& record) const override {
         return executor_.execute(left_->eval(record), right_->eval(record));
     }
 
