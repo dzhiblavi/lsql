@@ -57,3 +57,7 @@
 
 {"flag":true,"number":1,"text":"true","test_index":12}
 {"flag":false,"number":0,"text":"false","test_index":12}
+
+{"numeric":5,"text":"05","normalized":"5","test_index":13}
+{"numeric":null,"text":"bad","normalized":null,"test_index":13}
+{"numeric":null,"text":"","normalized":null,"test_index":13}

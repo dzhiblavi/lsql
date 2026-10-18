@@ -6,6 +6,7 @@
 - Cache repeated scalar expressions within projections.
 - Deduplicate aggregates in aggregate SELECT and GROUP BYs.
 - Normalize COUNT of non-null constants to COUNT(*).
+- Simplify redundant casts and COALESCE expressions.
 
 ## v0.0.4
 

@@ -47,3 +47,13 @@ SELECT
     JSON_VALUE(_line, 'count') AS again,
     5 AS test_index
 FROM $input
+
+SELECT
+    COALESCE(
+        Int(JSON_VALUE(_line, 'count')),
+        Int(JSON_VALUE(_line, 'count')),
+        7,
+        9
+    ) AS fallback,
+    6 AS test_index
+FROM $input

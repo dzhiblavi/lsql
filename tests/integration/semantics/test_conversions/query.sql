@@ -38,3 +38,10 @@ FROM ('', '0', 'false', 'yes')
 
 SELECT anon AS flag, Int(anon) AS number, String(anon) AS text, 12 AS test_index
 FROM (true, false)
+
+SELECT
+    Int(Int(anon)) AS numeric,
+    String(String(anon)) AS text,
+    String(Int(anon)) AS normalized,
+    13 AS test_index
+FROM ('05', 'bad', '')

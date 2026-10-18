@@ -35,4 +35,37 @@ TEST_CASE("Coalesce with leading nulls and a constant is folded") {
     CHECK(util::equal(optimized.statements, expected.statements));
 }
 
+TEST_CASE("Cast to the argument type is removed") {
+    auto cast = [](ir::Scalar arg) {
+        std::vector<ir::Scalar> args;
+        args.push_back(std::move(arg));
+        return ir::Scalar{
+            .node =
+                ir::FnCallScalar{
+                    .function = func::Cast{.cast_to = ValueType::Integer},
+                    .args = std::move(args),
+                },
+            .value_type = ValueType::Integer,
+        };
+    };
+
+    auto input = test::query(
+        test::project(
+            test::file(),
+            test::projector(test::Output, cast(cast(test::field(test::Timestamp)))),
+            test::schema({test::Output})));
+
+    Context ctx;
+    auto optimized = optimize(std::move(input), ctx);
+
+    auto expected = test::query(
+        test::project(
+            test::file(),
+            test::projector(test::Output, cast(test::field(test::Timestamp))),
+            test::schema({test::Output})));
+
+    CHECK(ctx.changes());
+    CHECK(util::equal(optimized.statements, expected.statements));
+}
+
 }  // namespace lsql::opt

@@ -7,6 +7,8 @@
 
 #include <rfl.hpp>
 
+#include <algorithm>
+
 namespace lsql::opt {
 
 namespace {
@@ -18,6 +20,16 @@ struct Optimizer : util::TreeWalker<Optimizer> {
     Context& ctx;
 
     void optimize(ir::FnCallScalar& s, auto& self) {
+        if (auto* cast = std::get_if<func::Cast>(&s.function)) {
+            verify_dbg(s.args.size() == 1);
+            if (s.args[0].value_type == cast->cast_to) {
+                ctx.setChanges().note("identity cast removed");
+                auto scalar = std::move(s.args[0]);
+                self = std::move(scalar);
+            }
+            return;
+        }
+
         if (std::holds_alternative<func::Coalesce>(s.function)) {
             // turn coalesce function into a more efficient IR node
             ctx.setChanges().note("coalesce func -> coalesce node");
@@ -42,6 +54,13 @@ struct Optimizer : util::TreeWalker<Optimizer> {
                     self.node = ir::ValueScalar{.value = std::move(v->value)};
                     return;
                 }
+
+                s.args.push_back(std::move(a));
+                break;
+            }
+
+            if (std::ranges::any_of(s.args, [&](const auto& previous) { return previous == a; })) {
+                continue;
             }
 
             // not a constant

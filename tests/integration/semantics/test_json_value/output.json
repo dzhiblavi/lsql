@@ -22,3 +22,8 @@
 {"fallback":"-7","again":"-7","test_index":5}
 {"fallback":null,"again":null,"test_index":5}
 {"fallback":"1e3","again":"1e3","test_index":5}
+
+{"fallback":42,"test_index":6}
+{"fallback":-7,"test_index":6}
+{"fallback":7,"test_index":6}
+{"fallback":7,"test_index":6}
