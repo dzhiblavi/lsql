@@ -5,7 +5,7 @@
 namespace lsql::llog {
 
 LoggerPtr global() {
-    static auto logger = spdlog::stderr_color_mt("logsql");
+    static auto logger = spdlog::stderr_color_mt("lsql");
     return logger;
 }
 

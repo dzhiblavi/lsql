@@ -45,7 +45,7 @@ configure: install_dependencies
 		-DASAN=$(ASAN)             \
 		-DTSAN=$(TSAN)             \
 		-DUBSAN=$(UBSAN)           \
-		-DLOGSQL_BUILD_TESTS=$(TESTS)
+		-DLSQL_BUILD_TESTS=$(TESTS)
 
 build: configure _prepare_output_dir
 	cmake --build --preset $(CONAN_PRESET) && \
@@ -53,7 +53,7 @@ build: configure _prepare_output_dir
 
 build-docker-linux-builder:
 	docker build                    \
-		--tag logsql-builder:latest \
+		--tag lsql-builder:latest \
 		--build-arg LLVM_VERSION=20 \
 		-f ./build/images/Dockerfile.ubuntu2004 .
 
@@ -62,7 +62,7 @@ build-docker-linux-%: _require_docker_linux_profile _prepare_output_dir
 		-e "args=$(args)"                   \
 		-v $(shell pwd):/build/lsql           \
 		-v $(shell pwd)/output:/output         \
-		logsql-builder:latest $(PROFILE) $*
+		lsql-builder:latest $(PROFILE) $*
 
 gen-doc: install_dependencies
 	cd $(TARGET_DIR) && $(CMAKE) --build . --target documentation

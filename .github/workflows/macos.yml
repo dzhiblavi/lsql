@@ -33,13 +33,13 @@ jobs:
 
       - name: Package macOS arm64 release binaries
         run: |
-          tar -czf output/logsql-macos-arm64-release.tar.gz \
+          tar -czf output/lsql-macos-arm64-release.tar.gz \
             -C output \
             lsql-Release-macos-arm64
 
       - name: Publish macOS arm64 release archive
         uses: actions/upload-artifact@v4
         with:
-          name: logsql-macos-arm64-release
+          name: lsql-macos-arm64-release
           if-no-files-found: error
-          path: output/logsql-macos-arm64-release.tar.gz
+          path: output/lsql-macos-arm64-release.tar.gz

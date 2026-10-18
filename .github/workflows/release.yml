@@ -38,18 +38,18 @@ jobs:
       - name: Download Linux archive
         uses: actions/download-artifact@v4
         with:
-          name: logsql-linux-amd64-release
+          name: lsql-linux-amd64-release
           path: dist
 
       - name: Download macOS archive
         uses: actions/download-artifact@v4
         with:
-          name: logsql-macos-arm64-release
+          name: lsql-macos-arm64-release
           path: dist
 
       - name: Generate checksums
         working-directory: dist
-        run: sha256sum logsql-*.tar.gz > SHA256SUMS
+        run: sha256sum lsql-*.tar.gz > SHA256SUMS
 
       - name: Create GitHub release
         env:
@@ -60,8 +60,8 @@ jobs:
         run: |
           release_args=(
             "$RELEASE_TAG"
-            dist/logsql-linux-amd64-release.tar.gz
-            dist/logsql-macos-arm64-release.tar.gz
+            dist/lsql-linux-amd64-release.tar.gz
+            dist/lsql-macos-arm64-release.tar.gz
             dist/SHA256SUMS
             --target "$GITHUB_SHA"
             --generate-notes

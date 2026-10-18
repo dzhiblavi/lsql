@@ -1,6 +1,6 @@
-# logsql
+# lsql
 
-`logsql` is a small query engine for text logs. It reads log files as streams of
+`lsql` is a small query engine for text logs. It reads log files as streams of
 records, extracts key/value fields, and runs query plans over them.
 
 The `lsql` command-line tool runs SQL-style queries over the execution engine.

@@ -1,6 +1,6 @@
-option(LOGSQL_BUILD_TESTS "Build tests" ON)
+option(LSQL_BUILD_TESTS "Build tests" ON)
 
-if(LOGSQL_BUILD_TESTS)
+if(LSQL_BUILD_TESTS)
     if (PROJECT_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
         set(BUILD_TESTING ON)
         include(CTest)

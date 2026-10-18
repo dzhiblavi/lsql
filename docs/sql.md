@@ -210,7 +210,7 @@ GROUP BY status, kind
 ORDER BY count, kind DESC
 ```
 
-`HAVING` filters grouped rows after aggregation. In `logsql`, `HAVING` is only
+`HAVING` filters grouped rows after aggregation. In `lsql`, `HAVING` is only
 valid together with `GROUP BY`. It can reference grouping keys, aggregate
 expressions, and `SELECT` aliases.
 

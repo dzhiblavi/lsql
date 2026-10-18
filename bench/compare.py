@@ -399,7 +399,7 @@ def print_summary(base_results, head_results, colors, threshold):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Compare two logsql benchmark result directories"
+        description="Compare two lsql benchmark result directories"
     )
     parser.add_argument("base", help="base result directory or tag under bench/results")
     parser.add_argument("head", help="head result directory or tag under bench/results")

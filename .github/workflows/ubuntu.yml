@@ -23,13 +23,13 @@ jobs:
 
       - name: Package Linux amd64 release binaries
         run: |
-          tar -czf output/logsql-linux-amd64-release.tar.gz \
+          tar -czf output/lsql-linux-amd64-release.tar.gz \
             -C output \
             lsql-Release-linux-amd64
 
       - name: Publish Linux amd64 release archive
         uses: actions/upload-artifact@v4
         with:
-          name: logsql-linux-amd64-release
+          name: lsql-linux-amd64-release
           if-no-files-found: error
-          path: output/logsql-linux-amd64-release.tar.gz
+          path: output/lsql-linux-amd64-release.tar.gz

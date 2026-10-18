@@ -288,7 +288,7 @@ def write_json(path, obj):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run logsql benchmark queries")
+    parser = argparse.ArgumentParser(description="Run lsql benchmark queries")
     parser.add_argument(
         "--tag",
         default=None,
