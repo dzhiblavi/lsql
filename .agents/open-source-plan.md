@@ -22,7 +22,8 @@ Item 2 was committed as `b059e23` (Document release installation and a complete
 quick start). Its full workflow was checked with published v0.0.4 binaries on
 macOS and in Ubuntu 20.04 amd64.
 
-Item 3 is complete and approved for commit. SQL docs now cover all 18 built-in
+Item 3 was committed as `f03a470` (Align documentation with SQL behavior and
+make COUNT case-insensitive). SQL docs now cover all 18 built-in
 functions, STREAM sources, sort direction, regex matching, casts, nulls, timestamp formats, and aggregate
 constraints. I/O docs clarify format detection, anonymous columns, timestamp
 ordering, CSV behavior, and no-buffer restrictions. CLI docs clarify case
@@ -41,8 +42,22 @@ The rebuilt parser passed all 137 tests. All 22 complete SQL reference examples,
 all documented function names, COUNT variants and invalid calls, documentation
 links and anchors, formatting, whitespace, and Linux make command expansion
 were checked. No new test files or test types were added.
-After committing item 3, present item 4: configure the GitHub description,
-topics, and documentation links.
+
+Item 4 is complete per the user: they added the GitHub description and topics
+and asked to mark this item done.
+
+Item 5 is prepared for review, not committed. A new `.github/workflows/ci.yml`
+reuses the existing Linux amd64 and macOS arm64 Release workflows for pull
+requests, pushes to `main`, and manual dispatch. New runs cancel previous CI
+runs for the same pull request or branch. Permissions remain `contents: read`.
+The builds run the existing tests, excluding hardening; Linux also checks
+formatting. README has a CI badge, and `docs/dev.md` describes CI coverage.
+
+Validation passed: actionlint v1.7.12 (without optional shellcheck),
+`make check-format`, `git diff --check`, and checks of triggers, permissions,
+reusable workflows, distinct artifact names, and documentation links.
+The new workflow has not run on GitHub yet; that requires pushing the change.
+After item 5 is committed, present item 6: practical examples and use cases.
 
 Build instructions belong in `docs/build/linux.md` and
 `docs/build/mac_silicon.md`. Keep them limited to prerequisites and commands,
@@ -62,7 +77,7 @@ For item 1, the user approved this README structure:
 - [x] **1.5.** Add query debugging documentation with AST, bound AST, IR, optimizer report, and execution plan examples; link it from README.
 - [x] **2.** Add installation instructions and a complete quick start.
 - [x] **3.** Reconcile documentation with the implementation and document build prerequisites.
-- [ ] **4.** Configure GitHub description, topics, and documentation links.
+- [x] **4.** Configure GitHub description, topics, and documentation links.
 - [ ] **5.** Run CI on pull requests and pushes to the main branch.
 - [ ] **6.** Add practical examples and explain when to use lsql.
 - [ ] **7.** Add CONTRIBUTING.md.

@@ -27,7 +27,7 @@ jobs:
             -C output \
             lsql-Release-linux-amd64
 
-      - name: Publish Linux amd64 release archive
+      - name: Upload Linux amd64 build artifact
         uses: actions/upload-artifact@v4
         with:
           name: lsql-linux-amd64-release

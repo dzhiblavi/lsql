@@ -1,5 +1,7 @@
 # lsql
 
+[![CI](https://github.com/dzhiblavi/lsql/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/dzhiblavi/lsql/actions/workflows/ci.yml)
+
 `lsql` is a command-line tool for running SQL-style queries directly over text
 logs. Use it to filter events, count errors, aggregate fields, and join related
 logs from your terminal.

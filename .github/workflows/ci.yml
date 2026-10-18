@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Linux amd64
+    uses: ./.github/workflows/ubuntu.yml
+
+  macos:
+    name: macOS arm64
+    uses: ./.github/workflows/macos.yml
