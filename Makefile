@@ -55,7 +55,7 @@ build-docker-linux-builder:
 	docker build                    \
 		--tag lsql-builder:latest \
 		--build-arg LLVM_VERSION=20 \
-		-f ./build/images/Dockerfile.ubuntu2004 .
+		-f ./build/linux/Dockerfile.ubuntu2004 .
 
 build-docker-linux-%: _require_docker_linux_profile _prepare_output_dir
 	docker run --rm                         \

@@ -18,19 +18,19 @@ RUN pip3 install conan
 
 WORKDIR /build
 
-COPY ./build/scripts/install_cmake.sh .
+COPY ./build/linux/scripts/install_cmake.sh .
 RUN chmod +x ./install_cmake.sh && ./install_cmake.sh
 
-COPY ./build/scripts/install_llvm.sh .
+COPY ./build/linux/scripts/install_llvm.sh .
 RUN chmod +x ./install_llvm.sh && ./install_llvm.sh "${LLVM_VERSION}"
 ENV PATH="/usr/lib/llvm-${LLVM_VERSION}/bin:${PATH}"
 
-COPY ./build/scripts/install_lemon.sh .
+COPY ./build/linux/scripts/install_lemon.sh .
 RUN chmod +x ./install_lemon.sh && ./install_lemon.sh
 
-COPY ./build/scripts/install_reflex.sh .
+COPY ./build/linux/scripts/install_reflex.sh .
 RUN chmod +x ./install_reflex.sh && ./install_reflex.sh
 
-COPY ./build/scripts/build_linux.sh .
+COPY ./build/linux/scripts/build_linux.sh .
 RUN chmod +x /build/build_linux.sh
 ENTRYPOINT ["/build/build_linux.sh"]

@@ -71,7 +71,7 @@ See:
 
 Build and development docs:
 
-- [Build](docs/build.md)
+- Build: [Linux](docs/build/linux.md), [macOS (Apple Silicon)](docs/build/mac_silicon.md)
 - [Development](docs/dev.md)
 - [Release notes](RELEASE_NOTES.md)
 

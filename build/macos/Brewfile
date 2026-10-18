@@ -1,0 +1,4 @@
+brew "cmake"
+brew "conan"
+brew "lemon"
+brew "llvm@20"

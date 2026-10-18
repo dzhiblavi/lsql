@@ -19,10 +19,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install build dependencies
-        run: brew install llvm@20 lemon conan
-
-      - name: Select LLVM 20
-        run: echo "$(brew --prefix llvm@20)/bin" >> "$GITHUB_PATH"
+        run: brew bundle install --file=build/macos/Brewfile --no-upgrade
 
       - name: Build and test
         run: make PROFILE=armv8-macos BUILD_TYPE=Release test args="-LE hardening"
