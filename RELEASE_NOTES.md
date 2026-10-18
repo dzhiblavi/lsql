@@ -8,6 +8,7 @@
 - Normalize COUNT of non-null constants to COUNT(*).
 - Simplify redundant casts and COALESCE expressions.
 - Cache repeated scalar expressions within filters.
+- Cache repeated scalar arguments across aggregates.
 
 ## v0.0.4
 

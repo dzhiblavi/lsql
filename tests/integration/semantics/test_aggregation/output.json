@@ -12,7 +12,7 @@
 
 {"rows":2,"values":0,"minimum":null,"maximum":null,"total":0,"test_index":7}
 
-{"rows":4,"values":3,"minimum":-2,"maximum":3,"total":4,"test_index":8}
+{"rows":4,"values":3,"minimum":-2,"maximum":3,"total":4,"fallback_total":9,"test_index":8}
 
 {"total":4,"adjusted":5,"shifted":7,"values":3,"rows":4,"test_index":9}
 

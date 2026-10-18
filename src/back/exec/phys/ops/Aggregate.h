@@ -1,6 +1,7 @@
 #pragma once
 
 #include "back/exec/expr/Aggregate.h"
+#include "back/exec/expr/ScalarContext.h"
 #include "back/exec/phys/MemberSubscriber.h"
 #include "back/exec/phys/Operation.h"
 #include "back/exec/phys/Source.h"
@@ -22,9 +23,13 @@ struct AggregateState : Record {
 class AggregateCollector : public OperationBase<AggregateCollector> {
  public:
     AggregateCollector(
-        int id, const std::vector<Arc<exec::Aggregate>>& aggregates, Arc<AggregateState> state)
+        int id,
+        const std::vector<Arc<exec::Aggregate>>& aggregates,
+        Arc<AggregateState> state,
+        Arc<ScalarContext> scalar_context)
         : OperationBase(id)
-        , state_(std::move(state)) {
+        , state_(std::move(state))
+        , scalar_context_(std::move(scalar_context)) {
         aggregators_.reserve(aggregates.size());
         for (auto&& a : aggregates) {
             aggregators_.push_back(a->aggregator());
@@ -38,6 +43,8 @@ class AggregateCollector : public OperationBase<AggregateCollector> {
  private:
     bool consume(const Record* record) {
         if (record != nullptr) {
+            scalar_context_->reset();
+
             for (auto&& aggregator : aggregators_) {
                 aggregator->feed(*record);
             }
@@ -59,6 +66,7 @@ class AggregateCollector : public OperationBase<AggregateCollector> {
 
     std::vector<Arc<Aggregator>> aggregators_;
     Arc<AggregateState> state_;
+    Arc<ScalarContext> scalar_context_;
 
     MemberSubscriber<AggregateCollector> sub_{
         this,

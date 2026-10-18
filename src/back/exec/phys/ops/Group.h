@@ -3,6 +3,7 @@
 #include "back/exec/Record.h"
 #include "back/exec/expr/Aggregate.h"
 #include "back/exec/expr/Scalar.h"
+#include "back/exec/expr/ScalarContext.h"
 #include "back/exec/phys/MemberSubscriber.h"
 #include "back/exec/phys/Operation.h"
 
@@ -15,10 +16,15 @@ namespace lsql::back::exec::phys {
 
 class Group : public OperationBase<Group>, public std::enable_shared_from_this<Group> {
  public:
-    Group(int id, std::vector<Arc<Aggregate>> aggregates, std::vector<Arc<Scalar>> group_key)
+    Group(
+        int id,
+        std::vector<Arc<Aggregate>> aggregates,
+        std::vector<Arc<Scalar>> group_key,
+        Arc<ScalarContext> scalar_context)
         : OperationBase(id)
         , aggregates_(std::move(aggregates))
-        , group_key_(std::move(group_key)) {
+        , group_key_(std::move(group_key))
+        , scalar_context_(std::move(scalar_context)) {
         prof::addEdge(sub_.scopeHandle(), prof_);
     }
 
@@ -27,6 +33,8 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
  private:
     bool consume(const Record* record) {
         if (record != nullptr) {
+            scalar_context_->reset();
+
             auto key = getKey(*record);
 
             auto&& aggregators = groups_[key];
@@ -95,6 +103,7 @@ class Group : public OperationBase<Group>, public std::enable_shared_from_this<G
 
     std::vector<Arc<Aggregate>> aggregates_;
     std::vector<Arc<Scalar>> group_key_;
+    Arc<ScalarContext> scalar_context_;
     MemberSubscriber<Group> sub_{
         this,
         &Group::consume,

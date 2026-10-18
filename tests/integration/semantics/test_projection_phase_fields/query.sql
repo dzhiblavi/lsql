@@ -57,3 +57,22 @@ FROM (
 )
 WHERE user_id = 'aaa' OR user_id = 'login'
 ORDER BY user_id
+
+cached_groups = (
+    SELECT
+        anon AS key,
+        SUM(Int(anon)) AS total,
+        MAX(Int(anon)) AS maximum,
+        COUNT(Int(anon)) AS values
+    FROM ('1', '1', '2', 'bad')
+    GROUP BY anon
+)
+
+SELECT key, total, 8 AS test_index
+FROM $cached_groups
+WHERE key IN (SELECT key FROM $cached_groups WHERE values > 1)
+ORDER BY key
+
+SELECT key, maximum, values, 9 AS test_index
+FROM $cached_groups
+ORDER BY key

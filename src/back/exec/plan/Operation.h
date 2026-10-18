@@ -27,6 +27,7 @@ struct AggregateProjector {
 struct Aggregate {
     Arc<Operation> source;
     std::vector<Arc<AggregateProjector>> aggregates;
+    Arc<ScalarContext> scalar_context;
 };
 
 struct Filter {
@@ -39,6 +40,7 @@ struct Group {
     Arc<Operation> source;
     std::vector<Arc<AggregateProjector>> aggregates;
     std::vector<Arc<ScalarProjector>> group_key;
+    Arc<ScalarContext> scalar_context;
 };
 
 struct Limit {

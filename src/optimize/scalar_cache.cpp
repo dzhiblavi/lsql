@@ -172,6 +172,16 @@ struct Optimizer : util::TreeWalker<Optimizer> {
         Base::visit(filter);
         updateCache(*filter.condition, "filter");
     }
+
+    void visit(ir::AggregateRelation& aggregate) {
+        Base::visit(aggregate);
+        updateCache(aggregate.aggregates, "aggregate");
+    }
+
+    void visit(ir::GroupRelation& group) {
+        Base::visit(group);
+        updateCache(group.aggregates, "group");
+    }
 };
 
 }  // namespace

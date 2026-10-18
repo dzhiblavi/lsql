@@ -76,7 +76,8 @@ struct Builder {
     void build(const plan::Aggregate& aggr, const plan::Operation& op) {
         build(*aggr.source);
         auto state = arc<AggregateState>();
-        auto collector = arc<AggregateCollector>(op.id, projectorsExprs(aggr.aggregates), state);
+        auto collector = arc<AggregateCollector>(
+            op.id, projectorsExprs(aggr.aggregates), state, aggr.scalar_context);
         get(*aggr.source, op.min_phase)->output(collector->sub());
         program.anchors.push_back(collector);
 
@@ -107,7 +108,7 @@ struct Builder {
 
         for (auto&& [phase, fields] : op.required_fields) {
             auto aggregates = projectorsExprs(n.aggregates, fields);
-            auto opr = arc<Group>(op.id, std::move(aggregates), group_key);
+            auto opr = arc<Group>(op.id, std::move(aggregates), group_key, n.scalar_context);
 
             get(*n.source, phase)->output(opr->sub());
             insert(op, phase, opr);

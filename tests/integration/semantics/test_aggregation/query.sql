@@ -52,6 +52,7 @@ SELECT
     MIN(Int(anon)) AS minimum,
     MAX(Int(anon)) AS maximum,
     SUM(Int(anon)) AS total,
+    SUM(COALESCE(Int(anon), 5)) AS fallback_total,
     8 AS test_index
 FROM ('3', 'bad', '-2', '3')
 

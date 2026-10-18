@@ -86,6 +86,7 @@ SELECT
     COUNT(*) + 1 AS adjusted,
     COUNT(Int(anon)) AS values,
     SUM(Int(anon)) AS total,
+    MAX(Int(anon)) AS maximum,
     14 AS test_index
 FROM ('1', '1', '2', 'bad', 'bad')
 GROUP BY anon

@@ -219,9 +219,10 @@ class Planner {
         });
     }
 
-    Arc<AggregateProjector> planAggregate(ir::Aggregate s, const Schema& schema) {
+    Arc<AggregateProjector> planAggregate(
+        ir::Aggregate s, const Schema& schema, ScalarScope* scope) {
         return util::match(std::move(s.node), [&](auto node) {
-            return planAggregate(std::move(node), s, schema);
+            return planAggregate(std::move(node), s, schema, scope);
         });
     }
 
@@ -276,7 +277,8 @@ class Planner {
 
     Arc<Operation> planRelation(ir::AggregateRelation r, auto& info) {
         auto source = planRelation(std::move(*r.source));
-        auto projectors = aggregatesList(std::move(r.aggregates), source->schema);
+        ScalarScope scope;
+        auto projectors = aggregatesList(std::move(r.aggregates), source->schema, &scope);
 
         return arc(
             Operation{
@@ -284,6 +286,7 @@ class Planner {
                     Aggregate{
                         .source = source,
                         .aggregates = projectors,
+                        .scalar_context = std::move(scope.context),
                     },
                 .min_phase = source->min_phase,
                 .schema = info.schema,
@@ -293,7 +296,8 @@ class Planner {
     Arc<Operation> planRelation(ir::GroupRelation r, auto& info) {
         auto source_schema = r.source->schema;
         auto source = planRelation(std::move(*r.source));
-        auto aggregates = aggregatesList(std::move(r.aggregates), source_schema);
+        ScalarScope scope;
+        auto aggregates = aggregatesList(std::move(r.aggregates), source_schema, &scope);
         auto group_key = projectorsList(std::move(r.group_list), source_schema);
 
         return arc(
@@ -303,6 +307,7 @@ class Planner {
                         .source = source,
                         .aggregates = aggregates,
                         .group_key = group_key,
+                        .scalar_context = std::move(scope.context),
                     },
                 .min_phase = source->min_phase,
                 .schema = info.schema,
@@ -572,8 +577,9 @@ class Planner {
             });
     }
 
-    Arc<AggregateProjector> planAggregate(ir::FnCallAggregate a, auto& info, auto& schema) {
-        auto args = expressionList(std::move(a.args), schema);
+    Arc<AggregateProjector> planAggregate(
+        ir::FnCallAggregate a, auto& info, auto& schema, ScalarScope* scope) {
+        auto args = expressionList(std::move(a.args), schema, scope);
         auto aggregate = func::buildAggregate<AggregatePtr>(
             a.function,
             util::Overloaded{
@@ -595,7 +601,8 @@ class Planner {
             });
     }
 
-    Arc<AggregateProjector> planAggregate(ir::ConstAggregate a, auto&& info, auto& /*schema*/) {
+    Arc<AggregateProjector> planAggregate(
+        ir::ConstAggregate a, auto&& info, auto& /*schema*/, ScalarScope*) {
         return box(
             AggregateProjector{
                 .field_id = info.output_field_id,
@@ -629,11 +636,11 @@ class Planner {
     }
 
     std::vector<Arc<AggregateProjector>> aggregatesList(
-        std::vector<ir::Aggregate> list, const Schema& schema) {
+        std::vector<ir::Aggregate> list, const Schema& schema, ScalarScope* scope) {
         std::vector<Arc<AggregateProjector>> proj;
         proj.reserve(list.size());
         for (auto&& item : list) {
-            proj.push_back(planAggregate(std::move(item), schema));
+            proj.push_back(planAggregate(std::move(item), schema, scope));
         }
         return proj;
     }
