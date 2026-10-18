@@ -1,0 +1,24 @@
+{"count":"42","dup":null,"enabled":"true","events":"[{\"message\":\"Hello\\nworld\"},null]","huge":"184467440737095516160000","id":"001","meta":"{ \"code\":500, \"nested\":{\"huge\":184467440737095516160000} }","nothing":null,"ratio":"1.2300","test_index":1,"user":"Alice"}
+{"count":"-7","dup":"last","enabled":"false","events":"[]","huge":"1e10000","id":"002","meta":"{}","nothing":null,"ratio":"1e3","test_index":1,"user":"long escaped \"hello\" message with Привет"}
+{"count":null,"dup":null,"enabled":null,"events":null,"huge":null,"id":"003","meta":null,"nothing":null,"ratio":null,"test_index":1,"user":""}
+
+{"code":"500","count_i":42,"huge_i":null,"id":"001","message":"Hello\nworld","ratio_f":1.23,"test_index":2}
+{"code":null,"count_i":-7,"huge_i":null,"id":"002","message":null,"ratio_f":1000,"test_index":2}
+{"code":null,"count_i":null,"huge_i":null,"id":"003","message":null,"ratio_f":null,"test_index":2}
+
+{"_line":"  {\"id\":\"001\",\"user\":\"Alice\",\"count\":42, \"ratio\":1.2300, \"enabled\":true,\"nothing\":null,\"meta\": { \"code\":500, \"nested\":{\"huge\":184467440737095516160000} }, \"events\":[{\"message\":\"Hello\\nworld\"},null],\"dup\":\"old\",\"dup\":null,\"huge\":184467440737095516160000,\"marker\":\"tskv\"}","id":"001","test_index":3}
+
+{"id":"001","meta":"{ \"code\":500, \"nested\":{\"huge\":184467440737095516160000} }","test_index":4,"user":"Alice"}
+{"id":"002","meta":"{}","test_index":4,"user":"long escaped \"hello\" message with Привет"}
+{"id":"003","meta":null,"test_index":4,"user":""}
+
+{"id":"003","meta":null,"test_index":5,"user":""}
+{"id":"002","meta":"{}","test_index":5,"user":"long escaped \"hello\" message with Привет"}
+{"id":"001","meta":"{ \"code\":500, \"nested\":{\"huge\":184467440737095516160000} }","test_index":5,"user":"Alice"}
+
+{"id":"001","meta":"{ \"code\":500, \"nested\":{\"huge\":184467440737095516160000} }","test_index":6,"user":"Alice"}
+{"id":"002","meta":"{}","test_index":6,"user":"long escaped \"hello\" message with Привет"}
+{"id":"003","meta":null,"test_index":6,"user":""}
+
+{"count":null,"enabled":null,"id":null,"test_index":7}
+{"count":"0","enabled":"false","id":"empty","test_index":7}

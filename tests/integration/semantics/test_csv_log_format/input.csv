@@ -1,0 +1,8 @@
+001,alice,10,ok
+002,"Bob, Jr.",20,"said ""hello"""
+003,"",,
+004,solo
+005,"has	tab",5,done
+006,"abcdefghijklmnopqrstuvwxyz ""quoted"" tail",30,done
+007, plain , 7 , spaced 
+008,"""",8,quote

@@ -9,7 +9,10 @@
 #include "config/build_settings.h"
 #include "core/exceptions.h"
 
+#include "util/overloaded.h"
+
 #include <optional>
+#include <utility>
 
 namespace lsql::back::exec::phys {
 
@@ -50,19 +53,31 @@ class Log : public Source, public OperationBase<Log> {
             auto&& values = record_.mutableValues();
             back::storage::Line line;
 
-            auto insert = [&](SlotId slot, std::string_view view) {
-                verify_dbg(0 <= slot && slot < values.size());
+            auto insert = util::Overloaded{
+                [&](SlotId slot, std::string_view view) {
+                    verify_dbg(0 <= slot && slot < values.size());
 
-                if (view.size() <= max_small_string_size) {
-                    values[slot] = std::string(view);
-                } else {
-                    values[slot] = line.subview(view);
-                }
+                    if (view.size() <= max_small_string_size) {
+                        values[slot] = std::string(view);
+                    } else {
+                        values[slot] = line.subview(view);
+                    }
+                },
+                [&](SlotId slot, std::string&& value) {
+                    verify_dbg(0 <= slot && slot < values.size());
+
+                    values[slot] = std::move(value);
+                },
+                [&](SlotId slot, null_t) {
+                    verify_dbg(0 <= slot && slot < values.size());
+
+                    values[slot] = null;
+                },
             };
 
-            auto parser = [&](std::string_view name, std::string_view value) {
+            auto parser = [&]<typename T>(std::string_view name, T&& value) {
                 if (auto it = slots_.find(name); it != slots_.end()) {
-                    insert(it->second, value);
+                    insert(it->second, std::forward<T>(value));
                 }
             };
 

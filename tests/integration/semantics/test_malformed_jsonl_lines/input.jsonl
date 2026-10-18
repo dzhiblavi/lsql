@@ -1,0 +1,11 @@
+{"id":"001","value":"valid"}
+not json
+{"id":"002","value":"bad\q"}
+{"id":"003" "value":"missing comma"}
+{"id":"004","value":"extra"} {"extra":true}
+{"id":"005","value":"trailing comma",}
+{"id":"006","value":[1,2}
+["array root",1,2,3,4,5,6,7,8]
+null
+42
+{"id":"007","value":"still valid"}

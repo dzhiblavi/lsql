@@ -10,6 +10,8 @@
 - Simplify redundant casts and COALESCE expressions.
 - Cache repeated scalar expressions within filters.
 - Cache repeated scalar arguments across aggregates.
+- Hardened log format detection and added headerless CSV and TSV input.
+- Added JSON Lines root fields as nullable strings.
 
 ## v0.0.4
 

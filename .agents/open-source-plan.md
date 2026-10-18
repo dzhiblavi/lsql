@@ -46,18 +46,80 @@ were checked. No new test files or test types were added.
 Item 4 is complete per the user: they added the GitHub description and topics
 and asked to mark this item done.
 
-Item 5 is prepared for review, not committed. A new `.github/workflows/ci.yml`
-reuses the existing Linux amd64 and macOS arm64 Release workflows for pull
-requests, pushes to `main`, and manual dispatch. New runs cancel previous CI
-runs for the same pull request or branch. Permissions remain `contents: read`.
-The builds run the existing tests, excluding hardening; Linux also checks
-formatting. README has a CI badge, and `docs/dev.md` describes CI coverage.
+Item 5 was committed as `aa1d534` (Update workflows). CI reuses the Linux
+amd64 and macOS arm64 builds on pull requests, pushes to `main`, and manual
+runs. Tests exclude hardening; Linux also checks formatting. CI uploads build
+artifacts without creating tags or GitHub Releases. The separate Release
+workflow is manual and accepts a `tag` input. actionlint, formatting,
+whitespace, workflow structure, and documentation links passed locally.
 
-Validation passed: actionlint v1.7.12 (without optional shellcheck),
-`make check-format`, `git diff --check`, and checks of triggers, permissions,
-reusable workflows, distinct artifact names, and documentation links.
-The new workflow has not run on GitHub yet; that requires pushing the change.
-After item 5 is committed, present item 6: practical examples and use cases.
+Item 6 is current. The user requested researching alternatives and proposing
+comparison criteria before deciding what value lsql offers and documenting it
+in README. An honest conclusion that lsql duplicates existing tools is welcome;
+do not invent differentiators or claim performance without measurements.
+
+The user prefers a short README comparison table with brief explanations;
+avoid expanding this into a large benchmark project unless requested.
+
+A format-support detour was implemented and approved for commit: IMAP is now
+TS_LOGFMT (timestamped logfmt), TSKV2 is now TSKV, and headerless CSV, TSV, and
+JSONL were added. Timestamp support is optional; formats without it reject
+time-range reads. TSKV detection requires a standalone tab-separated marker.
+CSV handles quotes and doubled quotes; positional fields remain anon1..anon32.
+JSONL root fields are nullable strings. simdjson decodes root strings and keys;
+numbers and nested containers remain raw JSON text, with numeric conversion
+left to lsql casts. Nested contents are not fully validated on input. The user
+accepted the Log.h refactor using util::Overloaded for borrowed and owned
+strings. Preserve it. README, I/O and SQL docs, and release notes were updated.
+Eight integration fixtures cover the new formats, malformed records, gzip,
+CRLF, STREAM, and rejection of timestamp ranges. The Release build, all 121
+non-hardening tests, formatting, links, whitespace checks, and documented JSONL
+example passed. This detour does not complete item 6; resume its compact
+comparison table and practical use cases after committing the format changes.
+
+Initial research used official docs and repositories for DuckDB CLI,
+clickhouse-local, lnav, angle-grinder, dsq, OctoSQL, SPyQL, trdsql, q, and
+Tailpipe. SQL over local files without a server is already available elsewhere.
+lnav supports SQL and headless mode; dsq supports logfmt; ClickHouse supports
+TSKV and extractKeyValuePairs. Generic key/value parsing is not unique.
+
+Potential niche to validate: direct timestamped logfmt/TSKV access with little setup,
+reusable SQL scripts across files, and narrow timestamp ranges in sorted logs.
+Source inspection confirms binary search for timestamp boundaries followed by
+reading the selected byte range; this requires ascending timestamps and
+uncompressed files. Competitor behavior and relative performance remain
+unmeasured.
+
+Proposed criteria: preparation from raw input to result; exact input-format
+compatibility and messy/missing fields; query expressiveness and SQL semantics;
+time-range access; files/gzip/pipes/live behavior; full end-to-end latency, peak
+memory and disk needs; installation footprint/platforms; diagnostics and
+maintenance. Distinguish native support, configuration/adapter, import, and
+unsupported cases. Compare identical results and include conversion/indexing
+cost, with first-use and repeated-use results reported separately.
+
+Representative tasks: grouped error counts; five minutes from a large sorted
+log; latency percentiles; LEFT JOIN requests/responses by request ID; merging
+service logs in timestamp order. Repeat representative tasks with JSONL and
+compressed input so the comparison is not limited to lsql's preferred format.
+No benchmarks or competitor installations have been performed yet.
+
+Primary sources for the comparison:
+- https://duckdb.org/docs/current/clients/cli/overview
+- https://duckdb.org/docs/current/data/json/overview
+- https://duckdb.org/community_extensions/extensions/read_lines
+- https://clickhouse.com/docs/concepts/features/tools-and-utilities/clickhouse-local
+- https://clickhouse.com/docs/reference/formats/TabSeparated/TSKV
+- https://clickhouse.com/docs/reference/functions/regular-functions/tuple-map-functions
+- https://lnav.org/features
+- https://docs.lnav.org/en/latest/formats.html
+- https://github.com/rcoh/angle-grinder
+- https://github.com/multiprocessio/dsq
+- https://github.com/cube2222/octosql
+- https://github.com/dcmoura/spyql
+- https://github.com/noborus/trdsql
+- https://github.com/harelba/q
+- https://github.com/turbot/tailpipe
 
 Build instructions belong in `docs/build/linux.md` and
 `docs/build/mac_silicon.md`. Keep them limited to prerequisites and commands,
@@ -78,8 +140,8 @@ For item 1, the user approved this README structure:
 - [x] **2.** Add installation instructions and a complete quick start.
 - [x] **3.** Reconcile documentation with the implementation and document build prerequisites.
 - [x] **4.** Configure GitHub description, topics, and documentation links.
-- [ ] **5.** Run CI on pull requests and pushes to the main branch.
-- [ ] **6.** Add practical examples and explain when to use lsql.
+- [x] **5.** Run CI on pull requests and pushes to the main branch.
+- [ ] **6.** Compare alternatives, establish when to use lsql, and add practical examples and README positioning.
 - [ ] **7.** Add CONTRIBUTING.md.
 - [ ] **8.** Add issue and pull request templates and contributor-friendly issues.
 - [ ] **9.** Improve release packaging and version consistency.

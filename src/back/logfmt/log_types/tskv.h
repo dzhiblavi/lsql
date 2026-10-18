@@ -7,8 +7,8 @@
 namespace lsql::back::logfmt {
 
 template <>
-struct LogTypeImpl<LogType::TSKV2> {
-    static constexpr TimeFormat time_format = TimeFormat::SQL;
+struct LogTypeImpl<LogType::TSKV> {
+    static constexpr std::optional<TimeFormat> time_format = TimeFormat::SQL;
 
     template <typename F>
     static bool parseKeyValue(std::string_view line, F&& callback) {
@@ -40,7 +40,11 @@ struct LogTypeImpl<LogType::TSKV2> {
         return true;
     }
 
-    static bool detectLogType(std::string_view line) { return line.contains("tskv"); }
+    static bool detectLogType(std::string_view line) {
+        const bool has_marker = line == "tskv" || line.starts_with("tskv\t") ||
+                                line.ends_with("\ttskv") || line.contains("\ttskv\t");
+        return has_marker && parseKeyValue(line, [](auto&&...) {});
+    }
 };
 
 }  // namespace lsql::back::logfmt

@@ -4,8 +4,11 @@
 #include "core/time_formats.h"
 #include "util/enum.h"
 
-#include "back/logfmt/log_types/imap.h"
-#include "back/logfmt/log_types/tskv2.h"
+#include "back/logfmt/log_types/csv.h"
+#include "back/logfmt/log_types/jsonl.h"
+#include "back/logfmt/log_types/ts_logfmt.h"
+#include "back/logfmt/log_types/tskv.h"
+#include "back/logfmt/log_types/tsv.h"
 
 #include <absl/container/flat_hash_map.h>
 #include <magic_enum/magic_enum.hpp>
@@ -30,6 +33,6 @@ ParseKeyValueFunc<F> parseKeyValueFunc(LogType type) {
 
 std::optional<LogType> detectLogType(std::string_view line);
 
-TimeFormat timeFormat(LogType type);
+std::optional<TimeFormat> timeFormat(LogType type);
 
 }  // namespace lsql::back::logfmt

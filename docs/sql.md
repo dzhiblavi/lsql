@@ -394,8 +394,9 @@ booleans, objects, and arrays retain their JSON representation. Missing paths,
 malformed JSON, and JSON `null` produce `null`. Use a cast such as
 `Int(JSON_VALUE(json, 'count'))` when a typed result is needed.
 
-Queries that only require `_line` can process arbitrary line-oriented input, so
-JSON Lines files do not need to be configured as a log format.
+JSON Lines sources expose root keys directly as nullable string fields;
+use `JSON_VALUE` on an object or array field for nested access. Queries that
+only require `_line` can also process arbitrary line-oriented input.
 
 Other scalar functions:
 

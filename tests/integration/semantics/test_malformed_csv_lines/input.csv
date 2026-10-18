@@ -1,0 +1,8 @@
+001,valid,10
+"unterminated,bad,20
+002,bad"quote,20
+003,"closed"junk,30
+004,badvalue,40
+"broken
+continuation",bad,50
+005,"still ""valid""",50

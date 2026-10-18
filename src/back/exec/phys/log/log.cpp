@@ -63,12 +63,13 @@ LogFile getFileSourceRange(std::string path, TimeRange range) {
     auto whole_line_source = arc<back::storage::PagedLineSource>(file);
     auto log_type = getLogType(*whole_line_source);
     auto time_format = back::logfmt::timeFormat(log_type);
+    require(time_format.has_value(), "can't pull timestamp from file at {}", path);
 
     llog::trace("searching for {} in file {}", range.ts_from, file->path().c_str());
-    auto from_pos = lowerBoundLine(*file, range.ts_from, time_format);
+    auto from_pos = lowerBoundLine(*file, range.ts_from, *time_format);
 
     llog::trace("searching for {} in file {}", range.ts_to, file->path().c_str());
-    auto to_pos = upperBoundLine(*file, range.ts_to, time_format);
+    auto to_pos = upperBoundLine(*file, range.ts_to, *time_format);
 
     if (from_pos == std::string::npos || to_pos == std::string::npos || to_pos <= from_pos) {
         from_pos = to_pos = 0;

@@ -19,8 +19,8 @@ std::optional<LogType> detectLogType(std::string_view line) {
     return result;
 }
 
-TimeFormat timeFormat(LogType type) {
-    static const std::array<TimeFormat, magic_enum::enum_count<LogType>()> formats =
+std::optional<TimeFormat> timeFormat(LogType type) {
+    static const std::array<std::optional<TimeFormat>, magic_enum::enum_count<LogType>()> formats =
         util::enum_apply<LogType>([]<LogType... F> {
             return std::array{LogTypeImpl<F>::time_format...};
         });

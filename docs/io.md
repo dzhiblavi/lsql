@@ -1,70 +1,61 @@
 # Input and Output
 
-## Log Input
+## Input
 
-The backend detects the log format from the beginning of the file. Current
-formats are:
+The format is detected automatically. Each record occupies one line.
 
-- `IMAP`: lines beginning with `[timestamp]`, followed by space-separated
-  `key=value` fields. The timestamp is exposed as `timestamp`. Detection looks
-  for a line beginning with `[`.
-- `TSKV2`: tab-separated tokens where `key=value` tokens become fields.
-  Detection looks for a line containing `tskv`, so include the `tskv` marker
-  in tab-separated key/value logs.
+| Format | Record | Fields |
+| --- | --- | --- |
+| Timestamped logfmt (`TS_LOGFMT`) | `[timestamp] key=value ...` | Named fields and `timestamp` |
+| TSKV | Tab-separated `key=value` pairs with a `tskv` marker | Named fields |
+| CSV | Comma-separated values | `anon1` through `anon32` |
+| TSV | Tab-separated values | `anon1` through `anon32` |
+| JSON Lines (`JSONL`) | One JSON object | Root keys |
 
-For example, save these IMAP-style lines as `input.1.txt`:
+Values are strings; missing fields and JSON `null` become `null`. Use explicit
+casts for numbers. The original line is available as `_line`. In key/value
+formats, tokens without a key become `anon1` through `anon32`.
 
-```text
-[2026-May-06 12:00:01.123456] uid=aaa user=alice status=ok action=login
-[2026-May-06 12:00:02.654321] uid=bbb user=bob status=fail action=logout
+CSV supports quoted fields and doubled quotes. TSV preserves quotes literally.
+Empty fields remain empty strings. CSV and TSV have no header handling.
+
+JSON strings and keys are unescaped. Numbers and booleans retain their text;
+objects and arrays remain JSON text, accessible with [`JSON_VALUE`](sql.md#functions).
+For repeated JSON keys, the last value wins.
+
+Gzip files (`.gz`, `.gzip`) are supported. Time ranges require uncompressed,
+timestamp-sorted logfmt or TSKV input; CSV, TSV, and JSONL do not support them.
+
+`STREAM 'command'` reads records from the command's stdout in the same input
+formats. For example, use `FROM STREAM 'cat requests.jsonl'` to read command
+output instead of a file directly.
+
+## Example
+
+Save this as `requests.jsonl`:
+
+```json
+{"status":500,"meta":{"path":"/api"}}
 ```
 
-Save this query as `query.sql`:
+Save this as `query.sql`:
 
 ```sql
-input = input.1.txt
-
-SELECT uid, status
-FROM $input
-WHERE status = 'ok'
+SELECT Int(status) AS status, JSON_VALUE(meta, 'path') AS path
+FROM requests.jsonl
 ```
 
-Run `./lsql -f JSON query.sql` to print the matching records as JSON.
+Run `./lsql -f JSON query.sql`:
 
-Tokens without `=` are exposed as `anon1`, `anon2`, up to `anon32`, in order.
-The full raw line is available through `_line`. Ad-hoc value relations use a
-single column named `anon`, as described in the [SQL reference](sql.md#sources-and-relations).
-
-For JSON Lines and other line-oriented input, read `_line` and extract fields
-with [`JSON_VALUE`](sql.md#functions).
-
-File sources are treated as having fields with any name of type `String`. When a
-requested field is missing in an input log line, its value is `null`.
-
-After a relation is bound, its fields are fixed by the query. References to
-fields outside that relation are rejected during binding.
-
-File timestamp ranges require logs in ascending timestamp order.
-
-Gzip-compressed inputs with `.gz` or `.gzip` suffixes are supported for full-file
-scans. Timestamp ranges are not supported for compressed inputs, including
-explicit query ranges and default ranges passed through `--time-from` or
-`--time-to`.
+```json
+{"status":500,"path":"/api"}
+```
 
 ## Output
 
-Supported output formats:
-
-- `JSON`: one JSON object per output record.
+- `JSON`: one JSON object per row.
 - `TSKV`: tab-separated `field=value` pairs.
-- `CSVHeader`: a header row followed by comma-separated rows. Values are
-  written without CSV quoting or escaping.
-- `PrettyTable`: a buffered, human-readable table with aligned columns.
+- `CSVHeader`: a header followed by comma-separated rows, without quoting or escaping.
+- `PrettyTable`: a buffered table with aligned columns.
 
-Multiple top-level queries produce multiple output groups. The order of those
-groups is unspecified by default. Use `--keep-output-order` to buffer output
-groups and print them in query order.
-
-Use `--no-buffer` to avoid buffering the complete result of a single top-level
-query. It requires exactly one top-level query and supports JSON, TSKV, and
-CSVHeader; it cannot be combined with `--keep-output-order` or PrettyTable. Standard stdout buffering is retained.
+See [CLI options](cli.md) for output ordering and buffering.

@@ -6,9 +6,8 @@
 logs. Use it to filter events, count errors, aggregate fields, and join related
 logs from your terminal.
 
-It reads IMAP-style and TSKV2 key/value logs, including gzip-compressed files.
-Use `JSON_VALUE` to query JSON Lines. Results can be printed as a table, JSON
-Lines, CSV, or TSKV.
+It reads timestamped logfmt, TSKV, CSV, TSV, and JSON Lines, including
+gzip-compressed files. Results can be printed as a table, JSON Lines, CSV, or TSKV.
 
 ## Example
 

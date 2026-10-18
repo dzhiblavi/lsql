@@ -9,8 +9,8 @@
 namespace lsql::back::logfmt {
 
 template <>
-struct LogTypeImpl<LogType::IMAP> {
-    static constexpr TimeFormat time_format = TimeFormat::ORACLE;
+struct LogTypeImpl<LogType::TS_LOGFMT> {
+    static constexpr std::optional<TimeFormat> time_format = TimeFormat::ORACLE;
 
     template <typename F>
     static bool parseKeyValue(std::string_view line, F&& callback) {
@@ -54,7 +54,9 @@ struct LogTypeImpl<LogType::IMAP> {
         return true;
     }
 
-    static bool detectLogType(std::string_view line) { return line.starts_with("["); }
+    static bool detectLogType(std::string_view line) {
+        return line.starts_with("[") && parseKeyValue(line, [](auto&&...) {});
+    }
 };
 
 }  // namespace lsql::back::logfmt
