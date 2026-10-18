@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 project(
     lsql
-    VERSION 0.0.4
+    VERSION 0.0.5
     LANGUAGES CXX)
 
 set(BUILD_SHARED_LIBS OFF)
