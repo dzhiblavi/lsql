@@ -40,6 +40,12 @@ struct Optimizer : util::TreeWalker<Optimizer> {
                     .value = int64_t(0),
                     .null_if_empty = false,
                 };
+            } else {
+                ctx.setChanges().note("count over non-null constant folded to count-all");
+                self.node = ir::FnCallAggregate{
+                    .function = func::CountAll{},
+                    .args = {},
+                };
             }
             return;
         }

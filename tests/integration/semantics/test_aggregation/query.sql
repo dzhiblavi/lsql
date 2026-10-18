@@ -5,7 +5,15 @@ input = input.1.txt
 SELECT COUNT(*) AS count, 1 AS test_index
 FROM $input
 
-SELECT COUNT(true) AS count_true, COUNT(false) AS count_false, COUNT(null) AS count_null, 2 AS test_index
+SELECT
+    COUNT(*) AS rows,
+    COUNT(1) AS count_one,
+    COUNT(0) AS count_zero,
+    COUNT(true) AS count_true,
+    COUNT(false) AS count_false,
+    COUNT('') AS count_empty,
+    COUNT(null) AS count_null,
+    2 AS test_index
 FROM $input
 
 SELECT MIN(timestamp) AS min_ts, MAX(timestamp) AS max_ts, 3 AS test_index
@@ -20,6 +28,7 @@ WHERE status = 'ok'
 
 SELECT
     COUNT(*) AS rows,
+    COUNT(1) AS count_one,
     COUNT(Int(anon)) AS values,
     MIN(Int(anon)) AS minimum,
     MAX(Int(anon)) AS maximum,

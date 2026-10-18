@@ -82,6 +82,7 @@ FROM (SELECT anon, COUNT(*) AS count FROM (1) WHERE false GROUP BY anon)
 SELECT
     anon AS key,
     COUNT(*) AS rows,
+    COUNT(1) AS count_one,
     COUNT(*) + 1 AS adjusted,
     COUNT(Int(anon)) AS values,
     SUM(Int(anon)) AS total,

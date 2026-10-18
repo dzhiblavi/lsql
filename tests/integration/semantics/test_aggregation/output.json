@@ -1,6 +1,6 @@
 {"count":4,"test_index":1}
 
-{"test_index":2,"count_null":0,"count_false":4,"count_true":4}
+{"rows":4,"count_one":4,"count_zero":4,"count_true":4,"count_false":4,"count_empty":4,"count_null":0,"test_index":2}
 
 {"max_ts":"2026-May-06 12:00:04","min_ts":"2026-May-06 12:00:01","test_index":3}
 
@@ -8,7 +8,7 @@
 
 {"count":2,"max_ts":"2026-May-06 12:00:03","min_ts":"2026-May-06 12:00:02","test_index":5}
 
-{"rows":0,"values":0,"minimum":null,"maximum":null,"total":0,"test_index":6}
+{"rows":0,"count_one":0,"values":0,"minimum":null,"maximum":null,"total":0,"test_index":6}
 
 {"rows":2,"values":0,"minimum":null,"maximum":null,"total":0,"test_index":7}
 
