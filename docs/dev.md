@@ -1,5 +1,9 @@
 # Development
 
+`lsql` is a query engine for text logs. It reads log files as streams of
+records, extracts key/value fields, and runs query plans over them. The
+command-line tool runs SQL-style queries through this engine.
+
 The integration tests are the best executable specification. Each semantic test
 contains `query.sql`, which is compared against the expected output.
 
