@@ -1,6 +1,7 @@
 #pragma once
 
 #include "back/exec/expr/Scalar.h"
+#include "back/exec/expr/ScalarContext.h"
 #include "back/exec/phys/MemberSubscriber.h"
 #include "back/exec/phys/Operation.h"
 
@@ -8,9 +9,10 @@ namespace lsql::back::exec::phys {
 
 class Projection : public OperationBase<Projection> {
  public:
-    Projection(int id, std::vector<Arc<Scalar>> scalars)
+    Projection(int id, std::vector<Arc<Scalar>> scalars, Arc<ScalarContext> scalar_context)
         : OperationBase(id)
         , scalars_(std::move(scalars))
+        , scalar_context_(std::move(scalar_context))
         , record_(std::vector<Value>(scalars_.size(), vnull)) {
         prof::addEdge(sub_.scopeHandle(), prof_);
     }
@@ -22,6 +24,8 @@ class Projection : public OperationBase<Projection> {
         if (record == nullptr) {
             return emit(nullptr);
         }
+
+        scalar_context_->reset();
 
         auto&& values = record_.mutableValues();
         for (size_t i = 0; i < scalars_.size(); ++i) {
@@ -37,6 +41,7 @@ class Projection : public OperationBase<Projection> {
     }
 
     std::vector<Arc<Scalar>> scalars_;
+    Arc<ScalarContext> scalar_context_;
     VecRecord record_;
 
     MemberSubscriber<Projection> sub_{

@@ -3,6 +3,7 @@
 ## v0.0.5 (wip)
 
 - Added macro expression support.
+- Cache repeated scalar expressions within projections.
 
 ## v0.0.4
 

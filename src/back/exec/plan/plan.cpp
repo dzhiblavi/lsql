@@ -4,6 +4,7 @@
 #include "back/exec/expr/CoalesceScalar.h"
 #include "back/exec/expr/ConstAggregate.h"
 #include "back/exec/expr/IdentifierScalar.h"
+#include "back/exec/expr/LazyScalar.h"
 #include "back/exec/expr/NaryFnScalar.h"
 #include "back/exec/expr/NullaryFnAggregate.h"
 #include "back/exec/expr/UnaryFnAggregate.h"
@@ -17,11 +18,30 @@
 
 #include "core/exceptions.h"
 #include "core/function/build.h"
+
 #include "util/archive.h"
+#include "util/deep_copy.h"
+
+#include <unordered_map>
 
 namespace lsql::back::exec::plan {
 
 namespace {
+
+struct ScalarScope {
+    Arc<ScalarContext> context = arc<ScalarContext>();
+    std::unordered_map<ir::Scalar, ScalarContext::Id> expressions;
+
+    ScalarContext::Id slot(const ir::Scalar& scalar) {
+        if (auto found = expressions.find(scalar); found != expressions.end()) {
+            return found->second;
+        }
+
+        auto id = context->addSlot();
+        expressions.emplace(util::deepCopy(scalar), id);
+        return id;
+    }
+};
 
 template <typename P>
 FieldSet requiredProjectorsFields(
@@ -193,9 +213,10 @@ class Planner {
             std::move(s.node), [&](auto node) { return planRelation(std::move(node), s); });
     }
 
-    ScalarPtr planScalar(ir::Scalar s, const Schema& schema) {
-        return util::match(
-            std::move(s.node), [&](auto node) { return planScalar(std::move(node), s, schema); });
+    ScalarPtr planScalar(ir::Scalar s, const Schema& schema, ScalarScope* scope = nullptr) {
+        return util::match(std::move(s.node), [&](auto node) {
+            return planScalar(std::move(node), s, schema, scope);
+        });
     }
 
     Arc<AggregateProjector> planAggregate(ir::Aggregate s, const Schema& schema) {
@@ -237,7 +258,8 @@ class Planner {
 
     Arc<Operation> planRelation(ir::ProjectionRelation r, auto& info) {
         auto source = planRelation(std::move(*r.source));
-        auto projectors = projectorsList(std::move(r.projectors), source->schema);
+        ScalarScope scope;
+        auto projectors = projectorsList(std::move(r.projectors), source->schema, &scope);
 
         return arc(
             Operation{
@@ -245,6 +267,7 @@ class Planner {
                     Projection{
                         .source = source,
                         .projectors = projectors,
+                        .scalar_context = std::move(scope.context),
                     },
                 .min_phase = source->min_phase,
                 .schema = info.schema,
@@ -501,23 +524,33 @@ class Planner {
         return named_ops[r.name];
     }
 
-    ScalarPtr planScalar(ir::FieldScalar e, auto& info, auto& schema) {
+    ScalarPtr planScalar(ir::FieldScalar e, auto& info, auto& schema, ScalarScope*) {
         auto slot = schema.slot(e.field_id);
         verify(slot.has_value());
         return arc<IdentifierScalar>(*slot, e.field_id, info.value_type);
     }
 
-    ScalarPtr planScalar(ir::ValueScalar e, auto& /*info*/, auto& /*schema*/) {
+    ScalarPtr planScalar(ir::ValueScalar e, auto& /*info*/, auto& /*schema*/, ScalarScope*) {
         return arc<ValueScalar>(e.value);
     }
 
-    ScalarPtr planScalar(ir::CoalesceScalar s, auto& info, auto& schema) {
-        auto args = expressionList(std::move(s.args), schema);
+    ScalarPtr planScalar(ir::CachedScalar s, auto& /*info*/, auto& schema, ScalarScope* scope) {
+        if (!scope) {
+            return planScalar(std::move(*s.scalar), schema);
+        }
+
+        auto id = scope->slot(*s.scalar);
+        auto scalar = planScalar(std::move(*s.scalar), schema, scope);
+        return arc<LazyScalar>(id, std::move(scalar), scope->context);
+    }
+
+    ScalarPtr planScalar(ir::CoalesceScalar s, auto& info, auto& schema, ScalarScope* scope) {
+        auto args = expressionList(std::move(s.args), schema, scope);
         return arc<CoalesceScalar>(info.value_type, std::move(args));
     }
 
-    ScalarPtr planScalar(ir::FnCallScalar s, auto& info, auto& schema) {
-        auto args = expressionList(std::move(s.args), schema);
+    ScalarPtr planScalar(ir::FnCallScalar s, auto& info, auto& schema, ScalarScope* scope) {
+        auto args = expressionList(std::move(s.args), schema, scope);
 
         return func::buildScalar<ScalarPtr>(
             s.function,
@@ -568,25 +601,27 @@ class Planner {
             });
     }
 
-    Arc<ScalarProjector> planProjector(ir::Projector p, const Schema& schema) {
-        return box<ScalarProjector>(p.alias_field_id, planScalar(std::move(*p.expr), schema));
+    Arc<ScalarProjector> planProjector(ir::Projector p, const Schema& schema, ScalarScope* scope) {
+        return box<ScalarProjector>(
+            p.alias_field_id, planScalar(std::move(*p.expr), schema, scope));
     }
 
-    std::vector<ScalarPtr> expressionList(std::vector<ir::Scalar> list, const Schema& schema) {
+    std::vector<ScalarPtr> expressionList(
+        std::vector<ir::Scalar> list, const Schema& schema, ScalarScope* scope = nullptr) {
         std::vector<ScalarPtr> exprs;
         exprs.reserve(list.size());
         for (auto&& item : list) {
-            exprs.push_back(planScalar(std::move(item), schema));
+            exprs.push_back(planScalar(std::move(item), schema, scope));
         }
         return exprs;
     }
 
     std::vector<Arc<ScalarProjector>> projectorsList(
-        std::vector<ir::Projector> list, const Schema& schema) {
+        std::vector<ir::Projector> list, const Schema& schema, ScalarScope* scope = nullptr) {
         std::vector<Arc<ScalarProjector>> proj;
         proj.reserve(list.size());
         for (auto&& item : list) {
-            proj.push_back(planProjector(std::move(item), schema));
+            proj.push_back(planProjector(std::move(item), schema, scope));
         }
         return proj;
     }

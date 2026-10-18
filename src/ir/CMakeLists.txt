@@ -2,6 +2,7 @@ add_library(lsql-ir STATIC)
 
 target_sources(
     lsql-ir PRIVATE
+    Scalars.cpp
     tools.cpp
 )
 

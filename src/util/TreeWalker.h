@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <type_traits>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -65,7 +66,7 @@ class TreeWalker {
     template <typename T>
     void visit(const std::shared_ptr<T>& value) {
         if (value) {
-            doVisit(*value);
+            doVisit(std::as_const(*value));
         }
     }
 
@@ -79,7 +80,7 @@ class TreeWalker {
     template <typename T>
     void visit(const std::unique_ptr<T>& value) {
         if (value) {
-            doVisit(*value);
+            doVisit(std::as_const(*value));
         }
     }
 

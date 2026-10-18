@@ -1,6 +1,6 @@
 #include "optimize/projection_collapse.h"
 
-#include "config/optimizer_settings.h"
+#include "optimize/ScalarCostEstimator.h"
 
 #include "ir/Aggregates.h"  // IWYU pragma: keep
 #include "ir/Relations.h"
@@ -14,123 +14,6 @@
 namespace lsql::opt {
 
 namespace {
-
-struct ScalarCostEstimator : util::TreeWalker<ScalarCostEstimator> {
-    using enum config::OptimizerSetting;
-    using Base = util::TreeWalker<ScalarCostEstimator>;
-    using Base::visit;
-
-    virtual ~ScalarCostEstimator() = default;
-    virtual int64_t view(const ir::FieldScalar&) = 0;
-
-    void visit(const ir::Scalar& s) {
-        Base::visit(s);
-        auto cost = std::visit([&](const auto& c) { return view(c); }, s.node);
-        setScalarCost(&s, cost);
-    }
-
-    int64_t cost(FieldId id) const {
-        auto it = cost_.find(id);
-        verify(it != cost_.end());
-        return it->second;
-    }
-
-    int64_t view(const ir::ValueScalar&) { return 0; }
-
-    int64_t view(const ir::CoalesceScalar& s) {
-        int64_t cost = optimizer.get(CoalesceCostOverhead);
-        for (auto&& child : s.args) {
-            cost += scalarCost(&child);
-        }
-        return cost;
-    }
-
-    int64_t view(const ir::FnCallScalar& s) {
-        int64_t cost = 0;
-        for (auto&& child : s.args) {
-            cost += scalarCost(&child);
-        }
-
-        util::match(
-            s.function,
-            util::Overloaded{
-                [&](const func::Lower&) { cost += optimizer.get(LowerCostOverhead); },
-                [&](const func::SplitPart&) { cost += optimizer.get(SplitPartCostOverhead); },
-                [&](const func::Substr&) { cost += optimizer.get(SubstrCostOverhead); },
-                [&](const func::ParseTimestamp&) {
-                    cost += optimizer.get(ParseTimestampCostOverhead);
-                },
-                [&](const func::JSONValue&) { cost += optimizer.get(JSONValueCostOverhead); },
-                [&](const func::Coalesce&) { cost += optimizer.get(CoalesceCostOverhead); },
-                [&](const func::Cast& f) {
-                    verify_dbg(s.args.size() == 1);
-
-                    if (f.cast_to == ValueType::String) {
-                        cost += optimizer.get(CastToStringCostOverhead);
-                    }
-                    if (s.args.front().value_type == ValueType::String) {
-                        cost += optimizer.get(ParseStringCostOverhead);
-                    }
-                },
-                [&](const func::Like&) { cost += optimizer.get(RegexCostOverhead); },
-                [&](const func::RSubstr&) { cost += optimizer.get(RegexCostOverhead); },
-                [&](const func::BooleanNegate&) { cost += optimizer.get(UnaryOpCostOverhead); },
-                [&](const func::Equal&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::NotEqual&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::Less&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::Greater&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::LessEqual&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::GreaterEqual&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::And&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::Or&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::Divide&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::Add&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::Subtract&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::Percentile&) { cost += optimizer.get(BinaryOpCostOverhead); },
-                [&](const func::CountNonNull&) {},
-                [&](const func::CountAll&) {},
-                [&](const func::Min&) {},
-                [&](const func::Max&) {},
-                [&](const func::Sum&) {},
-            });
-
-        return cost;
-    }
-
-    void estimateProjector(FieldId id, const ir::Scalar& s) {
-        visit(s);
-        auto cost = scalarCost(&s);
-        cost_[id] = cost;
-        total_cost_ += cost;
-    }
-
-    int64_t totalCost() const { return total_cost_; }
-
- protected:
-    int64_t setScalarCost(const ir::Scalar* s, int64_t cost) {
-        verify(!scalar_cost_.contains(s));
-        return scalar_cost_[s] = cost;
-    }
-
-    int64_t scalarCost(const ir::Scalar* s) const {
-        verify(scalar_cost_.contains(s));
-        return scalar_cost_.at(s);
-    }
-
-    config::OptimizerSettings& optimizer = config::optimizer();
-    int64_t total_cost_ = 0;
-    std::unordered_map<const ir::Scalar*, int64_t> scalar_cost_;
-    std::unordered_map<FieldId, int64_t> cost_;
-};
-
-struct RawScalarCostEstimator : ScalarCostEstimator {
-    int64_t view(const ir::FieldScalar&) override { return 0; }
-};
-
-struct ScalarCollapseCostEstimator : ScalarCostEstimator {
-    const ScalarCostEstimator* inner = nullptr;
-    int64_t view(const ir::FieldScalar& outer) override { return inner->cost(outer.field_id); }
-};
 
 struct CloneScalarView : util::TreeWalker<CloneScalarView> {
     using Base = util::TreeWalker<CloneScalarView>;
@@ -169,6 +52,13 @@ struct CloneScalarView : util::TreeWalker<CloneScalarView> {
     ir::Scalar clone(const ir::Scalar& s) {
         visit(s);
         return takeScalar(&s);
+    }
+
+    ir::Scalar view(const ir::CachedScalar& s, const ir::Scalar& self) {
+        return ir::Scalar{
+            .node = ir::CachedScalar{.scalar = box(takeScalar(s.scalar.get()))},
+            .value_type = self.value_type,
+        };
     }
 
  private:
@@ -220,37 +110,15 @@ struct Optimizer : util::TreeWalker<Optimizer> {
 
         auto& inner = std::get<ir::ProjectionRelation>(rel.source->node);
 
-        RawScalarCostEstimator inner_estimator;
-        for (auto&& [id, scalar] : inner.projectors) {
-            inner_estimator.estimateProjector(id, *scalar);
+        ScalarCostEstimator inner_estimator;
+        for (const auto& projector : inner.projectors) {
+            inner_estimator.estimate(*projector.expr);
         }
-        RawScalarCostEstimator outer_estimator;
-        for (auto&& [id, scalar] : rel.projectors) {
-            outer_estimator.estimateProjector(id, *scalar);
-        }
-
-        ScalarCollapseCostEstimator collapsed_estimator;
-        collapsed_estimator.inner = &inner_estimator;
-        for (auto&& [id, scalar] : rel.projectors) {
-            collapsed_estimator.estimateProjector(id, *scalar);
+        ScalarCostEstimator outer_estimator;
+        for (const auto& projector : rel.projectors) {
+            outer_estimator.estimate(*projector.expr);
         }
 
-        int64_t total_current_cost =
-            inner_estimator.totalCost() + outer_estimator.totalCost() +
-            config::optimizer().get(config::OptimizerSetting::ProjectionCostOverhead);
-
-        if (collapsed_estimator.totalCost() > total_current_cost) {
-            llog::trace(
-                "projection collapse skipped, cost too high: collapsed={}, old={}",
-                collapsed_estimator.totalCost(),
-                total_current_cost);
-            return;
-        }
-
-        ctx.setChanges().note(
-            "projection collapsed, cost: collapsed={}, old={}",
-            collapsed_estimator.totalCost(),
-            total_current_cost);
         std::unordered_map<FieldId, const ir::Scalar*> inner_scalars;
         inner_scalars.reserve(inner.projectors.size());
         for (auto&& [id, scalar] : inner.projectors) {
@@ -268,6 +136,25 @@ struct Optimizer : util::TreeWalker<Optimizer> {
                 .expr = box(collapser.collapse(*scalar)),
             });
         }
+
+        ScalarCostEstimator collapsed_estimator;
+        for (const auto& projector : collapsed) {
+            collapsed_estimator.estimate(*projector.expr);
+        }
+        auto current_cost =
+            inner_estimator.totalCost() + outer_estimator.totalCost() +
+            config::optimizer().get(config::OptimizerSetting::ProjectionCostOverhead);
+        if (collapsed_estimator.totalCost() > current_cost) {
+            llog::trace(
+                "projection collapse skipped, cost too high: collapsed={}, old={}",
+                collapsed_estimator.totalCost(),
+                current_cost);
+            return;
+        }
+        ctx.setChanges().note(
+            "projection collapsed, cost: collapsed={}, old={}",
+            collapsed_estimator.totalCost(),
+            current_cost);
 
         self.node = ir::ProjectionRelation{
             .source = std::move(inner.source),

@@ -12,3 +12,13 @@
 {"text":"{}","value":null,"child":null,"test_index":3}
 {"text":"{\"value\":false}","value":"false","child":null,"test_index":3}
 {"text":"{\"value\":{\"child\":\"Привет\"}}","value":"{\"child\":\"Привет\"}","child":"Привет","test_index":3}
+
+{"first":"42","second":"42","numeric":42,"adjusted":52,"test_index":4}
+{"first":"-7","second":"-7","numeric":-7,"adjusted":3,"test_index":4}
+{"first":null,"second":null,"numeric":null,"adjusted":null,"test_index":4}
+{"first":"1e3","second":"1e3","numeric":null,"adjusted":null,"test_index":4}
+
+{"fallback":"42","again":"42","test_index":5}
+{"fallback":"-7","again":"-7","test_index":5}
+{"fallback":null,"again":null,"test_index":5}
+{"fallback":"1e3","again":"1e3","test_index":5}

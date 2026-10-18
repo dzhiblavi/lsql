@@ -20,6 +20,7 @@ enum class OptimizerSetting {
     ParseStringCostOverhead,
     RegexCostOverhead,
     ProjectionCostOverhead,
+    CachedScalarCostOverhead,
 };
 
 struct OptimizerSettings : DynamicSettings<OptimizerSetting, OptimizerSettings> {
@@ -39,6 +40,7 @@ struct OptimizerSettings : DynamicSettings<OptimizerSetting, OptimizerSettings> 
         set(ParseStringCostOverhead, 10);
         set(RegexCostOverhead, 4);
         set(ProjectionCostOverhead, 10);
+        set(CachedScalarCostOverhead, 1);
     }
 
     void validate(OptimizerSetting setting, int64_t value) {

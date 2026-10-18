@@ -5,7 +5,11 @@
 #include "core/function/Function.h"
 
 #include "core/schema/types.h"
+#include "core/types.h"
 #include "core/value/Value.h"
+
+#include <cstddef>
+#include <functional>
 
 namespace lsql::ir {
 
@@ -28,9 +32,20 @@ struct FnCallScalar {
     std::vector<Scalar> args;
 };
 
+struct CachedScalar {
+    Box<Scalar> scalar;
+};
+
 struct Scalar {
     ScalarNode node;
     ValueType value_type;
 };
 
+bool operator==(const Scalar& left, const Scalar& right);
+
 }  // namespace lsql::ir
+
+template <>
+struct std::hash<lsql::ir::Scalar> {
+    size_t operator()(const lsql::ir::Scalar& scalar) const;
+};

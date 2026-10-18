@@ -6,6 +6,7 @@ target_sources(
     const_scalar_fold.cpp
     relation_simplify.cpp
     scalar_simplify.cpp
+    scalar_cache.cpp
     projection_collapse.cpp
     empty_relation_prune.cpp
     filter_pushdown.cpp

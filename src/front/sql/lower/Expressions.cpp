@@ -192,7 +192,7 @@ std::vector<ir::Aggregate> extractAggregates(bound::Expr& expr, Context& ctx) {
             .required_fields = FieldSet::withField(field_id),
             .span = span,
         };
-        return aggregates;
+        return std::move(aggregates);
     }
 
     std::vector<ir::Aggregate> aggregates;

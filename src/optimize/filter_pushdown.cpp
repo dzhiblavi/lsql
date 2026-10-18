@@ -5,6 +5,7 @@
 #include "ir/Scalars.h"
 
 #include "util/TreeWalker.h"
+#include "util/deep_copy.h"
 
 #include <unordered_map>
 #include <utility>
@@ -108,7 +109,7 @@ struct Optimizer : util::TreeWalker<Optimizer> {
 
     void pushdown(ir::FilterRelation& filter, ir::UnionAllRelation& union_all, ir::Relation& self) {
         for (auto& source : union_all.sources) {
-            addFilter(source, *filter.condition);
+            addFilter(source, util::deepCopy(*filter.condition));
         }
         ctx.note("filter pushed into union inputs");
         removeFilter(filter, self);
@@ -116,8 +117,8 @@ struct Optimizer : util::TreeWalker<Optimizer> {
 
     void pushdown(
         ir::FilterRelation& filter, ir::UnionAllSortedByRelation& merge, ir::Relation& self) {
-        addFilter(*merge.left, *filter.condition);
-        addFilter(*merge.right, *filter.condition);
+        addFilter(*merge.left, util::deepCopy(*filter.condition));
+        addFilter(*merge.right, util::deepCopy(*filter.condition));
         ctx.note("filter pushed into sorted merge inputs");
         removeFilter(filter, self);
     }
@@ -140,7 +141,7 @@ struct Optimizer : util::TreeWalker<Optimizer> {
     }
 
     void pushdown(ir::FilterRelation& filter, ir::LeftJoinRelation& join, ir::Relation& self) {
-        auto split = splitLeftCondition(*filter.condition, join.left->schema);
+        auto split = splitLeftCondition(util::deepCopy(*filter.condition), join.left->schema);
         if (!split.left) {
             return;
         }

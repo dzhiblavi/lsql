@@ -22,6 +22,7 @@ struct Stringifier : TreePrinter<Stringifier> {
 
     StrBuilder print(const exec::Aggregate&) { return StrBuilder("<compiled>"); }
     StrBuilder print(const exec::Scalar&) { return StrBuilder("<compiled>"); }
+    StrBuilder print(const exec::ScalarContext&) { return StrBuilder("<compiled>"); }
 
     StrBuilder print(const Operation& op) {
         if (printed.contains(&op)) {

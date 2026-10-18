@@ -8,12 +8,14 @@ struct FieldScalar;
 struct ValueScalar;
 struct FnCallScalar;
 struct CoalesceScalar;
+struct CachedScalar;
 
 using ScalarNode = std::variant< //
     FieldScalar, //
     ValueScalar, //
     CoalesceScalar, //
-    FnCallScalar //
+    FnCallScalar, //
+    CachedScalar //
 >;
 
 struct Scalar;

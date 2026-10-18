@@ -29,3 +29,21 @@ SELECT
     JSON_VALUE(anon, 'value.child') AS child,
     3 AS test_index
 FROM ('{"value":""}', '{"value":null}', '{}', '{"value":false}', '{"value":{"child":"Привет"}}')
+
+SELECT
+    JSON_VALUE(_line, 'count') AS first,
+    JSON_VALUE(_line, 'count') AS second,
+    Int(JSON_VALUE(_line, 'count')) AS numeric,
+    Int(JSON_VALUE(_line, 'count')) + 10 AS adjusted,
+    4 AS test_index
+FROM $input
+
+SELECT
+    COALESCE(
+        JSON_VALUE(_line, 'missing'),
+        JSON_VALUE(_line, 'count'),
+        JSON_VALUE(_line, 'count')
+    ) AS fallback,
+    JSON_VALUE(_line, 'count') AS again,
+    5 AS test_index
+FROM $input

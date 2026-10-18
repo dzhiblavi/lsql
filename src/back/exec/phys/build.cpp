@@ -226,7 +226,7 @@ struct Builder {
 
         for (auto&& [phase, fields] : op.required_fields) {
             auto scalars = projectorsExprs(proj.projectors, fields);
-            auto opr = arc<Projection>(op.id, std::move(scalars));
+            auto opr = arc<Projection>(op.id, std::move(scalars), proj.scalar_context);
 
             get(*proj.source, phase)->output(opr->sub());
             insert(op, phase, opr);

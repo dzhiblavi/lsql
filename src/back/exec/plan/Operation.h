@@ -2,6 +2,7 @@
 
 #include "back/exec/expr/Aggregate.h"
 #include "back/exec/expr/Scalar.h"
+#include "back/exec/expr/ScalarContext.h"
 #include "back/exec/plan/fwd/Operation.h"
 
 #include "core/schema/Schema.h"
@@ -82,6 +83,7 @@ struct MergeSorted {
 struct Projection {
     Arc<Operation> source;
     std::vector<Arc<ScalarProjector>> projectors;
+    Arc<ScalarContext> scalar_context;
 };
 
 struct HashSemiJoin {

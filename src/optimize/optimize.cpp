@@ -11,6 +11,7 @@
 #include "optimize/limit_pushdown.h"
 #include "optimize/projection_collapse.h"
 #include "optimize/relation_simplify.h"
+#include "optimize/scalar_cache.h"
 #include "optimize/scalar_simplify.h"
 
 namespace lsql::opt {
@@ -24,6 +25,7 @@ ir::Program optimize(ir::Program program, Context& ctx) {
     program = relationSimplify(std::move(program), ctx);
     program = filterPushdown(std::move(program), ctx);
     program = limitPushdown(std::move(program), ctx);
+    program = scalarCache(std::move(program), ctx);
     program = projectionCollapse(std::move(program), ctx);
     program = emptyRelationPrune(std::move(program), ctx);
     return program;

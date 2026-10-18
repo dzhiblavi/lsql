@@ -37,4 +37,4 @@ build: configure
 	cmake --build --preset $(CONAN_PRESET)
 
 test: build
-	ctest --test-dir $(TARGET_DIR) --output-on-failure
+	ctest --test-dir $(TARGET_DIR) --output-on-failure -j `nproc`
