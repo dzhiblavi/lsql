@@ -18,17 +18,31 @@ Item 1.5 was committed as `3bfb3dd` (Document query debugging with AST, IR,
 and execution plan examples). All 9 documented commands and 7 output examples,
 links, anchors, formatting, and whitespace checks passed.
 
-Item 2 is complete and approved for commit. `docs/install.md` documents
-platform selection, archive extraction, installation to `~/.local/bin`, PATH
-setup, and a complete first-query example. README links to it. The full workflow
-was checked with published v0.0.4 binaries on macOS and in Ubuntu 20.04 amd64.
-Documentation links, formatting, whitespace, and README preservation passed.
+Item 2 was committed as `b059e23` (Document release installation and a complete
+quick start). Its full workflow was checked with published v0.0.4 binaries on
+macOS and in Ubuntu 20.04 amd64.
 
-After committing item 2, work on item 3: reconcile the documentation with the
-implementation and document build prerequisites. Earlier changes already fixed
-obsolete make targets, CLI option names, log-level casing, and the macOS build
-setup. Audit the remaining SQL, CLI, I/O, and build instructions for concrete
-mismatches. Keep item 3 uncommitted for review; do not advance to item 4.
+Item 3 is complete and approved for commit. SQL docs now cover all 18 built-in
+functions, STREAM sources, sort direction, regex matching, casts, nulls, timestamp formats, and aggregate
+constraints. I/O docs clarify format detection, anonymous columns, timestamp
+ordering, CSV behavior, and no-buffer restrictions. CLI docs clarify case
+sensitivity, timestamp interpretation, and stack trace availability. Build
+instructions remain short and now include cloning and host prerequisites.
+
+The user explicitly requested fixing COUNT case sensitivity rather than
+keeping a documented exception. COUNT now parses as an ordinary identifier;
+function calls normalize its name to count_all/count_nonnull, and star calls
+remain restricted to COUNT. The user accepted this design after discussing why
+making lowercase count a lexer keyword would break aliases and field names.
+Preserve this design. Existing aggregation fixtures cover casing, nulls,
+aliases, and macros, and release notes mention the change.
+
+The rebuilt parser passed all 137 tests. All 22 complete SQL reference examples,
+all documented function names, COUNT variants and invalid calls, documentation
+links and anchors, formatting, whitespace, and Linux make command expansion
+were checked. No new test files or test types were added.
+After committing item 3, present item 4: configure the GitHub description,
+topics, and documentation links.
 
 Build instructions belong in `docs/build/linux.md` and
 `docs/build/mac_silicon.md`. Keep them limited to prerequisites and commands,
@@ -47,7 +61,7 @@ For item 1, the user approved this README structure:
 - [x] **1.** Rework README for new users.
 - [x] **1.5.** Add query debugging documentation with AST, bound AST, IR, optimizer report, and execution plan examples; link it from README.
 - [x] **2.** Add installation instructions and a complete quick start.
-- [ ] **3.** Reconcile documentation with the implementation and document build prerequisites.
+- [x] **3.** Reconcile documentation with the implementation and document build prerequisites.
 - [ ] **4.** Configure GitHub description, topics, and documentation links.
 - [ ] **5.** Run CI on pull requests and pushes to the main branch.
 - [ ] **6.** Add practical examples and explain when to use lsql.

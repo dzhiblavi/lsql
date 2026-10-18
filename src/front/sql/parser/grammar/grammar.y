@@ -40,7 +40,6 @@
 
 %token TOKEN_SELECT.
 %token TOKEN_DEF.
-%token TOKEN_COUNT.
 %token TOKEN_FROM.
 %token TOKEN_LEFT.
 %token TOKEN_JOIN.
@@ -589,32 +588,26 @@ expression(E) ::= TOKEN_NOT(N) expression(S). {
     };
 }
 
-expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN(RP). {
+expression(E) ::= TOKEN_IDENTIFIER(Fn) TOKEN_LPAREN TOKEN_STAR TOKEN_RPAREN(RP). {
+    if (functionName(Fn.text) != "count") {
+        pCtx->has_error = true;
+        pCtx->error_span = Fn.span;
+    }
+
     E = new ast::Expr{
         .node = ast::FnCallExpr{
             .func = "count_all",
             .args = {},
         },
-        .span = merge(C.span, RP.span),
+        .span = merge(Fn.span, RP.span),
     };
-}
-
-expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
-    E = new ast::Expr{
-        .node = ast::FnCallExpr{
-            .func = "count_nonnull",
-            .args = std::move(*L),
-        },
-        .span = merge(C.span, RP.span),
-    };
-
-    delete L;
 }
 
 expression(E) ::= TOKEN_IDENTIFIER(Fn) TOKEN_LPAREN TOKEN_RPAREN(RP). {
+    auto function_name = functionName(Fn.text);
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = functionName(Fn.text),
+            .func = function_name == "count" ? "count_nonnull" : std::move(function_name),
             .args = {},
         },
         .span = merge(Fn.span, RP.span),
@@ -622,9 +615,10 @@ expression(E) ::= TOKEN_IDENTIFIER(Fn) TOKEN_LPAREN TOKEN_RPAREN(RP). {
 }
 
 expression(E) ::= TOKEN_IDENTIFIER(Fn) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {
+    auto function_name = functionName(Fn.text);
     E = new ast::Expr{
         .node = ast::FnCallExpr{
-            .func = functionName(Fn.text),
+            .func = function_name == "count" ? "count_nonnull" : std::move(function_name),
             .args = std::move(*L),
         },
         .span = merge(Fn.span, RP.span),

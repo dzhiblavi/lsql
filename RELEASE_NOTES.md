@@ -2,6 +2,7 @@
 
 ## v0.0.5 (wip)
 
+- Made COUNT case-insensitive, consistent with other function names.
 - Added macro expression support.
 - Cache repeated scalar expressions within projections.
 - Deduplicate aggregates in aggregate SELECT and GROUP BYs.

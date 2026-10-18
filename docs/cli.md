@@ -29,6 +29,9 @@ For locally built binaries, use `./output/lsql-Debug` or
 | `--time-to TIMESTAMP` | Default upper input timestamp, in ISO8601 format. |
 | `-o`, `--option GROUP.KEY=VALUE` | Override an integer dynamic setting; can be repeated. |
 
+Format names and log levels are case-sensitive. Timestamp options use
+`YYYY-MM-DDTHH:MM:SS`, interpreted in the local timezone.
+
 The optimizer runs five passes by default. For example, select JSON output and
 set the number of optimization passes explicitly:
 
@@ -69,4 +72,4 @@ report flags above are used. Add `--run` to also execute the query:
 | `--profile-text` | Print per-phase text profiles to stderr. |
 | `--profile-flamegraph` | Write `prof.<N>.folded` files. |
 | `--profile-dot-graph` | Write `prof.dot`. |
-| `--print-stacktrace` | Print a stack trace for errors associated with a query source span. |
+| `--print-stacktrace` | Print a stack trace for errors associated with a query source span; requires a build with stack trace support. |

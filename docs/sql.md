@@ -1,7 +1,8 @@
 # SQL Style
 
 The SQL frontend is implemented by `lsql`. It supports a compact SQL-like
-language over log files and named relations.
+language over log files and named relations. This reference describes the
+current source tree; for a released version, use the documentation at its Git tag.
 
 ```sql
 input = app.log
@@ -35,8 +36,9 @@ Named relations are referenced with `$name`.
 
 Comments start with `--` and continue to the end of the line.
 
-Keywords are uppercase and currently case-sensitive, except literals such as
-`true`, `false`, and `null`, and casts such as `Int(...)`.
+Keywords are uppercase and case-sensitive. The `def` keyword and the literals
+`true`, `false`, and `null` are lowercase. Function and macro names are
+case-insensitive, including `COUNT` (`count(*)`, `Count(*)`, and `COUNT(*)`).
 
 ## Expression Macros
 
@@ -81,6 +83,17 @@ Gzip-compressed inputs with `.gz` or `.gzip` suffixes can be read as full-file
 sources. Timestamp ranges are not supported for compressed inputs, including
 default ranges passed through `--time-from` or `--time-to`.
 
+Command output is available through `STREAM`:
+
+```sql
+SELECT uid, status
+FROM STREAM 'printf "[2026-May-06 12:00:00.000000] uid=aaa status=ok\n"'
+```
+
+`STREAM 'command'` runs the command through `/bin/sh -c` and reads records from
+its stdout. Use `MATERIALIZE(STREAM 'command')` when its rows need to be stored
+for reuse.
+
 File sources are treated as having fields with any name of type `String`.
 When a requested field is missing in an input log line, its value is `null`.
 
@@ -92,6 +105,8 @@ Ad-hoc values:
 ```sql
 ('aaa', 'ccc')
 ```
+
+Ad-hoc values form a single column named `anon`.
 
 Named relation references:
 
@@ -137,7 +152,7 @@ row without a match produces one row with `null` in every right column. Null key
 never match, including another null key. The right input is collected in memory
 before reading the left input, so the right input must be finite.
 
-Materialized relation:
+A materialized relation stores its rows in memory for reuse:
 
 ```sql
 MATERIALIZE (
@@ -172,6 +187,9 @@ LIMIT n
 ```
 
 All clauses after `FROM` are optional.
+
+Computed expressions in `SELECT` require an explicit `AS` alias. Plain field
+references can be selected without an alias.
 
 Projection examples:
 
@@ -235,7 +253,9 @@ ORDER BY timestamp DESC
 LIMIT 2
 ```
 
-`ASC` is accepted and is the default.
+`ASC` is accepted and is the default. A trailing `ASC` or `DESC` applies to
+all expressions in the sort key list. For example, `ORDER BY count, kind DESC`
+sorts both keys in descending order.
 
 ## UNION
 
@@ -276,7 +296,8 @@ timestamp
 Missing fields from file sources evaluate to `null`. References to fields that
 are not present in a bound relation are rejected during binding.
 
-`*` projects all visible fields.
+`*` projects all visible fields. For files, field references in the query
+define those fields; `SELECT *` does not discover every key present in the log.
 
 The full raw input line is available as `_line`.
 
@@ -298,6 +319,10 @@ Operators:
 ```sql
 a = b
 a != b
+a < b
+a <= b
+a > b
+a >= b
 a AND b
 a OR b
 NOT a
@@ -309,7 +334,27 @@ a LIKE 'regex'
 a IN source
 ```
 
-Arithmetic requires compatible types. Equality allows comparing with `null`.
+Arithmetic requires compatible types. Cast string log fields with `Int(...)`
+or `Float(...)` before numeric operations. Integer division truncates the
+result; division by zero returns `null`. When a typed operand evaluates to
+`null`, for example `Int('bad')`, arithmetic also returns `null`. String `+`
+concatenates its operands.
+
+Equality allows comparing with `null`: `null = null` is `true`, and a non-null
+value is unequal to `null`. Use `field = null` or `field != null` to test for
+missing values.
+
+`LIKE` matches a regular expression against the whole string. For a substring
+match, include `.*` around the pattern:
+
+```sql
+SELECT anon, anon LIKE 'error' AS exact_match,
+       anon LIKE '.*error.*' AS contains_match
+FROM ('error', 'prefix error suffix')
+```
+
+Both rows match `.*error.*`; only the first matches `error`. The pattern must be
+a string literal. SQL wildcard patterns such as `%error%` are not used.
 
 ## Functions
 
@@ -320,7 +365,17 @@ String(expr)
 Int(expr)
 Float(expr)
 Bool(expr)
+Null(expr)
 ```
+
+Casts preserve `null`; `Null(expr)` always returns `null`. Invalid numeric string
+conversions return `null`. `Int(...)` requires a complete decimal integer string
+with an optional leading `-`; a leading `+` is not accepted. `Float(...)`
+requires a complete finite number. Leading or trailing whitespace is not
+accepted.
+
+Casting a string with `Bool(...)` tests whether it is non-empty: `Bool('')` is
+`false`, while `Bool('false')` and `Bool('0')` are both `true`.
 
 JSON value extraction:
 
@@ -330,7 +385,7 @@ JSON_VALUE(json, '$.messages[0].title')
 JSON_VALUE(json, '/messages/0/title')
 ```
 
-The path must be a constant string. Dot-separated object fields and bracketed
+The path must be a string literal. Dot-separated object fields and bracketed
 array indexes are supported, with an optional `$` prefix. RFC 6901 JSON Pointer
 paths are also accepted.
 
@@ -344,9 +399,38 @@ JSON Lines files do not need to be configured as a log format.
 
 Other scalar functions:
 
+| Function | Behavior |
+| --- | --- |
+| `LOWER(expr)` | Convert a string to lowercase. |
+| `SPLITPART(expr, 'separator', index)` | Select a zero-based part; return `null` if the part does not exist. The separator must be a one-character string literal and the index a non-negative integer literal. |
+| `SUBSTR(expr, start)` | Take a substring from a zero-based offset to the end. |
+| `SUBSTR(expr, start, length)` | Take a substring with the given length. Offsets and lengths must be non-negative integer literals. |
+| `COALESCE(expr, ...)` | Return the first non-null argument; all non-null argument types must agree. |
+| `RSUBSTR(expr, 'regex')` | Return the first matching substring, or `null` if there is no match. The regex must be a string literal. |
+| `PARSE_TIMESTAMP(expr, 'format')` | Parse a timestamp string into integer seconds since the Unix epoch, using the local timezone. |
+
+For example:
+
 ```sql
-COALESCE(expr, ...)
-RSUBSTR(expr, 'regex')
+SELECT LOWER(anon) AS lowered,
+       SPLITPART(anon, ':', 1) AS part,
+       SUBSTR(anon, 0, 3) AS prefix,
+       SUBSTR(anon, 4) AS suffix
+FROM ('ABC:def')
+```
+
+`PARSE_TIMESTAMP` requires a format string literal with one of these exact names:
+
+| Format | Example input |
+| --- | --- |
+| `SQL` | `2026-05-06 12:00:00` |
+| `ORACLE` | `2026-May-06 12:00:00` |
+| `ISO8601` | `2026-05-06T12:00:00` |
+
+```sql
+SELECT PARSE_TIMESTAMP('2026-May-06 12:00:01', 'ORACLE')
+       - PARSE_TIMESTAMP('2026-05-06T12:00:00', 'ISO8601') AS elapsed_seconds
+FROM (1)
 ```
 
 Aggregates:
@@ -360,8 +444,13 @@ SUM(expr)
 PERCENTILE(expr, p, ...)
 ```
 
-`PERCENTILE` returns a string representation of the selected percentile value or
-values.
+`COUNT(*)` counts all rows; `COUNT(expr)` counts non-null values. The functions
+`COUNT_ALL()` and `COUNT_NONNULL(expr)` are also accepted as equivalents.
+
+`PERCENTILE` takes one or more floating-point literals between `0.0` and `1.0`
+for its percentile arguments. It returns a string containing a bracketed list,
+even for a single percentile, such as `'[25]'`. Null input values are ignored;
+an empty input produces `null`.
 
 ## IN and Semi-Joins
 
@@ -399,7 +488,7 @@ WHERE uid IN (
 )
 ```
 
-Negated membership:
+Negated membership, using `$uids` from the previous example:
 
 ```sql
 SELECT uid
@@ -409,7 +498,7 @@ WHERE NOT uid IN $uids
 
 ## Examples
 
-Count slow failing requests:
+Find failing request groups with the highest latency:
 
 ```sql
 input = app.log

@@ -75,3 +75,24 @@ SELECT
     10 AS test_index
 FROM (1)
 WHERE false
+
+SELECT
+    count (*) AS lower_rows,
+    Count(*) AS title_rows,
+    cOuNt(*) AS mixed_rows,
+    count(uid) AS lower_values,
+    Count(uid) AS title_values,
+    cOuNt(missing) AS missing_values,
+    11 AS test_index
+FROM $input
+
+SELECT COUNT AS upper_count, count AS lower_count, 12 AS test_index
+FROM (
+    SELECT count(*) AS COUNT, Count(uid) AS count
+    FROM $input
+)
+
+def rows() = cOuNt(*)
+
+SELECT rows() AS rows, 13 AS test_index
+FROM $input

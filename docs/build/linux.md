@@ -1,6 +1,11 @@
 # Build on Linux
 
-Install Docker and Make. Run the following commands from the repository root.
+Install Git, Make, and Docker. Start Docker, then clone the repository:
+
+```sh
+git clone https://github.com/dzhiblavi/lsql.git
+cd lsql
+```
 
 For x86-64:
 

@@ -80,7 +80,6 @@ OR               { return TOKEN_OR; }
 LIKE             { return TOKEN_LIKE; }
 MATERIALIZE      { return TOKEN_MATERIALIZE; }
 STREAM           { return TOKEN_STREAM; }
-COUNT            { return TOKEN_COUNT; }
 true             { return TOKEN_TRUE; }
 false            { return TOKEN_FALSE; }
 null             { return TOKEN_NULL; }
