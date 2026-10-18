@@ -15,7 +15,7 @@ __pycache__/
 /sync.sh
 /make_mac.sh
 /ARC_RELEASES.md
-/AGENT_NOTES.md
+/NOTES.md
 
 /*.svg
 /*.out

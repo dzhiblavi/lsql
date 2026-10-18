@@ -1,5 +1,6 @@
 #include "core/schema/Schema.h"
 
+#include "util/hash.h"
 #include "util/verify.h"
 
 namespace lsql {
@@ -88,3 +89,7 @@ std::string to_string(const Schema& schema, const FieldBinding& binding) {
 }
 
 }  // namespace lsql
+
+size_t std::hash<lsql::Schema>::operator()(const lsql::Schema& schema) const {
+    return lsql::util::hash(schema.fieldIds());
+}

@@ -4,6 +4,7 @@
 #include "core/schema/types.h"
 
 #include <cstdint>
+#include <functional>
 #include <string>
 
 namespace lsql {
@@ -34,3 +35,8 @@ class Schema {
 std::string to_string(const Schema& schema, const FieldBinding& binding);
 
 }  // namespace lsql
+
+template <>
+struct std::hash<lsql::Schema> {
+    size_t operator()(const lsql::Schema& schema) const;
+};
