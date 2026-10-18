@@ -58,3 +58,6 @@
 {"key":"b","rows":1,"test_index":12}
 
 {"rows":0,"test_index":13}
+
+{"key":"1","rows":2,"adjusted":3,"values":2,"total":2,"test_index":14}
+{"key":"bad","rows":2,"adjusted":3,"values":0,"total":0,"test_index":14}

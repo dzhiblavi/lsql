@@ -78,3 +78,15 @@ ORDER BY key
 
 SELECT COUNT(*) AS rows, 13 AS test_index
 FROM (SELECT anon, COUNT(*) AS count FROM (1) WHERE false GROUP BY anon)
+
+SELECT
+    anon AS key,
+    COUNT(*) AS rows,
+    COUNT(*) + 1 AS adjusted,
+    COUNT(Int(anon)) AS values,
+    SUM(Int(anon)) AS total,
+    14 AS test_index
+FROM ('1', '1', '2', 'bad', 'bad')
+GROUP BY anon
+HAVING COUNT(*) > 1 AND (SUM(Int(anon)) >= 2 OR COUNT(Int(anon)) = 0)
+ORDER BY key

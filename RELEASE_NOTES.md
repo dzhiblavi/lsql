@@ -4,6 +4,7 @@
 
 - Added macro expression support.
 - Cache repeated scalar expressions within projections.
+- Deduplicate aggregates in aggregate SELECT and GROUP BYs.
 
 ## v0.0.4
 

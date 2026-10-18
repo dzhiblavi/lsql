@@ -13,3 +13,7 @@
 {"rows":2,"values":0,"minimum":null,"maximum":null,"total":0,"test_index":7}
 
 {"rows":4,"values":3,"minimum":-2,"maximum":3,"total":4,"test_index":8}
+
+{"total":4,"adjusted":5,"shifted":7,"values":3,"rows":4,"test_index":9}
+
+{"rows":0,"adjusted":1,"total":0,"next_total":1,"minimum":null,"same_minimum":null,"test_index":10}

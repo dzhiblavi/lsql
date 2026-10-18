@@ -7,6 +7,9 @@
 #include "core/schema/types.h"
 #include "core/value/Value.h"
 
+#include <cstddef>
+#include <functional>
+
 namespace lsql::ir {
 
 struct FnCallAggregate {
@@ -25,4 +28,11 @@ struct Aggregate {
     ValueType value_type;
 };
 
+bool operator==(const Aggregate& left, const Aggregate& right);
+
 }  // namespace lsql::ir
+
+template <>
+struct std::hash<lsql::ir::Aggregate> {
+    size_t operator()(const lsql::ir::Aggregate& aggregate) const;
+};

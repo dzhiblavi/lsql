@@ -131,3 +131,9 @@ FROM (
     GROUP BY anon
     HAVING false
 )
+
+SELECT anon, COUNT(*) AS rows, COUNT(*) + 1 AS adjusted, 22 AS test_index
+FROM (1, 1, 2)
+GROUP BY anon
+HAVING rows IN (2)
+ORDER BY anon

@@ -45,3 +45,23 @@ SELECT
     SUM(Int(anon)) AS total,
     8 AS test_index
 FROM ('3', 'bad', '-2', '3')
+
+SELECT
+    SUM(Int(anon)) AS total,
+    SUM(Int(anon)) + 1 AS adjusted,
+    SUM(Int(anon) + 1) AS shifted,
+    COUNT(Int(anon)) AS values,
+    COUNT(*) AS rows,
+    9 AS test_index
+FROM ('3', 'bad', '-2', '3')
+
+SELECT
+    COUNT(*) AS rows,
+    COUNT(*) + 1 AS adjusted,
+    SUM(Int(anon)) AS total,
+    SUM(Int(anon)) + 1 AS next_total,
+    MIN(5) AS minimum,
+    MIN(5) AS same_minimum,
+    10 AS test_index
+FROM (1)
+WHERE false

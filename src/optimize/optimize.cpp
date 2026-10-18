@@ -4,6 +4,7 @@
 #include "ir/Relations.h"   // IWYU pragma: keep
 #include "ir/Scalars.h"     // IWYU pragma: keep
 
+#include "optimize/aggregate_deduplicate.h"
 #include "optimize/const_aggregate_fold.h"
 #include "optimize/const_scalar_fold.h"
 #include "optimize/empty_relation_prune.h"
@@ -22,6 +23,7 @@ ir::Program optimize(ir::Program program, Context& ctx) {
     program = scalarSimplify(std::move(program), ctx);
     program = constScalarFold(std::move(program), ctx);
     program = constAggregateFold(std::move(program), ctx);
+    program = aggregateDeduplicate(std::move(program), ctx);
     program = relationSimplify(std::move(program), ctx);
     program = filterPushdown(std::move(program), ctx);
     program = limitPushdown(std::move(program), ctx);

@@ -41,3 +41,5 @@
 {"anon":1,"count":2,"test_index":20}
 
 {"rows":0,"test_index":21}
+
+{"anon":1,"rows":2,"adjusted":3,"test_index":22}

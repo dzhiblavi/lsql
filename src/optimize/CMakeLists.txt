@@ -2,6 +2,7 @@ add_library(lsql-optimize STATIC)
 
 target_sources(
     lsql-optimize PRIVATE
+    aggregate_deduplicate.cpp
     const_aggregate_fold.cpp
     const_scalar_fold.cpp
     relation_simplify.cpp
