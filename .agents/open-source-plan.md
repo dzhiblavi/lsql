@@ -14,17 +14,21 @@ Item 1 was committed as `b865416` (Rework README and move reference
 documentation into docs). Its lossless-content audit preserved the original
 example, optimizer default, source-build binary paths, and engine description.
 
-Item 1.5 is complete and approved for commit. `docs/debugging.md` contains
-actual AST, bound AST, unoptimized and optimized IR, optimizer report, and
-execution plan output, with explanations and diagnostic command examples.
-README and the CLI reference link to it. All 9 commands and 7 output examples,
+Item 1.5 was committed as `3bfb3dd` (Document query debugging with AST, IR,
+and execution plan examples). All 9 documented commands and 7 output examples,
 links, anchors, formatting, and whitespace checks passed.
 
-After committing item 1.5, the user authorized work on item 2: installation
-instructions and a complete quick start. The README already contains a release
-download link, platform selection, and first-query example. Prepare the missing
-steps from downloading the archive to installing the binary and running the
-example. Keep item 2 uncommitted for review and do not advance to item 3.
+Item 2 is complete and approved for commit. `docs/install.md` documents
+platform selection, archive extraction, installation to `~/.local/bin`, PATH
+setup, and a complete first-query example. README links to it. The full workflow
+was checked with published v0.0.4 binaries on macOS and in Ubuntu 20.04 amd64.
+Documentation links, formatting, whitespace, and README preservation passed.
+
+After committing item 2, work on item 3: reconcile the documentation with the
+implementation and document build prerequisites. Earlier changes already fixed
+obsolete make targets, CLI option names, log-level casing, and the macOS build
+setup. Audit the remaining SQL, CLI, I/O, and build instructions for concrete
+mismatches. Keep item 3 uncommitted for review; do not advance to item 4.
 
 Build instructions belong in `docs/build/linux.md` and
 `docs/build/mac_silicon.md`. Keep them limited to prerequisites and commands,
@@ -42,7 +46,7 @@ For item 1, the user approved this README structure:
 
 - [x] **1.** Rework README for new users.
 - [x] **1.5.** Add query debugging documentation with AST, bound AST, IR, optimizer report, and execution plan examples; link it from README.
-- [ ] **2.** Add installation instructions and a complete quick start.
+- [x] **2.** Add installation instructions and a complete quick start.
 - [ ] **3.** Reconcile documentation with the implementation and document build prerequisites.
 - [ ] **4.** Configure GitHub description, topics, and documentation links.
 - [ ] **5.** Run CI on pull requests and pushes to the main branch.

@@ -54,6 +54,9 @@ directory as `app.log` and `query.sql` from the example, then run:
 
 Use `./lsql -f JSON query.sql` to print one JSON object per result row.
 
+See [Install and Run lsql](docs/install.md) for installation on `PATH` and a
+complete copy-and-paste example.
+
 ## Documentation
 
 The SQL dialect is evolving. See the language reference for supported syntax.
