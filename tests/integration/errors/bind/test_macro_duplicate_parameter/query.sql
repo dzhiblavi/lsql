@@ -1,1 +1,1 @@
-def add x x = x + x
+def add(x, x) = x + x

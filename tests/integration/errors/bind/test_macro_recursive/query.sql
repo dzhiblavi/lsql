@@ -1,1 +1,1 @@
-def recursive x = recursive(x)
+def recursive(x) = recursive(x)

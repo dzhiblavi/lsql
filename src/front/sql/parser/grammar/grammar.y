@@ -110,6 +110,7 @@
 %type select_list        {std::vector<ast::Projector>*}
 %type group_by_list      {std::vector<ast::Projector>*}
 %type macro_parameters   {std::vector<ast::MacroParameter>*}
+%type macro_parameter_list {std::vector<ast::MacroParameter>*}
 
 %type where_opt          {std::optional<ast::Where>*}
 %type having_opt         {std::optional<ast::Where>*}
@@ -168,7 +169,7 @@ statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ from_source(R). {
     };
 }
 
-statement(S) ::= TOKEN_DEF(Def) TOKEN_IDENTIFIER(Name) macro_parameters(P) TOKEN_EQ expression(E). {
+statement(S) ::= TOKEN_DEF(Def) TOKEN_IDENTIFIER(Name) TOKEN_LPAREN macro_parameters(P) TOKEN_RPAREN TOKEN_EQ expression(E). {
     S = new ast::Statement{
         .node = ast::MacroDefinitionStatement{
             .name = functionName(Name.text),
@@ -185,7 +186,19 @@ macro_parameters(P) ::= . {
     P = new std::vector<ast::MacroParameter>();
 }
 
-macro_parameters(P) ::= macro_parameters(Parameters) TOKEN_IDENTIFIER(Name). {
+macro_parameters(P) ::= macro_parameter_list(Parameters). {
+    P = Parameters;
+}
+
+macro_parameter_list(P) ::= TOKEN_IDENTIFIER(Name). {
+    P = new std::vector<ast::MacroParameter>();
+    P->push_back(ast::MacroParameter{
+        .name = Name.text,
+        .span = Name.span,
+    });
+}
+
+macro_parameter_list(P) ::= macro_parameter_list(Parameters) TOKEN_COMMA TOKEN_IDENTIFIER(Name). {
     P = Parameters;
     P->push_back(ast::MacroParameter{
         .name = Name.text,

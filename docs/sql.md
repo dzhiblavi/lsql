@@ -40,13 +40,14 @@ Keywords are uppercase and currently case-sensitive, except literals such as
 
 ## Expression Macros
 
-Define expression macros with lowercase `def`, followed by a name, zero or more
-space-separated parameters, `=`, and an expression:
+Define expression macros with lowercase `def`, followed by a name, a parenthesized
+list of comma-separated parameters, `=`, and an expression. Parentheses are required
+even when there are no parameters:
 
 ```sql
-def minute_s = 60
-def add x y = x + y + 2
-def minutes seconds = seconds / minute_s()
+def minute_s() = 60
+def add(x, y) = x + y + 2
+def minutes(seconds) = seconds / minute_s()
 
 SELECT add(Int(uid), Int(request)) AS result,
        minutes(Int(duration)) AS duration_minutes

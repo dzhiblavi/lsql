@@ -1,2 +1,2 @@
-def value = 1
-def VALUE = 2
+def value() = 1
+def VALUE() = 2

@@ -1,2 +1,2 @@
 contains: duplicate macro 'value'
-contains: def VALUE = 2
+contains: def VALUE() = 2

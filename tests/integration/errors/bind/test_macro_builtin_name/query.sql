@@ -1,1 +1,1 @@
-def LOWER x = x
+def LOWER(x) = x
