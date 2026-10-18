@@ -59,6 +59,7 @@ Use `./lsql -f JSON query.sql` to print one JSON object per result row.
 The SQL dialect is evolving. See the language reference for supported syntax.
 
 - [Command-line options](docs/cli.md)
+- [Debugging queries: AST, IR, and execution plans](docs/debugging.md)
 - [SQL language](docs/sql.md)
 - [Input and output formats](docs/io.md)
 - Build from source: [Linux](docs/build/linux.md),

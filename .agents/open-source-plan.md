@@ -10,18 +10,21 @@ The build prerequisite was committed as `dee17dd` (Make macOS builds repeatable
 and organize platform build files). All 137 tests and the formatting check
 passed. The user chose repeatable setup, not byte-identical binaries.
 
-Item 1 is complete and approved for commit. README follows the agreed structure;
-CLI and I/O details moved to `docs/cli.md` and `docs/io.md`, and the engine
-description moved to `docs/dev.md`. A lossless-content audit restored the
-original filtering example, the five-pass optimizer default, and the source-build
-binary paths. Outdated CLI names and log-level casing were corrected.
-Both examples, documentation links, formatting, and diff whitespace checks passed.
-The README example was also verified against the published macOS v0.0.4 binary.
+Item 1 was committed as `b865416` (Rework README and move reference
+documentation into docs). Its lossless-content audit preserved the original
+example, optimizer default, source-build binary paths, and engine description.
 
-Current next item: 2, installation instructions and a complete quick start.
-Present it after committing item 1. Its release download link, platform selection,
-and first-query example are already covered by README; review any remaining
-installation steps with the user before expanding the scope.
+Item 1.5 is complete and approved for commit. `docs/debugging.md` contains
+actual AST, bound AST, unoptimized and optimized IR, optimizer report, and
+execution plan output, with explanations and diagnostic command examples.
+README and the CLI reference link to it. All 9 commands and 7 output examples,
+links, anchors, formatting, and whitespace checks passed.
+
+After committing item 1.5, the user authorized work on item 2: installation
+instructions and a complete quick start. The README already contains a release
+download link, platform selection, and first-query example. Prepare the missing
+steps from downloading the archive to installing the binary and running the
+example. Keep item 2 uncommitted for review and do not advance to item 3.
 
 Build instructions belong in `docs/build/linux.md` and
 `docs/build/mac_silicon.md`. Keep them limited to prerequisites and commands,
@@ -37,19 +40,20 @@ For item 1, the user approved this README structure:
 
 ## Ordered backlog
 
-1. Rework README for new users. Completed.
-2. Add installation instructions and a complete quick start.
-3. Reconcile documentation with the implementation and document build prerequisites.
-4. Configure GitHub description, topics, and documentation links.
-5. Run CI on pull requests and pushes to the main branch.
-6. Add practical examples and explain when to use lsql.
-7. Add CONTRIBUTING.md.
-8. Add issue and pull request templates and contributor-friendly issues.
-9. Improve release packaging and version consistency.
-10. Document project maturity, limitations, and roadmap.
-11. Add a visual demonstration and social preview.
-12. Document community interaction, code of conduct, and security reporting.
-13. Expand distribution, documentation hosting, and outreach.
+- [x] **1.** Rework README for new users.
+- [x] **1.5.** Add query debugging documentation with AST, bound AST, IR, optimizer report, and execution plan examples; link it from README.
+- [ ] **2.** Add installation instructions and a complete quick start.
+- [ ] **3.** Reconcile documentation with the implementation and document build prerequisites.
+- [ ] **4.** Configure GitHub description, topics, and documentation links.
+- [ ] **5.** Run CI on pull requests and pushes to the main branch.
+- [ ] **6.** Add practical examples and explain when to use lsql.
+- [ ] **7.** Add CONTRIBUTING.md.
+- [ ] **8.** Add issue and pull request templates and contributor-friendly issues.
+- [ ] **9.** Improve release packaging and version consistency.
+- [ ] **10.** Document project maturity, limitations, and roadmap.
+- [ ] **11.** Add a visual demonstration and social preview.
+- [ ] **12.** Document community interaction, code of conduct, and security reporting.
+- [ ] **13.** Expand distribution, documentation hosting, and outreach.
 
 Some changes can satisfy parts of later items. Preserve the order and review
 what remains when each item is reached.

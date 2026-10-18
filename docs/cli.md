@@ -41,6 +41,9 @@ For output ordering, buffering, and compressed input restrictions, see
 
 ## Query Diagnostics
 
+See [Debugging Queries](debugging.md) for examples of every dump and how to read
+them.
+
 | Option | Description |
 | --- | --- |
 | `--explain` | Print the execution plan. |
