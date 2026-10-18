@@ -87,12 +87,7 @@ struct UnionAllSortedByRelation {
 
 struct FileRelation {
     std::string path;
-};
-
-struct FileIntervalRelation {
-    std::string path;
-    timestamp_t ts_from;
-    timestamp_t ts_to;
+    std::optional<TimeRange> range;
     std::optional<TimeFormat> time_format;
 };
 

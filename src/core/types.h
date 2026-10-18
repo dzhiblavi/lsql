@@ -10,6 +10,8 @@ using timestamp_t = int64_t;
 struct TimeRange {
     timestamp_t ts_from;
     timestamp_t ts_to;
+
+    bool operator==(const TimeRange&) const = default;
 };
 
 template <typename T>

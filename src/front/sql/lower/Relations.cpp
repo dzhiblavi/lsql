@@ -441,22 +441,10 @@ ir::Relation lowerToIR(bound::FileRelation r, auto& info, Context& ctx) {
     llog::trace("path={}, requested fields: {}", r.path, to_string(fields, *ctx.binding()));
 
     return {
-        .node = ir::FileRelation{.path = std::move(r.path)},
-        .schema = Schema::fromFieldSet(fields),
-    };
-}
-
-ir::Relation lowerToIR(bound::FileIntervalRelation r, auto& info, Context& ctx) {
-    auto fields = info.fields_out->fields();
-    llog::trace(
-        "(interval) path={}, requested fields: {}", r.path, to_string(fields, *ctx.binding()));
-
-    return {
         .node =
-            ir::FileIntervalRelation{
+            ir::FileRelation{
                 .path = std::move(r.path),
-                .ts_from = r.ts_from,
-                .ts_to = r.ts_to,
+                .range = r.range,
                 .time_format = r.time_format,
             },
         .schema = Schema::fromFieldSet(fields),

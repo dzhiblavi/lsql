@@ -478,8 +478,10 @@ class Planner {
     }
 
     Arc<Operation> planRelation(ir::FileRelation r, auto& info) {
-        auto time_range =
-            util::isProbablyArchive(r.path) ? std::nullopt : settings_.default_time_range;
+        auto time_range = r.range;
+        if (!time_range.has_value() && !util::isProbablyArchive(r.path)) {
+            time_range = settings_.default_time_range;
+        }
 
         return arc(
             Operation{
@@ -487,20 +489,6 @@ class Planner {
                     Log{
                         .path = r.path,
                         .range = time_range,
-                        .time_format = std::nullopt,
-                    },
-                .min_phase = 0,
-                .schema = info.schema,
-            });
-    }
-
-    Arc<Operation> planRelation(ir::FileIntervalRelation r, auto& info) {
-        return arc(
-            Operation{
-                .node =
-                    Log{
-                        .path = r.path,
-                        .range = TimeRange{r.ts_from, r.ts_to},
                         .time_format = r.time_format,
                     },
                 .min_phase = 0,

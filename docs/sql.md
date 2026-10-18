@@ -73,19 +73,26 @@ File sources:
 ```sql
 input = path/to/log.txt
 input = path/to/log.txt.gz
-input = path/to/log.txt @ 2026-06-10T12:00:00 + 3600
+input = path/to/log.txt @ 2026-06-10T12:00:00
+input = path/to/log.txt 'ISO8601'
+input = path/to/log.txt @ 2026-06-10T12:00:00 'ISO8601'
 input = path/to/log.txt @ 2026-06-10T12:00:00 + 3600 'ISO8601'
 ```
 
-`path @ timestamp + N ['format']` reads an inclusive timestamp range beginning
-at the given ISO8601 timestamp and spanning `N` seconds. `+ N` is required.
+Syntax: `path [@ timestamp [+ N]] ['format']`.
 
-The optional string literal (`'SQL'`, `'ORACLE'`, or `'ISO8601'`) overrides the input's
-default time format. It searches for the first matching timestamp anywhere in
-each line; input must be sorted by that timestamp. This also enables ranges
-for CSV, TSV, JSON Lines, and plain text (available as `_line`). The override
-does not change the values of parsed fields. Without it, the input format must
-provide a time format.
+`@ timestamp` reads from the given ISO8601 timestamp to the end of the file.
+Adding `+ N` limits the range to `N` seconds; both endpoints are inclusive.
+An explicit `@ timestamp` overrides `--time-from` and `--time-to`. Without it,
+those options supply the range; without either option, the whole file is read.
+
+The optional string literal (`'SQL'`, `'ORACLE'`, or `'ISO8601'`) overrides the
+input's default time format, including when the range comes from CLI options.
+It searches for the first matching timestamp anywhere in each line; input must
+be sorted by that timestamp. This also enables ranges for CSV, TSV, JSON Lines,
+and plain text (available as `_line`). The override does not change the values
+of parsed fields. Without it, the input format must provide a time format when
+a range is used.
 
 Gzip-compressed inputs with `.gz` or `.gzip` suffixes can be read as full-file
 sources. Timestamp ranges are not supported for compressed inputs, including

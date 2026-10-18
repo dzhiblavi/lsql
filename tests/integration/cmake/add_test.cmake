@@ -12,6 +12,7 @@ function(add_sql_test TEST_DIR)
             -DTEST_DIR=${TEST_DIR_BINARY}
             -DCOMPARE_SCRIPT=${COMPARE_SCRIPT}
             -DQUERY_FILE=${TEST_DIR_BINARY}/query.sql
+            "-DARGS=${ARGN}"
             -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/run_compare_test.cmake
     )
 
@@ -26,5 +27,5 @@ function(add_sql_test TEST_DIR)
 endfunction()
 
 function(add_integration_test TEST_DIR)
-    add_sql_test(${TEST_DIR})
+    add_sql_test(${TEST_DIR} ${ARGN})
 endfunction()

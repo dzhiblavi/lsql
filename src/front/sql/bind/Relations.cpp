@@ -19,6 +19,7 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <limits>
 #include <ranges>
 
 namespace lsql::front::sql::bind {
@@ -419,20 +420,20 @@ bound::Relation bindRelation(ast::UnionAllSortedByRelation r, auto&& self, Conte
 }
 
 bound::Relation bindRelation(ast::FileRelation r, auto&& self, Context& ctx) {
-    return {
-        .node = bound::FileRelation{.path = std::move(r.path)},
-        .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
-        .span = self.span,
-    };
-}
+    std::optional<TimeRange> range;
+    if (r.range.has_value()) {
+        requireAt(
+            !util::isProbablyArchive(r.path),
+            self.span,
+            "time intervals cannot be applied to archives");
 
-bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& self, Context& ctx) {
-    requireAt(
-        !util::isProbablyArchive(r.path),
-        self.span,
-        "time intervals cannot be applied to archives");
-
-    auto ts_from = timestampFromString(r.ts_from, TimeFormat::ISO8601);
+        auto ts_from = timestampFromString(r.range->ts_from, TimeFormat::ISO8601);
+        range = TimeRange{
+            .ts_from = ts_from,
+            .ts_to = r.range->interval_s.has_value() ? ts_from + *r.range->interval_s
+                                                     : std::numeric_limits<timestamp_t>::max(),
+        };
+    }
 
     std::optional<TimeFormat> time_format;
     if (r.time_format.has_value()) {
@@ -442,10 +443,9 @@ bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& self, Context& 
 
     return {
         .node =
-            bound::FileIntervalRelation{
+            bound::FileRelation{
                 .path = std::move(r.path),
-                .ts_from = ts_from,
-                .ts_to = ts_from + r.interval_s,
+                .range = range,
                 .time_format = time_format,
             },
         .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),

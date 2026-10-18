@@ -94,14 +94,15 @@ struct UnionAllSortedByRelation {
     OrderBy order_by;
 };
 
-struct FileRelation {
-    std::string path;
+struct FileTimeRange {
+    std::string ts_from;
+    std::optional<int> interval_s;
+    SourceSpan span;
 };
 
-struct FileIntervalRelation {
+struct FileRelation {
     std::string path;
-    std::string ts_from;
-    int interval_s;
+    std::optional<FileTimeRange> range;
     std::optional<std::string> time_format;
 };
 

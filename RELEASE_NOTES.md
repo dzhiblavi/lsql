@@ -2,7 +2,8 @@
 
 ## v0.0.6 (WIP)
 
-- Added explicit time format overrides for file timestamp ranges.
+- Added explicit time format overrides.
+- Added open-ended file timestamp ranges.
 
 ## v0.0.5
 

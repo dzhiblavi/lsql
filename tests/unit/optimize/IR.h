@@ -88,7 +88,12 @@ inline ir::Relation empty(Schema schema = Schema()) {
 inline ir::Relation file(
     std::string path = "app.log", Schema schema = Schema::withField(Timestamp)) {
     return ir::Relation{
-        .node = ir::FileRelation{.path = std::move(path)},
+        .node =
+            ir::FileRelation{
+                .path = std::move(path),
+                .range = std::nullopt,
+                .time_format = std::nullopt,
+            },
         .schema = schema,
     };
 }

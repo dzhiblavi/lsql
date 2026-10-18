@@ -29,7 +29,7 @@ if(EXISTS ${PREPARE_SCRIPT})
 endif()
 
 execute_process(
-    COMMAND ${CLI} ${QUERY_FILE} -f JSON -j 1
+    COMMAND ${CLI} ${QUERY_FILE} -f JSON -j 1 ${ARGS}
     OUTPUT_VARIABLE actual_output
     ERROR_VARIABLE error_output
     RESULT_VARIABLE exit_code

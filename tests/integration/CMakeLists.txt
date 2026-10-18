@@ -23,6 +23,11 @@ add_integration_test(semantics/test_malformed_jsonl_lines)
 add_integration_test(semantics/test_expr_more)
 add_integration_test(semantics/test_merge_desc)
 add_integration_test(semantics/test_file_time_range)
+add_integration_test(
+    semantics/test_file_time_range_defaults
+    --time-from 2026-05-06T12:00:02
+    --time-to 2026-05-06T12:00:03
+)
 add_integration_test(semantics/test_archive_source)
 add_integration_test(semantics/test_stream_source)
 add_integration_test(semantics/test_materialized_stream_phase)

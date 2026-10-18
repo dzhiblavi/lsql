@@ -92,6 +92,7 @@
 %left TOKEN_AND.
 %right TOKEN_NOT.
 %left TOKEN_EQ TOKEN_NEQ TOKEN_LT TOKEN_GT TOKEN_LTE TOKEN_GTE TOKEN_IN TOKEN_LIKE.
+%nonassoc TOKEN_AT.
 %left TOKEN_PLUS TOKEN_MINUS.
 %left TOKEN_DIVIDE.
 %right TOKEN_EXCLAMATION.
@@ -122,6 +123,9 @@
 %type immediate_relation {ast::Relation*}
 %type adhoc_relation     {ast::Relation*}
 %type file_source        {ast::Relation*}
+%type file_time_range_opt {std::optional<ast::FileTimeRange>*}
+%type file_interval_opt   {std::optional<lsql::front::sql::parse::Token>*}
+%type file_format_opt     {std::optional<lsql::front::sql::parse::Token>*}
 %type select_source      {ast::Relation*}
 %type from_source        {ast::Relation*}
 %type join_source        {ast::Relation*}
@@ -362,37 +366,48 @@ alias_relation(S) ::= select_source(R) TOKEN_AS TOKEN_IDENTIFIER(A). {
 file_path(F) ::= TOKEN_PATH(P). { F = P; }
 file_path(F) ::= TOKEN_QUALIFIED_IDENTIFIER(P). { F = P; }
 
-file_source(F) ::= file_path(File). {
+file_source(F) ::= file_path(File) file_time_range_opt(Range) file_format_opt(Format). {
+    auto span = File.span;
+    if (Range->has_value()) {
+        span = merge(span, Range->value().span);
+    }
+    if (Format->has_value()) {
+        span = merge(span, Format->value().span);
+    }
+
     F = new ast::Relation{
         .node = ast::FileRelation{
             .path = File.text,
+            .range = std::move(*Range),
+            .time_format = Format->has_value()
+                ? std::optional(removeQuotes(Format->value().text)) : std::nullopt,
         },
-        .span = File.span,
+        .span = span,
     };
+    delete Range;
+    delete Format;
 }
 
-file_source(F) ::= file_path(File) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKEN_INTEGER(Interval). {
-    F = new ast::Relation{
-        .node = ast::FileIntervalRelation{
-            .path = File.text,
-            .ts_from = Ts.text,
-            .interval_s = std::stoi(Interval.text),
-            .time_format = std::nullopt,
-        },
-        .span = merge(File.span, Interval.span),
-    };
+file_time_range_opt(R) ::= . { R = new std::optional<ast::FileTimeRange>(); }
+
+file_time_range_opt(R) ::= TOKEN_AT(At) TOKEN_TIMESTAMP(Ts) file_interval_opt(Interval). {
+    R = new std::optional<ast::FileTimeRange>(ast::FileTimeRange{
+        .ts_from = Ts.text,
+        .interval_s = Interval->has_value()
+            ? std::optional(std::stoi(Interval->value().text)) : std::nullopt,
+        .span = merge(At.span, Interval->has_value() ? Interval->value().span : Ts.span),
+    });
+    delete Interval;
 }
 
-file_source(F) ::= file_path(File) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKEN_INTEGER(Interval) TOKEN_STR(Format). {
-    F = new ast::Relation{
-        .node = ast::FileIntervalRelation{
-            .path = File.text,
-            .ts_from = Ts.text,
-            .interval_s = std::stoi(Interval.text),
-            .time_format = removeQuotes(Format.text),
-        },
-        .span = merge(File.span, Format.span),
-    };
+file_interval_opt(I) ::= . [TOKEN_AT] { I = new std::optional<lsql::front::sql::parse::Token>(); }
+file_interval_opt(I) ::= TOKEN_PLUS TOKEN_INTEGER(Interval). {
+    I = new std::optional<lsql::front::sql::parse::Token>(Interval);
+}
+
+file_format_opt(F) ::= . { F = new std::optional<lsql::front::sql::parse::Token>(); }
+file_format_opt(F) ::= TOKEN_STR(Format). {
+    F = new std::optional<lsql::front::sql::parse::Token>(Format);
 }
 
 file_source(F) ::= TOKEN_STREAM(Stream) TOKEN_STR(Command). {
