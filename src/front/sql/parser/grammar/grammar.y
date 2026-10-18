@@ -39,6 +39,7 @@
 }
 
 %token TOKEN_SELECT.
+%token TOKEN_DEF.
 %token TOKEN_COUNT.
 %token TOKEN_FROM.
 %token TOKEN_LEFT.
@@ -108,6 +109,7 @@
 %type statement_list     {std::vector<ast::Statement>*}
 %type select_list        {std::vector<ast::Projector>*}
 %type group_by_list      {std::vector<ast::Projector>*}
+%type macro_parameters   {std::vector<ast::MacroParameter>*}
 
 %type where_opt          {std::optional<ast::Where>*}
 %type having_opt         {std::optional<ast::Where>*}
@@ -164,6 +166,31 @@ statement(S) ::= TOKEN_IDENTIFIER(Name) TOKEN_EQ from_source(R). {
         },
         .span = merge(Name.span, R->span),
     };
+}
+
+statement(S) ::= TOKEN_DEF(Def) TOKEN_IDENTIFIER(Name) macro_parameters(P) TOKEN_EQ expression(E). {
+    S = new ast::Statement{
+        .node = ast::MacroDefinitionStatement{
+            .name = functionName(Name.text),
+            .parameters = std::move(*P),
+            .body = Box<ast::Expr>(E),
+        },
+        .span = merge(Def.span, E->span),
+    };
+
+    delete P;
+}
+
+macro_parameters(P) ::= . {
+    P = new std::vector<ast::MacroParameter>();
+}
+
+macro_parameters(P) ::= macro_parameters(Parameters) TOKEN_IDENTIFIER(Name). {
+    P = Parameters;
+    P->push_back(ast::MacroParameter{
+        .name = Name.text,
+        .span = Name.span,
+    });
 }
 
 // immediate = does not require parentheses in SELECT FROM <here>
@@ -569,6 +596,16 @@ expression(E) ::= TOKEN_COUNT(C) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP
     };
 
     delete L;
+}
+
+expression(E) ::= TOKEN_IDENTIFIER(Fn) TOKEN_LPAREN TOKEN_RPAREN(RP). {
+    E = new ast::Expr{
+        .node = ast::FnCallExpr{
+            .func = functionName(Fn.text),
+            .args = {},
+        },
+        .span = merge(Fn.span, RP.span),
+    };
 }
 
 expression(E) ::= TOKEN_IDENTIFIER(Fn) TOKEN_LPAREN expression_list(L) TOKEN_RPAREN(RP). {

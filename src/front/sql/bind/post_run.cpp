@@ -1,4 +1,4 @@
-#pragma once
+#include "front/sql/bind/post_run.h"
 
 #include "front/sql/bound/Expressions.h"
 #include "front/sql/bound/Statement.h"
@@ -10,6 +10,8 @@
 #include <algorithm>
 
 namespace lsql::front::sql::bind {
+
+namespace {
 
 struct PostrunWalker : util::TreeWalker<PostrunWalker> {
     using Base = util::TreeWalker<PostrunWalker>;
@@ -62,6 +64,8 @@ struct PostrunWalker : util::TreeWalker<PostrunWalker> {
 
     ConstFieldBindingPtr binding;
 };
+
+}  // namespace
 
 void postRun(bound::Program& program) {
     PostrunWalker{.binding = program.binding}.visit(program);

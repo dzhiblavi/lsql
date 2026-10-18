@@ -5,7 +5,33 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <array>
+
 namespace lsql::front::common::bind {
+
+bool isBuiltinFunction(std::string_view name) {
+    static constexpr std::array<std::string_view, 18> names{
+        "lower",
+        "splitpart",
+        "substr",
+        "coalesce",
+        "percentile",
+        "rsubstr",
+        "json_value",
+        "count_all",
+        "count_nonnull",
+        "min",
+        "max",
+        "sum",
+        "parse_timestamp",
+        "null",
+        "int",
+        "float",
+        "bool",
+        "string",
+    };
+    return std::ranges::find(names, name) != names.end();
+}
 
 bound::UnaryExprType exprType(ast::UnaryExprType ast) {
     switch (ast) {

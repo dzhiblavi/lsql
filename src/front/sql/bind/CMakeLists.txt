@@ -5,7 +5,9 @@ target_sources(
     Expressions.cpp
     Relations.cpp
     Statements.cpp
+    expand_macros.cpp
     bind.cpp
+    post_run.cpp
 )
 
 target_link_libraries(

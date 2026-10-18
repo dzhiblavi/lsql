@@ -66,6 +66,7 @@ TIMESTAMP        [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}
 "$"              { return TOKEN_DOLLAR; }
 
 SELECT           { return TOKEN_SELECT; }
+def              { return TOKEN_DEF; }
 FROM             { return TOKEN_FROM; }
 LEFT             { return TOKEN_LEFT; }
 JOIN             { return TOKEN_JOIN; }

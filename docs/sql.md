@@ -38,6 +38,31 @@ Comments start with `--` and continue to the end of the line.
 Keywords are uppercase and currently case-sensitive, except literals such as
 `true`, `false`, and `null`, and casts such as `Int(...)`.
 
+## Expression Macros
+
+Define expression macros with lowercase `def`, followed by a name, zero or more
+space-separated parameters, `=`, and an expression:
+
+```sql
+def minute_s = 60
+def add x y = x + y + 2
+def minutes seconds = seconds / minute_s()
+
+SELECT add(Int(uid), Int(request)) AS result,
+       minutes(Int(duration)) AS duration_minutes
+FROM app.log
+```
+
+Macro names are case-insensitive, like function names. Parameter names are
+case-sensitive. Every call requires parentheses, including `minute_s()`, and
+the exact number of arguments. Expressions in `SELECT` still require `AS`.
+A bare name refers to a field, even when a macro has the same name.
+
+Macros can call built-in functions and previously defined macros. Forward
+references, recursion, duplicate definitions, duplicate parameters, and macro
+names matching built-in functions are rejected. Fields from the calling query
+must be passed as arguments; subqueries in a macro body have their own fields.
+
 ## Sources and Relations
 
 File sources:

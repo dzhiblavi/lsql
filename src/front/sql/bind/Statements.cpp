@@ -13,6 +13,10 @@
 
 namespace lsql::front::sql::bind {
 
+bound::Statement bindStatement(ast::MacroDefinitionStatement, auto&& self, Context&) {
+    throwAt(self.span, "macro definition must be expanded before binding");
+}
+
 bound::Statement bindStatement(ast::QueryStatement s, auto&& /*self*/, Context& ctx) {
     return bound::QueryStatement{
         .relation = box(bindRelation(std::move(*s.relation), ctx)),

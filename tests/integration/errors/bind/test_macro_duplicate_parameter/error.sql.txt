@@ -1,0 +1,2 @@
+contains: duplicate macro parameter 'x'
+contains: def add x x = x + x

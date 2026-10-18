@@ -1,0 +1,2 @@
+contains: unsupported operand types String, Integer for binary operation Add
+contains: SELECT increment('text') AS result FROM (0)

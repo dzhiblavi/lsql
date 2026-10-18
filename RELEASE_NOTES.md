@@ -1,5 +1,9 @@
 # Release notes
 
+## v0.0.5 (wip)
+
+- Added macro expression support.
+
 ## v0.0.4
 
 - Filter pushdown through left join.

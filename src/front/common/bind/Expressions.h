@@ -13,8 +13,11 @@
 #include "util/json.h"
 
 #include <algorithm>
+#include <string_view>
 
 namespace lsql::front::common::bind {
+
+bool isBuiltinFunction(std::string_view name);
 
 bound::UnaryExprType exprType(ast::UnaryExprType ast);
 bound::BinaryExprType exprType(ast::BinaryExprType ast);

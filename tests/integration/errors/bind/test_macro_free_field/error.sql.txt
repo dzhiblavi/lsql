@@ -1,0 +1,2 @@
+contains: unknown macro parameter 'uid'; pass fields as macro arguments
+contains: def invalid x = x + Int(uid)

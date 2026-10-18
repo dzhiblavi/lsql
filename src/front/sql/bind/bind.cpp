@@ -6,12 +6,15 @@
 #include "front/sql/bound/Expressions.h"  // IWYU pragma: keep
 #include "front/sql/bound/Relations.h"    // IWYU pragma: keep
 
-#include "front/sql/bind/Postrun.h"
+#include "front/sql/bind/expand_macros.h"
+#include "front/sql/bind/post_run.h"
 #include "front/sql/bind/Statements.h"
 
 namespace lsql::front::sql::bind {
 
 bound::Program bind(ast::Program program) {
+    program = expandMacros(std::move(program));
+
     bound::Program p{
         .statements = {},
         .binding = arc<FieldBinding>(),

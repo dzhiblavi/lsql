@@ -1,0 +1,2 @@
+contains: unknown function or macro 'later'; macros must be defined before use
+contains: def first x = later(x)
