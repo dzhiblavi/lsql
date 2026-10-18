@@ -23,8 +23,10 @@ JSON strings and keys are unescaped. Numbers and booleans retain their text;
 objects and arrays remain JSON text, accessible with [`JSON_VALUE`](sql.md#functions).
 For repeated JSON keys, the last value wins.
 
-Gzip files (`.gz`, `.gzip`) are supported. Time ranges require uncompressed,
-timestamp-sorted logfmt or TSKV input; CSV, TSV, and JSONL do not support them.
+Gzip files (`.gz`, `.gzip`) are supported. Time ranges require uncompressed
+input sorted by the searched timestamp. Timestamped logfmt and TSKV provide a
+default time format; other inputs require an explicit format in the
+[file source](sql.md#sources-and-relations).
 
 `STREAM 'command'` reads records from the command's stdout in the same input
 formats. For example, use `FROM STREAM 'cat requests.jsonl'` to read command

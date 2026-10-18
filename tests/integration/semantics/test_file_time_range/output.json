@@ -13,3 +13,36 @@
 {"uid":"bbb","test_index":5}
 {"uid":"ccc","test_index":5}
 {"uid":"ddd","test_index":5}
+
+{"test_index":6,"uid":"bbb"}
+{"test_index":6,"uid":"ccc"}
+
+{"test_index":7,"uid":"bbb"}
+{"test_index":7,"uid":"ccc"}
+
+{"test_index":8,"uid":"bbb"}
+{"test_index":8,"uid":"ccc"}
+
+{"test_index":9,"uid":"bbb"}
+{"test_index":9,"uid":"ccc"}
+
+{"test_index":10,"uid":"bbb"}
+{"test_index":10,"uid":"ccc"}
+
+{"_line":"event bbb at 2026-05-06T12:00:02","test_index":11}
+{"_line":"event ccc at 2026-05-06T12:00:03","test_index":11}
+
+{"rows":0,"test_index":12}
+
+{"test_index":13,"uid":"bbb"}
+{"test_index":13,"uid":"ccc"}
+
+{"rows":4,"test_index":14}
+
+{"test_index":15,"uid":"bbb"}
+{"test_index":15,"uid":"ccc"}
+
+{"rows":4,"test_index":16}
+
+{"test_index":17,"uid":"bbb"}
+{"test_index":17,"uid":"ccc"}

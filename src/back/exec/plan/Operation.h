@@ -6,6 +6,7 @@
 #include "back/exec/plan/fwd/Operation.h"
 
 #include "core/schema/Schema.h"
+#include "core/time_formats.h"
 #include "core/types.h"
 #include "util/uniq_id.h"
 
@@ -51,6 +52,7 @@ struct Limit {
 struct Log {
     std::string path;
     std::optional<TimeRange> range;
+    std::optional<TimeFormat> time_format;
 };
 
 struct Stream {

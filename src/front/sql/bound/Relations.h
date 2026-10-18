@@ -6,6 +6,7 @@
 #include "front/sql/bound/fwd/Expr.h"
 #include "front/sql/bound/fwd/Relation.h"
 
+#include "core/time_formats.h"
 #include "core/types.h"
 #include "core/value/Value.h"
 
@@ -92,6 +93,7 @@ struct FileIntervalRelation {
     std::string path;
     timestamp_t ts_from;
     timestamp_t ts_to;
+    std::optional<TimeFormat> time_format;
 };
 
 struct StreamRelation {

@@ -457,6 +457,7 @@ ir::Relation lowerToIR(bound::FileIntervalRelation r, auto& info, Context& ctx) 
                 .path = std::move(r.path),
                 .ts_from = r.ts_from,
                 .ts_to = r.ts_to,
+                .time_format = r.time_format,
             },
         .schema = Schema::fromFieldSet(fields),
     };

@@ -1,0 +1,2 @@
+SELECT uid
+FROM input.1.txt @ 2026-05-06T12:00:02 + 1 'UNKNOWN'

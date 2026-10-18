@@ -1,6 +1,10 @@
 # Release notes
 
-## v0.0.5 (wip)
+## v0.0.6 (WIP)
+
+- Added explicit time format overrides for file timestamp ranges.
+
+## v0.0.5
 
 - Made COUNT case-insensitive, consistent with other function names.
 - Added macro expression support.

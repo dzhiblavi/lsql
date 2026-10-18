@@ -487,6 +487,7 @@ class Planner {
                     Log{
                         .path = r.path,
                         .range = time_range,
+                        .time_format = std::nullopt,
                     },
                 .min_phase = 0,
                 .schema = info.schema,
@@ -500,6 +501,7 @@ class Planner {
                     Log{
                         .path = r.path,
                         .range = TimeRange{r.ts_from, r.ts_to},
+                        .time_format = r.time_format,
                     },
                 .min_phase = 0,
                 .schema = info.schema,

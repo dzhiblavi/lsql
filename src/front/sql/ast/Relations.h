@@ -102,6 +102,7 @@ struct FileIntervalRelation {
     std::string path;
     std::string ts_from;
     int interval_s;
+    std::optional<std::string> time_format;
 };
 
 struct StreamRelation {

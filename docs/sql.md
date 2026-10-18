@@ -74,10 +74,18 @@ File sources:
 input = path/to/log.txt
 input = path/to/log.txt.gz
 input = path/to/log.txt @ 2026-06-10T12:00:00 + 3600
+input = path/to/log.txt @ 2026-06-10T12:00:00 + 3600 'ISO8601'
 ```
 
-`path @ timestamp + N` reads a timestamp range beginning at the given ISO-like
-timestamp and spanning `N` seconds.
+`path @ timestamp + N ['format']` reads an inclusive timestamp range beginning
+at the given ISO8601 timestamp and spanning `N` seconds. `+ N` is required.
+
+The optional string literal (`'SQL'`, `'ORACLE'`, or `'ISO8601'`) overrides the input's
+default time format. It searches for the first matching timestamp anywhere in
+each line; input must be sorted by that timestamp. This also enables ranges
+for CSV, TSV, JSON Lines, and plain text (available as `_line`). The override
+does not change the values of parsed fields. Without it, the input format must
+provide a time format.
 
 Gzip-compressed inputs with `.gz` or `.gzip` suffixes can be read as full-file
 sources. Timestamp ranges are not supported for compressed inputs, including

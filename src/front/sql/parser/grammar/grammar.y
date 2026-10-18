@@ -377,8 +377,21 @@ file_source(F) ::= file_path(File) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKEN
             .path = File.text,
             .ts_from = Ts.text,
             .interval_s = std::stoi(Interval.text),
+            .time_format = std::nullopt,
         },
         .span = merge(File.span, Interval.span),
+    };
+}
+
+file_source(F) ::= file_path(File) TOKEN_AT TOKEN_TIMESTAMP(Ts) TOKEN_PLUS TOKEN_INTEGER(Interval) TOKEN_STR(Format). {
+    F = new ast::Relation{
+        .node = ast::FileIntervalRelation{
+            .path = File.text,
+            .ts_from = Ts.text,
+            .interval_s = std::stoi(Interval.text),
+            .time_format = removeQuotes(Format.text),
+        },
+        .span = merge(File.span, Format.span),
     };
 }
 

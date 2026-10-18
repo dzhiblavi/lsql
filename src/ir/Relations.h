@@ -5,9 +5,11 @@
 #include "ir/Scalar.h"
 
 #include "core/schema/Schema.h"
+#include "core/time_formats.h"
 #include "core/types.h"
 #include "core/value/Value.h"
 
+#include <optional>
 #include <vector>
 
 namespace lsql::ir {
@@ -104,6 +106,7 @@ struct FileIntervalRelation {
     std::string path;
     timestamp_t ts_from;
     timestamp_t ts_to;
+    std::optional<TimeFormat> time_format;
 };
 
 struct StreamRelation {

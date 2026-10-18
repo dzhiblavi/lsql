@@ -17,6 +17,8 @@
 #include "core/time_formats.h"
 #include "util/archive.h"
 
+#include <magic_enum/magic_enum.hpp>
+
 #include <ranges>
 
 namespace lsql::front::sql::bind {
@@ -430,8 +432,13 @@ bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& self, Context& 
         self.span,
         "time intervals cannot be applied to archives");
 
-    constexpr auto format = TimeFormat::ISO8601;
-    auto ts_from = timestampFromString(r.ts_from, format);
+    auto ts_from = timestampFromString(r.ts_from, TimeFormat::ISO8601);
+
+    std::optional<TimeFormat> time_format;
+    if (r.time_format.has_value()) {
+        time_format = magic_enum::enum_cast<TimeFormat>(*r.time_format);
+        requireAt(time_format.has_value(), self.span, "invalid time format '{}'", *r.time_format);
+    }
 
     return {
         .node =
@@ -439,6 +446,7 @@ bound::Relation bindRelation(ast::FileIntervalRelation r, auto&& self, Context& 
                 .path = std::move(r.path),
                 .ts_from = ts_from,
                 .ts_to = ts_from + r.interval_s,
+                .time_format = time_format,
             },
         .fields_out = arc<OpenRelationFieldSet>(ctx.binding()),
         .span = self.span,
