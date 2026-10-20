@@ -58,27 +58,27 @@ Box<ir::Scalar> conjunction(Box<ir::Scalar> left, Box<ir::Scalar> right) {
 }
 
 struct SplitCondition {
-    Box<ir::Scalar> left;
+    Box<ir::Scalar> pushable;
     Box<ir::Scalar> remaining;
 };
 
-SplitCondition splitLeftCondition(ir::Scalar condition, const Schema& left_schema) {
+SplitCondition splitCondition(ir::Scalar condition, const Schema& schema) {
     auto* call = std::get_if<ir::FnCallScalar>(&condition.node);
     if (call && std::holds_alternative<func::And>(call->function)) {
-        auto left = splitLeftCondition(std::move(call->args[0]), left_schema);
-        auto right = splitLeftCondition(std::move(call->args[1]), left_schema);
+        auto left = splitCondition(std::move(call->args[0]), schema);
+        auto right = splitCondition(std::move(call->args[1]), schema);
         return {
-            .left = conjunction(std::move(left.left), std::move(right.left)),
+            .pushable = conjunction(std::move(left.pushable), std::move(right.pushable)),
             .remaining = conjunction(std::move(left.remaining), std::move(right.remaining)),
         };
     }
 
-    FieldSubsetChecker checker{.schema = left_schema};
+    FieldSubsetChecker checker{.schema = schema};
     checker.visit(std::as_const(condition));
     if (checker.matches) {
-        return {.left = box(std::move(condition)), .remaining = nullptr};
+        return {.pushable = box(std::move(condition)), .remaining = nullptr};
     }
-    return {.left = nullptr, .remaining = box(std::move(condition))};
+    return {.pushable = nullptr, .remaining = box(std::move(condition))};
 }
 
 struct Optimizer : util::TreeWalker<Optimizer> {
@@ -126,27 +126,39 @@ struct Optimizer : util::TreeWalker<Optimizer> {
     void pushdown(
         ir::FilterRelation& filter, ir::ProjectionRelation& projection, ir::Relation& self) {
         FieldRebinder rebinder;
+        Schema fields;
         for (const auto& projector : projection.projectors) {
             auto* field = std::get_if<ir::FieldScalar>(&projector.expr->node);
             if (!field) {
-                return;
+                continue;
             }
             rebinder.fields.emplace(projector.alias_field_id, field->field_id);
+            fields.append(projector.alias_field_id);
         }
 
-        rebinder.visit(*filter.condition);
-        addFilter(*projection.source, std::move(*filter.condition));
+        auto split = splitCondition(util::deepCopy(*filter.condition), fields);
+        if (!split.pushable) {
+            return;
+        }
+
+        rebinder.visit(*split.pushable);
+        addFilter(*projection.source, std::move(*split.pushable));
         ctx.note("filter pushed through field projection");
+        if (split.remaining) {
+            filter.condition = std::move(split.remaining);
+            ctx.setChanges();
+            return;
+        }
         removeFilter(filter, self);
     }
 
     void pushdown(ir::FilterRelation& filter, ir::LeftJoinRelation& join, ir::Relation& self) {
-        auto split = splitLeftCondition(util::deepCopy(*filter.condition), join.left->schema);
-        if (!split.left) {
+        auto split = splitCondition(util::deepCopy(*filter.condition), join.left->schema);
+        if (!split.pushable) {
             return;
         }
 
-        addFilter(*join.left, std::move(*split.left));
+        addFilter(*join.left, std::move(*split.pushable));
         ctx.note("filter pushed into left join left input");
         if (split.remaining) {
             filter.condition = std::move(split.remaining);

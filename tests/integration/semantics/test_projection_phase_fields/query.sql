@@ -42,7 +42,7 @@ ORDER BY second_uid
 
 SELECT user_id, state, 5 AS test_index
 FROM (SELECT uid AS user_id, LOWER(status) AS state FROM input.1.txt)
-WHERE state = 'ok'
+WHERE state = 'ok' AND user_id != 'ccc'
 ORDER BY user_id
 
 SELECT COUNT(*) AS rows, 6 AS test_index

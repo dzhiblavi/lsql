@@ -5,6 +5,7 @@
 - Added explicit time format overrides.
 - Added open-ended file timestamp ranges.
 - Simplify some boolean operations during optimization.
+- Push down partial condition through filter(projection(...)).
 
 ## v0.0.5
 
