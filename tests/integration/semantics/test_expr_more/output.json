@@ -11,5 +11,5 @@
 {"text":"2","incremented":3,"difference":8,"missing":false,"test_index":4}
 {"text":"3","incremented":4,"difference":7,"missing":false,"test_index":4}
 
-{"flag":true,"conjunction":true,"disjunction":true,"negated":false,"precedence":true,"test_index":5}
-{"flag":false,"conjunction":false,"disjunction":false,"negated":true,"precedence":true,"test_index":5}
+{"flag":true,"conjunction":true,"disjunction":true,"negated":false,"double_negation":true,"precedence":true,"test_index":5}
+{"flag":false,"conjunction":false,"disjunction":false,"negated":true,"double_negation":false,"precedence":true,"test_index":5}

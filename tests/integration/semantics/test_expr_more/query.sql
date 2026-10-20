@@ -33,6 +33,7 @@ SELECT
     anon AND true AS conjunction,
     anon OR false AS disjunction,
     NOT anon AS negated,
+    NOT NOT anon AS double_negation,
     true OR false AND false AS precedence,
     5 AS test_index
 FROM (true, false)

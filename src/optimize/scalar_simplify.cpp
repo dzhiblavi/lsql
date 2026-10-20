@@ -19,6 +19,37 @@ struct Optimizer : util::TreeWalker<Optimizer> {
 
     Context& ctx;
 
+    void simplifyBooleanBinary(ir::FnCallScalar& call, ir::Scalar& self, bool conjunction) {
+        verify_dbg(call.args.size() == 2);
+
+        for (size_t index = 0; index < call.args.size(); ++index) {
+            auto* constant = std::get_if<ir::ValueScalar>(&call.args[index].node);
+            auto& other = call.args[1 - index];
+            if (!constant || constant->value.type() != ValueType::Boolean) {
+                continue;
+            }
+
+            ctx.setChanges().note("boolean constant operand simplified");
+            auto replacement =
+                std::move(constant->value.get<bool>() == conjunction ? other : call.args[index]);
+            self = std::move(replacement);
+            return;
+        }
+    }
+
+    void simplifyDoubleNegation(ir::FnCallScalar& call, ir::Scalar& self) {
+        verify_dbg(call.args.size() == 1);
+
+        auto* inner = std::get_if<ir::FnCallScalar>(&call.args[0].node);
+        if (!inner || !std::holds_alternative<func::BooleanNegate>(inner->function)) {
+            return;
+        }
+
+        ctx.setChanges().note("double boolean negation removed");
+        auto replacement = std::move(inner->args[0]);
+        self = std::move(replacement);
+    }
+
     void optimize(ir::FnCallScalar& s, auto& self) {
         if (auto* cast = std::get_if<func::Cast>(&s.function)) {
             verify_dbg(s.args.size() == 1);
@@ -27,6 +58,21 @@ struct Optimizer : util::TreeWalker<Optimizer> {
                 auto scalar = std::move(s.args[0]);
                 self = std::move(scalar);
             }
+            return;
+        }
+
+        if (std::holds_alternative<func::And>(s.function)) {
+            simplifyBooleanBinary(s, self, true);
+            return;
+        }
+
+        if (std::holds_alternative<func::Or>(s.function)) {
+            simplifyBooleanBinary(s, self, false);
+            return;
+        }
+
+        if (std::holds_alternative<func::BooleanNegate>(s.function)) {
+            simplifyDoubleNegation(s, self);
             return;
         }
 
